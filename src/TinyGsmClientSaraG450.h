@@ -515,6 +515,9 @@ public:
     for(int i = 0; res == "" && i<3; i++) {
       res = stream.readStringUntil('\n');
       res.trim();
+      if(res == "AT+CGSN") {
+        res = "";
+      }
     }
     waitResponse();
     // res.trim();
