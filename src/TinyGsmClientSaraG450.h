@@ -171,7 +171,7 @@ public:
       /* Workaround: sometimes module forgets to notify about data arrival.
       TODO: Currently we ping the module periodically,
       but maybe there's a better indicator that we need to poll */
-      if (millis() - prev_check > 500) {
+      if (millis() - prev_check > 5000) {
         got_data = true;
         prev_check = millis();
       }
@@ -907,6 +907,7 @@ protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
                     bool ssl = false, int timeout_s = 120, SocketProtocol protocol = TCP)
   {
+    DBG("> modemConnect");
     uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
     sendAT(GF("+USOCR="), protocol);  // create a socket
     if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) {  // reply is +USOCR: ## of socket created
@@ -929,25 +930,51 @@ protected:
     //waitResponse();
 
     // connect on the allocated socket
-    // TODO:  Use faster "asynchronous" connection?
-    // We would have to wait for the +UUSOCO URC to verify connection
+    /*
+    11:39:41.282 -> AT+USOCO=0,"h0.io",46
+    11:39:42.743 -> 
+    11:39:42.743 -> OK
+    11:39:43.705 -> 
+    11:39:43.705 -> OK
+    */
     sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
     int rsp = waitResponse(timeout_ms);
+    // The G450 sometimes returns with a second OK here.
     waitResponse();
-    // After a connect we can't immediately write data or else we get:
-    // AT+USOWR=0,3
-    // CME ERROR: Operation not allowed
-    delay(200); // Give the connection 200ms to settle
 
-    return (1 == rsp);
+    /*
+      After a connect we can't immediately write data or else we get:
+      -> AT+USOWR=0,3
+      -> CME ERROR: Operation not allowed
+      Wait for socket read command to return a valid before continuing
+    */
+    uint32_t startMillis = millis();
+    while(millis() - startMillis < 30000) { // sockets[*mux]->_timeout wasn't long enough for AWS S3
+      sendAT(GF("+USORD="), *mux, ",0");
+      if (waitResponse() == 2) {
+        DBG("Read result is ERROR");
+      } else {
+        // Connected and can read
+        DBG("< modemConnect");
+        return (1 == rsp);
+      }
+      delay(200);
+      yield();
+    }
+
+    modemDisconnect(*mux);
+    DBG("< modemConnect: can't read timeout");
+    return false;
   }
 
   bool modemDisconnect(uint8_t mux) {
+    DBG("> modemDisconnect");
     TINY_GSM_YIELD();
     if(sockets[mux]->protocol == TCP) {
       // AT+USOCTL=x,10 only works for TCP sockets
       if (!modemGetConnected(mux)) {
         sockets[mux]->sock_connected = false;
+        DBG("< modemDisconnect");
         return true;
       }
     }
@@ -957,12 +984,15 @@ protected:
     if (success) {
       sockets[mux]->sock_connected = false;
     }
+    DBG("< modemDisconnect");
     return success;
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+    DBG("> modemSend");
     sendAT(GF("+USOWR="), mux, ',', len);
     if (waitResponse(GF("@")) != 1) {
+      DBG("< modemSend: Result not @");
       return 0;
     }
     // 50ms delay, see AT manual section 25.10.4
@@ -970,21 +1000,25 @@ protected:
     stream.write((uint8_t*)buff, len);
     stream.flush();
     if (waitResponse(GF(GSM_NL "+USOWR:")) != 1) {
+      DBG("< modemSend: Result not +USOWR:");
       return 0;
     }
     streamSkipUntil(','); // Skip mux
     int sent = stream.readStringUntil('\n').toInt();
     waitResponse();  // sends back OK after the confirmation of number sent
+    DBG("< modemSend");
     return sent;
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
+    DBG("> modemRead");
     uint32_t startMillis = millis();
-    delay(20);
+    // delay(20);
     sendAT(GF("+USORD="), mux, ',', size);
     if (waitResponse(GF(GSM_NL "+USORD:")) != 1) {
       // Might end in an error because the socket is closed
       sockets[mux]->sock_connected = modemGetConnected(mux);
+      DBG("< modemRead: not +USORD:");
       return 0;
     }
     streamSkipUntil(','); // Skip mux
@@ -1000,72 +1034,97 @@ protected:
     }
     streamSkipUntil('\"');
     waitResponse();
-    DBG("### READ:", len, "from", mux);
+    DBG("< modemRead: ### READ:", len, "from", mux);
     sockets[mux]->sock_available = modemGetAvailable(mux);
     return len;
   }
 
   size_t modemGetAvailable(uint8_t mux) {
+    DBG("> modemAvailable");
     // Delay 20ms before sending command, but check for URC's
-    waitResponse(20);
-    // NOTE:  Querying a closed socket gives an error "operation not allowed"
+    // waitResponse(20);
+
     sendAT(GF("+USORD="), mux, ",0");
     size_t result = 0;
     uint8_t res = waitResponse(GF(GSM_NL "+USORD:"));
-    // Will give error "operation not allowed" when attempting to read a socket
-    // that you have already told to close
     if (res == 1) {
       streamSkipUntil(','); // Skip mux
       result = stream.readStringUntil('\n').toInt();
-      // if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
+      if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
       waitResponse();
-    } else {
-      // We received an error checking number of bytes to read
-      DBG("modemGetAvailable error");
+    } else if(res == 2) {
+      // ERROR means socket is disconnected.
+      DBG("< modemAvailable: modemGetAvailable ERROR");
       sockets[mux]->sock_connected = false; // disconnect to prevent infinite loops
       return 0;
+    } else {
+      // Unknown response.
+      DBG("< modemAvailable: modemGetAvailable error (not +USORD:)");
+      return 0;
     }
+
+    // If there is 0 bytes to read, check if the socket is still connected.
     if (!result && sockets[mux]->sock_connected) {
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
+
+    DBG("< modemAvailable");
     return result;
   }
 
   bool modemGetConnected(uint8_t mux) {
-    // NOTE:  Querying a closed socket gives an error "operation not allowed"
-    sendAT(GF("+USOCTL="), mux, ",10");
-    uint8_t res = waitResponse(GF(GSM_NL "+USOCTL:"), GF("+CME ERROR:"));
-    if(res == 1) {
-      // Valid response, need to read state
-    }
-    else if (res == 2) {
-      // +CME ERROR: Operation not allowed - means socket is not connected
-      stream.readStringUntil('\n'); // read the rest of the error string to purge the buffer
-      return false;
-    }
-    else {
-      // Unknown response
-      DBG("Socket connection state error");
-      return false;
-    }
+    // TODO: Only do this for TCP sockets, as +USOCTL=mux,10 only works for TCP
+    DBG("> modemGetConnected");
 
-    streamSkipUntil(','); // Skip mux
-    streamSkipUntil(','); // Skip type
-    int result = stream.readStringUntil('\n').toInt();
-    // 0: the socket is in INACTIVE status (it corresponds to CLOSED status
-    // defined in RFC793 "TCP Protocol Specification" [112])
-    // 1: the socket is in LISTEN status
-    // 2: the socket is in SYN_SENT status
-    // 3: the socket is in SYN_RCVD status
-    // 4: the socket is in ESTABILISHED status
-    // 5: the socket is in FIN_WAIT_1 status
-    // 6: the socket is in FIN_WAIT_2 status
-    // 7: the sokcet is in CLOSE_WAIT status
-    // 8: the socket is in CLOSING status
-    // 9: the socket is in LAST_ACK status
-    // 10: the socket is in TIME_WAIT status
-    waitResponse();
-    return (result != 0);
+    if(sockets[mux]->protocol == TCP) {
+      // NOTE:  Querying a closed socket gives an error "operation not allowed"
+      sendAT(GF("+USOCTL="), mux, ",10");
+      uint8_t res = waitResponse(GF(GSM_NL "+USOCTL:"));
+      if(res == 1) {
+        // Valid response, need to read state
+      }
+      else if (res == 2) {
+        // ERROR - means socket is not connected
+        stream.readStringUntil('\n'); // read the rest of the error string to purge the buffer
+        DBG("< modemGetConnected: ERROR - socket not connected");
+        return false;
+      }
+      else if (res == 3) {
+        // +CME ERROR: Operation not allowed - means socket is not connected
+        stream.readStringUntil('\n'); // read the rest of the error string to purge the buffer
+        DBG("< modemGetConnected: +CME ERROR: - socket not connected");
+        return false;
+      }
+      else {
+        // Unknown response
+        DBG("< modemGetConnected: Socket connection state error");
+        return false;
+      }
+
+      streamSkipUntil(','); // Skip mux
+      streamSkipUntil(','); // Skip type
+      int result = stream.readStringUntil('\n').toInt();
+      // 0: the socket is in INACTIVE status (it corresponds to CLOSED status
+      // defined in RFC793 "TCP Protocol Specification" [112])
+      // 1: the socket is in LISTEN status
+      // 2: the socket is in SYN_SENT status
+      // 3: the socket is in SYN_RCVD status
+      // 4: the socket is in ESTABILISHED status
+      // 5: the socket is in FIN_WAIT_1 status
+      // 6: the socket is in FIN_WAIT_2 status
+      // 7: the sokcet is in CLOSE_WAIT status
+      // 8: the socket is in CLOSING status
+      // 9: the socket is in LAST_ACK status
+      // 10: the socket is in TIME_WAIT status
+      waitResponse();
+      DBG("< modemGetConnected");
+      return (result != 0);
+
+    } else {
+      // UDP
+      DBG("< modemGetConnected");
+      return sockets[mux]->sock_connected;
+    }
   }
 
 public:
@@ -1123,8 +1182,10 @@ public:
     int index = 0;
     unsigned long startMillis = millis();
     do {
+      yield();
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
+        yield();
         TINY_GSM_YIELD();
         int a = stream.read();
         if (a <= 0) continue; // Skip 0x00 bytes, just in case
@@ -1178,7 +1239,7 @@ finish:
     }
     //data.replace(GSM_NL, "/");
     //DBG('<', index, '>', data);
-    DBG("WaitResponse() took: ", (millis() - startMillis), "ms");
+    // DBG("WaitResponse() took: ", (millis() - startMillis), "ms");
     return index;
   }
 
