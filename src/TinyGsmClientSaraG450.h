@@ -63,12 +63,12 @@ public:
     this->at = modem;
     this->mux = mux;
     this->protocol = protocol;
-    sock_available = 0;
-    prev_check = 0;
-    sock_connected = false;
-    got_data = false;
+    this->sock_available = 0;
+    this->prev_check = 0;
+    this->sock_connected = false;
+    this->got_data = false;
 
-    at->sockets[mux] = this;
+    this->at->sockets[mux] = this;
 
     return true;
   }
@@ -76,6 +76,7 @@ public:
 public:
   virtual int connect(const char *host, uint16_t port, int timeout_s) {
     stop();
+    delay(1000); // wait a second between disconnect and connect
     TINY_GSM_YIELD();
     rx.clear();
 
@@ -142,17 +143,20 @@ public:
   }
 
   virtual int available() {
+    DBG("> available");
     TINY_GSM_YIELD();
     if (!rx.size()) {
       /* Workaround: sometimes module forgets to notify about data arrival.
       TODO: Currently we ping the module periodically,
       but maybe there's a better indicator that we need to poll */
-      if (millis() - prev_check > 500) {
+      if (millis() - prev_check > 1000) {
         got_data = true;
         prev_check = millis();
+        DBG("force check");
       }
       at->maintain();
     }
+    DBG("< available mux=", mux, "fifo=", rx.size(), "modem=", sock_available);
     return rx.size() + sock_available;
   }
 
@@ -203,6 +207,7 @@ public:
     if (available()) {
       return true;
     }
+    DBG("< connected()", sock_connected);
     return sock_connected;
   }
   virtual operator bool() { return connected(); }
@@ -396,14 +401,15 @@ public:
   }
 
   void maintain() {
+    clearRxStreamBuffer(); // helps to process URCs
     for (int mux = 0; mux < TINY_GSM_MUX_COUNT; mux++) {
       GsmClient* sock = sockets[mux];
       if (sock && sock->got_data) {
         sock->got_data = false;
-        sock->sock_available = modemGetAvailable(mux);
+        size_t available = modemGetAvailable(mux);
+        sock->sock_available = available;
       }
     }
-    clearRxStreamBuffer();
   }
 
   void clearRxStreamBuffer() {
@@ -526,9 +532,10 @@ public:
 
   SimStatus getSimStatus(unsigned long timeout_ms = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
+      clearRxStreamBuffer();
       sendAT(GF("+CPIN?"));
-      // Waiting for sim to unlock response can be slow
-      if (waitResponse(4000, GF(GSM_NL "+CPIN:")) != 1) {
+      // Waiting for sim to unlock response can be slow - saw 5 seconds
+      if (waitResponse(6000, GF(GSM_NL "+CPIN:")) != 1) {
         delay(1000);
         continue;
       }
@@ -545,8 +552,19 @@ public:
   }
 
   RegStatus getGsmRegistrationStatus() {
+    clearRxStreamBuffer();
     sendAT(GF("+CREG?"));
-    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
+    /* Saw that creg can take 3 seconds to return
+13:45:02.030 -> AT+CREG?
+13:45:03.025 -> [13483] ### waitResponse timeout
+13:45:04.022 -> AT+CREG?
+13:45:04.055 -> 
+13:45:04.055 -> +CREG: 0,0
+13:45:04.055 -> 
+13:45:04.055 -> OK
+and later we get the second response confusing things
+    */
+    if (waitResponse(5000, GF(GSM_NL "+CREG:")) != 1) {
       return REG_UNKNOWN;
     }
     streamSkipUntil(','); /* Skip format (0) */
@@ -556,6 +574,7 @@ public:
   }
 
   RegStatus getGprsRegistrationStatus() {
+    clearRxStreamBuffer();
     sendAT(GF("+CGREG?"));
     if (waitResponse(GF(GSM_NL "+CGREG:")) != 1) {
       return REG_UNKNOWN;
@@ -567,6 +586,7 @@ public:
   }
 
   String getOperator() {
+    clearRxStreamBuffer();
     sendAT(GF("+COPS?"));
     if (waitResponse(GF(GSM_NL "+COPS:")) != 1) {
       return "";
@@ -581,13 +601,16 @@ public:
    * Generic network functions
    */
 
+  // Get signal strenght. Saw this command taking 11 seconds to return.
   int16_t getSignalQuality() {
+    clearRxStreamBuffer();
     sendAT(GF("+CSQ"));
-    if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
+    if (waitResponse(30000, GF(GSM_NL "+CSQ:")) != 1) {
       return 99;
     }
     int res = stream.readStringUntil(',').toInt();
     waitResponse();
+    clearRxStreamBuffer();
     return res;
   }
 
@@ -631,6 +654,7 @@ public:
    */
 
   bool gprsAttach() {
+    clearRxStreamBuffer();
     sendAT(GF("+CGATT=1"));  // attach to GPRS
     if (waitResponse(360000, GF(GSM_NL "+CGATT:")) != 1) {
       return false;
@@ -643,6 +667,7 @@ public:
 
 
   RegStatus getGprsAttachedStatus() {
+    clearRxStreamBuffer();
     sendAT(GF("+CGATT?"));
     if (waitResponse(GF(GSM_NL "+CGATT:")) != 1) {
       return REG_UNKNOWN;
@@ -672,19 +697,24 @@ public:
   }
 
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
-    gprsDisconnect();
+    DBG("> gprsConnect()");
 
-    DBG("Connecting GPRS");
+    gprsDisconnect();
 
     /*
     Profile might already be active
     */
     {
+      clearRxStreamBuffer();
       sendAT(GF("+UPSND=0,8")); // Check if PSD profile 0 is now active
       int res = waitResponse(GF(",8,1"), GF(",8,0"));
       waitResponse();  // Should return another OK
       if (res == 1) {
+        DBG("< gprsConnect() PSD already active");
         return true;  // It's active
+      }
+      if (res == 2) {
+        DBG("| gprsConnect() PSD not active");
       }
     }
 
@@ -728,6 +758,7 @@ public:
     // using the current parameters
     sendAT(GF("+UPSDA=0,3")); // Activate the PDP context associated with profile 0
     if (waitResponse(360000L) != 1) {  // Should return ok
+      DBG("x gprsConnect() PDP context activate failed");
       return false;
     }
 
@@ -741,9 +772,11 @@ public:
     int res = waitResponse(GF(",8,1"), GF(",8,0"));
     waitResponse();  // Should return another OK
     if (res == 1) {
+      DBG("< gprsConnect()");
       return true;  // It's now active
     } else if (res == 2) {  // If it's not active yet, wait for the +UUPSDA URC
       if (waitResponse(180000L, GF("+UUPSDA: ")) != 1) {  // 0=successful
+        DBG("x gprsConnect()");
         return false;
       } else {
         // We got +UUPSDA: 
@@ -753,25 +786,30 @@ public:
         // +UUPSDA: 33
         int result = stream.readStringUntil('\n').toInt();
         if(result != 0) {
+          DBG("x gprsConnect()");
           return false;
         }
       }
       streamSkipUntil('\n');  // Ignore the IP address, if returned
     } else {
+      DBG("x gprsConnect()");
       return false;
     }
 
+    DBG("< gprsConnect()");
     return true;
   }
 
   bool gprsDisconnect() {
-    DBG("Disconnecting GPRS");
+    DBG("> gprsDisconnect()");
     sendAT(GF("+UPSDA=0,4"));  // Deactivate the PDP context associated with profile 0
     if (waitResponse() != 1) { // Wait for OK
+      DBG("< gprsDisconnect() already disconnected");
       return true; // if we get an error we are disconnected
     }
     
     if(waitResponse(30000, "+UUPSDD: 0") == 1) {
+      DBG("< gprsDisconnect() disconnected");
       return true;
     }
 
@@ -780,6 +818,7 @@ public:
     //   return false;
     // }
 
+    DBG("< gprsDisconnect() error");
     return false;
   }
 
@@ -909,8 +948,10 @@ protected:
   {
     DBG("> modemConnect");
     uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
+
     sendAT(GF("+USOCR="), protocol);  // create a socket
     if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) {  // reply is +USOCR: ## of socket created
+      DBG("< modemConnect socket create error");
       return false;
     }
     *mux = stream.readStringUntil('\n').toInt();
@@ -939,8 +980,20 @@ protected:
     */
     sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
     int rsp = waitResponse(timeout_ms);
+    if (rsp == 2) {
+      // Modem returned ERROR
+      modemDisconnect(*mux);
+      DBG("< modemConnect: +USOCO ERROR");
+      return false;
+    }
     // The G450 sometimes returns with a second OK here.
-    waitResponse();
+    rsp = waitResponse();
+    if (rsp == 2) {
+      // Modem returned ERROR
+      modemDisconnect(*mux);
+      DBG("< modemConnect: +USOCO ERROR");
+      return false;
+    }
 
     /*
       After a connect we can't immediately write data or else we get:
@@ -951,12 +1004,13 @@ protected:
     uint32_t startMillis = millis();
     while(millis() - startMillis < 30000) { // sockets[*mux]->_timeout wasn't long enough for AWS S3
       sendAT(GF("+USORD="), *mux, ",0");
-      if (waitResponse() == 2) {
-        DBG("Read result is ERROR");
-      } else {
+      rsp = waitResponse();
+      if (rsp == 1) {
         // Connected and can read
         DBG("< modemConnect");
-        return (1 == rsp);
+        return true;
+      } else {
+        DBG("Read result is ERROR");
       }
       delay(200);
       yield();
@@ -984,7 +1038,7 @@ protected:
     if (success) {
       sockets[mux]->sock_connected = false;
     }
-    DBG("< modemDisconnect");
+    DBG("< modemDisconnect ", success);
     return success;
   }
 
@@ -1032,10 +1086,11 @@ protected:
       char c = stream.read();
       sockets[mux]->rx.put(c);
     }
+    // Shouldn't we read until we get the \"? But that char can exist in the actual data, so we need to use the length.
     streamSkipUntil('\"');
-    waitResponse();
+    waitResponse(); // +USORD: 0,48,"<data>"\r\n is followed by OK. Process this OK.
+    sockets[mux]->sock_available = modemGetAvailable(mux); // Check how much data is left in the modem's buffer to read.
     DBG("< modemRead: ### READ:", len, "from", mux);
-    sockets[mux]->sock_available = modemGetAvailable(mux);
     return len;
   }
 
@@ -1054,8 +1109,9 @@ protected:
       waitResponse();
     } else if(res == 2) {
       // ERROR means socket is disconnected.
-      DBG("< modemAvailable: modemGetAvailable ERROR");
+      // modemDisconnect(mux);
       sockets[mux]->sock_connected = false; // disconnect to prevent infinite loops
+      DBG("< modemAvailable: modemGetAvailable ERROR");
       return 0;
     } else {
       // Unknown response.
@@ -1068,7 +1124,7 @@ protected:
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
 
-    DBG("< modemAvailable");
+    DBG("< modemAvailable", result);
     return result;
   }
 
