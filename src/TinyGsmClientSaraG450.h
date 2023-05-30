@@ -276,7 +276,7 @@ public:
   bool init() {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
 
-    powerOnModule();
+    powerOnIo();
 
     if (!testAT()) {
       return false;
@@ -328,32 +328,6 @@ public:
       clearRxStreamBuffer();
       return (ret == SIM_READY || ret == SIM_LOCKED);
     }
-  }
-
-  void powerOffModuleHard() {
-    #if defined(TINY_GSM_PIN_POWER_OFF)
-      pinMode(TINY_GSM_PIN_POWER_OFF, OUTPUT);
-      digitalWrite(TINY_GSM_PIN_POWER_OFF, LOW);
-      delay(1000);
-      digitalWrite(TINY_GSM_PIN_POWER_OFF, HIGH);
-      pinMode(TINY_GSM_PIN_POWER_OFF, INPUT);
-      delay(1000);
-    #else
-      #error "Please define TINY_GSM_PIN_POWER_OFF"
-    #endif
-  }
-
-  void powerOnModule() {
-    #if defined(TINY_GSM_PIN_POWER_ON)
-      pinMode(TINY_GSM_PIN_POWER_ON, OUTPUT);
-      digitalWrite(TINY_GSM_PIN_POWER_ON, LOW);
-      delay(1000);
-      digitalWrite(TINY_GSM_PIN_POWER_ON, HIGH);
-      pinMode(TINY_GSM_PIN_POWER_ON, INPUT);
-      delay(1000);
-    #else
-      #error "Please define TINY_GSM_PIN_POWER_ON"
-    #endif
   }
 
   String getModemName() {
@@ -463,19 +437,44 @@ public:
     if (waitResponse(10000L) != 1) {
       return false;
     }
-    delay(3000);  // TODO:  Verify delay timing here
-    return init();
+    return true;
   }
 
-  bool hardRestart() {
-    powerOffModuleHard();
-    delay(3000);  // TODO:  Verify delay timing here
-    return init();
+  void hardRestart() {
+    powerOffIo();
+    delay(3000);
+    powerOnIo();
   }
 
   bool poweroff() {
     sendAT(GF("+CPWROFF"));
     return waitResponse(40000L) == 1;
+  }
+
+  void powerOffIo() {
+    #if defined(TINY_GSM_PIN_POWER_OFF)
+      pinMode(TINY_GSM_PIN_POWER_OFF, OUTPUT);
+      digitalWrite(TINY_GSM_PIN_POWER_OFF, LOW);
+      delay(1000);
+      digitalWrite(TINY_GSM_PIN_POWER_OFF, HIGH);
+      pinMode(TINY_GSM_PIN_POWER_OFF, INPUT);
+      delay(1000);
+    #else
+      #error "Please define TINY_GSM_PIN_POWER_OFF"
+    #endif
+  }
+
+  void powerOnIo() {
+    #if defined(TINY_GSM_PIN_POWER_ON)
+      pinMode(TINY_GSM_PIN_POWER_ON, OUTPUT);
+      digitalWrite(TINY_GSM_PIN_POWER_ON, LOW);
+      delay(1000);
+      digitalWrite(TINY_GSM_PIN_POWER_ON, HIGH);
+      pinMode(TINY_GSM_PIN_POWER_ON, INPUT);
+      delay(1000);
+    #else
+      #error "Please define TINY_GSM_PIN_POWER_ON"
+    #endif
   }
 
   bool radioOff() {
