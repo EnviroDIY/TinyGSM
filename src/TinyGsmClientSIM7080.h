@@ -653,6 +653,6 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   String            certificates[TINY_GSM_MUX_COUNT];
 };
 
-GSM_STATIC_VARIABLES(TinyGsmSim7080)
+GSM_STATIC_VARIABLES(TinyGsmSim70xx<TinyGsmSim7080>)
 
 #endif  // SRC_TINYGSMCLIENTSIM7080_H_
