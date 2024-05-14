@@ -646,6 +646,6 @@ class TinyGsmSequansMonarch
   const char* gsmNL = "\n";
 };
 
-AT_STATIC_VARIABLES(TinyGsmSequansMonarch)
+GSM_STATIC_VARIABLES(TinyGsmSequansMonarch)
 
 #endif  // SRC_TINYGSMCLIENTSEQUANSMONARCH_H_

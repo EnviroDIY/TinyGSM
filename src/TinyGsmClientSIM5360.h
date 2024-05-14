@@ -655,6 +655,6 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   GsmClientSim5360* sockets[TINY_GSM_MUX_COUNT];
 };
 
-AT_STATIC_VARIABLES(TinyGsmSim5360)
+GSM_STATIC_VARIABLES(TinyGsmSim5360)
 
 #endif  // SRC_TINYGSMCLIENTSIM5360_H_

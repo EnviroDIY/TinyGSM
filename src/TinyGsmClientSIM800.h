@@ -687,6 +687,6 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   GsmClientSim800* sockets[TINY_GSM_MUX_COUNT];
 };
 
-AT_STATIC_VARIABLES(TinyGsmSim800)
+GSM_STATIC_VARIABLES(TinyGsmSim800)
 
 #endif  // SRC_TINYGSMCLIENTSIM800_H_

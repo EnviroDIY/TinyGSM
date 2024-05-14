@@ -654,6 +654,6 @@ class TinyGsmSim7000SSL
   String               certificates[TINY_GSM_MUX_COUNT];
 };
 
-AT_STATIC_VARIABLES(TinyGsmSim70xx<TinyGsmSim7000SSL>)
+GSM_STATIC_VARIABLES(TinyGsmSim70xx<TinyGsmSim7000SSL>)
 
 #endif  // SRC_TINYGSMCLIENTSIM7000SSL_H_

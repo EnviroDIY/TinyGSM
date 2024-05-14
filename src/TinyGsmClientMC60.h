@@ -528,6 +528,6 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
   GsmClientMC60* sockets[TINY_GSM_MUX_COUNT];
 };
 
-AT_STATIC_VARIABLES(TinyGsmMC60)
+GSM_STATIC_VARIABLES(TinyGsmMC60)
 
 #endif  // SRC_TINYGSMCLIENTMC60_H_

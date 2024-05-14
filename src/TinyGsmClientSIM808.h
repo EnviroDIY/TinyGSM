@@ -163,6 +163,6 @@ class TinyGsmSim808 : public TinyGsmSim800,
   }
 };
 
-AT_STATIC_VARIABLES(TinyGsmSim808)
+GSM_STATIC_VARIABLES(TinyGsmSim808)
 
 #endif  // SRC_TINYGSMCLIENTSIM808_H_

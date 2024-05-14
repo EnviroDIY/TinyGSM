@@ -494,6 +494,6 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
   GsmClientA6* sockets[TINY_GSM_MUX_COUNT];
 };
 
-AT_STATIC_VARIABLES(TinyGsmA6)
+GSM_STATIC_VARIABLES(TinyGsmA6)
 
 #endif  // SRC_TINYGSMCLIENTA6_H_

@@ -117,7 +117,7 @@ uint32_t TinyGsmAutoBaud(T& SerialAT, uint32_t minimum = 9600,
 }
 
 #if defined TINY_GSM_DEBUG
-#define AT_STATIC_VARIABLES(specificModem)                               \
+#define GSM_STATIC_VARIABLES(specificModem)                              \
   template <>                                                            \
   const char* TinyGsmModem<specificModem>::modem_nl = AT_NL;             \
   template <>                                                            \
@@ -130,7 +130,7 @@ uint32_t TinyGsmAutoBaud(T& SerialAT, uint32_t minimum = 9600,
   template <>                                                            \
   const char* TinyGsmModem<specificModem>::modem_verbose_alt = AT_VERBOSE_ALT;
 #else
-#define AT_STATIC_VARIABLES(specificModem)                         \
+#define GSM_STATIC_VARIABLES(specificModem)                        \
   template <>                                                      \
   const char* TinyGsmModem<specificModem>::modem_nl = AT_NL;       \
   template <>                                                      \

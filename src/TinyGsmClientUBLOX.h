@@ -766,6 +766,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   GsmClientUBLOX* sockets[TINY_GSM_MUX_COUNT];
 };
 
-AT_STATIC_VARIABLES(TinyGsmUBLOX)
+GSM_STATIC_VARIABLES(TinyGsmUBLOX)
 
 #endif  // SRC_TINYGSMCLIENTUBLOX_H_

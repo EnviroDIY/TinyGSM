@@ -813,6 +813,6 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   bool             supportsAsyncSockets;
 };
 
-AT_STATIC_VARIABLES(TinyGsmSaraR4)
+GSM_STATIC_VARIABLES(TinyGsmSaraR4)
 
 #endif  // SRC_TINYGSMCLIENTSARAR4_H_

@@ -1576,6 +1576,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   uint32_t       lastCommandModeMillis;
 };
 
-AT_STATIC_VARIABLES(TinyGsmXBee)
+GSM_STATIC_VARIABLES(TinyGsmXBee)
 
 #endif  // SRC_TINYGSMCLIENTXBEE_H_
