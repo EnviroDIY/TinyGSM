@@ -496,7 +496,8 @@ class TinyGsmSim7000SSL
     sendAT(GF("+CARECV?"));
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
-      int res = waitResponse(3000, GF("+CARECV:"), GFP(AT_OK), GFP(GSM_ERROR));
+      int res = waitResponse(3000, GF("+CARECV:"), GFP(modem_ok),
+                             GFP(modem_error));
       // if we get the +CARECV: response, read the mux number and the number of
       // characters available
       if (res == 1) {
@@ -543,7 +544,8 @@ class TinyGsmSim7000SSL
 
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
-      int res = waitResponse(3000, GF("+CASTATE:"), GFP(AT_OK), GFP(GSM_ERROR));
+      int res = waitResponse(3000, GF("+CASTATE:"), GFP(modem_ok),
+                             GFP(modem_error));
       // if we get the +CASTATE: response, read the mux number and the status
       if (res == 1) {
         int    ret_mux = streamGetIntBefore(',');
@@ -651,5 +653,7 @@ class TinyGsmSim7000SSL
   GsmClientSim7000SSL* sockets[TINY_GSM_MUX_COUNT];
   String               certificates[TINY_GSM_MUX_COUNT];
 };
+
+AT_STATIC_VARIABLES(TinyGsmSim70xx<TinyGsmSim7000SSL>)
 
 #endif  // SRC_TINYGSMCLIENTSIM7000SSL_H_

@@ -14,10 +14,8 @@
 
 #define TINY_GSM_MUX_COUNT 7
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+
+#include "TinyGsmATDefines.h"
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmGPRS.tpp"
@@ -814,5 +812,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   bool             has2GFallback;
   bool             supportsAsyncSockets;
 };
+
+AT_STATIC_VARIABLES(TinyGsmSaraR4)
 
 #endif  // SRC_TINYGSMCLIENTSARAR4_H_

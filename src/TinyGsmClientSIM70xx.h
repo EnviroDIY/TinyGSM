@@ -11,10 +11,8 @@
 
 // #define TINY_GSM_DEBUG Serial
 // #define TINY_GSM_USE_HEX
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+
+#include "TinyGsmATDefines.h"
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmGPRS.tpp"

@@ -15,10 +15,8 @@
 
 #define TINY_GSM_MUX_COUNT 5
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+
+#include "TinyGsmATDefines.h"
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmCalling.tpp"
@@ -688,5 +686,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
  protected:
   GsmClientSim800* sockets[TINY_GSM_MUX_COUNT];
 };
+
+AT_STATIC_VARIABLES(TinyGsmSim800)
 
 #endif  // SRC_TINYGSMCLIENTSIM800_H_

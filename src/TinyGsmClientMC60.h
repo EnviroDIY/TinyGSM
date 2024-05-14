@@ -17,10 +17,8 @@
 
 #define TINY_GSM_MUX_COUNT 6
 #define TINY_GSM_BUFFER_READ_NO_CHECK
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+
+#include "TinyGsmATDefines.h"
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmCalling.tpp"
@@ -429,7 +427,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
     sendAT(GF("+QIRD=0,1,"), mux, ',', (uint16_t)size);
     // If it replies only OK for the write command, it means there is no
     // received data in the buffer of the connection.
-    int8_t res = waitResponse(GF("+QIRD:"), GFP(AT_OK), GFP(GSM_ERROR));
+    int8_t res = waitResponse(GF("+QIRD:"), GFP(modem_ok), GFP(modem_error));
     if (res == 1) {
       streamSkipUntil(':');  // skip IP address
       streamSkipUntil(',');  // skip port
@@ -529,5 +527,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
  protected:
   GsmClientMC60* sockets[TINY_GSM_MUX_COUNT];
 };
+
+AT_STATIC_VARIABLES(TinyGsmMC60)
 
 #endif  // SRC_TINYGSMCLIENTMC60_H_

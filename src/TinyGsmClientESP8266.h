@@ -14,10 +14,8 @@
 
 #define TINY_GSM_MUX_COUNT 5
 #define TINY_GSM_NO_MODEM_BUFFER
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+
+#include "TinyGsmATDefines.h"
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmSSL.tpp"
@@ -303,9 +301,9 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     // attempt first without than with the 'current' flag used in some firmware
     // versions
     sendAT(GF("+CWJAP=\""), ssid, GF("\",\""), pwd, GF("\""));
-    if (waitResponse(30000L, GFP(AT_OK), GF(AT_NL "FAIL" AT_NL)) != 1) {
+    if (waitResponse(30000L, GFP(modem_ok), GF(AT_NL "FAIL" AT_NL)) != 1) {
       sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
-      if (waitResponse(30000L, GFP(AT_OK), GF(AT_NL "FAIL" AT_NL)) != 1) {
+      if (waitResponse(30000L, GFP(modem_ok), GF(AT_NL "FAIL" AT_NL)) != 1) {
         return false;
       }
     }
@@ -335,7 +333,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
            GF("\",\""), host, GF("\","), port, GF(","),
            TINY_GSM_TCP_KEEP_ALIVE);
     // TODO(?): Check mux
-    int8_t rsp = waitResponse(timeout_ms, GFP(AT_OK), GFP(GSM_ERROR),
+    int8_t rsp = waitResponse(timeout_ms, GFP(modem_ok), GFP(modem_error),
                               GF("ALREADY CONNECT"));
     // if (rsp == 3) waitResponse();
     // May return "ERROR" after the "ALREADY CONNECT"
@@ -357,7 +355,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     // after "STATUS:" it should return the status number (0,1,2,3,4,5),
     // followed by an OK
     // Hopefully we'll catch the "3" here, but fall back to the OK or Error
-    int8_t status = waitResponse(GF("3"), GFP(AT_OK), GFP(GSM_ERROR));
+    int8_t status = waitResponse(GF("3"), GFP(modem_ok), GFP(modem_error));
     // if the status is anything but 3, there are no connections open
     if (status != 1) {
       for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
@@ -367,8 +365,8 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     }
     bool verified_connections[TINY_GSM_MUX_COUNT] = {0, 0, 0, 0, 0};
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
-      uint8_t has_status = waitResponse(GF("+CIPSTATUS:"), GFP(AT_OK),
-                                        GFP(GSM_ERROR));
+      uint8_t has_status = waitResponse(GF("+CIPSTATUS:"), GFP(modem_ok),
+                                        GFP(modem_error));
       if (has_status == 1) {
         int8_t returned_mux = streamGetIntBefore(',');
         streamSkipUntil(',');   // Skip mux
@@ -435,5 +433,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
  protected:
   GsmClientESP8266* sockets[TINY_GSM_MUX_COUNT];
 };
+
+AT_STATIC_VARIABLES(TinyGsmESP8266)
 
 #endif  // SRC_TINYGSMCLIENTESP8266_H_

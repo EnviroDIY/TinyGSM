@@ -21,6 +21,8 @@
 // here)
 #define TINY_GSM_XBEE_GUARD_TIME 1010
 
+#include "TinyGsmATDefines.h"
+
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -1573,5 +1575,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   bool           inCommandMode;
   uint32_t       lastCommandModeMillis;
 };
+
+AT_STATIC_VARIABLES(TinyGsmXBee)
 
 #endif  // SRC_TINYGSMCLIENTXBEE_H_

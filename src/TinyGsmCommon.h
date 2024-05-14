@@ -116,4 +116,27 @@ uint32_t TinyGsmAutoBaud(T& SerialAT, uint32_t minimum = 9600,
   return 0;
 }
 
+#if defined TINY_GSM_DEBUG
+#define AT_STATIC_VARIABLES(specificModem)                               \
+  template <>                                                            \
+  const char* TinyGsmModem<specificModem>::modem_nl = AT_NL;             \
+  template <>                                                            \
+  const char* TinyGsmModem<specificModem>::modem_ok = AT_OK AT_NL;       \
+  template <>                                                            \
+  const char* TinyGsmModem<specificModem>::modem_error = AT_ERROR AT_NL; \
+                                                                         \
+  template <>                                                            \
+  const char* TinyGsmModem<specificModem>::modem_verbose = AT_VERBOSE;   \
+  template <>                                                            \
+  const char* TinyGsmModem<specificModem>::modem_verbose_alt = AT_VERBOSE_ALT;
+#else
+#define AT_STATIC_VARIABLES(specificModem)                         \
+  template <>                                                      \
+  const char* TinyGsmModem<specificModem>::modem_nl = AT_NL;       \
+  template <>                                                      \
+  const char* TinyGsmModem<specificModem>::modem_ok = AT_OK AT_NL; \
+  template <>                                                      \
+  const char* TinyGsmModem<specificModem>::modem_error = AT_ERROR AT_NL;
+#endif
+
 #endif  // SRC_TINYGSMCOMMON_H_

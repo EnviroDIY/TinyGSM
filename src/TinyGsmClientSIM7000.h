@@ -457,4 +457,6 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
   GsmClientSim7000* sockets[TINY_GSM_MUX_COUNT];
 };
 
+AT_STATIC_VARIABLES(TinyGsmSim70xx<TinyGsmSim7000>)
+
 #endif  // SRC_TINYGSMCLIENTSIM7000_H_
