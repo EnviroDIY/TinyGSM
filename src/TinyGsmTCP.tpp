@@ -144,7 +144,7 @@ class TinyGsmTCP {
 #elif defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
       // Returns the combined number of characters available in the TinyGSM
       // fifo and the modem chips internal fifo, doing an extra check-in
-      // with the modem to see if anything has arrived without a UURC.
+      // with the modem to see if anything has arrived without a URC.
       if (!rx.size()) {
         if (millis() - prev_check > 500) {
           // setting got_data to true will tell maintain to run
@@ -183,7 +183,7 @@ class TinyGsmTCP {
 
 #elif defined TINY_GSM_BUFFER_READ_NO_CHECK
       // Reads characters out of the TinyGSM fifo, and from the modem chip's
-      // internal fifo if avaiable.
+      // internal fifo if available.
       at->maintain();
       while (cnt < size) {
         size_t chunk = TinyGsmMin(size - cnt, rx.size());
@@ -206,7 +206,7 @@ class TinyGsmTCP {
 
 #elif defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
       // Reads characters out of the TinyGSM fifo, and from the modem chips
-      // internal fifo if avaiable, also double checking with the modem if
+      // internal fifo if available, also double checking with the modem if
       // data has arrived without issuing a UURC.
       at->maintain();
       while (cnt < size) {
@@ -334,7 +334,7 @@ class TinyGsmTCP {
   void maintainImpl() {
 #if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
     // Keep listening for modem URC's and proactively iterate through
-    // sockets asking if any data is avaiable
+    // sockets asking if any data is available
     for (int mux = 0; mux < muxCount; mux++) {
       GsmClient* sock = thisModem().sockets[mux];
       if (sock && sock->got_data) {

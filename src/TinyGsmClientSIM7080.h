@@ -192,7 +192,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
 
   void maintainImpl() {
     // Keep listening for modem URC's and proactively iterate through
-    // sockets asking if any data is avaiable
+    // sockets asking if any data is available
     bool check_socks = false;
     for (int mux = 0; mux < TINY_GSM_MUX_COUNT; mux++) {
       GsmClientSim7080* sock = sockets[mux];

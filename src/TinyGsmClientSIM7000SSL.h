@@ -183,7 +183,7 @@ class TinyGsmSim7000SSL
 
   void maintainImpl() {
     // Keep listening for modem URC's and proactively iterate through
-    // sockets asking if any data is avaiable
+    // sockets asking if any data is available
     bool check_socks = false;
     for (int mux = 0; mux < TINY_GSM_MUX_COUNT; mux++) {
       GsmClientSim7000SSL* sock = sockets[mux];

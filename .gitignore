@@ -50,3 +50,5 @@ platformio_extra_envs.ini
 pioScripts/generate_compile_commands.py
 compile_commands.json
 src/TinyGsmATDefines.h
+variants/*
+boards/*
