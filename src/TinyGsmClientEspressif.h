@@ -76,6 +76,14 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     }
     thisModem().sendAT(GF("E0"));  // Echo Off
     if (thisModem().waitResponse() != 1) { return false; }
+
+#ifdef TINY_GSM_DEBUG
+    thisModem().sendAT(GF("+SYSLOG=1"));  // turn on verbose error codes
+#else
+    thisModem().sendAT(GF("+SYSLOG=0"));  // turn off error codes
+#endif
+    thisModem().waitResponse();
+
     thisModem().sendAT(GF("+CIPMUX=1"));  // Enable Multiple Connections
     if (thisModem().waitResponse() != 1) { return false; }
     thisModem().sendAT(GF("+CWMODE=1"));  // Put into "station" mode
@@ -136,7 +144,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
 
   // Gets the modem firmware version
   String getModemRevisionImpl() {
-    thisModem().sendAT(GF("GMR"));  // GMR instead of CGMR
+    thisModem().sendAT(GF("+GMR"));  // GMR instead of CGMR
     String res;
     if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
     thisModem().cleanResponseString(res);
