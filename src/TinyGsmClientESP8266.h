@@ -17,18 +17,16 @@
 #include "TinyGsmClientEspressif.h"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
-#include "TinyGsmWifi.tpp"
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
 
-static uint8_t TINY_GSM_TCP_KEEP_ALIVE = 120;
-
 // <state>: current Wi-Fi state.
-//     0: ESP8266 station has not started any Wi-Fi connection.
-//     1: ESP8266 station has connected to an AP, but does not get an IPv4
-//     address yet. 2: ESP8266 station has connected to an AP, and got an IPv4
-//     address. 3: ESP8266 station is in Wi-Fi connecting or reconnecting state.
-//     4: ESP8266 station is in Wi-Fi disconnected state.
+//   0: ESP8266 station has not started any Wi-Fi connection.
+//   1: ESP8266 station has connected to an AP, but does not get an IPv4 address
+//   yet.
+//   2: ESP8266 station has connected to an AP, and got an IPv4 address.
+//   3: ESP8266 station is in Wi-Fi connecting or reconnecting state.
+//   4: ESP8266 station is in Wi-Fi disconnected state.
 enum ESP8266RegStatus {
   REG_UNINITIALIZED = 0,
   REG_UNREGISTERED  = 1,
@@ -41,7 +39,6 @@ enum ESP8266RegStatus {
 class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
                        public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>,
                        public TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmWifi<TinyGsmESP8266>,
                        public TinyGsmTime<TinyGsmESP8266>,
                        public TinyGsmNTP<TinyGsmESP8266> {
   friend class TinyGsmEspressif<TinyGsmESP8266>;
@@ -156,7 +153,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
    */
  public:
   ESP8266RegStatus getRegistrationStatus() {
-    sendAT(GF("+CWSTATE"));
+    sendAT(GF("+CWSTATE?"));
     if (waitResponse(3000, GF("+CWSTATE:")) != 1) return REG_UNKNOWN;
     // +CWSTATE:<state>,<"ssid">
     // followed by an OK
@@ -278,8 +275,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     sendAT(GF("+CIPSNTPCFG?"));
     if (waitResponse(2000L, GF("+CIPSNTPCFG:")) != 1) { return false; }
 
-    char tzSign = stream.read();
-    itimezone   = stream.parseFloat();
+    itimezone = stream.parseFloat();
     // Final OK
     waitResponse();
 
@@ -309,6 +305,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     if (month_abbrev == "Oct") { return 10; }
     if (month_abbrev == "Nov") { return 11; }
     if (month_abbrev == "Dec") { return 12; }
+    return 0;
   }
 
   bool getNetworkUTCTimeImpl(int* year, int* month, int* day, int* hour,
@@ -325,8 +322,6 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     char   buf[12];
     size_t bytesRead = stream.readBytesUntil('\n', buf,
                                              static_cast<size_t>(12));
-    Serial.print("bytesRead: ");
-    Serial.println(bytesRead);
     // if we read 12 or more bytes, it's an overflow
     if (bytesRead && bytesRead < 12) {
       buf[bytesRead] = '\0';
@@ -334,6 +329,16 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     }
     stream.setTimeout(prev_timeout);
     waitResponse();
+
+    if (modem_time != 0) {
+      switch (epoch) {
+        case UNIX: modem_time += 0; break;
+        case Y2K: modem_time += 946684800; break;
+        case GPS: modem_time += 315878400; break;
+      }
+    }
+
+    return modem_time;
   }
 
   /*
@@ -405,14 +410,18 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
 
     sendAT(GF("+CIPSTART="), mux, ',', ssl ? GF("\"SSL") : GF("\"TCP"),
            GF("\",\""), host, GF("\","), port);
-    int8_t connect_mux = streamGetIntBefore(',');
-    if (mux != connect_mux) {
-      DBG("WARNING:  Unexpected mux number returned:", connect_mux, "not", mux);
-    }
-    int8_t rsp = waitResponse(timeout_ms, GFP(GSM_OK), GFP(GSM_ERROR),
+
+    String data;
+    int8_t rsp = waitResponse(timeout_ms, data, GFP(GSM_OK), GFP(GSM_ERROR),
                               GF("ALREADY CONNECT"));
-    // if (rsp == 3) waitResponse();
-    // May return "ERROR" after the "ALREADY CONNECT"
+    if (rsp == 1 && data.length() > 8) {
+      int8_t coma        = data.indexOf(',');
+      int8_t connect_mux = data.substring(0, coma).toInt();
+      if (mux != connect_mux) {
+        DBG("WARNING:  Unexpected mux number returned:", connect_mux, "not",
+            mux);
+      }
+    }
     return (1 == rsp);
   }
 

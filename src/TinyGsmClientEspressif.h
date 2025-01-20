@@ -27,7 +27,7 @@
 #ifdef MODEM_MODEL
 #undef MODEM_MODEL
 #endif
-#if defined(TINY_GSM_MODEM_ESP8266) || defined(TINY_GSM_MODEM_ESP8266NONOS)
+#if defined(TINY_GSM_MODEM_ESP8266) || defined(TINY_GSM_MODEM_ESP8266_NONOS)
 #define MODEM_MODEL "ESP8266"
 #elif defined(TINY_GSM_MODEM_ESP32)
 #define MODEM_MODEL "ESP32"
@@ -37,8 +37,6 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmWifi.tpp"
-
-static uint8_t TINY_GSM_TCP_KEEP_ALIVE = 120;
 
 template <class EspressifType>
 class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
@@ -72,7 +70,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientEspressif"));
 
-    if (!testAT()) { return false; }
+    if (!thisModem().testAT()) { return false; }
     if (pin && strlen(pin) > 0) {
       DBG("Espressif modules do not use an unlock pin!");
     }
@@ -87,7 +85,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
                                  // for some firmware variants if needed
       if (thisModem().waitResponse() != 1) { return false; }
     }
-    DBG(GF("### Modem:"), getModemName());
+    DBG(GF("### Modem:"), thisModem().getModemName());
     return true;
   }
 
@@ -109,7 +107,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     thisModem().sendAT(GF("+GMR"));
     String res;
     if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
-    cleanResponseString(res);
+    thisModem().cleanResponseString(res);
     return res;
   }
 
@@ -122,14 +120,14 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   String getModemModelImpl() {
     String model = MODEM_MODEL;
     thisModem().sendAT(GF("+GMR"));
-    streamSkipUntil('\n');  // skip the AT version
-    streamSkipUntil('\n');  // skip the SDK version
-    streamSkipUntil('\n');  // skip the compile time
+    thisModem().streamSkipUntil('\n');  // skip the AT version
+    thisModem().streamSkipUntil('\n');  // skip the SDK version
+    thisModem().streamSkipUntil('\n');  // skip the compile time
     // read the hardware from the Bin version
-    streamSkipUntil('(');  // skip the text "Bin version"
+    thisModem().streamSkipUntil('(');  // skip the text "Bin version"
     String wroom = stream.readStringUntil(
         ')');              // read the WRoom version in the parethesis
-    streamSkipUntil('(');  // skip the bin version itself
+    thisModem().streamSkipUntil('(');            // skip the bin version itself
     if (thisModem().waitResponse(1000L) == 1) {  // wait for the ending OK
       return wroom;
     }
@@ -141,7 +139,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     thisModem().sendAT(GF("GMR"));  // GMR instead of CGMR
     String res;
     if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
-    cleanResponseString(res);
+    thisModem().cleanResponseString(res);
     return res;
   }
 
@@ -165,7 +163,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
       return false;
     }
     delay(500);
-    return init(pin);
+    return thisModem().init(pin);
   }
 
   bool powerOffImpl() {
@@ -199,9 +197,9 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
         return 0;
       }
     }
-    streamSkipUntil(',');             // Skip SSID
-    streamSkipUntil(',');             // Skip BSSID/MAC address
-    streamSkipUntil(',');             // Skip Chanel number
+    thisModem().streamSkipUntil(',');             // Skip SSID
+    thisModem().streamSkipUntil(',');             // Skip BSSID/MAC address
+    thisModem().streamSkipUntil(',');             // Skip Chanel number
     int8_t res2 = stream.parseInt();  // Read RSSI
     thisModem().waitResponse();       // Returns an OK after the value
     return res2;
@@ -232,10 +230,12 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   bool networkConnectImpl(const char* ssid, const char* pwd) {
     // attempt first without than with the 'current' flag used in some firmware
     // versions
-    sendAT(GF("+CWJAP=\""), ssid, GF("\",\""), pwd, GF("\""));
-    if (waitResponse(30000L, GFP(GSM_OK), GF(AT_NL "FAIL" AT_NL)) != 1) {
-      sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
-      if (waitResponse(30000L, GFP(GSM_OK), GF(AT_NL "FAIL" AT_NL)) != 1) {
+    thisModem().sendAT(GF("+CWJAP=\""), ssid, GF("\",\""), pwd, GF("\""));
+    if (thisModem().waitResponse(30000L, GFP(GSM_OK), GF(AT_NL "FAIL" AT_NL)) !=
+        1) {
+      thisModem().sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
+      if (thisModem().waitResponse(30000L, GFP(GSM_OK),
+                                   GF(AT_NL "FAIL" AT_NL)) != 1) {
         return false;
       }
     }
@@ -244,9 +244,9 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   }
 
   bool networkDisconnectImpl() {
-    sendAT(GF("+CWQAP"));
-    bool retVal = waitResponse(10000L) == 1;
-    waitResponse(GF("WIFI DISCONNECT"));
+    thisModem().sendAT(GF("+CWQAP"));
+    bool retVal = thisModem().waitResponse(10000L) == 1;
+    thisModem().waitResponse(GF("WIFI DISCONNECT"));
     return retVal;
   }
 

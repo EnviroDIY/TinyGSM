@@ -40,8 +40,7 @@ enum ESP8266NonOSRegStatus {
 class TinyGsmESP8266NonOS
     : public TinyGsmEspressif<TinyGsmESP8266NonOS>,
       public TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT>,
-      public TinyGsmSSL<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT>,
-      public TinyGsmWifi<TinyGsmESP8266NonOS> {
+      public TinyGsmSSL<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT> {
   friend class TinyGsmEspressif<TinyGsmESP8266NonOS>;
   friend class TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSSL<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT>;
@@ -273,7 +272,7 @@ class TinyGsmESP8266NonOS
     // TODO(?): Check mux
     int8_t rsp = waitResponse(timeout_ms, GFP(GSM_OK), GFP(GSM_ERROR),
                               GF("ALREADY CONNECT"));
-    // if (rsp == 3) waitResponse();
+    if (rsp == 3) waitResponse();
     // May return "ERROR" after the "ALREADY CONNECT"
     return (1 == rsp);
   }

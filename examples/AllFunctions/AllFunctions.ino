@@ -31,8 +31,9 @@
 // #define TINY_GSM_MODEM_M590
 // #define TINY_GSM_MODEM_MC60
 // #define TINY_GSM_MODEM_MC60E
-// #define TINY_GSM_MODEM_ESP8266
 // #define TINY_GSM_MODEM_ESP32
+// #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_ESP8266_NONOS
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
@@ -171,7 +172,7 @@ void loop() {
   DBG("Modem Hardware Version:", hw_ver);
 
   String fv_ver = modem.getModemRevision();
-  DBG("Modem Firware Version:", fv_ver);
+  DBG("Modem Firmware Version:", fv_ver);
 
 #if not defined(TINY_GSM_MODEM_ESP8266) && not defined(TINY_GSM_MODEM_ESP32)
   String mod_sn = modem.getModemSerialNumber();
@@ -283,6 +284,12 @@ void loop() {
     DBG("#####  RECEIVED:", strlen(logo), "CHARACTERS");
     client.stop();
   }
+#endif
+
+#if TINY_GSM_TEST_SSL && \
+    (defined TINY_GSM_MODEM_ESP32 || defined TINY_GSM_MODEM_ESP8266)
+  modem.setTimeZone(-5);
+  modem.waitForTimeSync();
 #endif
 
 #if TINY_GSM_TEST_SSL && defined TINY_GSM_MODEM_HAS_SSL
@@ -448,7 +455,7 @@ void loop() {
 // Test the Network time functions
 #if TINY_GSM_TEST_NTP && defined TINY_GSM_MODEM_HAS_NTP
   DBG("Asking modem to sync with NTP");
-  modem.NTPServerSync("pool.ntp.org", 20);
+  modem.NTPServerSync("pool.ntp.org", -5);
 #endif
 
 #if TINY_GSM_TEST_TIME && defined TINY_GSM_MODEM_HAS_TIME

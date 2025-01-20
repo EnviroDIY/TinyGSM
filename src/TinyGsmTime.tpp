@@ -95,8 +95,8 @@ class TinyGsmTime {
    * @param epoch The epoch start to use.
    * @return *uint32_t* The offset from the start of the epoch
    */
-  uint32_t getNetworkEpoch() {
-    return thisModem().getNetworkEpochImpl(TinyGSM_EpochStart epoch = UNIX);
+  uint32_t getNetworkEpoch(TinyGSM_EpochStart epoch = UNIX) {
+    return thisModem().getNetworkEpochImpl(epoch);
   }
 
   /*
