@@ -14,6 +14,17 @@
 #define TINY_GSM_MODEM_HAS_TIME
 
 enum TinyGSMDateTimeFormat { DATE_FULL = 0, DATE_TIME = 1, DATE_DATE = 2 };
+/**
+ * @brief Set the epoch start value.
+ */
+enum TinyGSM_EpochStart {
+  UNIX = 0,  ///< Use a Unix epoch, starting 1/1/1970 (946684800s behind of Y2K
+             ///< epoch, 315878400ss behind of GPS epoch)
+  Y2K = 1,   ///< Use an epoch starting 1/1/2000, as some RTC's and Arduinos do
+            ///< (946684800s ahead of UNIX epoch, 630806400s ahead of GPS epoch)
+  GPS = 2  ///< Use the GPS epoch starting Jan 5, 1980 (315878400s ahead of UNIX
+           ///< epoch, 630806400s behind of Y2K epoch)
+};
 
 template <class modemType>
 class TinyGsmTime {
@@ -76,6 +87,16 @@ class TinyGsmTime {
                          int* minute, int* second, float* timezone) {
     return thisModem().getNetworkUTCTimeImpl(year, month, day, hour, minute,
                                              second, timezone);
+  }
+
+  /**
+   * @brief Get the Date/Time as an epoch value
+   *
+   * @param epoch The epoch start to use.
+   * @return *uint32_t* The offset from the start of the epoch
+   */
+  uint32_t getNetworkEpoch() {
+    return thisModem().getNetworkEpochImpl(TinyGSM_EpochStart epoch = UNIX);
   }
 
   /*
@@ -160,6 +181,9 @@ class TinyGsmTime {
   bool getNetworkUTCTimeImpl(int* year, int* month, int* day, int* hour,
                              int* minute, int* second,
                              float* timezone) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  uint32_t getNetworkEpochImpl(TinyGSM_EpochStart epoch = UNIX)
+      TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
 #endif  // SRC_TINYGSMTIME_H_
