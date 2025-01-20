@@ -101,12 +101,26 @@ typedef TinyGsmM590::GsmClientM590 TinyGsmClient;
 typedef TinyGsmMC60                TinyGsm;
 typedef TinyGsmMC60::GsmClientMC60 TinyGsmClient;
 
-#elif defined(TINY_GSM_MODEM_ESP8266) || defined(TINY_GSM_MODEM_ESP32)
+#elif defined(TINY_GSM_MODEM_ESP32)
+#define TINY_GSM_MODEM_HAS_WIFI
+#include "TinyGsmClientESP32.h"
+typedef TinyGsmESP32                       TinyGsm;
+typedef TinyGsmESP32::GsmClientESP32       TinyGsmClient;
+typedef TinyGsmESP32::GsmClientSecureESP32 TinyGsmClientSecure;
+
+#elif defined(TINY_GSM_MODEM_ESP8266)
 #define TINY_GSM_MODEM_HAS_WIFI
 #include "TinyGsmClientESP8266.h"
 typedef TinyGsmESP8266                         TinyGsm;
 typedef TinyGsmESP8266::GsmClientESP8266       TinyGsmClient;
 typedef TinyGsmESP8266::GsmClientSecureESP8266 TinyGsmClientSecure;
+
+#elif defined(TINY_GSM_MODEM_ESP8266_NONOS)
+#define TINY_GSM_MODEM_HAS_WIFI
+#include "TinyGsmClientESP8266NonOS.h"
+typedef TinyGsmESP8266NonOS                              TinyGsm;
+typedef TinyGsmESP8266NonOS::GsmClientESP8266NonOS       TinyGsmClient;
+typedef TinyGsmESP8266NonOS::GsmClientSecureESP8266NonOS TinyGsmClientSecure;
 
 #elif defined(TINY_GSM_MODEM_XBEE)
 #define TINY_GSM_MODEM_HAS_WIFI

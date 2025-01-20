@@ -1,14 +1,14 @@
 /**
- * @file       TinyGsmClientESP8266.h
+ * @file       TinyGsmClientESP32.h
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMCLIENTESP8266_H_
-#define SRC_TINYGSMCLIENTESP8266_H_
-// #pragma message("TinyGSM:  TinyGsmClientESP8266")
+#ifndef SRC_TINYGSMCLIENTESP32_H_
+#define SRC_TINYGSMCLIENTESP32_H_
+// #pragma message("TinyGSM:  TinyGsmClientESP32")
 
 // #define TINY_GSM_DEBUG Serial
 
@@ -24,12 +24,13 @@
 static uint8_t TINY_GSM_TCP_KEEP_ALIVE = 120;
 
 // <state>: current Wi-Fi state.
-//     0: ESP8266 station has not started any Wi-Fi connection.
-//     1: ESP8266 station has connected to an AP, but does not get an IPv4
-//     address yet. 2: ESP8266 station has connected to an AP, and got an IPv4
-//     address. 3: ESP8266 station is in Wi-Fi connecting or reconnecting state.
-//     4: ESP8266 station is in Wi-Fi disconnected state.
-enum ESP8266RegStatus {
+//     0: ESP32 station has not started any Wi-Fi connection.
+//     1: ESP32 station has connected to an AP, but does not get an IPv4 address
+//     yet.
+//     2: ESP32 station has connected to an AP, and got an IPv4 address.
+//     3: ESP32 station is in Wi-Fi connecting or reconnecting state.
+//     4: ESP32 station is in Wi-Fi disconnected state.
+enum ESP32RegStatus {
   REG_UNINITIALIZED = 0,
   REG_UNREGISTERED  = 1,
   REG_OK            = 2,
@@ -38,35 +39,35 @@ enum ESP8266RegStatus {
   REG_UNKNOWN       = 5,
 };
 
-class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
-                       public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmWifi<TinyGsmESP8266>,
-                       public TinyGsmTime<TinyGsmESP8266>,
-                       public TinyGsmNTP<TinyGsmESP8266> {
-  friend class TinyGsmEspressif<TinyGsmESP8266>;
-  friend class TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmModem<TinyGsmESP8266>;
-  friend class TinyGsmWifi<TinyGsmESP8266>;
-  friend class TinyGsmNTP<TinyGsmESP8266>;
-  friend class TinyGsmTime<TinyGsmESP8266>;
+class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
+                     public TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT>,
+                     public TinyGsmSSL<TinyGsmESP32, TINY_GSM_MUX_COUNT>,
+                     public TinyGsmWifi<TinyGsmESP32>,
+                     public TinyGsmTime<TinyGsmESP32>,
+                     public TinyGsmNTP<TinyGsmESP32> {
+  friend class TinyGsmEspressif<TinyGsmESP32>;
+  friend class TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmESP32, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmModem<TinyGsmESP32>;
+  friend class TinyGsmWifi<TinyGsmESP32>;
+  friend class TinyGsmNTP<TinyGsmESP32>;
+  friend class TinyGsmTime<TinyGsmESP32>;
 
   /*
    * Inner Client
    */
  public:
-  class GsmClientESP8266 : public GsmClient {
-    friend class TinyGsmESP8266;
+  class GsmClientESP32 : public GsmClient {
+    friend class TinyGsmESP32;
 
    public:
-    GsmClientESP8266() {}
+    GsmClientESP32() {}
 
-    explicit GsmClientESP8266(TinyGsmESP8266& modem, uint8_t mux = -1) {
+    explicit GsmClientESP32(TinyGsmESP32& modem, uint8_t mux = -1) {
       init(&modem, mux);
     }
 
-    bool init(TinyGsmESP8266* modem, uint8_t mux = 0) {
+    bool init(TinyGsmESP32* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_connected = false;
 
@@ -112,12 +113,12 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureESP8266 : public GsmClientESP8266 {
+  class GsmClientSecureESP32 : public GsmClientESP32 {
    public:
-    GsmClientSecureESP8266() {}
+    GsmClientSecureESP32() {}
 
-    explicit GsmClientSecureESP8266(TinyGsmESP8266& modem, uint8_t mux = 0)
-        : GsmClientESP8266(modem, mux) {}
+    explicit GsmClientSecureESP32(TinyGsmESP32& modem, uint8_t mux = 0)
+        : GsmClientESP32(modem, mux) {}
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
@@ -134,8 +135,8 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
    * Constructor
    */
  public:
-  explicit TinyGsmESP8266(Stream& stream)
-      : TinyGsmEspressif<TinyGsmESP8266>(stream) {
+  explicit TinyGsmESP32(Stream& stream)
+      : TinyGsmEspressif<TinyGsmESP32>(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -155,7 +156,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
    * Generic network functions
    */
  public:
-  ESP8266RegStatus getRegistrationStatus() {
+  ESP32RegStatus getRegistrationStatus() {
     sendAT(GF("+CWSTATE"));
     if (waitResponse(3000, GF("+CWSTATE:")) != 1) return REG_UNKNOWN;
     // +CWSTATE:<state>,<"ssid">
@@ -163,12 +164,12 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     int8_t status = streamGetIntBefore(',');
     streamSkipUntil('\n');  // throw away the ssid
     waitResponse();         // wait for trailing OK
-    return (ESP8266RegStatus)status;
+    return (ESP32RegStatus)status;
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    ESP8266RegStatus s = getRegistrationStatus();
+    ESP32RegStatus s = getRegistrationStatus();
     return (s == REG_OK);
   }
 
@@ -221,6 +222,12 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   void setTimeZone(int8_t timezone, bool enable_sync = true) {
     // configure the NTP settings for the modem
     sendAT(GF("+CIPSNTPCFG="), enable_sync ? 1 : 0, ',', timezone);
+    waitResponse();
+  }
+
+  void setTimeSyncInterval(uint16_t seconds) {
+    // configure the NTP settings for the modem
+    sendAT(GF("+CIPSNTPINTV="), seconds);
     waitResponse();
   }
 
@@ -360,7 +367,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   /*
    * Temperature functions
    */
-  // No functions of this type supported
+  // No functions of this type implemented
 
   /*
    * Client related functions
@@ -400,6 +407,12 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
       // (or were not) put into the customized certificate partitions. The
       // default firmware comes with espressif certificates in slots 0 and 1.
       sendAT(GF("+CIPSSLCCONF="), mux, GF(",3,0,0"));
+      waitResponse();
+
+      // set the SSL SNI (server name indication)
+      // Multiple connections: (AT+CIPMUX=1)
+      // AT+CIPSSLCSNI=<link ID>,<"sni">
+      sendAT(GF("+CIPSSLCSNI="), mux, GF(",\""), host, GF("\""));
       waitResponse();
     }
 
@@ -488,7 +501,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   }
 
  protected:
-  GsmClientESP8266* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientESP32* sockets[TINY_GSM_MUX_COUNT];
 };
 
-#endif  // SRC_TINYGSMCLIENTESP8266_H_
+#endif  // SRC_TINYGSMCLIENTESP32_H_
