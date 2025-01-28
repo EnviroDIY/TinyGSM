@@ -323,9 +323,9 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // Returns unix timestamp.  Will match SNTP after SNTP syncs.
     sendAT(GF("+SYSTIMESTAMP?"));
     if (waitResponse(2000L, GF("+SYSTIMESTAMP:")) != 1) { return 0; }
-    uint32_t modem_time   = 0;
-    uint32_t prev_timeout = stream.getTimeout();
-    stream.setTimeout(10000L);
+    uint32_t start = millis();
+    while (stream.available() < 9 && millis() - start < 10000L) {}
+    uint32_t modem_time = 0;
     char   buf[12];
     size_t bytesRead = stream.readBytesUntil('\n', buf,
                                              static_cast<size_t>(12));
@@ -334,7 +334,6 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       buf[bytesRead] = '\0';
       modem_time     = atoi(buf);
     }
-    stream.setTimeout(prev_timeout);
     waitResponse();
 
     if (modem_time != 0) {

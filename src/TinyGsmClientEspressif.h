@@ -216,7 +216,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   String getLocalIPImpl() {
     // attempt with and without 'current' flag
     thisModem().sendAT(GF("+CIPSTA?"));
-    int8_t res1 = thisModem().waitResponse(GF("ERROR"), GF("+CIPSTA:"));
+    thisModem().waitResponse(GF("ERROR"), GF("+CIPSTA:"));
     String res2 = stream.readStringUntil('\n');
     res2.replace("ip:", "");  // newer firmwares have this
     res2.replace("\"", "");
