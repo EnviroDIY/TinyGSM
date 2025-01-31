@@ -190,7 +190,6 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   /*
    * Generic network functions
    */
- public:
  protected:
   int8_t getSignalQualityImpl() {
     thisModem().sendAT(GF("+CWJAP?"));

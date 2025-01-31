@@ -41,8 +41,8 @@ class TinyGsmSim7000SSL
   friend class TinyGsmSMS<TinyGsmSim7000SSL>;
   friend class TinyGsmGSMLocation<TinyGsmSim7000SSL>;
   friend class TinyGsmGPS<TinyGsmSim7000SSL>;
-  friend class TinyGsmNTP<TinyGsmSim7000SSL>;
   friend class TinyGsmTime<TinyGsmSim7000SSL>;
+  friend class TinyGsmNTP<TinyGsmSim7000SSL>;
   friend class TinyGsmBattery<TinyGsmSim7000SSL>;
 
   /*

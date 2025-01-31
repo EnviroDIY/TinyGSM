@@ -46,8 +46,8 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   friend class TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmModem<TinyGsmESP8266>;
   friend class TinyGsmWifi<TinyGsmESP8266>;
-  friend class TinyGsmNTP<TinyGsmESP8266>;
   friend class TinyGsmTime<TinyGsmESP8266>;
+  friend class TinyGsmNTP<TinyGsmESP8266>;
 
   /*
    * Inner Client
