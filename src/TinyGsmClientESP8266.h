@@ -116,7 +116,6 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     explicit GsmClientSecureESP8266(TinyGsmESP8266& modem, uint8_t mux = 0)
         : GsmClientESP8266(modem, mux) {}
 
-   public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
@@ -174,11 +173,9 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
    */
   // Follows functions as inherited from TinyGsmSSL.tpp
 
-
   /*
    * WiFi functions
    */
- protected:
   // Follows functions inherited from Espressif
 
   /*
@@ -343,6 +340,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   /*
    * NTP server functions
    */
+ protected:
   // NOTE: I don't think this forces an immediate sync
   byte NTPServerSyncImpl(String server = "pool.ntp.org", int TimeZone = 0) {
     // configure the NTP settings for the modem
@@ -374,11 +372,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
                     bool ssl = false, int timeout_s = 75) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     if (ssl) {
-      // The modem time **MUST** be correct or SSL won't work
-      uint32_t modem_time = getNetworkEpoch();
-      // If we get a time between January 1, 2020 and January 1, 2035, we're
-      // (hopefully) good
-      if (modem_time < 1577836800 && modem_time > 2051222400) { return false; }
+      waitForTimeSync(timeout_s);
 
       // configure SSL
       // AT+CIPSSLCCONF=<link ID>,<auth_mode>[,<pki_number>][,<ca_number>]
@@ -458,6 +452,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
       int8_t  mux      = streamGetIntBefore(',');
       int16_t len      = streamGetIntBefore(':');
       int16_t len_orig = len;
+      int16_t prev_available = sockets[mux]->available();
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
@@ -466,9 +461,9 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
         }
         while (len--) { moveCharFromStreamToFifo(mux); }
         // TODO(SRGDamia1): deal with buffer overflow/missed characters
-        if (len_orig != sockets[mux]->available()) {
+        if (len_orig != sockets[mux]->available() - prev_available) {
           DBG("### Different number of characters received than expected: ",
-              sockets[mux]->available(), " vs ", len_orig);
+              sockets[mux]->available() - prev_available, " vs ", len_orig);
         }
       }
       data = "";
