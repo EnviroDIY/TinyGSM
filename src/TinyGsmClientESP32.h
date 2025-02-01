@@ -59,30 +59,45 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
    public:
     GsmClientESP32() {}
 
-    explicit GsmClientESP32(TinyGsmESP32& modem, uint8_t mux = 0) {
+    explicit GsmClientESP32(TinyGsmESP32& modem,
+                            uint8_t       mux = static_cast<uint8_t>(-1)) {
+      _sslAuthMode = -1;
+      _caIndex     = 0;
+      _pkiIndex    = 0;
       init(&modem, mux);
     }
 
-    bool init(TinyGsmESP32* modem, uint8_t mux = 0) {
+    bool init(TinyGsmESP32* modem, uint8_t mux = static_cast<uint8_t>(-1)) {
       this->at       = modem;
       sock_connected = false;
 
-      if (mux < TINY_GSM_MUX_COUNT) {
-        this->mux = mux;
+      // if it's a valid mux number,
+      // and that mux number isn't in use,
+      // accept the mux number
+      if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] != nullptr) {
+        this->mux              = mux;
+        at->sockets[this->mux] = this;
       } else {
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        this->mux = static_cast<uint>(-1);
       }
-      at->sockets[this->mux] = this;
 
       return true;
     }
 
    public:
     virtual int connect(const char* host, uint16_t port, int timeout_s) {
-      stop();
+      if (mux < TINY_GSM_MUX_COUNT && at->sockets[this->mux] != nullptr) {
+        stop();
+      }
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      uint8_t oldMux = mux;
+      sock_connected = at->modemConnect(host, port, &mux, false, timeout_s);
+      if (mux != oldMux && oldMux < TINY_GSM_MUX_COUNT) {
+        DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
+        at->sockets[oldMux] = nullptr;
+      }
+      at->sockets[mux] = this;
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -103,6 +118,11 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
      */
 
     String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+    // needed for SSL client, thus for both
+    int8_t _sslAuthMode;
+    bool   _caIndex;
+    bool   _pkiIndex;
   };
 
   /*
@@ -113,14 +133,60 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
    public:
     GsmClientSecureESP32() {}
 
-    explicit GsmClientSecureESP32(TinyGsmESP32& modem, uint8_t mux = 0)
+    explicit GsmClientSecureESP32(TinyGsmESP32& modem, uint8_t mux = -1)
         : GsmClientESP32(modem, mux) {}
 
+    // <auth_mode>:
+    //     0: no authentication. In this case <pki_number> and <ca_number>
+    //     are not required.
+    //        - SRGD Note: You do not need to load any certificates onto
+    //        your device for this. Not all servers will accept it.
+    //     1: the client provides the client certificate for the server to
+    //     verify.
+    //        - SRGD Note: I do not believe this is commonly used. To use
+    //        this, you must load a client certificate and a client key onto
+    //        your device.
+    //     2: the client loads CA certificate to verify the server’s
+    //     certificate.
+    //        - SRGD Note: This is a common authentication type sed by
+    //        browsers, where the browser verifies the server's certificate.
+    //        For this to work, you must load either the server's
+    //        intermediate or parent certificate onto your device.
+    //     3: mutual authentication.
+    //        - SRGD Note: This is used by AWS IoT Core and other IoT
+    //        services. In this case you must load 3 certs to your device:
+    //        The servers CA cert, the client cert, and the client key.
+    void setSSLAuthMode(int8_t mode) {
+      _sslAuthMode = mode;
+    }
+    // <ca_number>: the index of CA (certificate authority certificate =
+    // server's certificate). There are only two client-CA certificate slots: 0
+    // and 1.
+    void setCAIndex(bool index) {
+      _caIndex = index;
+    }
+    // <pki_number>: the index of certificate and private key. There are only
+    // two client-PKI slots: 0 and 1. You must put both the certificate and the
+    // matching private key into the same slot number.
+    //    PKI - A public key infrastructure (PKI) is a set of roles,
+    //    policies, hardware, software and procedures needed to create,
+    //    manage, distribute, use, store and revoke digital certificates and
+    //    manage public-key encryption.
+    void setPKIIndex(bool index) {
+      _pkiIndex = index;
+    }
+
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop();
+      if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] != nullptr) { stop(); }
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
+      uint8_t oldMux = mux;
+      sock_connected = at->modemConnect(host, port, &mux, true, timeout_s);
+      if (mux != oldMux && oldMux < TINY_GSM_MUX_COUNT) {
+        DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
+        at->sockets[oldMux] = nullptr;
+      }
+      at->sockets[mux] = this;
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -169,7 +235,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   }
 
   /*
-   * Secure socket layer (SSL) functions
+   * Secure socket layer (SSL) certificate management functions
    */
   // Follows functions as inherited from TinyGsmSSL.tpp
 
@@ -323,9 +389,9 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     uint32_t start = millis();
     while (stream.available() < 9 && millis() - start < 10000L) {}
     uint32_t modem_time = 0;
-    char   buf[12];
-    size_t bytesRead = stream.readBytesUntil('\n', buf,
-                                             static_cast<size_t>(12));
+    char     buf[12];
+    size_t   bytesRead = stream.readBytesUntil('\n', buf,
+                                               static_cast<size_t>(12));
     // if we read 12 or more bytes, it's an overflow
     if (bytesRead && bytesRead < 12) {
       buf[bytesRead] = '\0';
@@ -375,47 +441,106 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
    * Client related functions
    */
  protected:
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
+  bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
                     bool ssl = false, int timeout_s = 75) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     if (ssl) {
-      waitForTimeSync(timeout_s);
+      if (!*mux < TINY_GSM_MUX_COUNT) {
+        // If we didn't get a valid mux - the user wants us to assign the mux
+        // for them. If we're using SSL, in order to set the proper auth type
+        // and certs before opening the socket, we need to open the socket with
+        // a known mux rather than using CIPSTARTEX. Thus, we'l find the next
+        // available unattached mux this way:
+        bool got_next_mux = false;
+        int  next_mux     = 0;
+        for (; next_mux < TINY_GSM_MUX_COUNT; next_mux++) {
+          if (sockets[next_mux] == nullptr) {
+            DBG(GF("### Socket mux"), next_mux, GF("will be used"));
+            got_next_mux = true;
+            break;
+          }
+        }
+        if (got_next_mux) {
+          *mux = next_mux;
+        } else {
+          DBG("### WARNING: No empty mux sockets found, please select the mux "
+              "you want in the client constructor.");
+          return false;
+        }
 
-      // configure SSL
-      // AT+CIPSSLCCONF=<link ID>,<auth_mode>[,<pki_number>][,<ca_number>]
-      // <link ID>: ID of the connection (0 ~ max). For multiple connections, if
-      // the value is max, it means all connections. By default, max is 5.
-      // <auth_mode>:
-      //     0: no authentication. In this case <pki_number> and <ca_number> are
-      //     not required.
-      //     1: the client provides the client certificate for the server to
-      //     verify.
-      //     2: the client loads CA certificate to verify the server’s
-      //     certificate.
-      //     3: mutual authentication.
-      // <pki_number>: the index of certificate and private key. If there is
-      // only one certificate and private key, the value should be 0.
-      //    PKI - A public key infrastructure (PKI) is a set of roles, policies,
-      //    hardware, software and procedures needed to create, manage,
-      //    distribute, use, store and revoke digital certificates and manage
-      //    public-key encryption.
-      // <ca_number>: the index of CA. If there is only one CA, the value should
-      // be 0.
-      // The PKI number and CA number to use are based on what certificates were
-      // (or were not) put into the customized certificate partitions. The
-      // default firmware comes with espressif certificates in slots 0 and 1.
-      sendAT(GF("+CIPSSLCCONF="), mux, GF(",3,0,0"));
-      waitResponse();
+        // SSL certificate checking will not work without a valid timestamp!
+        if (!waitForTimeSync(timeout_s) && sockets[*mux]->_sslAuthMode >= 1 &&
+            sockets[*mux]->_sslAuthMode <= 3) {
+          DBG("### WARNING: The module timestamp must be valid for SSL auth. "
+              "Please use setTimeZone(...) or NTPServerSync(...) to enable "
+              "time syncing before attempting an SSL connection!");
+          return false;
+        }
 
-      // set the SSL SNI (server name indication)
-      // Multiple connections: (AT+CIPMUX=1)
-      // AT+CIPSSLCSNI=<link ID>,<"sni">
-      sendAT(GF("+CIPSSLCSNI="), mux, GF(",\""), host, GF("\""));
-      waitResponse();
+        // configure SSL authentication type and in-use certificates
+        // AT+CIPSSLCCONF=<link ID>,<auth_mode>[,<pki_number>][,<ca_number>]
+        // <link ID>: ID of the connection (0 ~ max). For multiple connections,
+        // if the value is max, it means all connections. By default, max is 5.
+        // <auth_mode>:
+        //     0: no authentication. In this case <pki_number> and <ca_number>
+        //     are not required.
+        //        - SRGD Note: You do not need to load any certificates onto
+        //        your device for this. Not all servers will accept it.
+        //     1: the client provides the client certificate for the server to
+        //     verify.
+        //        - SRGD Note: I do not believe this is commonly used. To use
+        //        this, you must load a client certificate and a client key onto
+        //        your device.
+        //     2: the client loads CA certificate to verify the server’s
+        //     certificate.
+        //        - SRGD Note: This is a common authentication type sed by
+        //        browsers, where the browser verifies the server's certificate.
+        //        For this to work, you must load either the server's
+        //        intermediate or parent certificate onto your device.
+        //     3: mutual authentication.
+        //        - SRGD Note: This is used by AWS IoT Core and other IoT
+        //        services. In this case you must load 3 certs to your device:
+        //        The servers CA cert, the client cert, and the client key.
+        // <pki_number>: the index of certificate and private key. If there is
+        // only one certificate and private key, the value should be 0.
+        //    PKI - A public key infrastructure (PKI) is a set of roles,
+        //    policies, hardware, software and procedures needed to create,
+        //    manage, distribute, use, store and revoke digital certificates and
+        //    manage public-key encryption.
+        // <ca_number>: the index of CA (certificate authority certificate =
+        // server's certificate). If there is only one CA, the value should be
+        // 0.
+        // The PKI number and CA number to use are based on what certificates
+        // were (or were not) put into the customized certificate partitions.
+        // The default firmware comes with espressif certificates in slots 0
+        // and 1.
+        if (sockets[*mux]->_sslAuthMode == static_cast<uint8_t>(-1) ||
+            sockets[*mux]->_sslAuthMode == 0) {
+          sendAT(GF("+CIPSSLCCONF="), *mux, GF(",0"));
+        } else {
+          sendAT(GF("+CIPSSLCCONF="), *mux, ',', sockets[*mux]->_sslAuthMode,
+                 ',', sockets[*mux]->_pkiIndex, ',', sockets[*mux]->_caIndex);
+        }
+        waitResponse();
+
+        // set the SSL SNI (server name indication)
+        // Multiple connections: (AT+CIPMUX=1)
+        // AT+CIPSSLCSNI=<link ID>,<"sni">
+        sendAT(GF("+CIPSSLCSNI="), *mux, GF(",\""), host, GF("\""));
+        waitResponse();
+      }
     }
 
-    sendAT(GF("+CIPSTART="), mux, ',', ssl ? GF("\"SSL") : GF("\"TCP"),
-           GF("\",\""), host, GF("\","), port);
+    // Make the connection
+    // If we know the mux number we want to use, use CIPSTART, if we want the
+    // module to assign a mux number for us, use CIPSTARTEX
+    if (*mux < TINY_GSM_MUX_COUNT) {
+      sendAT(GF("+CIPSTART="), *mux, ',', ssl ? GF("\"SSL") : GF("\"TCP"),
+             GF("\",\""), host, GF("\","), port);
+    } else {
+      sendAT(GF("+CIPSTARTEX="), ssl ? GF("\"SSL") : GF("\"TCP"), GF("\",\""),
+             host, GF("\","), port);
+    }
 
     String data;
     int8_t rsp = waitResponse(timeout_ms, data, GFP(GSM_OK), GFP(GSM_ERROR),
@@ -423,10 +548,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     if (rsp == 1 && data.length() > 8) {
       int8_t coma        = data.indexOf(',');
       int8_t connect_mux = data.substring(0, coma).toInt();
-      if (mux != connect_mux) {
-        DBG("WARNING:  Unexpected mux number returned:", connect_mux, "not",
-            mux);
-      }
+      *mux               = connect_mux;
     }
     return (1 == rsp);
   }
@@ -462,9 +584,9 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
  public:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+IPD,"))) {
-      int8_t  mux      = streamGetIntBefore(',');
-      int16_t len      = streamGetIntBefore(':');
-      int16_t len_orig = len;
+      int8_t  mux            = streamGetIntBefore(',');
+      int16_t len            = streamGetIntBefore(':');
+      int16_t len_orig       = len;
       int16_t prev_available = sockets[mux]->available();
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
