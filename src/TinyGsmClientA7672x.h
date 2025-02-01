@@ -308,13 +308,13 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
- public:
+ protected:
   // The name of the certificate/key/password file. The file name must
-  // havetype like ".pem" or ".der".
+  // have type like ".pem" or ".der".
   // The certificate like - const char ca_cert[] PROGMEM =  R"EOF(-----BEGIN...
   // len of certificate like - sizeof(ca_cert)
-  bool addCertificate(const char* certificateName, const char* cert,
-                      const uint16_t len) {
+  bool addCertificateImpl(const char* certificateName, const char* cert,
+                          const uint16_t len) {
     sendAT(GF("+CCERTDOWN="), certificateName, GF(","), len);
     if (waitResponse(GF(">")) != 1) { return false; }
     stream.write(cert, len);
@@ -322,7 +322,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return waitResponse() == 1;
   }
 
-  bool deleteCertificate(const char* certificateName) {  // todo test
+  bool deleteCertificateImpl(const char* certificateName) {  // todo test
     sendAT(GF("+CCERTDELE="), certificateName);
     return waitResponse() == 1;
   }
