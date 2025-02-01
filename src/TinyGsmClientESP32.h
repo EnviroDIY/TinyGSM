@@ -121,8 +121,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
     // needed for SSL client, thus for both
     int8_t _sslAuthMode;
-    bool   _caIndex;
-    bool   _pkiIndex;
+    uint8_t _caIndex;
+    uint8_t _pkiIndex;
   };
 
   /*
@@ -135,6 +135,76 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
     explicit GsmClientSecureESP32(TinyGsmESP32& modem, uint8_t mux = -1)
         : GsmClientESP32(modem, mux) {}
+
+    // This adds the server's CA certificate that the client connects to, used
+    // in auth mode 2 and 3
+    // Ths is the value client_ca_00.crt in the AT firmware
+    bool addCertificate(uint8_t certNumber, const char* cert,
+                        const uint16_t len) {
+      _caIndex = certNumber;
+      char cert_name[12];
+      char cert_number[2];
+      itoa(certNumber, cert_number, 10);
+      strcpy(cert_name, "client_ca.");
+      strcat(cert_name, cert_number);
+      at->setCertificate(cert_name, mux);
+      at->deleteCertificate(cert_name);
+      return at->addCertificate(cert_name, cert, len);
+    }
+    bool addCertificate(const char* cert, const uint16_t len) {
+      return addCertificate(_caIndex, cert, len);
+    }
+    bool addCA(uint8_t certNumber, const char* cert, const uint16_t len) {
+      return addCertificate(certNumber, cert, len);
+    }
+    bool addCA(const char* cert, const uint16_t len) {
+      return addCertificate(_caIndex, cert, len);
+    }
+
+    bool addClientCert(uint8_t certNumber, const char* cert,
+                       const uint16_t len) {
+      _pkiIndex = certNumber;
+      char cert_name[14];
+      char cert_number[2];
+      itoa(certNumber, cert_number, 10);
+      strcpy(cert_name, "client_cert.");
+      strcat(cert_name, cert_number);
+      at->deleteCertificate(cert_name);
+      return at->addCertificate(cert_name, cert, len);
+    }
+    bool addClientCert(const char* cert, const uint16_t len) {
+      return addClientCert(_pkiIndex, cert, len);
+    }
+
+    bool addClientKey(uint8_t keyNumber, const char* key, const uint16_t len) {
+      _pkiIndex = keyNumber;
+      char key_name[13];
+      char key_number[2];
+      itoa(keyNumber, key_number, 10);
+      strcpy(key_name, "client_key.");
+      strcat(key_name, key_number);
+      at->deleteCertificate(key_name);
+      return at->addCertificate(key_name, key, len);
+    }
+    bool addClientKey(const char* key, const uint16_t len) {
+      return addClientKey(_pkiIndex, key, len);
+    }
+
+    // This sets the certificate number for the server's CA certificate, used in
+    // auth mode 2 and 3
+    // This is identical to setCAIndex()
+    bool setCertificate(uint8_t certNumber) {
+      _caIndex = certNumber;
+      char cert_name[12];
+      char cert_number[2];
+      itoa(certNumber, cert_number, 10);
+      strcpy(cert_name, "client_ca.");
+      strcat(cert_name, cert_number);
+      return at->setCertificate(cert_name, mux);
+    }
+    bool setCA(uint8_t certNumber) {
+      return setCertificate(certNumber);
+    }
 
     // <auth_mode>:
     //     0: no authentication. In this case <pki_number> and <ca_number>
@@ -162,8 +232,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // <ca_number>: the index of CA (certificate authority certificate =
     // server's certificate). There are only two client-CA certificate slots: 0
     // and 1.
-    void setCAIndex(bool index) {
-      _caIndex = index;
+    void setCAIndex(uint8_t index) {
+      setCertificate(index);
     }
     // <pki_number>: the index of certificate and private key. There are only
     // two client-PKI slots: 0 and 1. You must put both the certificate and the
@@ -172,7 +242,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     //    policies, hardware, software and procedures needed to create,
     //    manage, distribute, use, store and revoke digital certificates and
     //    manage public-key encryption.
-    void setPKIIndex(bool index) {
+    void setPKIIndex(uint8_t index) {
       _pkiIndex = index;
     }
 
@@ -237,7 +307,40 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // Follows functions as inherited from TinyGsmSSL.tpp
+  bool addCertificateImpl(const char* certificateName, const char* cert,
+                          const uint16_t len) {
+    // pull the namespace out of the name
+    char certNamespace[12];
+    memcpy(certNamespace, certificateName, strlen(certificateName) - 2);
+    certNamespace[strlen(certificateName) + 1] = '\0';
+    // AT+SYSMFG=<operation>,<"namespace">,<"key">,<type>,<value>
+    // operation = 2 for write
+    // type = 7 for string (ie, the client is a text string, not a binary
+    // string)
+    // Write a new value for client_cert.0 key into client_cert namespace (That
+    // is, update the 0th client certificate)
+    // AT+SYSMFG=2,"client_cert","client_cert.0",8,1164
+    // Wait until AT command port returns ``>``, and then write 1164 bytes
+    sendAT(GF("+SYSMFG=2,\""), certNamespace, GF("\",\""), certificateName,
+           GF("\",7,"), len);
+    if (waitResponse(GF(">")) != 1) { return false; }
+    stream.write(reinterpret_cast<const uint8_t*>(cert), len);
+    stream.flush();
+    if (waitResponse(10000L) != 1) { return false; }
+    return true;
+  }
+  bool deleteCertificateImpl(const char* certificateName) {
+    // pull the namespace out of the name
+    char certNamespace[12];
+    memcpy(certNamespace, certificateName, strlen(certificateName) - 2);
+    certNamespace[strlen(certificateName) + 1] = '\0';
+    // AT+SYSMFG=<operation>,<"namespace">[,<"key">]
+    // operation = 0 for erase
+    // AT+SYSMFG=0,"client_cert","client_cert.0"
+    sendAT(GF("+SYSMFG=0,\""), certNamespace, GF("\",\""), certificateName,
+           '"');
+    return waitResponse() == 1;
+  }
 
   /*
    * WiFi functions
