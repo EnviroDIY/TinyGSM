@@ -144,6 +144,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    public:
     bool addCertificate(const char* certificateName, const char* cert,
                         const uint16_t len) {
+      // set the cert name for this mux
+      at->setCertificate(certificateName, mux);
       return at->addCertificate(certificateName, cert, len);
     }
 
