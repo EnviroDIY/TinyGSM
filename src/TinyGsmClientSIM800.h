@@ -298,7 +298,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   }
 
   /*
-   * Secure socket layer (SSL) functions
+   * Secure socket layer (SSL) certificate management functions
    */
   // Follows functions as inherited from TinyGsmSSL.tpp
 

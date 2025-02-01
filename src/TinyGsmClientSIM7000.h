@@ -173,7 +173,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
   }
 
   /*
-   * Secure socket layer (SSL) functions
+   * Secure socket layer (SSL) certificate management functions
    */
   // NOTE:  Use modem TinyGsmSim7000SSL for a secure client!
 
@@ -332,7 +332,10 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     bool ssl = false, int timeout_s = 75) {
-    if (ssl) { DBG("SSL only supported using application on SIM7000!"); }
+    if (ssl) {
+      DBG("SSL only supported using application on SIM7000! Use modem "
+          "TinyGsmSim7000SSL for a secure client!");
+    }
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
 
     // when not using SSL, the TCP application toolkit is more stable

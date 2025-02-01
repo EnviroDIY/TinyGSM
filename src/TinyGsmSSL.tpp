@@ -22,7 +22,7 @@ class TinyGsmSSL {
    */
  public:
   /*
-   * Secure socket layer (SSL) functions
+   * Secure socket layer (SSL) certificate management functions
    */
   bool addCertificate(const char* filename) {
     return thisModem().addCertificateImpl(filename);
@@ -68,7 +68,7 @@ class TinyGsmSSL {
    */
 
   /*
-   * Secure socket layer (SSL) functions
+   * Secure socket layer (SSL) certificate management functions
    */
  protected:
   bool addCertificateImpl(const char* filename) TINY_GSM_ATTR_NOT_IMPLEMENTED;

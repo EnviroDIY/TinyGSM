@@ -278,7 +278,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   }
 
   /*
-   * Secure socket layer (SSL) functions
+   * Secure socket layer (SSL) certificate management functions
    */
   // No functions of this type supported
 

@@ -169,7 +169,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   }
 
   /*
-   * Secure socket layer (SSL) functions
+   * Secure socket layer (SSL) certificate management functions
    */
   // Follows functions as inherited from TinyGsmSSL.tpp
 

@@ -217,7 +217,7 @@ class TinyGsmSim7000SSL
   }
 
   /*
-   * Secure socket layer (SSL) functions
+   * Secure socket layer (SSL) certificate management functions
    */
   // Follows functions as inherited from TinyGsmSSL.tpp
 

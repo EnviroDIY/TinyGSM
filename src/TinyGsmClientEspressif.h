@@ -225,9 +225,9 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   }
 
   /*
-   * Secure socket layer (SSL) functions
+   * Secure socket layer (SSL) certificate management functions
    */
-  // Follows functions as inherited from TinyGsmSSL.tpp
+  // No functions of this type supported in this parent template
 
 
   /*

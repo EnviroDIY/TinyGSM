@@ -236,7 +236,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
   }
 
   /*
-   * Secure socket layer (SSL) functions
+   * Secure socket layer (SSL) certificate management functions
    */
   // No functions of this type supported
 
