@@ -769,7 +769,6 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
  protected:
   GsmClientA7672X* sockets[TINY_GSM_MUX_COUNT];
   bool             hasSSL = false;
-  String           certificates[TINY_GSM_MUX_COUNT];
 };
 
 #endif  // SRC_TINYGSMCLIENTA7672X_H_

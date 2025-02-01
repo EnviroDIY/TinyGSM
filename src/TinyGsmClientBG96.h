@@ -843,7 +843,6 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
 
  protected:
   GsmClientBG96* sockets[TINY_GSM_MUX_COUNT];
-  String         certificates[TINY_GSM_MUX_COUNT];
 };
 
 #endif  // SRC_TINYGSMCLIENTBG96_H_
