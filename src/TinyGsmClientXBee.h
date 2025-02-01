@@ -37,10 +37,15 @@
 #define MODEM_MODEL "XBee"
 
 #include "TinyGsmModem.tpp"
+#include "TinyGsmTCP.tpp"
+
+// NOTE: This module supports SSL, but we do not support any certificate
+// management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
+// so as not to waste space.
+#define TINY_GSM_MODEM_HAS_SSL
+
 #include "TinyGsmWifi.tpp"
 #include "TinyGsmGPRS.tpp"
-#include "TinyGsmTCP.tpp"
-#include "TinyGsmSSL.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTemperature.tpp"
 #include "TinyGsmBattery.tpp"
@@ -81,7 +86,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
                     public TinyGsmGPRS<TinyGsmXBee>,
                     public TinyGsmWifi<TinyGsmXBee>,
                     public TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT>,
-                    public TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>,
                     public TinyGsmSMS<TinyGsmXBee>,
                     public TinyGsmBattery<TinyGsmXBee>,
                     public TinyGsmTemperature<TinyGsmXBee> {
@@ -89,7 +93,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   friend class TinyGsmGPRS<TinyGsmXBee>;
   friend class TinyGsmWifi<TinyGsmXBee>;
   friend class TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmXBee>;
   friend class TinyGsmBattery<TinyGsmXBee>;
   friend class TinyGsmTemperature<TinyGsmXBee>;
@@ -855,7 +858,16 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // Follows functions as inherited from TinyGsmSSL.tpp
+  // This module supports SSL, but there are no certificate management functions
+  // are supported yet.
+  // If you wish to add certificate management for this module you must (in
+  // addition to adding the functions here):
+  // Add `#include "TinyGsmSSL.tpp` to the top of the file
+  // Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
+  // Add `public TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>,` to the
+  // constructor's initializer list
+  // Add `friend class TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>;` to the
+  // friend list.
 
   /*
    * WiFi functions

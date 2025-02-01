@@ -31,7 +31,12 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmSSL.tpp"
+
+// NOTE: This module supports SSL, but we do not support any certificate
+// management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
+// so as not to waste space.
+#define TINY_GSM_MODEM_HAS_SSL
+
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
@@ -53,7 +58,6 @@ enum UBLOXRegStatus {
 class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
                      public TinyGsmGPRS<TinyGsmUBLOX>,
                      public TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>,
-                     public TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>,
                      public TinyGsmCalling<TinyGsmUBLOX>,
                      public TinyGsmSMS<TinyGsmUBLOX>,
                      public TinyGsmGSMLocation<TinyGsmUBLOX>,
@@ -63,7 +67,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   friend class TinyGsmModem<TinyGsmUBLOX>;
   friend class TinyGsmGPRS<TinyGsmUBLOX>;
   friend class TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmUBLOX>;
   friend class TinyGsmSMS<TinyGsmUBLOX>;
   friend class TinyGsmGSMLocation<TinyGsmUBLOX>;
@@ -312,7 +315,16 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // Follows functions as inherited from TinyGsmSSL.tpp
+  // This module supports SSL, but there are no certificate management functions
+  // are supported yet.
+  // If you wish to add certificate management for this module you must (in
+  // addition to adding the functions here):
+  // Add `#include "TinyGsmSSL.tpp` to the top of the file
+  // Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
+  // Add `public TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>,` to the
+  // constructor's initializer list
+  // Add `friend class TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>;` to the
+  // friend list.
 
   /*
    * WiFi functions

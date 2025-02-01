@@ -16,7 +16,12 @@
 
 #include "TinyGsmClientEspressif.h"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmSSL.tpp"
+
+// NOTE: This module supports SSL, but we do not support any certificate
+// management for the non-OS version of the ESP8266 firmware, so we define
+// TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module so as not to
+// waste space.
+#define TINY_GSM_MODEM_HAS_SSL
 
 static uint8_t TINY_GSM_TCP_KEEP_ALIVE = 120;
 
@@ -39,11 +44,9 @@ enum ESP8266NonOSRegStatus {
 
 class TinyGsmESP8266NonOS
     : public TinyGsmEspressif<TinyGsmESP8266NonOS>,
-      public TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT>,
-      public TinyGsmSSL<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT> {
+      public TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT> {
   friend class TinyGsmEspressif<TinyGsmESP8266NonOS>;
   friend class TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmModem<TinyGsmESP8266NonOS>;
   friend class TinyGsmWifi<TinyGsmESP8266NonOS>;
 
@@ -187,7 +190,7 @@ class TinyGsmESP8266NonOS
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // Follows functions as inherited from TinyGsmSSL.tpp
+  // No SSL functions are supported on the ESP8266 using the non-OS AT firmware.
 
 
   /*

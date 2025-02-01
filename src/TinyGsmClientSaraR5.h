@@ -31,7 +31,12 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmSSL.tpp"
+
+// NOTE: This module supports SSL, but we do not support any certificate
+// management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
+// so as not to waste space.
+#define TINY_GSM_MODEM_HAS_SSL
+
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
@@ -68,7 +73,6 @@ enum SaraR5RegStatus {
 class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
                       public TinyGsmGPRS<TinyGsmSaraR5>,
                       public TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>,
-                      public TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>,
                       public TinyGsmCalling<TinyGsmSaraR5>,
                       public TinyGsmSMS<TinyGsmSaraR5>,
                       public TinyGsmGSMLocation<TinyGsmSaraR5>,
@@ -78,7 +82,6 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
   friend class TinyGsmModem<TinyGsmSaraR5>;
   friend class TinyGsmGPRS<TinyGsmSaraR5>;
   friend class TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmSaraR5>;
   friend class TinyGsmSMS<TinyGsmSaraR5>;
   friend class TinyGsmGSMLocation<TinyGsmSaraR5>;
@@ -340,6 +343,25 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
   }
 
   /*
+   * Secure socket layer (SSL) certificate management functions
+   */
+  // This module supports SSL, but there are no certificate management functions
+  // are supported yet.
+  // If you wish to add certificate management for this module you must (in
+  // addition to adding the functions here):
+  // Add `#include "TinyGsmSSL.tpp` to the top of the file
+  // Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
+  // Add `public TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>,` to the
+  // constructor's initializer list
+  // Add `friend class TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>;` to the
+  // friend list.
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
+
+  /*
    * GPRS functions
    */
  protected:
@@ -457,6 +479,11 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
    * Phone Call functions
    */
   // Follows all phone call functions as inherited from TinyGsmCalling.tpp
+
+  /*
+   * Audio functions
+   */
+  // No functions of this type supported
 
   /*
    * Text messaging (SMS) functions
@@ -616,6 +643,26 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
    * Time functions
    */
   // Follows all clock functions as inherited from TinyGsmTime.tpp
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
 
   /*
    * Battery functions

@@ -30,7 +30,12 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmSSL.tpp"
+
+// NOTE: This module supports SSL, but we do not support any certificate
+// management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
+// so as not to waste space.
+#define TINY_GSM_MODEM_HAS_SSL
+
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
@@ -61,7 +66,6 @@ class TinyGsmSequansMonarch
     : public TinyGsmModem<TinyGsmSequansMonarch>,
       public TinyGsmGPRS<TinyGsmSequansMonarch>,
       public TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>,
-      public TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>,
       public TinyGsmCalling<TinyGsmSequansMonarch>,
       public TinyGsmSMS<TinyGsmSequansMonarch>,
       public TinyGsmTime<TinyGsmSequansMonarch>,
@@ -69,7 +73,6 @@ class TinyGsmSequansMonarch
   friend class TinyGsmModem<TinyGsmSequansMonarch>;
   friend class TinyGsmGPRS<TinyGsmSequansMonarch>;
   friend class TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmSequansMonarch>;
   friend class TinyGsmSMS<TinyGsmSequansMonarch>;
   friend class TinyGsmTime<TinyGsmSequansMonarch>;
@@ -329,7 +332,16 @@ class TinyGsmSequansMonarch
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // Follows functions as inherited from TinyGsmSSL.tpp
+  // This module supports SSL, but there are no certificate management functions
+  // are supported yet.
+  // If you wish to add certificate management for this module you must (in
+  // addition to adding the functions here):
+  // Add `#include "TinyGsmSSL.tpp` to the top of the file
+  // Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
+  // Add `public TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>,` to the
+  // constructor's initializer list
+  // Add `friend class TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>;`
+  // to the friend list.
 
   /*
    * WiFi functions

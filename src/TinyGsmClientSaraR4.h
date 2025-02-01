@@ -31,7 +31,12 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmSSL.tpp"
+
+// NOTE: This module supports SSL, but we do not support any certificate
+// management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
+// so as not to waste space.
+#define TINY_GSM_MODEM_HAS_SSL
+
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGSMLocation.tpp"
@@ -53,7 +58,6 @@ enum SaraR4RegStatus {
 class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
                       public TinyGsmGPRS<TinyGsmSaraR4>,
                       public TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>,
-                      public TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>,
                       public TinyGsmSMS<TinyGsmSaraR4>,
                       public TinyGsmGSMLocation<TinyGsmSaraR4>,
                       public TinyGsmGPS<TinyGsmSaraR4>,
@@ -63,7 +67,6 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   friend class TinyGsmModem<TinyGsmSaraR4>;
   friend class TinyGsmGPRS<TinyGsmSaraR4>;
   friend class TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmSaraR4>;
   friend class TinyGsmGSMLocation<TinyGsmSaraR4>;
   friend class TinyGsmGPS<TinyGsmSaraR4>;
@@ -351,7 +354,16 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // Follows functions as inherited from TinyGsmSSL.tpp
+  // This module supports SSL, but there are no certificate management functions
+  // are supported yet.
+  // If you wish to add certificate management for this module you must (in
+  // addition to adding the functions here):
+  // Add `#include "TinyGsmSSL.tpp` to the top of the file
+  // Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
+  // Add `public TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>,` to the
+  // constructor's initializer list
+  // Add `friend class TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>;` to the
+  // friend list.
 
   /*
    * WiFi functions
