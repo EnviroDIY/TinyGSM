@@ -711,8 +711,10 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     streamSkipUntil(',');  // Skip mux
     int16_t len = streamGetIntBefore(',');
     streamSkipUntil('\"');
-
-    for (int i = 0; i < len; i++) { moveCharFromStreamToFifo(mux); }
+    bool chars_remaining = true;
+    while (len-- && chars_remaining) {
+      chars_remaining = moveCharFromStreamToFifo(mux);
+    }
     streamSkipUntil('\"');
     waitResponse();
     // DBG("### READ:", len, "from", mux);

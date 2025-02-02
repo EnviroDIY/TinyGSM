@@ -507,8 +507,9 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
       // that much there. In that case, make sure we make sure we re-set the
       // amount of data available.
       if (len < size) { sockets[mux]->sock_available = len; }
-      for (uint16_t i = 0; i < len; i++) {
-        moveCharFromStreamToFifo(mux);
+      bool chars_remaining = true;
+      while (len-- && chars_remaining) {
+        chars_remaining = moveCharFromStreamToFifo(mux);
         sockets[mux]->sock_available--;
         // ^^ One less character available after moving from modem's FIFO to our
         // FIFO

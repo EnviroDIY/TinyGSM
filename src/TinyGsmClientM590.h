@@ -471,8 +471,10 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
           // reset the len to read to the amount free
           len = sockets[mux]->rx.free();
         }
-        while (len--) { moveCharFromStreamToFifo(mux); }
-        // TODO(?): Handle lost characters
+        bool chars_remaining = true;
+        while (len-- && chars_remaining) {
+          chars_remaining = moveCharFromStreamToFifo(mux);
+        }
         if (len_orig != sockets[mux]->available()) {
           DBG("### Different number of characters received than expected: ",
               sockets[mux]->available(), " vs ", len_orig);

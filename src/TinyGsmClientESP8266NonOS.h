@@ -333,8 +333,11 @@ class TinyGsmESP8266NonOS
           // reset the len to read to the amount free
           len = sockets[mux]->rx.free();
         }
-        while (len--) { moveCharFromStreamToFifo(mux); }
-        // TODO(SRGDamia1): deal with buffer overflow/missed characters
+        bool chars_remaining = true;
+        while (len-- && chars_remaining) {
+          chars_remaining = moveCharFromStreamToFifo(mux);
+        }
+        // TODO(SRGDamia1): deal with buffer overflow
         if (len_orig != sockets[mux]->available()) {
           DBG("### Different number of characters received than expected: ",
               sockets[mux]->available(), " vs ", len_orig);

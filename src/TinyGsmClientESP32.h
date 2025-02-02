@@ -722,7 +722,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
         while (len-- && chars_remaining) {
           chars_remaining = moveCharFromStreamToFifo(mux);
         }
-        // TODO(SRGDamia1): deal with buffer overflow/missed characters
+        // TODO(SRGDamia1): deal with buffer overflow
         if (len_orig != sockets[mux]->rx.size() - prev_size) {
           DBG("### Different number of characters received than expected: ",
               sockets[mux]->rx.size() - prev_size, " vs ", len_orig);

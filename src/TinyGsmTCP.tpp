@@ -357,10 +357,6 @@ class TinyGsmTCP {
 
   // Yields up to a time-out period and then reads a character from the stream
   // into the mux FIFO
-  // TODO(SRGDamia1):  Do we really need to wait _two_ timeout periods for no
-  // character return?  Will wait once in the first "while
-  // !stream.available()" and then will wait again in the stream.read()
-  // function.
   inline bool moveCharFromStreamToFifo(uint8_t mux) {
     if (!thisModem().sockets[mux]) { return false; }
     uint32_t startMillis = millis();

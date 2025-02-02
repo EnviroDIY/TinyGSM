@@ -734,8 +734,10 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       if (waitResponse(GF("+QIRD:")) != 1) { return 0; }
     }
     int16_t len = streamGetIntBefore('\n');
-
-    for (int i = 0; i < len; i++) { moveCharFromStreamToFifo(mux); }
+    bool    chars_remaining = true;
+    while (len-- && chars_remaining) {
+      chars_remaining = moveCharFromStreamToFifo(mux);
+    }
     waitResponse();
     // DBG("### READ:", len, "from", mux);
     sockets[mux]->sock_available = modemGetAvailable(mux);
