@@ -361,15 +361,20 @@ class TinyGsmTCP {
   // character return?  Will wait once in the first "while
   // !stream.available()" and then will wait again in the stream.read()
   // function.
-  inline void moveCharFromStreamToFifo(uint8_t mux) {
-    if (!thisModem().sockets[mux]) return;
+  inline bool moveCharFromStreamToFifo(uint8_t mux) {
+    if (!thisModem().sockets[mux]) { return false; }
     uint32_t startMillis = millis();
     while (!thisModem().stream.available() &&
            (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
       TINY_GSM_YIELD();
     }
-    char c = thisModem().stream.read();
-    thisModem().sockets[mux]->rx.put(c);
+    if (thisModem().stream.available()) {
+      char c = thisModem().stream.read();
+      thisModem().sockets[mux]->rx.put(c);
+      return true;
+    } else {
+      return false;
+    }
   }
 };
 

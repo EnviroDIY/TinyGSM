@@ -74,11 +74,11 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       // if it's a valid mux number,
       // and that mux number isn't in use,
       // accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] != nullptr) {
+      if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] == nullptr) {
         this->mux              = mux;
         at->sockets[this->mux] = this;
       } else {
-        this->mux = static_cast<uint>(-1);
+        this->mux = static_cast<uint8_t>(-1);
       }
 
       return true;
@@ -86,9 +86,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
    public:
     virtual int connect(const char* host, uint16_t port, int timeout_s) {
-      if (mux < TINY_GSM_MUX_COUNT && at->sockets[this->mux] != nullptr) {
-        stop();
-      }
+      if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] != nullptr) { stop(); }
       TINY_GSM_YIELD();
       rx.clear();
       uint8_t oldMux = mux;
@@ -319,7 +317,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // pull the namespace out of the name
     char certNamespace[12];
     memcpy(certNamespace, certificateName, strlen(certificateName) - 2);
-    certNamespace[strlen(certNamespace) + 1] = '\0';
+    certNamespace[strlen(certificateName) - 2] = '\0';
     // AT+SYSMFG=<operation>,<"namespace">,<"key">,<type>,<value>
     // operation = 2 for write
     // type = 8 for binary (ie, the certificates must be stored in binary,
@@ -340,7 +338,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // pull the namespace out of the name
     char certNamespace[12];
     memcpy(certNamespace, certificateName, strlen(certificateName) - 2);
-    certNamespace[strlen(certNamespace) + 1] = '\0';
+    certNamespace[strlen(certificateName) - 2] = '\0';
     // AT+SYSMFG=<operation>,<"namespace">[,<"key">]
     // operation = 0 for erase
     // AT+SYSMFG=0,"client_cert","client_cert.0"
@@ -563,8 +561,9 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
                     bool ssl = false, int timeout_s = 75) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+    uint8_t  requested_mux = *mux;
     if (ssl) {
-      if (!*mux < TINY_GSM_MUX_COUNT) {
+      if (!(requested_mux < TINY_GSM_MUX_COUNT)) {
         // If we didn't get a valid mux - the user wants us to assign the mux
         // for them. If we're using SSL, in order to set the proper auth type
         // and certs before opening the socket, we need to open the socket with
@@ -574,27 +573,29 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
         int  next_mux     = 0;
         for (; next_mux < TINY_GSM_MUX_COUNT; next_mux++) {
           if (sockets[next_mux] == nullptr) {
-            DBG(GF("### Socket mux"), next_mux, GF("will be used"));
             got_next_mux = true;
             break;
           }
         }
         if (got_next_mux) {
-          *mux = next_mux;
+          requested_mux = next_mux;
         } else {
           DBG("### WARNING: No empty mux sockets found, please select the mux "
               "you want in the client constructor.");
           return false;
         }
+      }
 
         // SSL certificate checking will not work without a valid timestamp!
-        if (!waitForTimeSync(timeout_s) && sockets[*mux]->_sslAuthMode >= 1 &&
-            sockets[*mux]->_sslAuthMode <= 3) {
-          DBG("### WARNING: The module timestamp must be valid for SSL auth. "
-              "Please use setTimeZone(...) or NTPServerSync(...) to enable "
-              "time syncing before attempting an SSL connection!");
-          return false;
-        }
+      if (sockets[requested_mux] != nullptr &&
+          sockets[requested_mux]->_sslAuthMode >= 1 &&
+          sockets[requested_mux]->_sslAuthMode <= 3 &&
+          !waitForTimeSync(timeout_s)) {
+        DBG("### WARNING: The module timestamp must be valid for SSL auth. "
+            "Please use setTimeZone(...) or NTPServerSync(...) to enable "
+            "time syncing before attempting an SSL connection!");
+        return false;
+      }
 
         // configure SSL authentication type and in-use certificates
         // AT+CIPSSLCCONF=<link ID>,<auth_mode>[,<pki_number>][,<ca_number>]
@@ -633,29 +634,33 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
         // were (or were not) put into the customized certificate partitions.
         // The default firmware comes with espressif certificates in slots 0
         // and 1.
-        if (sockets[*mux]->_sslAuthMode == static_cast<uint8_t>(-1) ||
-            sockets[*mux]->_sslAuthMode == 0) {
-          sendAT(GF("+CIPSSLCCONF="), *mux, GF(",0"));
-        } else {
-          sendAT(GF("+CIPSSLCCONF="), *mux, ',', sockets[*mux]->_sslAuthMode,
-                 ',', sockets[*mux]->_pkiIndex, ',', sockets[*mux]->_caIndex);
-        }
+      if (sockets[requested_mux] == nullptr ||
+          (sockets[requested_mux]->_sslAuthMode != 1 &&
+           sockets[requested_mux]->_sslAuthMode != 2 &&
+           sockets[requested_mux]->_sslAuthMode != 3)) {
+        sendAT(GF("+CIPSSLCCONF="), requested_mux, GF(",0"));
+      } else {
+        sendAT(GF("+CIPSSLCCONF="), requested_mux, ',',
+               sockets[requested_mux]->_sslAuthMode, ',',
+               sockets[requested_mux]->_pkiIndex, ',',
+               sockets[requested_mux]->_caIndex);
+      }
         waitResponse();
 
         // set the SSL SNI (server name indication)
         // Multiple connections: (AT+CIPMUX=1)
         // AT+CIPSSLCSNI=<link ID>,<"sni">
-        sendAT(GF("+CIPSSLCSNI="), *mux, GF(",\""), host, GF("\""));
+        sendAT(GF("+CIPSSLCSNI="), requested_mux, GF(",\""), host, GF("\""));
         waitResponse();
-      }
     }
 
     // Make the connection
     // If we know the mux number we want to use, use CIPSTART, if we want the
     // module to assign a mux number for us, use CIPSTARTEX
-    if (*mux < TINY_GSM_MUX_COUNT) {
-      sendAT(GF("+CIPSTART="), *mux, ',', ssl ? GF("\"SSL") : GF("\"TCP"),
-             GF("\",\""), host, GF("\","), port);
+    if (requested_mux < TINY_GSM_MUX_COUNT) {
+      sendAT(GF("+CIPSTART="), requested_mux, ',',
+             ssl ? GF("\"SSL") : GF("\"TCP"), GF("\",\""), host, GF("\","),
+             port);
     } else {
       sendAT(GF("+CIPSTARTEX="), ssl ? GF("\"SSL") : GF("\"TCP"), GF("\",\""),
              host, GF("\","), port);
@@ -705,19 +710,22 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     if (data.endsWith(GF("+IPD,"))) {
       int8_t  mux            = streamGetIntBefore(',');
       int16_t len            = streamGetIntBefore(':');
-      int16_t len_orig       = len;
-      int16_t prev_available = sockets[mux]->available();
+      size_t  len_orig       = len;
+      size_t  prev_size      = sockets[mux]->rx.size();
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           // reset the len to read to the amount free
           len = sockets[mux]->rx.free();
         }
-        while (len--) { moveCharFromStreamToFifo(mux); }
+        bool chars_remaining = true;
+        while (len-- && chars_remaining) {
+          chars_remaining = moveCharFromStreamToFifo(mux);
+        }
         // TODO(SRGDamia1): deal with buffer overflow/missed characters
-        if (len_orig != sockets[mux]->available() - prev_available) {
+        if (len_orig != sockets[mux]->rx.size() - prev_size) {
           DBG("### Different number of characters received than expected: ",
-              sockets[mux]->available() - prev_available, " vs ", len_orig);
+              sockets[mux]->rx.size() - prev_size, " vs ", len_orig);
         }
       }
       data = "";
