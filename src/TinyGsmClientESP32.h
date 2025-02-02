@@ -319,7 +319,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // pull the namespace out of the name
     char certNamespace[12];
     memcpy(certNamespace, certificateName, strlen(certificateName) - 2);
-    certNamespace[strlen(certificateName) + 1] = '\0';
+    certNamespace[strlen(certNamespace) + 1] = '\0';
     // AT+SYSMFG=<operation>,<"namespace">,<"key">,<type>,<value>
     // operation = 2 for write
     // type = 8 for binary (ie, the certificates must be stored in binary,
@@ -329,7 +329,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // AT+SYSMFG=2,"client_cert","client_cert.0",8,1164
     // Wait until AT command port returns ``>``, and then write 1164 bytes
     sendAT(GF("+SYSMFG=2,\""), certNamespace, GF("\",\""), certificateName,
-           GF("\",7,"), len);
+           GF("\",8,"), len);
     if (waitResponse(GF(">")) != 1) { return false; }
     stream.write(reinterpret_cast<const uint8_t*>(cert), len);
     stream.flush();
@@ -340,7 +340,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // pull the namespace out of the name
     char certNamespace[12];
     memcpy(certNamespace, certificateName, strlen(certificateName) - 2);
-    certNamespace[strlen(certificateName) + 1] = '\0';
+    certNamespace[strlen(certNamespace) + 1] = '\0';
     // AT+SYSMFG=<operation>,<"namespace">[,<"key">]
     // operation = 0 for erase
     // AT+SYSMFG=0,"client_cert","client_cert.0"
