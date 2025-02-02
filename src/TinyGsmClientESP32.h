@@ -307,6 +307,13 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
+  // NOTE: You must be running AT firmware >= 3.4.0.0 for these functions to
+  // work. If you are running a lower level firmware, you must update. You
+  // almost certainly will need to flash your board with the new firmware using
+  // esptools/ESP flash download tools instead of using the AT+CIUPDATE function
+  // because the structure of the NVM space changed and the newer structure is
+  // needed for the SYSMFG command used here. The CIUPDATE function does not
+  // update the NVM.
   bool addCertificateImpl(const char* certificateName, const char* cert,
                           const uint16_t len) {
     // pull the namespace out of the name
@@ -315,8 +322,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     certNamespace[strlen(certificateName) + 1] = '\0';
     // AT+SYSMFG=<operation>,<"namespace">,<"key">,<type>,<value>
     // operation = 2 for write
-    // type = 7 for string (ie, the client is a text string, not a binary
-    // string)
+    // type = 8 for binary (ie, the certificates must be stored in binary,
+    // though you can enter them as strings)
     // Write a new value for client_cert.0 key into client_cert namespace (That
     // is, update the 0th client certificate)
     // AT+SYSMFG=2,"client_cert","client_cert.0",8,1164
