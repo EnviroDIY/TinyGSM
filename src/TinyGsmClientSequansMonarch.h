@@ -143,6 +143,20 @@ class TinyGsmSequansMonarch
    * Inner Secure Client
    */
  public:
+#if 0
+ // These will be needed if certificate management functions are ever added
+  class GsmClientSecureSequansMonarch
+      : public GSMSecureClient<GsmClientSequansMonarch> {
+   public:
+    friend class TinyGsmSequansMonarch;
+    friend class GsmClientSequansMonarch;
+    GsmClientSecureSequansMonarch() {}
+
+    explicit GsmClientSecureSequansMonarch(TinyGsmSequansMonarch& modem,
+                                           uint8_t                mux = 1)
+        : GSMSecureClient<GsmClientSequansMonarch>(modem, mux) {}
+#endif
+
   class GsmClientSecureSequansMonarch : public GsmClientSequansMonarch {
    public:
     GsmClientSecureSequansMonarch() {}
@@ -336,12 +350,14 @@ class TinyGsmSequansMonarch
   // are supported yet.
   // If you wish to add certificate management for this module you must (in
   // addition to adding the functions here):
-  // Add `#include "TinyGsmSSL.tpp` to the top of the file
-  // Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  // Add `public TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>,` to the
-  // constructor's initializer list
-  // Add `friend class TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>;`
-  // to the friend list.
+  //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
+  //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
+  //  - Add `public TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>,` to
+  //    the constructor's initializer list
+  //  - Add `friend class TinyGsmSSL<TinyGsmSequansMonarch,
+  //    TINY_GSM_MUX_COUNT>;` to the friend list.
+  //  - Remove the #if 0 directive and change the constructor of the secure
+  //    inner client
 
   /*
    * WiFi functions
@@ -485,7 +501,7 @@ class TinyGsmSequansMonarch
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
 
     if (ssl) {
-      // enable SSl and use security profile 1
+      // enable SSL and use security profile 1
       // AT+SQNSSCFG=<connId>,<enable>,<spId>
       sendAT(GF("+SQNSSCFG="), mux, GF(",1,1"));
       if (waitResponse() != 1) {

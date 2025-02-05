@@ -134,23 +134,19 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureA7672X : public GsmClientA7672X {
+  class GsmClientSecureA7672X : public GSMSecureClient<GsmClientA7672X> {
    public:
+    friend class TinyGsmA7672X;
+    friend class GsmClientA7672X;
     GsmClientSecureA7672X() {}
 
-    explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux = 0)
-        : GsmClientA7672X(modem, mux) {}
+explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux = 0)
+    : GSMSecureClient<GsmClientA7672X>(modem, mux) {}
 
-   public:
-    bool addCertificate(const char* certificateName, const char* cert,
-                        const uint16_t len) {
-      // set the cert name for this mux
-      at->setCertificate(certificateName, mux);
-      return at->addCertificate(certificateName, cert, len);
-    }
-
-    bool setCertificate(const char* certificateName) {
-      return at->setCertificate(certificateName, mux);
+public:
+bool addCertificate(const char* certificateName, const char* cert,
+                    const uint16_t len) {
+  return at->addCertificate(certificateName, cert, len);
     }
 
     bool deleteCertificate(const char* certificateName) {
@@ -315,8 +311,21 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   // have type like ".pem" or ".der".
   // The certificate like - const char ca_cert[] PROGMEM =  R"EOF(-----BEGIN...
   // len of certificate like - sizeof(ca_cert)
-  bool addCertificateImpl(const char* certificateName, const char* cert,
+  // NOTE: Uploading the certificate only happens by filename, the type of
+  // certificate does not matter here
+  bool addCertificateImpl(CertificateType cert_type,
+                          const char* certificateName, const char* cert,
                           const uint16_t len) {
+    switch (cert_type) {
+      case CLIENT_PSK:
+      case CLIENT_PSK_IDENTITY: {
+        DBG(GF("SSL with pre-shared keys is not supported on this module"));
+        return false;
+      }
+      default: {
+        break;
+      }
+    }
     sendAT(GF("+CCERTDOWN="), certificateName, GF(","), len);
     if (waitResponse(GF(">")) != 1) { return false; }
     stream.write(cert, len);
@@ -324,6 +333,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return waitResponse() == 1;
   }
 
+  // NOTE: Deleting the certificate only happens by filename, the type of
+  // certificate does not matter here
   bool deleteCertificateImpl(const char* certificateName) {  // todo test
     sendAT(GF("+CCERTDELE="), certificateName);
     return waitResponse() == 1;
@@ -496,55 +507,112 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     if (waitResponse(2000L) != 1) { return false; }
 
     if (ssl) {
+      if (sslAuthModes[mux] == PRE_SHARED_KEYS) {
+        DBG("### The A7672x does not support SSL using pre-shared keys.");
+        return false;
+      }
+
+      // NOTE: The SSL context (<ssl_ctx_index>) is not the same as the
+      // connection identifier.  The SSL context is the grouping of SSL
+      // settings, the connection identifier is the mux/socket number. For this,
+      // we will *always* configure SSL context 0, just as we always configured
+      // PDP context 1.
+
       hasSSL = true;
       // set the ssl version
       // AT+CSSLCFG="sslversion",<ssl_ctx_index>,<sslversion>
-      // <ctxindex> PDP context identifier
-      // <sslversion> 0: QAPI_NET_SSL_PROTOCOL_UNKNOWN
-      //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
-      //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
-      //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
-      //              4: QAPI_NET_SSL_PROTOCOL_DTLS_1_0
-      //              5: QAPI_NET_SSL_PROTOCOL_DTLS_1_2
+      // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
+      // <sslversion> 0: SSL3.0
+      //              1: TLS1.0
+      //              2: TLS1.1
+      //              3: TLS1.2
+      //              4: All
       // NOTE:  despite docs using caps, "sslversion" must be in lower case
       sendAT(GF("+CSSLCFG=\"sslversion\",0,3"));  // TLS 1.2
       if (waitResponse(5000L) != 1) return false;
 
+      // set the ssl sec level
+      // AT+QSSLCFG="authmode",<ssl_ctx_index>,<authmode>
+      // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
+      // <authmode> 0: No authentication (NO_VALIDATION)
+      //            1: server authentication (CA_VALIDATION)
+      //            2: server and client authentication (MUTUAL_AUTHENTICATION)
+      //            3: client authentication and no server authentication
+      //            (CLIENT_VALIDATION)
+      switch (sslAuthModes[mux]) {
+        case CA_VALIDATION: {
+          sendAT(GF("+CSSLCFG=\"authmode\",0,1"));
+          break;
+        }
+        case MUTUAL_AUTHENTICATION: {
+          sendAT(GF("+CSSLCFG=\"authmode\",0,2"));
+          break;
+        }
+        case CLIENT_VALIDATION: {
+          sendAT(GF("+CSSLCFG=\"authmode\",0,3"));
+          break;
+        }
+        default: {
+          sendAT(GF("+CSSLCFG=\"authmode\",0,0"));
+          break;
+        }
+      }
+      if (waitResponse(5000L) != 1) return false;
 
-      if (certificates[mux] != "") {
+      // apply the correct certificates to the connection
+      if (CAcerts[mux] != nullptr &&
+          (sslAuthModes[mux] == CA_VALIDATION ||
+           sslAuthModes[mux] == MUTUAL_AUTHENTICATION)) {
         /* Configure the server root CA of the specified SSL context
-        AT + CSSLCFG = "cacert", <ssl_ ctx_index>,<ca_file> */
-        sendAT(GF("+CSSLCFG=\"cacert\",0,"), certificates[mux].c_str());
+        AT + CSSLCFG = "cacert", <ssl_ctx_index>,<ca_file> */
+        sendAT(GF("+CSSLCFG=\"cacert\",0,"), CAcerts[mux]);
+        if (waitResponse(5000L) != 1) return false;
+      }
+      // SRGD WARNING: UNTESTED!!
+      if (clientCerts[mux] != nullptr &&
+          (sslAuthModes[mux] == MUTUAL_AUTHENTICATION ||
+           sslAuthModes[mux] == CLIENT_VALIDATION)) {
+        sendAT(GF("+CSSLCFG=\"clientcert\",0,"), clientCerts[mux]);
+        if (waitResponse(5000L) != 1) return false;
+      }
+      // SRGD WARNING: UNTESTED!!
+      if (clientKeys[mux] != nullptr &&
+          (sslAuthModes[mux] == MUTUAL_AUTHENTICATION ||
+           sslAuthModes[mux] == CLIENT_VALIDATION)) {
+        sendAT(GF("+CSSLCFG=\"clientkey\",0,"), clientKeys[mux]);
         if (waitResponse(5000L) != 1) return false;
       }
 
       // set the SSL SNI (server name indication)
       // AT+CSSLCFG="enableSNI",<ssl_ctx_index>,<enableSNI_flag>
-      // NOTE:  despite docs using caps, "sni" must be in lower case
       sendAT(GF("+CSSLCFG=\"enableSNI\",0,1"));
       if (waitResponse(2000L) != 1) { return false; }
 
       // Configure the report mode of sending and receiving data
-      /* +CCHSET=<report_send_result>,<recv_mode>
-       * <report_send_result> Whether to report result of CCHSEND, the default
-       *  value is 0: 0 No. 1 Yes. Module will report +CCHSEND:
-       * <session_id>,<err> to MCU when complete sending data.
-       *
-       * <recv_mode> The receiving mode, the default value is 0:
-       * 0 Output the data to MCU whenever received data.
-       * 1 Module caches the received data and notifies MCU with+CCHEVENT:
-       * <session_id>,RECV EVENT. MCU can use AT+CCHRECV to receive the cached
-       * data (only in manual receiving mode).
-       */
+      // +CCHSET=<report_send_result>,<recv_mode>
+      // <report_send_result> Whether to report result of CCHSEND, the default
+      //   value is 0: 0 No. 1 Yes. Module will report +CCHSEND:
+      // <session_id>,<err> to MCU when complete sending data.
+      // <recv_mode> The receiving mode, the default value is 0:
+      //   0 Output the data to MCU whenever received data.
+      //   1 Module caches the received data and notifies MCU with+CCHEVENT:
+      // <session_id>,RECV EVENT. MCU can use AT+CCHRECV to receive the cached
+      //   data (only in manual receiving mode).
       sendAT(GF("+CCHSET=1,1"));
       if (waitResponse(2000L) != 1) { return false; }
 
+      // Start SSL service
       sendAT(GF("+CCHSTART"));
       if (waitResponse(2000L) != 1) { return false; }
 
+      // set the connection identifier that the above SSL context settings
+      // apply to (ie, tie connection mux to SSL context)
+      // AT+CCHSSLCFG=<session_id>,<ssl_ctx_index>
       sendAT(GF("+CCHSSLCFG="), mux, GF(",0"));
       if (waitResponse(2000L) != 1) { return false; }
 
+      // Connect to server
+      // AT+CCHOPEN=<session_id>,<host>,<port>[,<client_type>,[<bind_port>]]
       sendAT(GF("+CCHOPEN="), 0, GF(",\""), host, GF("\","), port, GF(",2"));
       rsp = waitResponse(timeout_ms, GF("+CCHOPEN: 0,0" AT_NL),
                          GF("+CCHOPEN: 0,1" AT_NL), GF("+CCHOPEN: 0,4" AT_NL),

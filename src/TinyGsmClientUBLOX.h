@@ -145,6 +145,17 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    * Inner Secure Client
    */
  public:
+#if 0
+ // These will be needed if certificate management functions are ever added
+  class GsmClientSecureUBLOX : public GSMSecureClient<GsmClientUBLOX> {
+   public:
+    friend class TinyGsmUBLOX;
+    friend class GsmClientUBLOX;
+    GsmClientSecureUBLOX() {}
+    explicit GsmClientSecureUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 0)
+        : GSMSecureClient<GsmClientUBLOX>(modem, mux) {}
+#endif
+
   class GsmClientSecureUBLOX : public GsmClientUBLOX {
    public:
     GsmClientSecureUBLOX() {}
@@ -319,12 +330,14 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   // are supported yet.
   // If you wish to add certificate management for this module you must (in
   // addition to adding the functions here):
-  // Add `#include "TinyGsmSSL.tpp` to the top of the file
-  // Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  // Add `public TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>,` to the
-  // constructor's initializer list
-  // Add `friend class TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>;` to the
-  // friend list.
+  //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
+  //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
+  //  - Add `public TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>,` to the
+  //    constructor's initializer list
+  //  - Add `friend class TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>;` to the
+  //    friend list.
+  //  - Remove the #if 0 directive and change the constructor of the secure
+  //    inner client
 
   /*
    * WiFi functions

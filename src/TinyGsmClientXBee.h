@@ -13,8 +13,8 @@
 
 // #define TINY_GSM_DEBUG Serial
 
-// XBee's do not support multi-plexing in transparent/command mode
-// The much more complicated API mode is needed for multi-plexing
+// XBee's do not support multiplexing in transparent/command mode
+// The much more complicated API mode is needed for multiplexing
 #define TINY_GSM_MUX_COUNT 1
 #define TINY_GSM_NO_MODEM_BUFFER
 // XBee's have a default guard time of 1 second (1000ms, 10 extra for safety
@@ -129,7 +129,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     // Because all settings are saved to flash, it is possible (or likely) that
     // you could send data even if you haven't "made" any connection.
     virtual int connect(const char* host, uint16_t port, int timeout_s) {
-      // NOTE:  Not caling stop() or yeild() here
+      // NOTE:  Not calling stop() or yield() here
       at->streamClear();  // Empty anything in the buffer before starting
       sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
       return sock_connected;
@@ -142,7 +142,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       if (timeout_s != 0) {
         DBG("Timeout [", timeout_s, "] doesn't apply here.");
       }
-      // NOTE:  Not caling stop() or yeild() here
+      // NOTE:  Not calling stop() or yield() here
       at->streamClear();  // Empty anything in the buffer before starting
       sock_connected = at->modemConnect(ip, port, mux, false);
       return sock_connected;
@@ -266,6 +266,17 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
    * Inner Secure Client
    */
  public:
+#if 0
+ // These will be needed if certificate management functions are ever added
+  class GsmClientSecureXBee : public GSMSecureClient<GsmClientXBee> {
+   public:
+    friend class TinyGsmXBee;
+    friend class GsmClientXBee;
+    GsmClientSecureXBee() {}
+    explicit GsmClientSecureXBee(TinyGsmXBee& modem, uint8_t mux = 0)
+        : GSMSecureClient<GsmClientXBee>(modem, mux) {}
+#endif
+
   class GsmClientSecureXBee : public GsmClientXBee {
    public:
     GsmClientSecureXBee() {}
@@ -275,7 +286,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      // NOTE:  Not caling stop() or yeild() here
+      // NOTE:  Not calling stop() or yield() here
       at->streamClear();  // Empty anything in the buffer before starting
       sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
       return sock_connected;
@@ -288,7 +299,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       if (timeout_s != 0) {
         DBG("Timeout [", timeout_s, "] doesn't apply here.");
       }
-      // NOTE:  Not caling stop() or yeild() here
+      // NOTE:  Not calling stop() or yield() here
       at->streamClear();  // Empty anything in the buffer before starting
       sock_connected = at->modemConnect(ip, port, mux, true);
       return sock_connected;
@@ -862,12 +873,14 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   // are supported yet.
   // If you wish to add certificate management for this module you must (in
   // addition to adding the functions here):
-  // Add `#include "TinyGsmSSL.tpp` to the top of the file
-  // Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  // Add `public TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>,` to the
-  // constructor's initializer list
-  // Add `friend class TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>;` to the
-  // friend list.
+  //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
+  //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
+  //  - Add `public TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>,` to the
+  //    constructor's initializer list
+  //  - Add `friend class TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>;` to the
+  //    friend list.
+  //  - Remove the #if 0 directive and change the constructor of the secure
+  //    inner client
 
   /*
    * WiFi functions

@@ -107,17 +107,16 @@ class TinyGsmSim7000SSL
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureSIM7000SSL : public GsmClientSim7000SSL {
+  class GsmClientSecureSIM7000SSL
+      : public GSMSecureClient<GsmClientSim7000SSL> {
    public:
+    friend class TinyGsmSIM7000SSL;
+    friend class GsmClientSIM7000SSL;
     GsmClientSecureSIM7000SSL() {}
 
     explicit GsmClientSecureSIM7000SSL(TinyGsmSim7000SSL& modem,
                                        uint8_t            mux = 0)
-        : GsmClientSim7000SSL(modem, mux) {}
-
-    bool setCertificate(const String& certificateName) {
-      return at->setCertificate(certificateName, mux);
-    }
+        : GSMSecureClient<GsmClientSim7000SSL>(modem, mux) {}
 
     virtual int connect(const char* host, uint16_t port,
                         int timeout_s) override {
@@ -320,6 +319,7 @@ class TinyGsmSim7000SSL
    * Text messaging (SMS) functions
    */
   // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
+
   /*
    * GSM Location functions
    */
@@ -368,20 +368,22 @@ class TinyGsmSim7000SSL
     sendAT(GF("+CACID="), mux);
     if (waitResponse(timeout_ms) != 1) return false;
 
+    // NOTE: The SSL context (<ctxindex>) is not the same as the connection
+    // identifier.  The SSL context is the grouping of SSL settings, the
+    // connection identifier is the mux/socket number.
+    // For this, we will *always* configure SSL context 0, just as we always
+    // configured PDP context 1.
 
     if (ssl) {
       // set the ssl version
-      // AT+CSSLCFG="SSLVERSION",<ctxindex>,<sslversion>
-      // <ctxindex> PDP context identifier - for reasons not understood by me,
-      //            use PDP context identifier of 0 for what we defined as 1 in
-      //            the gprsConnect function
+      // AT+CSSLCFG="sslversion",<ctxindex>,<sslversion>
+      // <ctxindex> SSL context identifier - we always use 0
       // <sslversion> 0: QAPI_NET_SSL_PROTOCOL_UNKNOWN
       //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
       //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
       //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
       //              4: QAPI_NET_SSL_PROTOCOL_DTLS_1_0
       //              5: QAPI_NET_SSL_PROTOCOL_DTLS_1_2
-      // NOTE:  despite docs using caps, "sslversion" must be in lower case
       sendAT(GF("+CSSLCFG=\"sslversion\",0,3"));  // TLS 1.2
       if (waitResponse(5000L) != 1) return false;
     }
@@ -395,40 +397,69 @@ class TinyGsmSim7000SSL
     waitResponse();
 
     if (ssl) {
-      // set the PDP context to apply SSL to
-      // AT+CSSLCFG="CTXINDEX",<ctxindex>
-      // <ctxindex> PDP context identifier - for reasons not understood by me,
-      //            use PDP context identifier of 0 for what we defined as 1 in
-      //            the gprsConnect function
-      // NOTE:  despite docs using "CRINDEX" in all caps, the module only
-      // accepts the command "ctxindex" and it must be in lower case
+      // Query all the parameters that have been set for this SSL context
+      // TODO(@SRGDamia1): Skip this?
+      // AT+CSSLCFG="ctxindex" ,<ctxindex>
+      // <ctxindex> SSL context identifier - we always use 0
       sendAT(GF("+CSSLCFG=\"ctxindex\",0"));
       if (waitResponse(5000L, GF("+CSSLCFG:")) != 1) return false;
       streamSkipUntil('\n');  // read out the certificate information
       waitResponse();
 
-      if (certificates[mux] != "") {
-        // apply the correct certificate to the connection
-        // AT+CASSLCFG=<cid>,"CACERT",<caname>
+      // apply the correct certificates to the connection
+      if (CAcerts[mux] != nullptr &&
+          (sslAuthModes[mux] == CA_VALIDATION ||
+           sslAuthModes[mux] == MUTUAL_AUTHENTICATION)) {
+        // AT+CASSLCFG=<cid>,"cacert",<caname>
         // <cid> Application connection ID (set with AT+CACID above)
         // <certname> certificate name
-        sendAT(GF("+CASSLCFG="), mux, ",CACERT,\"", certificates[mux].c_str(),
-               "\"");
+        sendAT(GF("+CASSLCFG="), mux, GF(",cacert,\""), CAcerts[mux], "\"");
+        if (waitResponse(5000L) != 1) return false;
+      }
+      // SRGD WARNING: UNTESTED!!
+      if (clientCerts[mux] != nullptr &&
+          (sslAuthModes[mux] == MUTUAL_AUTHENTICATION)) {
+        // AT+CASSLCFG=<cid>,"clientcert",<certname>
+        // <cid> Application connection ID (set with AT+CACID above)
+        // <certname> Alphanumeric ASCII text string up to 64 characters. Client
+        // certificate name that has been configured by AT+CSSLCFG.
+        // NOTE: The AT+CSSLCFG convert function for the client cert combines
+        // the certificate and the key in a single certificate name
+        sendAT(GF("+CASSLCFG="), mux, GF("\"clientcert\",\""), clientCerts[mux],
+               GF("\""));
+        if (waitResponse(5000L) != 1) return false;
+      }
+      // SRGD WARNING: UNTESTED!!
+      if (psKeys[mux] != nullptr &&
+          (sslAuthModes[mux] == CLIENT_PSK_IDENTITY)) {
+        // AT+CASSLCFG=<cid>,"psktable",<pskname>
+        // <cid> Application connection ID (set with AT+CACID above)
+        // <pskname> Alphanumeric ASCII text string up to 64 characters. PSK
+        // table name that has been configured by AT+CSSLCFG. File content
+        // format is <identity>:<hex string>.
+        sendAT(GF("+CASSLCFG=\"psktable\","), mux, GF(",\""), clientKeys[mux],
+               GF("\""));
         if (waitResponse(5000L) != 1) return false;
       }
 
-      // set the protocol
+      // set the connection protocol for SSL - we only support TCP
       // 0:  TCP; 1: UDP
-      sendAT(GF("+CASSLCFG="), mux, ',', GF("protocol,0"));
+      sendAT(GF("+CASSLCFG="), mux, ',', GF("\"protocol\",0"));
+      waitResponse();
+
+      // set the connection identifier that the above SSL context settings apply
+      // to (ie, tie connection mux to SSL context)
+      // AT+CASSLCFG=<cid>,"crindex",<crindex>
+      // <cid> Application connection ID (set with AT+CACID above)
+      // <crindex> SSL context identifier (<ctxindex>) - we always use 0
+      sendAT(GF("+CASSLCFG="), mux, ',', GF("\"crindex\",0"));
       waitResponse();
 
       // set the SSL SNI (server name indication)
       // AT+CSSLCFG="SNI",<ctxindex>,<servername>
-      // <ctxindex> PDP context identifier - for reasons not understood by me,
-      //            use PDP context identifier of 0 for what we defined as 1 in
-      //            the gprsConnect function
-      // NOTE:  despite docs using caps, "sni" must be in lower case
-      sendAT(GF("+CSSLCFG=\"sni\",0,"), GF("\""), host, GF("\""));
+      // <ctxindex> SSL context identifier - we always use 0
+      // <servername> Sever name (we use the host)
+      sendAT(GF("+CSSLCFG=\"sni\",0,\""), host, GF("\""));
       waitResponse();
     }
 

@@ -109,19 +109,21 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureESP8266 : public GsmClientESP8266 {
+  class GsmClientSecureESP8266 : public GSMSecureClient<GsmClientESP8266> {
    public:
+    friend class TinyGsmESP8266;
+    friend class GsmClientESP8266;
     GsmClientSecureESP8266() {}
 
-    explicit GsmClientSecureESP8266(TinyGsmESP8266& modem, uint8_t mux = 0)
-        : GsmClientESP8266(modem, mux) {}
+explicit GsmClientSecureESP8266(TinyGsmESP8266& modem, uint8_t mux = 0)
+    : GSMSecureClient<GsmClientESP8266>(modem, mux) {}
 
-    int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop();
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-      return sock_connected;
+int connect(const char* host, uint16_t port, int timeout_s) override {
+  stop();
+  TINY_GSM_YIELD();
+  rx.clear();
+  sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
+  return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };

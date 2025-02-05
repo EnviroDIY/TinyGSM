@@ -61,9 +61,6 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
     explicit GsmClientESP32(TinyGsmESP32& modem,
                             uint8_t       mux = static_cast<uint8_t>(-1)) {
-      _sslAuthMode = -1;
-      _caIndex     = 0;
-      _pkiIndex    = 0;
       init(&modem, mux);
     }
 
@@ -116,132 +113,44 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
      */
 
     String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
-    // needed for SSL client, thus for both
-    int8_t _sslAuthMode;
-    uint8_t _caIndex;
-    uint8_t _pkiIndex;
   };
 
   /*
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureESP32 : public GsmClientESP32 {
+  class GsmClientSecureESP32 : public GSMSecureClient<GsmClientESP32> {
    public:
+    friend class TinyGsmESP32;
+    friend class GsmClientESP32;
     GsmClientSecureESP32() {}
 
     explicit GsmClientSecureESP32(TinyGsmESP32& modem, uint8_t mux = -1)
-        : GsmClientESP32(modem, mux) {}
+        : GSMSecureClient<GsmClientESP32>(modem, mux) {}
 
-    // This adds the server's CA certificate that the client connects to, used
-    // in auth mode 2 and 3
-    // Ths is the value client_ca_00.crt in the AT firmware
-    bool addCertificate(uint8_t certNumber, const char* cert,
-                        const uint16_t len) {
-      _caIndex = certNumber;
+    bool setCACert(uint8_t certNumber) {
       char cert_name[12];
       char cert_number[2];
       itoa(certNumber, cert_number, 10);
       strcpy(cert_name, "client_ca.");
       strcat(cert_name, cert_number);
-      at->setCertificate(cert_name, mux);
-      at->deleteCertificate(cert_name);
-      return at->addCertificate(cert_name, cert, len);
+      return at->setCertificate(CA_CERTIFICATE, cert_name);
     }
-    bool addCertificate(const char* cert, const uint16_t len) {
-      return addCertificate(_caIndex, cert, len);
-    }
-    bool addCA(uint8_t certNumber, const char* cert, const uint16_t len) {
-      return addCertificate(certNumber, cert, len);
-    }
-    bool addCA(const char* cert, const uint16_t len) {
-      return addCertificate(_caIndex, cert, len);
-    }
-
-    bool addClientCert(uint8_t certNumber, const char* cert,
-                       const uint16_t len) {
-      _pkiIndex = certNumber;
+    bool setClientCert(uint8_t certNumber) {
       char cert_name[14];
       char cert_number[2];
       itoa(certNumber, cert_number, 10);
       strcpy(cert_name, "client_cert.");
       strcat(cert_name, cert_number);
-      at->deleteCertificate(cert_name);
-      return at->addCertificate(cert_name, cert, len);
+      return at->setCertificate(CLIENT_CERTIFICATE, cert_name, mux);
     }
-    bool addClientCert(const char* cert, const uint16_t len) {
-      return addClientCert(_pkiIndex, cert, len);
-    }
-
-    bool addClientKey(uint8_t keyNumber, const char* key, const uint16_t len) {
-      _pkiIndex = keyNumber;
+    bool setPrivateKey(uint8_t keyNumber) {
       char key_name[13];
       char key_number[2];
       itoa(keyNumber, key_number, 10);
       strcpy(key_name, "client_key.");
       strcat(key_name, key_number);
-      at->deleteCertificate(key_name);
-      return at->addCertificate(key_name, key, len);
-    }
-    bool addClientKey(const char* key, const uint16_t len) {
-      return addClientKey(_pkiIndex, key, len);
-    }
-
-    // This sets the certificate number for the server's CA certificate, used in
-    // auth mode 2 and 3
-    // This is identical to setCAIndex()
-    bool setCertificate(uint8_t certNumber) {
-      _caIndex = certNumber;
-      char cert_name[12];
-      char cert_number[2];
-      itoa(certNumber, cert_number, 10);
-      strcpy(cert_name, "client_ca.");
-      strcat(cert_name, cert_number);
-      return at->setCertificate(cert_name, mux);
-    }
-    bool setCA(uint8_t certNumber) {
-      return setCertificate(certNumber);
-    }
-
-    // <auth_mode>:
-    //     0: no authentication. In this case <pki_number> and <ca_number>
-    //     are not required.
-    //        - SRGD Note: You do not need to load any certificates onto
-    //        your device for this. Not all servers will accept it.
-    //     1: the client provides the client certificate for the server to
-    //     verify.
-    //        - SRGD Note: I do not believe this is commonly used. To use
-    //        this, you must load a client certificate and a client key onto
-    //        your device.
-    //     2: the client loads CA certificate to verify the server’s
-    //     certificate.
-    //        - SRGD Note: This is a common authentication type sed by
-    //        browsers, where the browser verifies the server's certificate.
-    //        For this to work, you must load either the server's
-    //        intermediate or parent certificate onto your device.
-    //     3: mutual authentication.
-    //        - SRGD Note: This is used by AWS IoT Core and other IoT
-    //        services. In this case you must load 3 certs to your device:
-    //        The servers CA cert, the client cert, and the client key.
-    void setSSLAuthMode(int8_t mode) {
-      _sslAuthMode = mode;
-    }
-    // <ca_number>: the index of CA (certificate authority certificate =
-    // server's certificate). There are only two client-CA certificate slots: 0
-    // and 1.
-    void setCAIndex(uint8_t index) {
-      setCertificate(index);
-    }
-    // <pki_number>: the index of certificate and private key. There are only
-    // two client-PKI slots: 0 and 1. You must put both the certificate and the
-    // matching private key into the same slot number.
-    //    PKI - A public key infrastructure (PKI) is a set of roles,
-    //    policies, hardware, software and procedures needed to create,
-    //    manage, distribute, use, store and revoke digital certificates and
-    //    manage public-key encryption.
-    void setPKIIndex(uint8_t index) {
-      _pkiIndex = index;
+      return at->setCertificate(CLIENT_KEY, key_name, mux);
     }
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
@@ -312,8 +221,47 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   // because the structure of the NVM space changed and the newer structure is
   // needed for the SYSMFG command used here. The CIUPDATE function does not
   // update the NVM.
-  bool addCertificateImpl(const char* certificateName, const char* cert,
+
+  // This adds the server's CA certificate that the client connects to, used
+  // in auth mode 2 and 3
+  // This is the value client_ca_0x.crt in the AT firmware
+  bool addCACert(uint8_t certNumber, const char* cert, const uint16_t len) {
+    char cert_name[12];
+    char cert_number[2];
+    itoa(certNumber, cert_number, 10);
+    strcpy(cert_name, "client_ca.");
+    strcat(cert_name, cert_number);
+    return addCertificate(CA_CERTIFICATE, cert_name, cert, len);
+  }
+
+  bool addClientCert(uint8_t certNumber, const char* cert, const uint16_t len) {
+    char cert_name[14];
+    char cert_number[2];
+    itoa(certNumber, cert_number, 10);
+    strcpy(cert_name, "client_cert.");
+    strcat(cert_name, cert_number);
+    return addCertificate(cert_name, cert, len);
+  }
+
+  bool addPrivateKey(uint8_t keyNumber, const char* key, const uint16_t len) {
+    char key_name[13];
+    char key_number[2];
+    itoa(keyNumber, key_number, 10);
+    strcpy(key_name, "client_key.");
+    strcat(key_name, key_number);
+    return addCertificate(key_name, key, len);
+  }
+
+  bool addCertificateImpl(CertificateType cert_type,
+                          const char* certificateName, const char* cert,
                           const uint16_t len) {
+    if (cert_type == CLIENT_PSK || cert_type == CLIENT_PSK_IDENTITY) {
+      DBG("### The ESP32 does not support SSL using pre-shared keys with AT "
+          "firmware.");
+      return false;
+    }
+    // delete any old text in the cert first
+    deleteCertificate(certificateName);
     // pull the namespace out of the name
     char certNamespace[12];
     memcpy(certNamespace, certificateName, strlen(certificateName) - 2);
@@ -322,8 +270,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // operation = 2 for write
     // type = 8 for binary (ie, the certificates must be stored in binary,
     // though you can enter them as strings)
-    // Write a new value for client_cert.0 key into client_cert namespace (That
-    // is, update the 0th client certificate)
+    // Write a new value for client_cert.0 key into client_cert namespace
+    // (That is, update the 0th client certificate)
     // AT+SYSMFG=2,"client_cert","client_cert.0",8,1164
     // Wait until AT command port returns ``>``, and then write 1164 bytes
     sendAT(GF("+SYSMFG=2,\""), certNamespace, GF("\",\""), certificateName,
@@ -334,6 +282,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     if (waitResponse(10000L) != 1) { return false; }
     return true;
   }
+
   bool deleteCertificateImpl(const char* certificateName) {
     // pull the namespace out of the name
     char certNamespace[12];
@@ -345,6 +294,25 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     sendAT(GF("+SYSMFG=0,\""), certNamespace, GF("\",\""), certificateName,
            '"');
     return waitResponse() == 1;
+  }
+
+  bool convertCertificateImpl(CertificateType cert_type, const char*) {
+    if (cert_type == CLIENT_PSK || cert_type == CLIENT_PSK_IDENTITY) {
+      DBG("### The ESP32 does not support SSL using pre-shared keys with AT "
+          "firmware.");
+      return false;
+    }
+    return true;  // no conversion needed on the ESP32
+  }
+
+  bool convertClientCertificatesImpl(const char*, const char*) {
+    return true;  // no conversion needed on the ESP32
+  }
+
+  bool convertPSKandIDImpl(const char*, const char*) {
+    DBG("### The ESP32 does not support SSL using pre-shared keys with AT "
+        "firmware.");
+    return false;
   }
 
   /*
@@ -560,7 +528,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
                     bool ssl = false, int timeout_s = 75) {
-    uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+    uint32_t timeout_ms    = ((uint32_t)timeout_s) * 1000;
     uint8_t  requested_mux = *mux;
     if (ssl) {
       if (!(requested_mux < TINY_GSM_MUX_COUNT)) {
@@ -586,10 +554,17 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
         }
       }
 
-        // SSL certificate checking will not work without a valid timestamp!
+      if (sslAuthModes[requested_mux] == PRE_SHARED_KEYS) {
+        DBG("### The ESP32 does not support SSL using pre-shared keys with "
+            "AT firmware.");
+        return false;
+      }
+
+      // SSL certificate checking will not work without a valid timestamp!
       if (sockets[requested_mux] != nullptr &&
-          sockets[requested_mux]->_sslAuthMode >= 1 &&
-          sockets[requested_mux]->_sslAuthMode <= 3 &&
+          (sslAuthModes[requested_mux] == CLIENT_VALIDATION ||
+           sslAuthModes[requested_mux] == CA_VALIDATION ||
+           sslAuthModes[requested_mux] == MUTUAL_AUTHENTICATION) &&
           !waitForTimeSync(timeout_s)) {
         DBG("### WARNING: The module timestamp must be valid for SSL auth. "
             "Please use setTimeZone(...) or NTPServerSync(...) to enable "
@@ -597,61 +572,78 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
         return false;
       }
 
-        // configure SSL authentication type and in-use certificates
-        // AT+CIPSSLCCONF=<link ID>,<auth_mode>[,<pki_number>][,<ca_number>]
-        // <link ID>: ID of the connection (0 ~ max). For multiple connections,
-        // if the value is max, it means all connections. By default, max is 5.
-        // <auth_mode>:
-        //     0: no authentication. In this case <pki_number> and <ca_number>
-        //     are not required.
-        //        - SRGD Note: You do not need to load any certificates onto
-        //        your device for this. Not all servers will accept it.
-        //     1: the client provides the client certificate for the server to
-        //     verify.
-        //        - SRGD Note: I do not believe this is commonly used. To use
-        //        this, you must load a client certificate and a client key onto
-        //        your device.
-        //     2: the client loads CA certificate to verify the server’s
-        //     certificate.
-        //        - SRGD Note: This is a common authentication type sed by
-        //        browsers, where the browser verifies the server's certificate.
-        //        For this to work, you must load either the server's
-        //        intermediate or parent certificate onto your device.
-        //     3: mutual authentication.
-        //        - SRGD Note: This is used by AWS IoT Core and other IoT
-        //        services. In this case you must load 3 certs to your device:
-        //        The servers CA cert, the client cert, and the client key.
-        // <pki_number>: the index of certificate and private key. If there is
-        // only one certificate and private key, the value should be 0.
-        //    PKI - A public key infrastructure (PKI) is a set of roles,
-        //    policies, hardware, software and procedures needed to create,
-        //    manage, distribute, use, store and revoke digital certificates and
-        //    manage public-key encryption.
-        // <ca_number>: the index of CA (certificate authority certificate =
-        // server's certificate). If there is only one CA, the value should be
-        // 0.
-        // The PKI number and CA number to use are based on what certificates
-        // were (or were not) put into the customized certificate partitions.
-        // The default firmware comes with espressif certificates in slots 0
-        // and 1.
+      // configure SSL authentication type and in-use certificates
+      // AT+CIPSSLCCONF=<link ID>,<auth_mode>[,<pki_number>][,<ca_number>]
+      // <link ID>: ID of the connection (0 ~ max). For multiple connections,
+      // if the value is max, it means all connections. By default, max is 5.
+      // <auth_mode>:
+      //     0: no authentication. In this case <pki_number> and <ca_number>
+      //     are not required.
+      //        - SRGD Note: You do not need to load any certificates onto
+      //        your device for this. Not all servers will accept it.
+      //     1: the client provides the client certificate for the server to
+      //     verify.
+      //        - SRGD Note: I do not believe this is commonly used. To use
+      //        this, you must load a client certificate and a client key onto
+      //        your device.
+      //     2: the client loads CA certificate to verify the server’s
+      //     certificate.
+      //        - SRGD Note: This is a common authentication type sed by
+      //        browsers, where the browser verifies the server's certificate.
+      //        For this to work, you must load either the server's
+      //        intermediate or parent certificate onto your device.
+      //     3: mutual authentication.
+      //        - SRGD Note: This is used by AWS IoT Core and other IoT
+      //        services. In this case you must load 3 certs to your device:
+      //        The servers CA cert, the client cert, and the client key.
+      // <pki_number>: the index of certificate and private key. If there is
+      // only one certificate and private key, the value should be 0.
+      //    PKI - A public key infrastructure (PKI) is a set of roles,
+      //    policies, hardware, software and procedures needed to create,
+      //    manage, distribute, use, store and revoke digital certificates and
+      //    manage public-key encryption.
+      // <ca_number>: the index of CA (certificate authority certificate =
+      // server's certificate). If there is only one CA, the value should be
+      // 0.
+      // The PKI number and CA number to use are based on what certificates
+      // were (or were not) put into the customized certificate partitions.
+      // The default firmware comes with espressif certificates in slots 0
+      // and 1.
       if (sockets[requested_mux] == nullptr ||
-          (sockets[requested_mux]->_sslAuthMode != 1 &&
-           sockets[requested_mux]->_sslAuthMode != 2 &&
-           sockets[requested_mux]->_sslAuthMode != 3)) {
+          (sslAuthModes[requested_mux] == NO_VALIDATION)) {
         sendAT(GF("+CIPSSLCCONF="), requested_mux, GF(",0"));
       } else {
+        uint8_t _pkiIndex = 0;
+        uint8_t _caIndex  = 0;
+        char    tempbuf[2];
+        // extract the cert number from the name
+        if (CAcerts[requested_mux] != nullptr) {
+          memcpy(tempbuf,
+                 CAcerts[requested_mux] + strlen(CAcerts[requested_mux]) - 1,
+                 1);
+          tempbuf[1] = '\0';
+          _pkiIndex  = atoi(tempbuf);
+        }
+        // extract the cert number from the name
+        if (clientCerts[requested_mux] != nullptr) {
+          memcpy(tempbuf,
+                 clientCerts[requested_mux] +
+                     strlen(clientCerts[requested_mux]) - 1,
+                 1);
+          tempbuf[1] = '\0';
+          _caIndex   = atoi(tempbuf);
+        }
         sendAT(GF("+CIPSSLCCONF="), requested_mux, ',',
-               sockets[requested_mux]->_sslAuthMode, ',',
-               sockets[requested_mux]->_pkiIndex, ',',
-               sockets[requested_mux]->_caIndex);
+               static_cast<uint8_t>(sslAuthModes[requested_mux]), ',',
+               _pkiIndex, ',', _caIndex);
       }
-        waitResponse();
+      waitResponse();
 
-        // set the SSL SNI (server name indication)
-        // Multiple connections: (AT+CIPMUX=1)
-        // AT+CIPSSLCSNI=<link ID>,<"sni">
-        sendAT(GF("+CIPSSLCSNI="), requested_mux, GF(",\""), host, GF("\""));
-        waitResponse();
+      // set the SSL SNI (server name indication)
+      // Multiple connections: (AT+CIPMUX=1)
+      // AT+CIPSSLCSNI=<link ID>,<"sni">
+      sendAT(GF("+CIPSSLCSNI="), requested_mux, GF(",\""), host, GF("\""));
+      waitResponse();
     }
 
     // Make the connection
@@ -708,10 +700,10 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
  public:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+IPD,"))) {
-      int8_t  mux            = streamGetIntBefore(',');
-      int16_t len            = streamGetIntBefore(':');
-      size_t  len_orig       = len;
-      size_t  prev_size      = sockets[mux]->rx.size();
+      int8_t  mux       = streamGetIntBefore(',');
+      int16_t len       = streamGetIntBefore(':');
+      size_t  len_orig  = len;
+      size_t  prev_size = sockets[mux]->rx.size();
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());

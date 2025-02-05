@@ -40,7 +40,14 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmSSL.tpp"
+
+// NOTE: This module supports SSL, but we do not support any certificate
+// management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
+// so as not to waste space.
+// See the example examples/more/SIM800_SslSetCert/SIM800_SslSetCert.ino for an
+// example of how to manage the certificates
+#define TINY_GSM_MODEM_HAS_SSL
+
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
@@ -120,7 +127,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux, GF(",1"));  // Quick close
       sock_connected = false;
@@ -141,6 +148,17 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    * Inner Secure Client
    */
  public:
+#if 0
+  class GsmClientSecureSim800 : public GSMSecureClient<GsmClientSim800> {
+   public:
+    friend class TinyGsmSim800;
+    friend class GsmClientSim800;
+    GsmClientSecureSim800() {}
+
+    explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 0)
+        : GSMSecureClient<GsmClientSim800>(modem, mux) {}
+#endif
+
   class GsmClientSecureSim800 : public GsmClientSim800 {
    public:
     GsmClientSecureSim800() {}
@@ -300,7 +318,18 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // Follows functions as inherited from TinyGsmSSL.tpp
+  // This module supports SSL, but there are no certificate management functions
+  // are supported yet.
+  // If you wish to add certificate management for this module you must (in
+  // addition to adding the functions here):
+  //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
+  //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
+  //  - Add `public TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>,` to the
+  //    constructor's initializer list
+  //  - Add `friend class TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>;` to the
+  //    friend list.
+  //  - Remove the #if 0 directive and change the constructor of the secure
+  //    inner client
 
   /*
    * WiFi functions

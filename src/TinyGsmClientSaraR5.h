@@ -56,7 +56,7 @@ enum SaraR5RegStatus {
   REG_SMS_ONLY_HOME    = 6,
   REG_SMS_ONLY_ROAMING = 7,
   REG_EMERGENCY_ONLY =
-      8,  // blox AT command manual states: attached for emergency bearer
+      8,  // ublox AT command manual states: attached for emergency bearer
           // services only (see 3GPP TS 24.008 [85] and 3GPP TS 24.301 [120]
           // that specify the condition when the MS is considered as attached
           // for emergency bearer services)
@@ -162,6 +162,15 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
  public:
   class GsmClientSecureR5 : public GsmClientSaraR5 {
    public:
+#if 0
+   // These will be needed if certificate management is ever added
+    // friend class TinyGsmR5;
+    // friend class GsmClientR5;
+    // GsmClientSecureR5() {}
+    // explicit GsmClientSecureR5(TinyGsmSaraR5& modem, uint8_t mux = 0)
+    //     : GSMSecureClient<GsmClientSaraR5>(modem, mux) {}
+#endif
+
     GsmClientSecureR5() {}
 
     explicit GsmClientSecureR5(TinyGsmSaraR5& modem, uint8_t mux = 0)
@@ -349,12 +358,14 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
   // are supported yet.
   // If you wish to add certificate management for this module you must (in
   // addition to adding the functions here):
-  // Add `#include "TinyGsmSSL.tpp` to the top of the file
-  // Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  // Add `public TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>,` to the
-  // constructor's initializer list
-  // Add `friend class TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>;` to the
-  // friend list.
+  //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
+  //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
+  //  - Add `public TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>,` to the
+  //    constructor's initializer list
+  //  - Add `friend class TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>;` to the
+  //    friend list.
+  //  - Remove the #if 0 directive and change the constructor of the secure
+  //    inner client
 
   /*
    * WiFi functions

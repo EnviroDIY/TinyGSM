@@ -110,6 +110,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       return true;
     }
 
+   public:
     virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
@@ -144,17 +145,15 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureBG96 : public GsmClientBG96 {
+  class GsmClientSecureBG96 : public GSMSecureClient<GsmClientBG96> {
    public:
+    friend class TinyGsmBG96;
+    friend class GsmClientBG96;
     GsmClientSecureBG96() {}
 
     explicit GsmClientSecureBG96(TinyGsmBG96& modem, uint8_t mux = 0)
-        : GsmClientBG96(modem, mux) {
+        : GSMSecureClient<GsmClientBG96>(modem, mux) {
       ssl_sock = true;
-    }
-
-    bool setCertificate(const String& certificateName) {
-      return at->setCertificate(certificateName, mux);
     }
 
     void stop(uint32_t maxWaitMs) override {
@@ -623,9 +622,15 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     bool     ssl        = sockets[mux]->ssl_sock;
 
     if (ssl) {
+      // NOTE: The SSL context (<sslctxID>) is not the same as the connection
+      // identifier.  The SSL context is the grouping of SSL settings, the
+      // connection identifier is the mux/socket number.
+      // For this, we will *always* configure SSL context 0, just as we always
+      // configured PDP context 1.
+
       // set the ssl version
-      // AT+QSSLCFG="sslversion",<ctxindex>,<sslversion>
-      // <ctxindex> PDP context identifier
+      // AT+QSSLCFG="sslversion",<sslctxID>,<sslversion>
+      // <sslctxID> SSL Context ID, range 0-5; we always use 0
       // <sslversion> 0: QAPI_NET_SSL_3.0
       //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
       //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
@@ -635,8 +640,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       sendAT(GF("+QSSLCFG=\"sslversion\",0,3"));  // TLS 1.2
       if (waitResponse(5000L) != 1) return false;
       // set the ssl cipher_suite
-      // AT+QSSLCFG="ciphersuite",<ctxindex>,<cipher_suite>
-      // <ctxindex> PDP context identifier
+      // AT+QSSLCFG="ciphersuite",<sslctxID>,<cipher_suite>
+      // <sslctxID> SSL Context ID, range 0-5; we always use 0
       // <cipher_suite> 0: TODO
       //              1: TODO
       //              0X0035: TLS_RSA_WITH_AES_256_CBC_SHA
@@ -645,37 +650,61 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       sendAT(GF(
           "+QSSLCFG=\"ciphersuite\",0,0X0035"));  // TLS_RSA_WITH_AES_256_CBC_SHA
       if (waitResponse(5000L) != 1) return false;
+
       // set the ssl sec level
-      // AT+QSSLCFG="seclevel",<ctxindex>,<sec_level>
-      // <ctxindex> PDP context identifier
-      // <sec_level> 0: TODO
-      //              1: TODO
-      //              0X0035: TLS_RSA_WITH_AES_256_CBC_SHA
-      //              0XFFFF: ALL
-      // NOTE:  despite docs using caps, "sslversion" must be in lower case
-      sendAT(GF("+QSSLCFG=\"seclevel\",0,1"));
+      // AT+QSSLCFG="seclevel",<sslctxID>,<sec_level>
+      // <sslctxID> SSL Context ID, range 0-5; we always use 0
+      // <sec_level> 0: No authentication (NO_VALIDATION)
+      //             1: Manage server authentication (CA_VALIDATION)
+      //             2: Manage server and client authentication if requested by
+      //             the remote server (MUTUAL_AUTHENTICATION)
+      switch (sslAuthModes[mux]) {
+        case CA_VALIDATION: {
+          sendAT(GF("+QSSLCFG=\"seclevel\",0,1"));
+          break;
+        }
+        case MUTUAL_AUTHENTICATION: {
+          sendAT(GF("+QSSLCFG=\"seclevel\",0,2"));
+          break;
+        }
+        default: {
+          sendAT(GF("+QSSLCFG=\"seclevel\",0,0"));
+          break;
+        }
+      }
       if (waitResponse(5000L) != 1) return false;
 
-
-      if (certificates[mux] != "") {
-        // apply the correct certificate to the connection
-        // AT+QSSLCFG="cacert",<ctxindex>,<caname>
-        // <ctxindex> PDP context identifier
-        // <certname> certificate name
-
-        // sendAT(GF("+CASSLCFG="), mux, ",CACERT,\"",
-        // certificates[mux].c_str(),
-        //        "\"");
-        sendAT(GF("+QSSLCFG=\"cacert\",0,\""), certificates[mux].c_str(),
-               GF("\""));
+      // apply the correct certificates to the connection
+      if (CAcerts[mux] == nullptr &&
+          (sslAuthModes[mux] == CA_VALIDATION ||
+           sslAuthModes[mux] == MUTUAL_AUTHENTICATION)) {
+        // AT+QSSLCFG="cacert",<sslctxID>,<cacertpath>
+        // <sslctxID> SSL Context ID, range 0-5; we always use 0
+        // <cacertpath> certificate file path
+        sendAT(GF("+QSSLCFG=\"cacert\",0,\""), CAcerts[mux], GF("\""));
+        if (waitResponse(5000L) != 1) return false;
+      }
+      // SRGD WARNING: UNTESTED!!
+      if (clientCerts[mux] != nullptr &&
+          (sslAuthModes[mux] == MUTUAL_AUTHENTICATION)) {
+        // AT+QSSLCFG="clientcert",<sslctxID>,<client_cert_path>
+        sendAT(GF("+QSSLCFG=\"clientcert\",0,\""), clientCerts[mux], GF("\""));
+        if (waitResponse(5000L) != 1) return false;
+      }
+      // SRGD WARNING: UNTESTED!!
+      if (clientKeys[mux] != nullptr &&
+          (sslAuthModes[mux] == MUTUAL_AUTHENTICATION)) {
+        // AT+QSSLCFG="clientkey",<sslctxID>[,<client_key_path>]
+        sendAT(GF("+QSSLCFG=\"clientkey\",0,\""), clientKeys[mux], GF("\""));
         if (waitResponse(5000L) != 1) return false;
       }
 
-      // <PDPcontextID>(1-16), <connectID>(0-11),
-      // "TCP/UDP/TCP LISTENER/UDPSERVICE", "<IP_address>/<domain_name>",
-      // <remote_port>,<local_port>,<access_mode>(0-2; 0=buffer)
+      // AT+QSSLOPEN=<pdpctxID>,<sslctxID>,<clientID>,<serveraddr>,<server_port>[,<access_mode>]
+      // <PDPcontextID>(1-16) - we always use 1, which we configured above
+      // <sslctxID> SSL Context ID, range 0-5; we always use 0
+      // <connectID>(0-11), - socket index (mux)
       // may need previous AT+QSSLCFG
-      sendAT(GF("+QSSLOPEN=1,1,"), mux, GF(",\""), host, GF("\","), port,
+      sendAT(GF("+QSSLOPEN=1,0,"), mux, GF(",\""), host, GF("\","), port,
              GF(",0"));
       waitResponse();
 
@@ -733,7 +762,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       sendAT(GF("+QIRD="), mux, ',', (uint16_t)size);
       if (waitResponse(GF("+QIRD:")) != 1) { return 0; }
     }
-    int16_t len = streamGetIntBefore('\n');
+    int16_t len             = streamGetIntBefore('\n');
     bool    chars_remaining = true;
     while (len-- && chars_remaining) {
       chars_remaining = moveCharFromStreamToFifo(mux);

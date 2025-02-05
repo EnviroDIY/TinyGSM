@@ -106,16 +106,14 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureSIM7080 : public GsmClientSim7080 {
+  class GsmClientSecureSIM7080 : public GSMSecureClient<GsmClientSim7080> {
    public:
+    friend class TinyGsmSIM7080;
+    friend class GsmClientSIM7080;
     GsmClientSecureSIM7080() {}
 
     explicit GsmClientSecureSIM7080(TinyGsmSim7080& modem, uint8_t mux = 0)
-        : GsmClientSim7080(modem, mux) {}
-
-    bool setCertificate(const String& certificateName) {
-      return at->setCertificate(certificateName, mux);
-    }
+        : GSMSecureClient<GsmClientSim7080>(modem, mux) {}
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
@@ -254,7 +252,116 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // Follows functions as inherited from TinyGsmSSL.tpp
+  // The name of the certificate/key/password file. The file name must
+  // have type like ".pem" or ".der".
+  // The certificate like - const char ca_cert[] PROGMEM =  R"EOF(-----BEGIN...
+  // len of certificate like - sizeof(ca_cert)
+  // NOTE: Uploading the certificate only happens by filename, the type of
+  // certificate does not matter here
+  bool addCertificateImpl(CertificateType cert_type,
+                          const char* certificateName, const char* cert,
+                          const uint16_t len) {
+    // Initialize AT relate to file system functions
+    sendAT(GF("+CFSINIT"));
+    if (waitResponse() != 1) { return false; }
+
+    // Write File to the Flash Buffer Allocated by CFSINIT
+    // AT+CFSWFILE=<index>,<file name>,<mode>,<file size>,<input time>
+    //<index> 3: "/customer/" (always use customer for certificates)
+    //<file name> File name length should less or equal 230 characters
+    // <mode> 0: If the file already existed, write the data at the beginning of
+    //           the file. - We always do this
+    //        1: If the file already existed, add the data at the end of the
+    //        file.
+    // <file size> File size should be less than 10240 bytes
+    // <input time> Millisecond, should send file during this period or you
+    // can’t send file when timeout. The value should be less than 10000 ms.
+    // <len_filename> Integer type. Maximum length of parameter <file name>.
+    sendAT(GF("+CFSWFILE=3\""), certificateName, GF("\",0,"), len,
+           GF(",10000,"), strlen(certificateName));
+    if (waitResponse() != 1) { return false; }
+
+    stream.write(cert, len);
+    stream.flush();
+
+    // Release AT relates to file system functions.
+    sendAT(GF("+CFSTERM"));
+    return waitResponse() == 1;
+  }
+
+  // NOTE: Deleting the certificate only happens by filename, the type of
+  // certificate does not matter here
+  bool deleteCertificateImpl(CertificateType,
+                             const char* certificateName) {  // todo test
+    // Initialize AT relate to file system functions
+    sendAT(GF("+CFSINIT"));
+    if (waitResponse() != 1) { return false; }
+
+    // Delete file
+    sendAT(GF("+CFSDFILE=3"), certificateName);
+    if (waitResponse() != 1) { return false; }
+
+    // Release AT relates to file system functions.
+    sendAT(GF("+CFSTERM"));
+    return waitResponse() == 1;
+  }
+
+
+  bool convertCertificateImpl(CertificateType cert_type, const char* filename) {
+    // Convert certificate into something the module will use and save it to
+    // file
+    //  AT+CSSLCFG="CONVERT",<ssltype>,<cname>[,<keyname>[,<passkey>]]
+    // <ssltype> 2=QAPI_NET_SSL_CA_LIST_E
+    // <cname> name of cert file
+    switch (cert_type) {
+      case CLIENT_PSK:
+      case CLIENT_PSK_IDENTITY: {
+        DBG("### WARNING: The PSK and PSK identity must be converted together "
+            "on the SIM7080.  Please use the convertPSKandID(..) function.");
+        return false;
+      }
+      case CLIENT_CERTIFICATE:
+      case CLIENT_KEY: {
+        DBG("### WARNING: The client certificate and matching key must be "
+            "converted together on the SIM7080.  Please use the "
+            "convertClientCertificates(..) function.");
+        return false;
+      }
+      case CA_CERTIFICATE:
+      default: {
+        sendAT(GF("+CSSLCFG=\"CONVERT\",2,\""), filename, '"');
+        return waitResponse() == 1;
+        // After conversion, the AT manual suggests you delete the files!
+      }
+    }
+  }
+
+  bool convertClientCertificatesImpl(const char* client_cert_name,
+                                     const char* client_cert_key) {
+    // Convert certificate into something the module will use and save it to
+    // file
+    //  AT+CSSLCFG="CONVERT",<ssltype>,<cname>[,<keyname>[,<passkey>]]
+    // <ssltype> 1=QAPI_NET_SSL_CERTIFICATE_E
+    // <cname> name of cert file
+    // <keyname> name of key file (for PKI cert/key pairs)
+    sendAT(GF("+CSSLCFG=\"CONVERT\",1,\""), client_cert_name, GF("\",\""),
+           client_cert_key, '"');
+    return waitResponse() == 1;
+    // After conversion, the AT manual suggests you delete the files!
+  }
+
+  bool convertPSKandIDImpl(const char* psk, const char* pskIdent) {
+    // Convert certificate into something the module will use and save it to
+    // file
+    //  AT+CSSLCFG="CONVERT",<ssltype>,<cname>[,<keyname>[,<passkey>]]
+    // <ssltype> 3=QAPI_NET_SSL_PSK_TABLE_E
+    // <cname> name of cert file
+    // <keyname> name of key file (for PKI cert/key pairs)
+    // <passkey>
+    sendAT(GF("+CSSLCFG=\"CONVERT\",3,\""), pskIdent, GF("\":\""), psk, '"');
+    return waitResponse() == 1;
+    // After conversion, the AT manual suggests you delete the files!
+  }
 
   /*
    * WiFi functions
@@ -449,13 +556,16 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     sendAT(GF("+CACID="), mux);
     if (waitResponse(timeout_ms) != 1) return false;
 
+    // NOTE: The SSL context (<ctxindex>) is not the same as the connection
+    // identifier.  The SSL context is the grouping of SSL settings, the
+    // connection identifier is the mux/socket number.
+    // For this, we will *always* configure SSL context 0, just as we always
+    // configured PDP context 1.
 
     if (ssl) {
       // set the ssl version
       // AT+CSSLCFG="SSLVERSION",<ctxindex>,<sslversion>
-      // <ctxindex> PDP context identifier - for reasons not understood by me,
-      //            use PDP context identifier of 0 for what we defined as 1 in
-      //            the gprsConnect function
+      // <ctxindex> SSL context identifier - we always use 0
       // <sslversion> 0: QAPI_NET_SSL_PROTOCOL_UNKNOWN
       //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
       //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
@@ -476,33 +586,65 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     waitResponse();
 
     if (ssl) {
-      // set the PDP context to apply SSL to
-      // AT+CSSLCFG="CTXINDEX",<ctxindex>
-      // <ctxindex> PDP context identifier - for reasons not understood by me,
-      //            use PDP context identifier of 0 for what we defined as 1 in
-      //            the gprsConnect function
-      // NOTE:  despite docs using "CRINDEX" in all caps, the module only
-      // accepts the command "ctxindex" and it must be in lower case
+      // Query all the parameters that have been set for this SSL context
+      // TODO(@SRGDamia1): Skip this?
+      // AT+CSSLCFG="CTXINDEX" ,<ctxindex>
+      // <ctxindex> SSL context identifier - we always use 0
+      // NOTE:  despite docs using "CTXINDEX" in all caps, the module only
+      // accepts the command "CTXINDEX" and it must be in lower case
       sendAT(GF("+CSSLCFG=\"ctxindex\",0"));
       if (waitResponse(5000L, GF("+CSSLCFG:")) != 1) return false;
       streamSkipUntil('\n');  // read out the certificate information
       waitResponse();
 
-      if (certificates[mux] != "") {
-        // apply the correct certificate to the connection
+      // apply the correct certificates to the connection
+      if (CAcerts[mux] != nullptr &&
+          (sslAuthModes[mux] == CA_VALIDATION ||
+           sslAuthModes[mux] == MUTUAL_AUTHENTICATION)) {
         // AT+CASSLCFG=<cid>,"CACERT",<caname>
         // <cid> Application connection ID (set with AT+CACID above)
         // <certname> certificate name
-        sendAT(GF("+CASSLCFG="), mux, ",CACERT,\"", certificates[mux].c_str(),
-               "\"");
+        sendAT(GF("+CASSLCFG="), mux, ",CACERT,\"", CAcerts[mux], "\"");
+        if (waitResponse(5000L) != 1) return false;
+      }
+      // SRGD WARNING: UNTESTED!!
+      if (clientCerts[mux] != nullptr &&
+          (sslAuthModes[mux] == MUTUAL_AUTHENTICATION)) {
+        // AT+CASSLCFG=<cid>,"CERT",<certname>
+        // <cid> Application connection ID (set with AT+CACID above)
+        // <certname> Alphanumeric ASCII text string up to 64 characters.
+        // Client certificate name that has been configured by AT+CSSLCFG.
+        // NOTE: The AT+CSSLCFG convert function for the client cert combines
+        // the certificate and the key in a single certificate name
+        sendAT(GF("+CASSLCFG="), mux, GF("\"CERT\",\""), clientCerts[mux],
+               GF("\""));
+        if (waitResponse(5000L) != 1) return false;
+      }
+      // SRGD WARNING: UNTESTED!!
+      if (psKeys[mux] != nullptr &&
+          (sslAuthModes[mux] == CLIENT_PSK_IDENTITY)) {
+        // AT+CASSLCFG=<cid>,"PSKTABLE",<pskname>
+        // <cid> Application connection ID (set with AT+CACID above)
+        // <pskname> Alphanumeric ASCII text string up to 64 characters. PSK
+        // table name that has been configured by AT+CSSLCFG. File content
+        // format is <identity>:<hex string>.
+        sendAT(GF("+CASSLCFG=\"PSKTABLE\","), mux, GF(",\""), clientKeys[mux],
+               GF("\""));
         if (waitResponse(5000L) != 1) return false;
       }
 
+      // set the connection identifier that the above SSL context settings
+      // apply to (ie, tie connection mux to SSL context)
+      // AT+CASSLCFG=<cid>,"CRINDEX",<crindex>
+      // <cid> Application connection ID (set with AT+CACID above)
+      // <crindex> SSL context identifier (<ctxindex>) - we always use 0
+      sendAT(GF("+CASSLCFG="), mux, ',', GF("\"CRINDEX\",0"));
+      waitResponse();
+
       // set the SSL SNI (server name indication)
       // AT+CSSLCFG="SNI",<ctxindex>,<servername>
-      // <ctxindex> PDP context identifier - for reasons not understood by me,
-      //            use PDP context identifier of 0 for what we defined as 1 in
-      //            the gprsConnect function
+      // <ctxindex> SSL context identifier - we always use 0
+      // <servername> Sever name (we use the host)
       // NOTE:  despite docs using caps, "sni" must be in lower case
       sendAT(GF("+CSSLCFG=\"sni\",0,"), GF("\""), host, GF("\""));
       waitResponse();
@@ -511,7 +653,8 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // actually open the connection
     // AT+CAOPEN=<cid>,<pdp_index>,<conn_type>,<server>,<port>[,<recv_mode>]
     // <cid> TCP/UDP identifier
-    // <pdp_index> Index of PDP connection; we set up PCP context 1 above
+    // <pdp_index> Index of PDP connection; we set up PCP context 1 above, but
+    // must use 0 here
     // <conn_type> "TCP" or "UDP"
     // <recv_mode> 0: The received data can only be read manually using
     // AT+CARECV=<cid>

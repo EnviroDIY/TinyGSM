@@ -135,7 +135,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     void stop(uint32_t maxWaitMs) {
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
-      // We want to use an async socket close because the syncrhonous close of
+      // We want to use an async socket close because the synchronous close of
       // an open socket is INCREDIBLY SLOW and the modem can freeze up.  But we
       // only attempt the async close if we already KNOW the socket is open
       // because calling the async close on a closed socket and then attempting
@@ -178,6 +178,16 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
    * Inner Secure Client
    */
  public:
+#if 0
+   class GsmClientSecureR4 : public GSMSecureClient<GsmClientSaraR4> {
+   public:
+    friend class TinyGsmR4;
+    friend class GsmClientR4;
+    GsmClientSecureR4() {}
+    explicit GsmClientSecureR4(TinyGsmSaraR4& modem, uint8_t mux = 0)
+        : GSMSecureClient<GsmClientSaraR4>(modem, mux) {}
+#endif
+
   class GsmClientSecureR4 : public GsmClientSaraR4 {
    public:
     GsmClientSecureR4() {}
@@ -358,12 +368,14 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   // are supported yet.
   // If you wish to add certificate management for this module you must (in
   // addition to adding the functions here):
-  // Add `#include "TinyGsmSSL.tpp` to the top of the file
-  // Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  // Add `public TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>,` to the
-  // constructor's initializer list
-  // Add `friend class TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>;` to the
-  // friend list.
+  //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
+  //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
+  //  - Add `public TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>,` to the
+  //    constructor's initializer list
+  //  - Add `friend class TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>;` to the
+  //    friend list.
+  //  - Remove the #if 0 directive and change the constructor of the secure
+  //    inner client
 
   /*
    * WiFi functions

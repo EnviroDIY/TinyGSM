@@ -207,7 +207,7 @@ class TinyGsmTCP {
 #elif defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
       // Reads characters out of the TinyGSM fifo, and from the modem chips
       // internal fifo if available, also double checking with the modem if
-      // data has arrived without issuing a UURC.
+      // data has arrived without issuing a URC.
       at->maintain();
       while (cnt < size) {
         size_t chunk = TinyGsmMin(size - cnt, rx.size());
