@@ -74,6 +74,12 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] == nullptr) {
         this->mux              = mux;
         at->sockets[this->mux] = this;
+        at->sslAuthModes[mux]  = NO_VALIDATION;
+        at->CAcerts[mux]       = nullptr;
+        at->clientCerts[mux]   = nullptr;
+        at->clientKeys[mux]    = nullptr;
+        at->pskIdents[mux]     = nullptr;  // identity for PSK cipher suites
+        at->psKeys[mux]        = nullptr;  // key in hex for PSK cipher suites
       } else {
         this->mux = static_cast<uint8_t>(-1);
       }
@@ -97,7 +103,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       TINY_GSM_YIELD();
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;

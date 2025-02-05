@@ -124,7 +124,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+USOCL="), mux);
       at->waitResponse();  // should return within 1s

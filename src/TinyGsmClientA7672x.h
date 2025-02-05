@@ -113,7 +113,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
@@ -162,7 +162,7 @@ bool addCertificate(const char* certificateName, const char* cert,
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CCHCLOSE="), mux);  //, GF(",1"));  // Quick close
       sock_connected = false;

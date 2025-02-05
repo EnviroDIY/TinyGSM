@@ -94,7 +94,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       TINY_GSM_YIELD();
       at->sendAT(GF("+TCPCLOSE="), mux);
       sock_connected = false;

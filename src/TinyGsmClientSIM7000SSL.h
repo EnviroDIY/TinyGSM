@@ -86,7 +86,7 @@ class TinyGsmSim7000SSL
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CACLOSE="), mux);
       sock_connected = false;

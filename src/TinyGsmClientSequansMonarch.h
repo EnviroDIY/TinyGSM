@@ -122,7 +122,7 @@ class TinyGsmSequansMonarch
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+SQNSH="), mux);
       sock_connected = false;
