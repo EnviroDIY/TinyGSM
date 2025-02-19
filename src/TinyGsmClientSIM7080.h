@@ -258,9 +258,8 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   // len of certificate like - sizeof(ca_cert)
   // NOTE: Uploading the certificate only happens by filename, the type of
   // certificate does not matter here
-  bool addCertificateImpl(CertificateType cert_type,
-                          const char* certificateName, const char* cert,
-                          const uint16_t len) {
+  bool addCertificateImpl(CertificateType, const char* certificateName,
+                          const char* cert, const uint16_t len) {
     // Initialize AT relate to file system functions
     sendAT(GF("+CFSINIT"));
     if (waitResponse() != 1) { return false; }
@@ -621,8 +620,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
-      if (psKeys[mux] != nullptr &&
-          (sslAuthModes[mux] == CLIENT_PSK_IDENTITY)) {
+      if (psKeys[mux] != nullptr && (sslAuthModes[mux] == PRE_SHARED_KEYS)) {
         // AT+CASSLCFG=<cid>,"PSKTABLE",<pskname>
         // <cid> Application connection ID (set with AT+CACID above)
         // <pskname> Alphanumeric ASCII text string up to 64 characters. PSK

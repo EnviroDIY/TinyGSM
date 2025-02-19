@@ -580,11 +580,11 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
       // configure SSL authentication type and in-use certificates
       // AT+CIPSSLCCONF=<link ID>,<auth_mode>[,<pki_number>][,<ca_number>]
-      // <link ID>: ID of the connection (0 ~ max). For multiple connections,
-      // if the value is max, it means all connections. By default, max is 5.
+      // <link ID>: ID of the connection (0 ~ max). For multiple connections, if
+      // the value is max, it means all connections. By default, max is 5.
       // <auth_mode>:
-      //     0: no authentication. In this case <pki_number> and <ca_number>
-      //     are not required.
+      //     0: no authentication. In this case <pki_number> and <ca_number> are
+      //     not required.
       //        - SRGD Note: You do not need to load any certificates onto
       //        your device for this. Not all servers will accept it.
       //     1: the client provides the client certificate for the server to
@@ -604,15 +604,14 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       //        The servers CA cert, the client cert, and the client key.
       // <pki_number>: the index of certificate and private key. If there is
       // only one certificate and private key, the value should be 0.
-      //    PKI - A public key infrastructure (PKI) is a set of roles,
-      //    policies, hardware, software and procedures needed to create,
-      //    manage, distribute, use, store and revoke digital certificates and
-      //    manage public-key encryption.
+      //    PKI - A public key infrastructure (PKI) is a set of roles, policies,
+      //    hardware, software and procedures needed to create, manage,
+      //    distribute, use, store and revoke digital certificates and manage
+      //    public-key encryption.
       // <ca_number>: the index of CA (certificate authority certificate =
-      // server's certificate). If there is only one CA, the value should be
-      // 0.
-      // The PKI number and CA number to use are based on what certificates
-      // were (or were not) put into the customized certificate partitions.
+      // server's certificate). If there is only one CA, the value should be 0.
+      // The PKI number and CA number to use are based on what certificates were
+      // (or were not) put into the customized certificate partitions.
       // The default firmware comes with espressif certificates in slots 0
       // and 1.
       if (sockets[requested_mux] == nullptr ||

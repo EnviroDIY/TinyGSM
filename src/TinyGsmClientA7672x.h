@@ -349,8 +349,8 @@ bool addCertificate(const char* certificateName, const char* cert,
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
-                       const char* pwd = nullptr) {
+  bool gprsConnectImpl(const char* apn, const char* = nullptr,
+                       const char* = nullptr) {
     gprsDisconnect();
 
     // Define the PDP context

@@ -430,8 +430,7 @@ class TinyGsmSim7000SSL
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
-      if (psKeys[mux] != nullptr &&
-          (sslAuthModes[mux] == CLIENT_PSK_IDENTITY)) {
+      if (psKeys[mux] != nullptr && (sslAuthModes[mux] == PRE_SHARED_KEYS)) {
         // AT+CASSLCFG=<cid>,"psktable",<pskname>
         // <cid> Application connection ID (set with AT+CACID above)
         // <pskname> Alphanumeric ASCII text string up to 64 characters. PSK

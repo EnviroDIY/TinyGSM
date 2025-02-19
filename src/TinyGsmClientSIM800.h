@@ -46,7 +46,9 @@
 // so as not to waste space.
 // See the example examples/more/SIM800_SslSetCert/SIM800_SslSetCert.ino for an
 // example of how to manage the certificates
+#if !defined(TINY_GSM_MODEM_SIM900)
 #define TINY_GSM_MODEM_HAS_SSL
+#endif
 
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmCalling.tpp"
@@ -68,7 +70,6 @@ enum SIM800RegStatus {
 class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
                       public TinyGsmGPRS<TinyGsmSim800>,
                       public TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT>,
-                      public TinyGsmSSL<TinyGsmSim800, TINY_GSM_MUX_COUNT>,
                       public TinyGsmCalling<TinyGsmSim800>,
                       public TinyGsmSMS<TinyGsmSim800>,
                       public TinyGsmGSMLocation<TinyGsmSim800>,
@@ -78,7 +79,6 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   friend class TinyGsmModem<TinyGsmSim800>;
   friend class TinyGsmGPRS<TinyGsmSim800>;
   friend class TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmSim800, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmSim800>;
   friend class TinyGsmSMS<TinyGsmSim800>;
   friend class TinyGsmGSMLocation<TinyGsmSim800>;
