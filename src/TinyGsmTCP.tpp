@@ -56,6 +56,16 @@ class TinyGsmTCP {
     return thisModem().maintainImpl();
   }
 
+  uint8_t findFirstUnassignedMux() {
+    // Try to iterate through the assigned client sockets to find the next spot
+    // in the array of client pointers that has not been linked to an object.
+    for (int next_mux = 0; next_mux < muxCount; next_mux++) {
+      if (thisModem().sockets[next_mux] == nullptr) { return next_mux; }
+    }
+    DBG("### WARNING: No empty mux sockets found!");
+    return static_cast<uint8_t>(-1);
+  }
+
  protected:
   // destructor (protected!)
   ~TinyGsmTCP() {}
@@ -278,6 +288,11 @@ class TinyGsmTCP {
     }
     operator bool() override {
       return connected();
+    }
+
+    // destructor - need to remove self from the socket pointer array
+    virtual ~GsmClient() {
+      at->sockets[mux] = nullptr;
     }
 
     /*
