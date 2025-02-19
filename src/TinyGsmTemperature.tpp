@@ -34,17 +34,19 @@ class TinyGsmTemperature {
     return thisModem().getTemperatureImpl();
   }
 
+ protected:
+  // destructor (protected!)
+  ~TinyGsmTemperature() {}
+
   /*
    * CRTP Helper
    */
- protected:
   inline const modemType& thisModem() const {
     return static_cast<const modemType&>(*this);
   }
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
-  ~TinyGsmTemperature() {}
 
   /* =========================================== */
   /* =========================================== */

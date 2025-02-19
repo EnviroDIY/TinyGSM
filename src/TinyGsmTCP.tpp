@@ -56,17 +56,19 @@ class TinyGsmTCP {
     return thisModem().maintainImpl();
   }
 
+ protected:
+  // destructor (protected!)
+  ~TinyGsmTCP() {}
+
   /*
    * CRTP Helper
    */
- protected:
   inline const modemType& thisModem() const {
     return static_cast<const modemType&>(*this);
   }
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
-  ~TinyGsmTCP() {}
 
   /*
    * Inner Client

@@ -34,17 +34,19 @@ class TinyGsmSMS {
     return thisModem().sendSMS_UTF16Impl(number, text, len);
   }
 
+ protected:
+  // destructor (protected!)
+  ~TinyGsmSMS() {}
+
   /*
    * CRTP Helper
    */
- protected:
   inline const modemType& thisModem() const {
     return static_cast<const modemType&>(*this);
   }
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
-  ~TinyGsmSMS() {}
 
   /*
    * Utilities
