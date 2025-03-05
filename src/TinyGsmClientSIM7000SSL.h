@@ -34,10 +34,10 @@ class TinyGsmSim7000SSL
       public TinyGsmNTP<TinyGsmSim7000SSL>,
       public TinyGsmBattery<TinyGsmSim7000SSL> {
   friend class TinyGsmSim70xx<TinyGsmSim7000SSL>;
-  friend class TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmModem<TinyGsmSim7000SSL>;
   friend class TinyGsmGPRS<TinyGsmSim7000SSL>;
+  friend class TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmSim7000SSL>;
   friend class TinyGsmGSMLocation<TinyGsmSim7000SSL>;
   friend class TinyGsmGPS<TinyGsmSim7000SSL>;
@@ -107,16 +107,18 @@ class TinyGsmSim7000SSL
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureSIM7000SSL
-      : public GSMSecureClient<GsmClientSim7000SSL> {
+  class GsmClientSecureSim7000SSL
+      : public GsmClientSim7000SSL,
+        public TinyGsmSSL<TinyGsmSim7000SSL,
+                          TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    friend class TinyGsmSIM7000SSL;
-    friend class GsmClientSIM7000SSL;
-    GsmClientSecureSIM7000SSL() {}
+    GsmClientSecureSim7000SSL() {}
 
-    explicit GsmClientSecureSIM7000SSL(TinyGsmSim7000SSL& modem,
+    explicit GsmClientSecureSim7000SSL(TinyGsmSim7000SSL& modem,
                                        uint8_t            mux = 0)
-        : GSMSecureClient<GsmClientSim7000SSL>(modem, mux) {}
+        : GsmClientSim7000SSL(modem, mux),
+          TinyGsmSSL<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>::GsmSecureClient(
+              &modem, &mux) {}
 
     virtual int connect(const char* host, uint16_t port,
                         int timeout_s) override {
@@ -218,7 +220,117 @@ class TinyGsmSim7000SSL
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // Follows functions as inherited from TinyGsmSSL.tpp
+
+  //  NOTE: These functions are copied from the SIM7080 implementation. Per the
+  //  AT command manual, the commands are identical and **should** work for both
+  //  modules. BUT I (SRGDamia1) have done no testing to confirm this.
+
+  // The name of the certificate/key/password file. The file name must
+  // have type like ".pem" or ".der".
+  // NOTE: Uploading the certificate only happens by filename, the type of
+  // certificate does not matter here
+  bool addCertificateImpl(CertificateType, const char* certificateName,
+                          const char* cert, const uint16_t len) {
+    // Initialize AT relate to file system functions
+    sendAT(GF("+CFSINIT"));
+    if (waitResponse() != 1) { return false; }
+
+    // Write File to the Flash Buffer Allocated by CFSINIT
+    // AT+CFSWFILE=<index>,<file name>,<mode>,<file size>,<input time>
+    //<index> 3: "/customer/" (always use customer for certificates)
+    //<file name> File name length should less or equal 230 characters
+    // <mode> 0: If the file already existed, write the data at the beginning of
+    //           the file. - We always do this
+    //        1: If the file already existed, add the data at the end of the
+    //        file.
+    // <file size> File size should be less than 10240 bytes
+    // <input time> Millisecond, should send file during this period or you
+    // can’t send file when timeout. The value should be less than 10000 ms.
+    // <len_filename> Integer type. Maximum length of parameter <file name>.
+    sendAT(GF("+CFSWFILE=3\""), certificateName, GF("\",0,"), len,
+           GF(",10000,"), strlen(certificateName));
+    if (waitResponse() != 1) { return false; }
+
+    stream.write(cert, len);
+    stream.flush();
+
+    // Release AT relates to file system functions.
+    sendAT(GF("+CFSTERM"));
+    return waitResponse() == 1;
+  }
+
+  // NOTE: Deleting the certificate only happens by filename, the type of
+  // certificate does not matter here
+  bool deleteCertificateImpl(const char* certificateName) {  // todo test
+    // Initialize AT relate to file system functions
+    sendAT(GF("+CFSINIT"));
+    if (waitResponse() != 1) { return false; }
+
+    // Delete file
+    sendAT(GF("+CFSDFILE=3"), certificateName);
+    if (waitResponse() != 1) { return false; }
+
+    // Release AT relates to file system functions.
+    sendAT(GF("+CFSTERM"));
+    return waitResponse() == 1;
+  }
+
+
+  bool convertCertificateImpl(CertificateType cert_type, const char* filename) {
+    // Convert certificate into something the module will use and save it to
+    // file
+    //  AT+CSSLCFG="CONVERT",<ssltype>,<cname>[,<keyname>[,<passkey>]]
+    // <ssltype> 2=QAPI_NET_SSL_CA_LIST_E
+    // <cname> name of cert file
+    switch (cert_type) {
+      case CLIENT_PSK:
+      case CLIENT_PSK_IDENTITY: {
+        DBG("### WARNING: The PSK and PSK identity must be converted together "
+            "on the SIM7080.  Please use the convertPSKandID(..) function.");
+        return false;
+      }
+      case CLIENT_CERTIFICATE:
+      case CLIENT_KEY: {
+        DBG("### WARNING: The client certificate and matching key must be "
+            "converted together on the SIM7080.  Please use the "
+            "convertClientCertificates(..) function.");
+        return false;
+      }
+      case CA_CERTIFICATE:
+      default: {
+        sendAT(GF("+CSSLCFG=\"CONVERT\",2,\""), filename, '"');
+        return waitResponse() == 1;
+        // After conversion, the AT manual suggests you delete the files!
+      }
+    }
+  }
+
+  bool convertClientCertificatesImpl(const char* client_cert_name,
+                                     const char* client_cert_key) {
+    // Convert certificate into something the module will use and save it to
+    // file
+    //  AT+CSSLCFG="CONVERT",<ssltype>,<cname>[,<keyname>[,<passkey>]]
+    // <ssltype> 1=QAPI_NET_SSL_CERTIFICATE_E
+    // <cname> name of cert file
+    // <keyname> name of key file (for PKI cert/key pairs)
+    sendAT(GF("+CSSLCFG=\"CONVERT\",1,\""), client_cert_name, GF("\",\""),
+           client_cert_key, '"');
+    return waitResponse() == 1;
+    // After conversion, the AT manual suggests you delete the files!
+  }
+
+  bool convertPSKandIDImpl(const char* psk, const char* pskIdent) {
+    // Convert certificate into something the module will use and save it to
+    // file
+    //  AT+CSSLCFG="CONVERT",<ssltype>,<cname>[,<keyname>[,<passkey>]]
+    // <ssltype> 3=QAPI_NET_SSL_PSK_TABLE_E
+    // <cname> name of cert file
+    // <keyname> name of key file (for PKI cert/key pairs)
+    // <passkey>
+    sendAT(GF("+CSSLCFG=\"CONVERT\",3,\""), pskIdent, GF("\":\""), psk, '"');
+    return waitResponse() == 1;
+    // After conversion, the AT manual suggests you delete the files!
+  }
 
   /*
    * WiFi functions

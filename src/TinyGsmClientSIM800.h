@@ -149,14 +149,16 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    */
  public:
 #if 0
-  class GsmClientSecureSim800 : public GSMSecureClient<GsmClientSim800> {
+// These will be needed if certificate management functions are ever added
+  class GsmClientSecureSim800 : public GsmClientSim800,
+        public TinyGsmSSL<TinyGsmSim800, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    friend class TinyGsmSim800;
-    friend class GsmClientSim800;
     GsmClientSecureSim800() {}
 
     explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 0)
-        : GSMSecureClient<GsmClientSim800>(modem, mux) {}
+        : GsmClientSim800(modem, mux),
+          TinyGsmSSL<TinyGsmSim800, TINY_GSM_MUX_COUNT>::GsmSecureClient(
+              &modem, &mux) {}
 #endif
 
   class GsmClientSecureSim800 : public GsmClientSim800 {

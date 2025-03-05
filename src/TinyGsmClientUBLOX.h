@@ -147,13 +147,14 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
  public:
 #if 0
  // These will be needed if certificate management functions are ever added
-  class GsmClientSecureUBLOX : public GSMSecureClient<GsmClientUBLOX> {
+  class GsmClientSecureUBLOX : public GsmClientUBLOX,
+        public TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    friend class TinyGsmUBLOX;
-    friend class GsmClientUBLOX;
     GsmClientSecureUBLOX() {}
     explicit GsmClientSecureUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 0)
-        : GSMSecureClient<GsmClientUBLOX>(modem, mux) {}
+        : GsmClientUBLOX(modem, mux),
+          TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>::GsmSecureClient(
+              &modem, &mux) {}
 #endif
 
   class GsmClientSecureUBLOX : public GsmClientUBLOX {

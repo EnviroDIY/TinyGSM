@@ -268,13 +268,14 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
  public:
 #if 0
  // These will be needed if certificate management functions are ever added
-  class GsmClientSecureXBee : public GSMSecureClient<GsmClientXBee> {
+  class GsmClientSecureXBee : public GsmClientXBee,
+        public TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    friend class TinyGsmXBee;
-    friend class GsmClientXBee;
     GsmClientSecureXBee() {}
     explicit GsmClientSecureXBee(TinyGsmXBee& modem, uint8_t mux = 0)
-        : GSMSecureClient<GsmClientXBee>(modem, mux) {}
+        : GsmClientXBee(modem, mux),
+          TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>::GsmSecureClient(
+              &modem, &mux) {}
 #endif
 
   class GsmClientSecureXBee : public GsmClientXBee {

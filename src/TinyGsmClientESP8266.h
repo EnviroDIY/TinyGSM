@@ -59,7 +59,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
    public:
     GsmClientESP8266() {}
 
-    explicit GsmClientESP8266(TinyGsmESP8266& modem, uint8_t mux = -1) {
+    explicit GsmClientESP8266(TinyGsmESP8266& modem, uint8_t mux = 0) {
       init(&modem, mux);
     }
 
@@ -109,21 +109,24 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureESP8266 : public GSMSecureClient<GsmClientESP8266> {
+  class GsmClientSecureESP8266
+      : public GsmClientESP8266,
+        public TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    friend class TinyGsmESP8266;
-    friend class GsmClientESP8266;
     GsmClientSecureESP8266() {}
 
-explicit GsmClientSecureESP8266(TinyGsmESP8266& modem, uint8_t mux = 0)
-    : GSMSecureClient<GsmClientESP8266>(modem, mux) {}
+    explicit GsmClientSecureESP8266(TinyGsmESP8266& modem, uint8_t mux = 0)
+        : GsmClientESP8266(modem, mux),
+          TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>::GsmSecureClient(
+              &modem, &mux) {}
 
-int connect(const char* host, uint16_t port, int timeout_s) override {
-  stop();
-  TINY_GSM_YIELD();
-  rx.clear();
-  sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-  return sock_connected;
+    virtual int connect(const char* host, uint16_t port,
+                        int timeout_s) override {
+      stop();
+      TINY_GSM_YIELD();
+      rx.clear();
+      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
+      return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
@@ -173,7 +176,45 @@ int connect(const char* host, uint16_t port, int timeout_s) override {
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // Follows functions as inherited from TinyGsmSSL.tpp
+  // Follows functions as inherited from TinyGsmSSL.tpp for setting the
+  // certificate name and the SSL connection type, but this library does **NOT**
+  // currently support uploading or deleting certificates on the modem.
+  // Although these "functions" are not functional, they need to be implemented
+  // for the SSL template to compile.
+
+  bool addCertificateImpl(CertificateType, const char*, const char*,
+                          const uint16_t) {
+    DBG("### The TinyGSM implementation of the AT commands for the ESP8266 "
+        "does not support adding certificates to the module!  You must "
+        "manually add your certificates.");
+    return false;
+  }
+
+  bool deleteCertificateImpl(const char*) {
+    DBG("### The TinyGSM implementation of the AT commands for the ESP8266 "
+        "does not support deleting certificates from the module!  You must "
+        "manually delete your certificates.");
+    return false;
+  }
+
+  bool convertCertificateImpl(CertificateType cert_type, const char*) {
+    if (cert_type == CLIENT_PSK || cert_type == CLIENT_PSK_IDENTITY) {
+      DBG("### The ESP8266 does not support SSL using pre-shared keys with AT "
+          "firmware.");
+      return false;
+    }
+    return true;  // no conversion needed on the ESP8266
+  }
+
+  bool convertClientCertificatesImpl(const char*, const char*) {
+    return true;  // no conversion needed on the ESP8266
+  }
+
+  bool convertPSKandIDImpl(const char*, const char*) {
+    DBG("### The ESP8266 does not support SSL using pre-shared keys with AT "
+        "firmware.");
+    return false;
+  }
 
   /*
    * WiFi functions
@@ -221,7 +262,16 @@ int connect(const char* host, uint16_t port, int timeout_s) override {
   }
 
   bool waitForTimeSync(int timeout_s = 120) {
+    // if we're not connected, we'll never get the time
     if (!isNetworkConnected()) { return false; }
+    // if SNTP sync isn't enabled, we won't have the time
+    // NOTE: We don't actually enable the time here, because doing so would
+    // change any user settings for the timezone and time servers.
+    sendAT(GF("+CIPSNTPCFG?"));
+    int8_t is_enabled = streamGetIntBefore(',');
+    waitResponse();  // returns OK
+    if (!is_enabled) { return false; }
+    // if we're sure we should be able to get the time, wait for it
     uint32_t start_millis = millis();
     while (millis() - start_millis < static_cast<uint32_t>(timeout_s) * 1000) {
       uint32_t modem_time = getNetworkEpoch();
@@ -318,9 +368,9 @@ int connect(const char* host, uint16_t port, int timeout_s) override {
     uint32_t start = millis();
     while (stream.available() < 9 && millis() - start < 10000L) {}
     uint32_t modem_time = 0;
-    char   buf[12];
-    size_t bytesRead = stream.readBytesUntil('\n', buf,
-                                             static_cast<size_t>(12));
+    char     buf[12];
+    size_t   bytesRead = stream.readBytesUntil('\n', buf,
+                                               static_cast<size_t>(12));
     // if we read 12 or more bytes, it's an overflow
     if (bytesRead && bytesRead < 12) {
       buf[bytesRead] = '\0';
@@ -374,9 +424,24 @@ int connect(const char* host, uint16_t port, int timeout_s) override {
                     bool ssl = false, int timeout_s = 75) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     if (ssl) {
-      waitForTimeSync(timeout_s);
+      if (sslAuthModes[mux] == PRE_SHARED_KEYS) {
+        DBG("### The ESP32 does not support SSL using pre-shared keys with "
+            "AT firmware.");
+        return false;
+      }
+      // SSL certificate checking will not work without a valid timestamp!
+      if (sockets[mux] != nullptr &&
+          (sslAuthModes[mux] == CLIENT_VALIDATION ||
+           sslAuthModes[mux] == CA_VALIDATION ||
+           sslAuthModes[mux] == MUTUAL_AUTHENTICATION) &&
+          !waitForTimeSync(timeout_s)) {
+        DBG("### WARNING: The module timestamp must be valid for SSL auth. "
+            "Please use setTimeZone(...) or NTPServerSync(...) to enable "
+            "time syncing before attempting an SSL connection!");
+        return false;
+      }
 
-      // configure SSL
+      // configure SSL authentication type and in-use certificates
       // AT+CIPSSLCCONF=<link ID>,<auth_mode>[,<pki_number>][,<ca_number>]
       // <link ID>: ID of the connection (0 ~ max). For multiple connections, if
       // the value is max, it means all connections. By default, max is 5.
@@ -394,12 +459,40 @@ int connect(const char* host, uint16_t port, int timeout_s) override {
       //    hardware, software and procedures needed to create, manage,
       //    distribute, use, store and revoke digital certificates and manage
       //    public-key encryption.
-      // <ca_number>: the index of CA. If there is only one CA, the value should
-      // be 0.
+      // <ca_number>: the index of CA (certificate authority certificate =
+      // server's certificate). If there is only one CA, the value should be 0.
       // The PKI number and CA number to use are based on what certificates were
-      // (or were not) put into the customized certificate partitions. The
-      // default firmware comes with espressif certificates in slots 0 and 1.
-      sendAT(GF("+CIPSSLCCONF="), mux, GF(",3,0,0"));
+      // (or were not) put into the customized certificate partitions.
+      // The default firmware comes with espressif certificates in slots 0
+      // and 1.
+      if (sockets[mux] == nullptr || (sslAuthModes[mux] == NO_VALIDATION)) {
+        sendAT(GF("+CIPSSLCCONF="), mux, GF(",0"));
+      } else {
+        uint8_t _pkiIndex = 0;
+        uint8_t _caIndex  = 0;
+        char    tempbuf[2];
+        // extract the cert number from the name
+        if (CAcerts[mux] != nullptr) {
+          memcpy(tempbuf, CAcerts[mux] + strlen(CAcerts[mux]) - 1, 1);
+          tempbuf[1] = '\0';
+          _pkiIndex  = atoi(tempbuf);
+        }
+        // extract the cert number from the name
+        if (clientCerts[mux] != nullptr) {
+          memcpy(tempbuf, clientCerts[mux] + strlen(clientCerts[mux]) - 1, 1);
+          tempbuf[1] = '\0';
+          _caIndex   = atoi(tempbuf);
+        }
+        sendAT(GF("+CIPSSLCCONF="), mux, ',',
+               static_cast<uint8_t>(sslAuthModes[mux]), ',', _pkiIndex, ',',
+               _caIndex);
+      }
+      waitResponse();
+
+      // set the SSL SNI (server name indication)
+      // Multiple connections: (AT+CIPMUX=1)
+      // AT+CIPSSLCSNI=<link ID>,<"sni">
+      sendAT(GF("+CIPSSLCSNI="), mux, GF(",\""), host, GF("\""));
       waitResponse();
     }
 
@@ -451,10 +544,10 @@ int connect(const char* host, uint16_t port, int timeout_s) override {
  public:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+IPD,"))) {
-      int8_t  mux      = streamGetIntBefore(',');
-      int16_t len      = streamGetIntBefore(':');
-      int16_t len_orig = len;
-      int16_t prev_available = sockets[mux]->available();
+      int8_t  mux       = streamGetIntBefore(',');
+      int16_t len       = streamGetIntBefore(':');
+      size_t  len_orig  = len;
+      size_t  prev_size = sockets[mux]->rx.size();
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
@@ -466,9 +559,9 @@ int connect(const char* host, uint16_t port, int timeout_s) override {
           chars_remaining = moveCharFromStreamToFifo(mux);
         }
         // TODO(SRGDamia1): deal with buffer overflow
-        if (len_orig != sockets[mux]->available() - prev_available) {
+        if (len_orig != sockets[mux]->rx.size() - prev_size) {
           DBG("### Different number of characters received than expected: ",
-              sockets[mux]->available() - prev_available, " vs ", len_orig);
+              sockets[mux]->rx.size() - prev_size, " vs ", len_orig);
         }
       }
       data = "";

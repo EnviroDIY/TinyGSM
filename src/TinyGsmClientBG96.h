@@ -145,14 +145,15 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureBG96 : public GSMSecureClient<GsmClientBG96> {
+  class GsmClientSecureBG96
+      : public GsmClientBG96,
+        public TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    friend class TinyGsmBG96;
-    friend class GsmClientBG96;
     GsmClientSecureBG96() {}
 
     explicit GsmClientSecureBG96(TinyGsmBG96& modem, uint8_t mux = 0)
-        : GSMSecureClient<GsmClientBG96>(modem, mux) {
+        : TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>::GsmSecureClient(&modem,
+                                                                       &mux) {
       ssl_sock = true;
     }
 
@@ -277,7 +278,48 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // Follows functions as inherited from TinyGsmSSL.tpp
+  // Follows functions as inherited from TinyGsmSSL.tpp for setting the
+  // certificate name and the SSL connection type, but this library does **NOT**
+  // currently support uploading,deleting, or converting certificates on the
+  // modem.
+  // Although these "functions" are not functional, they need to be implemented
+  // for the SSL template to compile.
+
+  bool addCertificateImpl(CertificateType, const char*, const char*,
+                          const uint16_t) {
+    DBG("### The TinyGSM implementation of the AT commands for the BG96 "
+        "does not support adding certificates to the module!  You must "
+        "manually add your certificates.");
+    return false;
+  }
+
+  bool deleteCertificateImpl(const char*) {
+    DBG("### The TinyGSM implementation of the AT commands for the BG96 "
+        "does not support deleting certificates from the module!  You must "
+        "manually delete your certificates.");
+    return false;
+  }
+
+  bool convertCertificateImpl(CertificateType, const char*) {
+    DBG("### The TinyGSM implementation of the AT commands for the BG96 "
+        "does not support converting certificates for the module!  You must "
+        "manually convert your certificates.");
+    return false;
+  }
+
+  bool convertClientCertificatesImpl(const char*, const char*) {
+    DBG("### The TinyGSM implementation of the AT commands for the BG96 "
+        "does not support converting certificates for the module!  You must "
+        "manually convert your certificates.");
+    return false;
+  }
+
+  bool convertPSKandIDImpl(const char*, const char*) {
+    DBG("### The TinyGSM implementation of the AT commands for the BG96 "
+        "does not support converting certificates for the module!  You must "
+        "manually convert your certificates.");
+    return false;
+  }
 
   /*
    * WiFi functions

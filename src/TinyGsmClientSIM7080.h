@@ -106,16 +106,19 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureSIM7080 : public GSMSecureClient<GsmClientSim7080> {
+  class GsmClientSecureSim7080
+      : public GsmClientSim7080,
+        public TinyGsmSSL<TinyGsmSim7080, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    friend class TinyGsmSIM7080;
-    friend class GsmClientSIM7080;
-    GsmClientSecureSIM7080() {}
+    GsmClientSecureSim7080() {}
 
-    explicit GsmClientSecureSIM7080(TinyGsmSim7080& modem, uint8_t mux = 0)
-        : GSMSecureClient<GsmClientSim7080>(modem, mux) {}
+    explicit GsmClientSecureSim7080(TinyGsmSim7080& modem, uint8_t mux = 0)
+        : GsmClientSim7080(modem, mux),
+          TinyGsmSSL<TinyGsmSim7080, TINY_GSM_MUX_COUNT>::GsmSecureClient(
+              &modem, &mux) {}
 
-    int connect(const char* host, uint16_t port, int timeout_s) override {
+    virtual int connect(const char* host, uint16_t port,
+                        int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
@@ -254,8 +257,6 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
    */
   // The name of the certificate/key/password file. The file name must
   // have type like ".pem" or ".der".
-  // The certificate like - const char ca_cert[] PROGMEM =  R"EOF(-----BEGIN...
-  // len of certificate like - sizeof(ca_cert)
   // NOTE: Uploading the certificate only happens by filename, the type of
   // certificate does not matter here
   bool addCertificateImpl(CertificateType, const char* certificateName,
@@ -290,8 +291,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
 
   // NOTE: Deleting the certificate only happens by filename, the type of
   // certificate does not matter here
-  bool deleteCertificateImpl(CertificateType,
-                             const char* certificateName) {  // todo test
+  bool deleteCertificateImpl(const char* certificateName) {  // todo test
     // Initialize AT relate to file system functions
     sendAT(GF("+CFSINIT"));
     if (waitResponse() != 1) { return false; }

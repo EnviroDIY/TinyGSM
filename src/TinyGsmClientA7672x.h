@@ -134,19 +134,22 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureA7672X : public GSMSecureClient<GsmClientA7672X> {
+  class GsmClientSecureA7672X
+      : public GsmClientA7672X,
+        public TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    friend class TinyGsmA7672X;
-    friend class GsmClientA7672X;
     GsmClientSecureA7672X() {}
 
-explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux = 0)
-    : GSMSecureClient<GsmClientA7672X>(modem, mux) {}
+    explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux = 0)
+        : GsmClientA7672X(modem, mux),
+          TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>::GsmSecureClient(&modem,
+                                                                         &mux) {
+    }
 
-public:
-bool addCertificate(const char* certificateName, const char* cert,
-                    const uint16_t len) {
-  return at->addCertificate(certificateName, cert, len);
+   public:
+    bool addCertificate(const char* certificateName, const char* cert,
+                        const uint16_t len) {
+      return at->addCertificate(certificateName, cert, len);
     }
 
     bool deleteCertificate(const char* certificateName) {
@@ -338,6 +341,18 @@ bool addCertificate(const char* certificateName, const char* cert,
   bool deleteCertificateImpl(const char* certificateName) {  // todo test
     sendAT(GF("+CCERTDELE="), certificateName);
     return waitResponse() == 1;
+  }
+
+  bool convertCertificateImpl(CertificateType, const char*) {
+    return true;  // no conversion needed
+  }
+
+  bool convertClientCertificatesImpl(const char*, const char*) {
+    return true;  // no conversion needed
+  }
+
+  bool convertPSKandIDImpl(const char*, const char*) {
+    return true;  // no conversion needed
   }
 
   /*

@@ -74,12 +74,6 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] == nullptr) {
         this->mux              = mux;
         at->sockets[this->mux] = this;
-        at->sslAuthModes[mux]  = NO_VALIDATION;
-        at->CAcerts[mux]       = nullptr;
-        at->clientCerts[mux]   = nullptr;
-        at->clientKeys[mux]    = nullptr;
-        at->pskIdents[mux]     = nullptr;  // identity for PSK cipher suites
-        at->psKeys[mux]        = nullptr;  // key in hex for PSK cipher suites
       } else {
         this->mux = static_cast<uint8_t>(-1);
       }
@@ -125,14 +119,17 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureESP32 : public GSMSecureClient<GsmClientESP32> {
+  class GsmClientSecureESP32
+      : public GsmClientESP32,
+        public TinyGsmSSL<TinyGsmESP32, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    friend class TinyGsmESP32;
-    friend class GsmClientESP32;
     GsmClientSecureESP32() {}
 
-    explicit GsmClientSecureESP32(TinyGsmESP32& modem, uint8_t mux = -1)
-        : GSMSecureClient<GsmClientESP32>(modem, mux) {}
+    explicit GsmClientSecureESP32(TinyGsmESP32& modem,
+                                  uint8_t       mux = static_cast<uint8_t>(-1))
+        : GsmClientESP32(modem, mux),
+          TinyGsmSSL<TinyGsmESP32, TINY_GSM_MUX_COUNT>::GsmSecureClient(&modem,
+                                                                        &mux) {}
 
     bool setCACert(uint8_t certNumber) {
       char cert_name[12];
@@ -140,7 +137,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       itoa(certNumber, cert_number, 10);
       strcpy(cert_name, "client_ca.");
       strcat(cert_name, cert_number);
-      return at->setCertificate(CA_CERTIFICATE, cert_name);
+      return ssl_at->setCertificate(CA_CERTIFICATE, cert_name);
     }
     bool setClientCert(uint8_t certNumber) {
       char cert_name[14];
@@ -148,7 +145,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       itoa(certNumber, cert_number, 10);
       strcpy(cert_name, "client_cert.");
       strcat(cert_name, cert_number);
-      return at->setCertificate(CLIENT_CERTIFICATE, cert_name, mux);
+      return ssl_at->setCertificate(CLIENT_CERTIFICATE, cert_name, mux);
     }
     bool setPrivateKey(uint8_t keyNumber) {
       char key_name[13];
@@ -156,7 +153,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       itoa(keyNumber, key_number, 10);
       strcpy(key_name, "client_key.");
       strcat(key_name, key_number);
-      return at->setCertificate(CLIENT_KEY, key_name, mux);
+      return ssl_at->setCertificate(CLIENT_KEY, key_name, mux);
     }
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
@@ -228,6 +225,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   // needed for the SYSMFG command used here. The CIUPDATE function does not
   // update the NVM.
 
+ public:
   // This adds the server's CA certificate that the client connects to, used
   // in auth mode 2 and 3
   // This is the value client_ca_0x.crt in the AT firmware
@@ -258,6 +256,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     return addCertificate(key_name, key, len);
   }
 
+ private:
   bool addCertificateImpl(CertificateType cert_type,
                           const char* certificateName, const char* cert,
                           const uint16_t len) {

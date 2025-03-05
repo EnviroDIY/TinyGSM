@@ -174,7 +174,8 @@ void loop() {
   String fv_ver = modem.getModemRevision();
   DBG("Modem Firmware Version:", fv_ver);
 
-#if not defined(TINY_GSM_MODEM_ESP8266) && not defined(TINY_GSM_MODEM_ESP32)
+#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) && \
+    !defined(TINY_GSM_MODEM_ESP8266_NONOS)
   String mod_sn = modem.getModemSerialNumber();
   DBG("Modem Serial Number (may be SIM CCID):", mod_sn);
 #endif
@@ -239,7 +240,8 @@ void loop() {
   DBG("Signal quality:", csq);
 #endif
 
-#if TINY_GSM_TEST_USSD && defined TINY_GSM_MODEM_HAS_SMS
+#if TINY_GSM_TEST_USSD && defined TINY_GSM_MODEM_HAS_SMS && \
+    !defined(TINY_GSM_MODEM_SARAR4) && !defined(TINY_GSM_MODEM_XBEE)
   String ussd_balance = modem.sendUSSD("*111#");
   DBG("Balance (USSD):", ussd_balance);
 
@@ -293,9 +295,44 @@ void loop() {
 #endif
 
 #if TINY_GSM_TEST_SSL && defined TINY_GSM_MODEM_HAS_SSL
-  // TODO: Add test of adding certificcate
-  TinyGsmClientSecure secureClient(modem, 1);
-  const int           securePort = 443;
+  TinyGsmClientSecure secureClient(modem, 0);
+
+#if defined(TINY_GSM_MODEM_CAN_MANAGE_CERTS)
+  secureClient.setSSLAuthMode(NO_VALIDATION);
+
+#if defined(TEST_BUILD_ADD_CERTS)
+  // WARNING:  Never run this section with an actual board attached!!
+  // If you run this, you will overwrite already installed certificates with
+  // junk and probably cause SSL to stop working on your module.
+  const char* fake_certificate = "-----BEGIN FAKE CERTIFICATE-----";
+  const char* fake_cert_name   = "myFakeCert.crt";
+
+  modem.addCACert(fake_cert_name, fake_certificate, strlen(fake_certificate));
+  modem.convertCACert(fake_cert_name);
+
+  modem.addClientCert(fake_cert_name, fake_certificate,
+                      strlen(fake_certificate));
+  modem.addPrivateKey(fake_cert_name, fake_certificate,
+                      strlen(fake_certificate));
+  modem.convertClientCertificates(fake_cert_name, fake_cert_name);
+
+  modem.addPSK(fake_cert_name, fake_certificate, strlen(fake_certificate));
+  modem.addPSKID(fake_cert_name, fake_certificate, strlen(fake_certificate));
+  modem.convertPSKandID(fake_certificate, fake_certificate);
+
+  modem.deleteCertificate(fake_cert_name);
+
+  secureClient.setCACert(fake_cert_name);
+  secureClient.setClientCert(fake_cert_name);
+  secureClient.setPrivateKey(fake_cert_name);
+  secureClient.setPSK(fake_certificate);
+  secureClient.setPSKID(fake_certificate);
+  secureClient.setPreSharedKey(fake_certificate, fake_certificate);
+  secureClient.setPSKID(fake_certificate);
+#endif
+#endif
+
+  const int securePort = 443;
   DBG("Connecting securely to", server);
   if (!secureClient.connect(server, securePort)) {
     DBG("... failed");
