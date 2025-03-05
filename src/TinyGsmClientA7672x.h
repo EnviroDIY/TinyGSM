@@ -76,7 +76,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    * Inner Client
    */
  public:
-  class GsmClientA7672X : public GsmClient {
+  class GsmClientA7672X
+      : public TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT>::GsmClient {
     friend class TinyGsmA7672X;
 
    public:
@@ -156,7 +157,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       return at->deleteCertificate(certificateName);
     }
 
-    int connect(const char* host, uint16_t port, int timeout_s) override {
+    virtual int connect(const char* host, uint16_t port,
+                        int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();

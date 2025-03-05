@@ -53,7 +53,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
    * Inner Client
    */
  public:
-  class GsmClientESP32 : public GsmClient {
+  class GsmClientESP32
+      : public TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT>::GsmClient {
     friend class TinyGsmESP32;
 
    public:
@@ -156,7 +157,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       return ssl_at->setCertificate(CLIENT_KEY, key_name, mux);
     }
 
-    int connect(const char* host, uint16_t port, int timeout_s) override {
+    virtual int connect(const char* host, uint16_t port,
+                        int timeout_s) override {
       if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] != nullptr) { stop(); }
       TINY_GSM_YIELD();
       rx.clear();

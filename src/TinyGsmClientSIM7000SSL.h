@@ -49,7 +49,8 @@ class TinyGsmSim7000SSL
    * Inner Client
    */
  public:
-  class GsmClientSim7000SSL : public GsmClient {
+  class GsmClientSim7000SSL
+      : public TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>::GsmClient {
     friend class TinyGsmSim7000SSL;
 
    public:

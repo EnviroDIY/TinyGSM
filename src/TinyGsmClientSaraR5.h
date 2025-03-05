@@ -93,7 +93,8 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
    * Inner Client
    */
  public:
-  class GsmClientSaraR5 : public GsmClient {
+  class GsmClientSaraR5
+      : public TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>::GsmClient {
     friend class TinyGsmSaraR5;
 
    public:
@@ -180,7 +181,8 @@ public:
         : GsmClientSaraR5(modem, mux) {}
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) override {
+    virtual int connect(const char* host, uint16_t port,
+                        int timeout_s) override {
       // stop();  // DON'T stop!
       TINY_GSM_YIELD();
       rx.clear();
@@ -379,8 +381,8 @@ public:
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
-                       const char* pwd = nullptr) {
+  bool gprsConnectImpl(const char* apn, const char* = nullptr,
+                       const char* = nullptr) {
     sendAT(GF("+CGATT=1"));  // attach to GPRS
     if (waitResponse(360000L) != 1) { return false; }
 
@@ -422,7 +424,7 @@ public:
     char* searchPtr = searchBuf;
 
     for (size_t index = 0; index <= response.length(); index++) {
-      int scanned = 0;
+      // int scanned;
       // Find the first/next occurrence of +CGDCONT:
       searchPtr = strstr(searchPtr, "+CGDCONT:");
       if (searchPtr != nullptr) {
@@ -432,9 +434,9 @@ public:
 
         searchPtr += strlen("+CGDCONT:");
         while (*searchPtr == ' ') searchPtr++;  // skip spaces
-        scanned = sscanf(searchPtr, "%d,\"%[^\"]\",\"%[^\"]\",\"%d.%d.%d.%d",
-                         &rcid, strPdpType, strApn, &ipOct[0], &ipOct[1],
-                         &ipOct[2], &ipOct[3]);
+                                                /*scanned =*/
+        sscanf(searchPtr, "%d,\"%[^\"]\",\"%[^\"]\",\"%d.%d.%d.%d", &rcid,
+               strPdpType, strApn, &ipOct[0], &ipOct[1], &ipOct[2], &ipOct[3]);
 
         if (!strcmp(strApn, apn)) {
           // found the configuration that we want to connect to

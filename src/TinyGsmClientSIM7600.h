@@ -85,7 +85,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    * Inner Client
    */
  public:
-  class GsmClientSim7600 : public GsmClient {
+  class GsmClientSim7600
+      : public TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT>::GsmClient {
     friend class TinyGsmSim7600;
 
    public:

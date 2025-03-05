@@ -53,7 +53,8 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
    * Inner Client
    */
  public:
-  class GsmClientESP8266 : public GsmClient {
+  class GsmClientESP8266
+      : public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>::GsmClient {
     friend class TinyGsmESP8266;
 
    public:

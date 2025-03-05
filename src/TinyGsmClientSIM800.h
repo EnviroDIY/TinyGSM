@@ -90,7 +90,8 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    * Inner Client
    */
  public:
-  class GsmClientSim800 : public GsmClient {
+  class GsmClientSim800
+      : public TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT>::GsmClient {
     friend class TinyGsmSim800;
 
    public:
@@ -168,7 +169,8 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 0)
         : GsmClientSim800(modem, mux) {}
 
-    int connect(const char* host, uint16_t port, int timeout_s) override {
+    virtual int connect(const char* host, uint16_t port,
+                        int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();

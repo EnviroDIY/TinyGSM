@@ -78,7 +78,8 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    * Inner Client
    */
  public:
-  class GsmClientUBLOX : public GsmClient {
+  class GsmClientUBLOX
+      : public TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>::GsmClient {
     friend class TinyGsmUBLOX;
 
    public:
@@ -164,7 +165,8 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     explicit GsmClientSecureUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 0)
         : GsmClientUBLOX(modem, mux) {}
 
-    int connect(const char* host, uint16_t port, int timeout_s) override {
+    virtual int connect(const char* host, uint16_t port,
+                        int timeout_s) override {
       // stop();  // DON'T stop!
       TINY_GSM_YIELD();
       rx.clear();

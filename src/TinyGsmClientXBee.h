@@ -101,7 +101,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
    * Inner Client
    */
  public:
-  class GsmClientXBee : public GsmClient {
+  class GsmClientXBee
+      : public TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT>::GsmClient {
     friend class TinyGsmXBee;
 
    public:
@@ -134,7 +135,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
       return sock_connected;
     }
-    int connect(const char* host, uint16_t port) override {
+    virtual int connect(const char* host, uint16_t port) override {
       return connect(host, port, 75);
     }
 
@@ -286,13 +287,14 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
         : GsmClientXBee(modem, mux) {}
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) override {
+    virtual int connect(const char* host, uint16_t port,
+                        int timeout_s) override {
       // NOTE:  Not calling stop() or yield() here
       at->streamClear();  // Empty anything in the buffer before starting
       sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
       return sock_connected;
     }
-    int connect(const char* host, uint16_t port) override {
+    virtual int connect(const char* host, uint16_t port) override {
       return connect(host, port, 75);
     }
 

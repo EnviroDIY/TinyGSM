@@ -82,7 +82,9 @@ class TinyGsmSequansMonarch
    * Inner Client
    */
  public:
-  class GsmClientSequansMonarch : public GsmClient {
+  class GsmClientSequansMonarch
+      : public TinyGsmTCP<TinyGsmSequansMonarch,
+                          TINY_GSM_MUX_COUNT>::GsmClient {
     friend class TinyGsmSequansMonarch;
 
    public:
@@ -170,7 +172,8 @@ class TinyGsmSequansMonarch
     bool strictSSL = false;
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) override {
+    virtual int connect(const char* host, uint16_t port,
+                        int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();

@@ -46,7 +46,6 @@ class TinyGsmESP8266NonOS
     : public TinyGsmEspressif<TinyGsmESP8266NonOS>,
       public TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT> {
   friend class TinyGsmEspressif<TinyGsmESP8266NonOS>;
-  friend class TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmModem<TinyGsmESP8266NonOS>;
   friend class TinyGsmWifi<TinyGsmESP8266NonOS>;
   friend class TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT>;
@@ -55,7 +54,8 @@ class TinyGsmESP8266NonOS
    * Inner Client
    */
  public:
-  class GsmClientESP8266NonOS : public GsmClient {
+  class GsmClientESP8266NonOS
+      : public TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT>::GsmClient {
     friend class TinyGsmESP8266NonOS;
 
    public:
@@ -121,7 +121,8 @@ class TinyGsmESP8266NonOS
         : GsmClientESP8266NonOS(modem, mux) {}
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) override {
+    virtual int connect(const char* host, uint16_t port,
+                        int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();

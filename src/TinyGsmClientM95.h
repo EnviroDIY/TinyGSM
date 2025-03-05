@@ -70,7 +70,8 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
    * Inner Client
    */
  public:
-  class GsmClientM95 : public GsmClient {
+  class GsmClientM95
+      : public TinyGsmTCP<TinyGsmM95, TINY_GSM_MUX_COUNT>::GsmClient {
     friend class TinyGsmM95;
 
    public:
