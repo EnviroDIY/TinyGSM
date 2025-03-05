@@ -10,9 +10,9 @@
 #define SRC_TINYGSMSSL_H_
 
 #include "TinyGsmCommon.h"
-#include "TinyGsmTCP.tpp"
 
 #define TINY_GSM_MODEM_HAS_SSL
+#define TINY_GSM_MODEM_CAN_MANAGE_CERTS
 
 typedef enum {
   CA_CERTIFICATE      = 0,
@@ -60,7 +60,8 @@ typedef enum {
   }                                                                           \
   bool add##cert_abbrev(const char* certificateName, const char* cert,        \
                         const uint16_t len) {                                 \
-    return addCertificateImpl(cert_type, certificateName, cert, len);         \
+    return thisModem().addCertificateImpl(cert_type, certificateName, cert,   \
+                                          len);                               \
   }                                                                           \
   bool add##cert_abbrev(String& certificateName, String& cert,                \
                         const uint16_t len) {                                 \
@@ -80,20 +81,28 @@ typedef enum {
     return thisModem().convertCertificate(cert_type, filename.c_str());       \
   }
 
-#define TINY_GSM_MAKE_CLIENT_SET_FUNCTIONS(cert_abbrev, cert_type)     \
-  bool set##cert_abbrev(const char* certificateName) {                 \
-    return thisClient().at->setCertificate(cert_type, certificateName, \
-                                           thisClient().mux);          \
-  }                                                                    \
-  bool set##cert_abbrev(String& certificateName) {                     \
-    return thisClient().at->setCertificate(cert_type, certificateName, \
-                                           thisClient().mux);          \
+#define TINY_GSM_MAKE_CLIENT_SET_FUNCTIONS(cert_abbrev, cert_type)         \
+  bool set##cert_abbrev(const char* certificateName) {                     \
+    if (ssl_mux != nullptr) { return false; }                              \
+    if (*ssl_mux < muxCount) {                                             \
+      return ssl_at->setCertificate(cert_type, certificateName, *ssl_mux); \
+    } else {                                                               \
+      DBG("Tried to set certificate of invalid socket!");                  \
+      return false;                                                        \
+    }                                                                      \
+  }                                                                        \
+  bool set##cert_abbrev(String& certificateName) {                         \
+    if (ssl_mux != nullptr) { return false; }                              \
+    if (*ssl_mux < muxCount) {                                             \
+      return ssl_at->setCertificate(cert_type, certificateName, *ssl_mux); \
+    } else {                                                               \
+      DBG("Tried to set certificate of invalid socket!");                  \
+      return false;                                                        \
+    }                                                                      \
   }
 
-template <class sslModemType, uint8_t muxCount>
-class TinyGsmSSL {  //: public TinyGsmTCP<sslModemType, muxCount> {
-                    // friend class TinyGsmTCP<sslModemType, muxCount>;
-
+template <class modemType, uint8_t muxCount>
+class TinyGsmSSL {
   /* =========================================== */
   /* =========================================== */
   /*
@@ -103,7 +112,17 @@ class TinyGsmSSL {  //: public TinyGsmTCP<sslModemType, muxCount> {
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-
+  TinyGsmSSL() {
+    // fill arrays with empty values
+    for (uint8_t i = 0; i < muxCount; i++) {
+      sslAuthModes[i] = NO_VALIDATION;
+      CAcerts[i]      = nullptr;
+      clientCerts[i]  = nullptr;
+      clientKeys[i]   = nullptr;
+      pskIdents[i]    = nullptr;
+      psKeys[i]       = nullptr;
+    }
+  }
   // Assign a certificate by certificate type and the filename of the
   // certificate The filename should be of a file already saved in the module's
   // file system
@@ -177,7 +196,7 @@ class TinyGsmSSL {  //: public TinyGsmTCP<sslModemType, muxCount> {
 
   // for many (but not all!) modules, the certificate must be "converted" from a
   // file stored somewhere in the flash file system into a certificate ready to
-  // be used by the TCP connection
+  // be used by the connection
   bool convertCertificate(CertificateType cert_type, const char* filename) {
     return thisModem().convertCertificateImpl(cert_type, filename);
   }
@@ -220,58 +239,73 @@ class TinyGsmSSL {  //: public TinyGsmTCP<sslModemType, muxCount> {
   // functions for pre-shared key identities; ie add/setPSKID(..)
   TINY_GSM_MAKE_SSL_FUNCTIONS(PSKID, CLIENT_PSK_IDENTITY)
 
-
-  // retained for backwards compatibility
-  // if a cert is added or set without a type, assume it's a certificate
-  // authority certificate
+ protected:
+  // destructor (protected!)
+  ~TinyGsmSSL() {}
 
   /*
    * CRTP Helper
    */
- protected:
-  inline const sslModemType& thisModem() const {
-    return static_cast<const sslModemType&>(*this);
+  inline const modemType& thisModem() const {
+    return static_cast<const modemType&>(*this);
   }
-  inline sslModemType& thisModem() {
-    return static_cast<sslModemType&>(*this);
+  inline modemType& thisModem() {
+    return static_cast<modemType&>(*this);
   }
-  ~TinyGsmSSL() {}
 
   /*
    * Inner Secure Client
    */
  public:
-  template <class tcpClientType>
-  class GSMSecureClient : public tcpClientType {
-    // Make all classes created from the modem template friends
-    friend class TinyGsmTCP<sslModemType, muxCount>;
-    friend class TinyGsmSSL<sslModemType, muxCount>;
+  class GsmSecureClient {
+    friend class TinyGsmSSL<modemType, muxCount>;
 
    public:
-    GSMSecureClient() {}
-
-    explicit GSMSecureClient(sslModemType& modem, uint8_t mux = -1)
-        : tcpClientType(modem, mux) {}
+    GsmSecureClient() {}
+    explicit GsmSecureClient(modemType* modem, uint8_t* mux = nullptr) {
+      this->ssl_at  = modem;
+      this->ssl_mux = mux;
+    }
 
     void setSSLAuthMode(SSLAuthMode mode) {
-      thisClient().at->sslAuthModes[thisClient().mux] = mode;
+      if (ssl_mux != nullptr) { return; }
+      if (*ssl_mux < muxCount) {
+        ssl_at->sslAuthModes[*ssl_mux] = mode;
+      } else {
+        DBG("Tried to change SSL mode of invalid socket!");
+      }
     }
 
     // set the name of the certificate into the certificate name buffer of the
     // modem
     bool setCertificate(CertificateType cert_type,
                         const char*     certificateName) {
-      return thisClient().at->setCertificate(cert_type, certificateName,
-                                             thisClient().mux);
+      if (ssl_mux != nullptr) { return false; }
+      if (*ssl_mux < muxCount) {
+        return ssl_at->setCertificate(cert_type, certificateName, *ssl_mux);
+      } else {
+        DBG("Tried to set certificate of invalid socket!");
+        return false;
+      }
     }
     bool setCertificate(CertificateType cert_type, String& certificateName) {
-      return thisClient().at->setCertificate(cert_type, certificateName,
-                                             thisClient().mux);
+      if (ssl_mux != nullptr) { return false; }
+      if (*ssl_mux < muxCount) {
+        return ssl_at->setCertificate(cert_type, certificateName, *ssl_mux);
+      } else {
+        DBG("Tried to set certificate of invalid socket!");
+        return false;
+      }
     }
 
     void setPreSharedKey(const char* pskIdent, const char* psKey) {
-      thisClient().at->pskIdents[thisClient().mux] = pskIdent;
-      thisClient().at->psKeys[thisClient().mux]    = psKey;
+      if (ssl_mux != nullptr) { return; }
+      if (*ssl_mux < muxCount) {
+        ssl_at->pskIdents[*ssl_mux] = pskIdent;
+        ssl_at->psKeys[*ssl_mux]    = psKey;
+      } else {
+        DBG("Tried to set pre-shared key and identity of invalid socket!");
+      }
     }
     // NOTE: For backwards compatibility, adding a certificate without a type
     // assumes it's from a certificate authority
@@ -288,17 +322,21 @@ class TinyGsmSSL {  //: public TinyGsmTCP<sslModemType, muxCount> {
     // functions for pre-shared key identities; ie setPSKID(..)
     TINY_GSM_MAKE_CLIENT_SET_FUNCTIONS(PSKID, CLIENT_PSK_IDENTITY)
 
+    // destructor - need to remove self from the socket pointer array
+    virtual ~GsmSecureClient() {
+      if (ssl_mux != nullptr) {
+        ssl_at->sslAuthModes[*ssl_mux] = NO_VALIDATION;
+        ssl_at->CAcerts[*ssl_mux]      = nullptr;
+        ssl_at->clientCerts[*ssl_mux]  = nullptr;
+        ssl_at->clientKeys[*ssl_mux]   = nullptr;
+        ssl_at->pskIdents[*ssl_mux]    = nullptr;
+        ssl_at->psKeys[*ssl_mux]       = nullptr;
+      }
+    }
 
-    /*
-     * CRTP Helper
-     */
    protected:
-    inline const tcpClientType& thisClient() const {
-      return static_cast<const tcpClientType&>(*this);
-    }
-    inline tcpClientType& thisClient() {
-      return static_cast<tcpClientType&>(*this);
-    }
+    modemType* ssl_at;
+    uint8_t*   ssl_mux;
   };
 
   /* =========================================== */
