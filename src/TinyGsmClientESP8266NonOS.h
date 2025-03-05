@@ -49,6 +49,7 @@ class TinyGsmESP8266NonOS
   friend class TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmModem<TinyGsmESP8266NonOS>;
   friend class TinyGsmWifi<TinyGsmESP8266NonOS>;
+  friend class TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT>;
 
   /*
    * Inner Client

@@ -134,7 +134,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     // read the hardware from the Bin version
     thisModem().streamSkipUntil('(');  // skip the text "Bin version"
     String wroom = stream.readStringUntil(
-        ')');              // read the WRoom version in the parethesis
+        ')');  // read the WRoom version in the parethesis
     thisModem().streamSkipUntil('(');            // skip the bin version itself
     if (thisModem().waitResponse(1000L) == 1) {  // wait for the ending OK
       return wroom;
@@ -204,11 +204,11 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
         return 0;
       }
     }
-    thisModem().streamSkipUntil(',');             // Skip SSID
-    thisModem().streamSkipUntil(',');             // Skip BSSID/MAC address
-    thisModem().streamSkipUntil(',');             // Skip Chanel number
-    int8_t res2 = stream.parseInt();  // Read RSSI
-    thisModem().waitResponse();       // Returns an OK after the value
+    thisModem().streamSkipUntil(',');  // Skip SSID
+    thisModem().streamSkipUntil(',');  // Skip BSSID/MAC address
+    thisModem().streamSkipUntil(',');  // Skip Chanel number
+    int8_t res2 = stream.parseInt();   // Read RSSI
+    thisModem().waitResponse();        // Returns an OK after the value
     return res2;
   }
 

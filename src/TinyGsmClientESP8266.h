@@ -42,10 +42,10 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
                        public TinyGsmTime<TinyGsmESP8266>,
                        public TinyGsmNTP<TinyGsmESP8266> {
   friend class TinyGsmEspressif<TinyGsmESP8266>;
-  friend class TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmModem<TinyGsmESP8266>;
   friend class TinyGsmWifi<TinyGsmESP8266>;
+  friend class TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmTime<TinyGsmESP8266>;
   friend class TinyGsmNTP<TinyGsmESP8266>;
 
