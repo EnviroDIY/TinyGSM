@@ -98,10 +98,10 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   }
 
   bool setBaudImpl(uint32_t baud) {
-    thisModem().sendAT(GF("+UART_CUR="), baud, "8,1,0,0");
+    thisModem().sendAT(GF("+UART_CUR="), baud, ",8,1,0,0");
     if (thisModem().waitResponse() != 1) {
       thisModem().sendAT(GF("+UART="), baud,
-                         "8,1,0,0");  // Really old firmwares might need this
+                         ",8,1,0,0");  // Really old firmwares might need this
       // if (thisModem().waitResponse() != 1) {
       //   thisModem().sendAT(GF("+IPR="), baud);  // First release firmwares
       //   might need this
