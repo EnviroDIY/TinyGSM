@@ -183,8 +183,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   // Although these "functions" are not functional, they need to be implemented
   // for the SSL template to compile.
 
-  bool addCertificateImpl(CertificateType, const char*, const char*,
-                          const uint16_t) {
+  bool loadCertificateImpl(const char*, const char*, const uint16_t) {
     DBG("### The TinyGSM implementation of the AT commands for the ESP8266 "
         "does not support adding certificates to the module!  You must "
         "manually add your certificates.");
@@ -200,8 +199,8 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
 
   bool convertCertificateImpl(CertificateType cert_type, const char*) {
     if (cert_type == CLIENT_PSK || cert_type == CLIENT_PSK_IDENTITY) {
-      DBG("### The ESP8266 does not support SSL using pre-shared keys with AT "
-          "firmware.");
+      // The ESP8266 does not support SSL using pre-shared keys with AT
+      // firmware.
       return false;
     }
     return true;  // no conversion needed on the ESP8266
@@ -212,8 +211,8 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   }
 
   bool convertPSKandIDImpl(const char*, const char*) {
-    DBG("### The ESP8266 does not support SSL using pre-shared keys with AT "
-        "firmware.");
+    // The ESP8266 does not support SSL using pre-shared keys with AT
+    // firmware.
     return false;
   }
 
@@ -426,8 +425,8 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     if (ssl) {
       if (sslAuthModes[mux] == PRE_SHARED_KEYS) {
-        DBG("### The ESP32 does not support SSL using pre-shared keys with "
-            "AT firmware.");
+        // The ESP8266 does not support SSL using pre-shared keys with AT
+        // firmware.
         return false;
       }
       // SSL certificate checking will not work without a valid timestamp!
@@ -476,13 +475,13 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
         if (CAcerts[mux] != nullptr) {
           memcpy(tempbuf, CAcerts[mux] + strlen(CAcerts[mux]) - 1, 1);
           tempbuf[1] = '\0';
-          _pkiIndex  = atoi(tempbuf);
+          _caIndex   = atoi(tempbuf);
         }
         // extract the cert number from the name
         if (clientCerts[mux] != nullptr) {
           memcpy(tempbuf, clientCerts[mux] + strlen(clientCerts[mux]) - 1, 1);
           tempbuf[1] = '\0';
-          _caIndex   = atoi(tempbuf);
+          _pkiIndex  = atoi(tempbuf);
         }
         sendAT(GF("+CIPSSLCCONF="), mux, ',',
                static_cast<uint8_t>(sslAuthModes[mux]), ',', _pkiIndex, ',',
@@ -515,7 +514,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   }
 
   bool modemGetConnected(uint8_t mux) {
-    sendAT(GF("+CIPSTATE"));
+    sendAT(GF("+CIPSTATE?"));
     bool verified_connections[TINY_GSM_MUX_COUNT] = {0, 0, 0, 0, 0};
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       uint8_t has_status = waitResponse(GF("+CIPSTATE:"), GFP(GSM_OK),
@@ -528,8 +527,9 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
         streamSkipUntil(',');   // Skip local port
         streamSkipUntil('\n');  // Skip client/server type
         verified_connections[returned_mux] = 1;
-      }
-      if (has_status == 2) break;  // once we get to the ok, stop
+      } else {
+        break;
+      };  // once we get to the ok or error, stop
     }
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       if (sockets[muxNo]) {

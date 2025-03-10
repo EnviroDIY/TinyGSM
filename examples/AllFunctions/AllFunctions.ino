@@ -127,7 +127,7 @@ const char resource[] = "/TinyGSM/logo.txt";
 StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm        modem(debugger);
 #else
-TinyGsm        modem(SerialAT);
+TinyGsm modem(SerialAT);
 #endif
 
 void setup() {

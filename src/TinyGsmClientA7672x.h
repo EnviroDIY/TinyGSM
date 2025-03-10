@@ -148,9 +148,9 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     }
 
    public:
-    bool addCertificate(const char* certificateName, const char* cert,
-                        const uint16_t len) {
-      return at->addCertificate(certificateName, cert, len);
+    bool loadCertificate(const char* certificateName, const char* cert,
+                         const uint16_t len) {
+      return at->loadCertificate(certificateName, cert, len);
     }
 
     bool deleteCertificate(const char* certificateName) {
@@ -318,19 +318,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   // len of certificate like - sizeof(ca_cert)
   // NOTE: Uploading the certificate only happens by filename, the type of
   // certificate does not matter here
-  bool addCertificateImpl(CertificateType cert_type,
-                          const char* certificateName, const char* cert,
-                          const uint16_t len) {
-    switch (cert_type) {
-      case CLIENT_PSK:
-      case CLIENT_PSK_IDENTITY: {
-        DBG(GF("SSL with pre-shared keys is not supported on this module"));
-        return false;
-      }
-      default: {
-        break;
-      }
-    }
+  bool loadCertificateImpl(const char* certificateName, const char* cert,
+                            const uint16_t len) {
     sendAT(GF("+CCERTDOWN="), certificateName, GF(","), len);
     if (waitResponse(GF(">")) != 1) { return false; }
     stream.write(cert, len);

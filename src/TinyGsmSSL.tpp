@@ -51,52 +51,34 @@ typedef enum {
 } SSLAuthMode;
 
 // macro function to help create more functions
-#define TINY_GSM_MAKE_SSL_FUNCTIONS(cert_abbrev, cert_type)                   \
-  bool add##cert_abbrev(const char* filename) {                               \
-    return thisModem().addCertificateImpl(cert_type, filename);               \
-  }                                                                           \
-  bool add##cert_abbrev(String& filename) {                                   \
-    return add##cert_abbrev(cert_type, filename.c_str());                     \
-  }                                                                           \
-  bool add##cert_abbrev(const char* certificateName, const char* cert,        \
-                        const uint16_t len) {                                 \
-    return thisModem().addCertificateImpl(cert_type, certificateName, cert,   \
-                                          len);                               \
-  }                                                                           \
-  bool add##cert_abbrev(String& certificateName, String& cert,                \
-                        const uint16_t len) {                                 \
-    return add##cert_abbrev(cert_type, certificateName.c_str(), cert.c_str(), \
-                            len);                                             \
-  }                                                                           \
-  bool set##cert_abbrev(const char* certificateName, const uint8_t mux = 0) { \
-    return set##cert_abbrev(cert_type, certificateName, mux);                 \
-  }                                                                           \
-  bool set##cert_abbrev(String& certificateName, const uint8_t mux = 0) {     \
-    return set##cert_abbrev(cert_type, certificateName, mux);                 \
-  }                                                                           \
-  bool convert##cert_abbrev(const char* filename) {                           \
-    return thisModem().convertCertificateImpl(cert_type, filename);           \
-  }                                                                           \
-  bool convert##cert_abbrev(String& filename) {                               \
-    return thisModem().convertCertificate(cert_type, filename.c_str());       \
+#define TINY_GSM_MAKE_SSL_FUNCTIONS(cert_abbrev, cert_type)               \
+  bool set##cert_abbrev(const char* certificateName, const uint8_t mux) { \
+    return setCertificate(cert_type, certificateName, mux);               \
+  }                                                                       \
+  bool set##cert_abbrev(String& certificateName, const uint8_t mux) {     \
+    return setCertificate(cert_type, certificateName, mux);               \
+  }                                                                       \
+  bool convert##cert_abbrev(const char* filename) {                       \
+    return thisModem().convertCertificateImpl(cert_type, filename);       \
+  }                                                                       \
+  bool convert##cert_abbrev(String& filename) {                           \
+    return thisModem().convertCertificate(cert_type, filename.c_str());   \
   }
 
 #define TINY_GSM_MAKE_CLIENT_SET_FUNCTIONS(cert_abbrev, cert_type)         \
   bool set##cert_abbrev(const char* certificateName) {                     \
-    if (ssl_mux != nullptr) { return false; }                              \
+    if (ssl_mux == nullptr) { return false; }                              \
     if (*ssl_mux < muxCount) {                                             \
       return ssl_at->setCertificate(cert_type, certificateName, *ssl_mux); \
     } else {                                                               \
-      DBG("Tried to set certificate of invalid socket!");                  \
       return false;                                                        \
     }                                                                      \
   }                                                                        \
   bool set##cert_abbrev(String& certificateName) {                         \
-    if (ssl_mux != nullptr) { return false; }                              \
+    if (ssl_mux == nullptr) { return false; }                              \
     if (*ssl_mux < muxCount) {                                             \
       return ssl_at->setCertificate(cert_type, certificateName, *ssl_mux); \
     } else {                                                               \
-      DBG("Tried to set certificate of invalid socket!");                  \
       return false;                                                        \
     }                                                                      \
   }
@@ -123,29 +105,18 @@ class TinyGsmSSL {
       psKeys[i]       = nullptr;
     }
   }
-  // Assign a certificate by certificate type and the filename of the
-  // certificate The filename should be of a file already saved in the module's
-  // file system
-  bool addCertificate(CertificateType cert_type, const char* filename) {
-    return thisModem().addCertificateImpl(cert_type, filename);
-  }
-  bool addCertificate(CertificateType cert_type, String& filename) {
-    return thisModem().addCertificateImpl(cert_type, filename.c_str());
-  }
 
-  // Assign a certificate by certificate type, including the whole text of the
+  // Load a new certificate onto the module, including the whole text of the
   // certificate
   // A file will be created (or updated) on the module's filesystem with the
   // content of the certificate
-  bool addCertificate(CertificateType cert_type, const char* certificateName,
-                      const char* cert, const uint16_t len) {
-    return thisModem().addCertificateImpl(cert_type, certificateName, cert,
-                                          len);
+  bool loadCertificate(const char* certificateName, const char* cert,
+                       const uint16_t len) {
+    return thisModem().loadCertificateImpl(certificateName, cert, len);
   }
-  bool addCertificate(CertificateType cert_type, String& certificateName,
-                      String& cert, const uint16_t len) {
-    return addCertificate(cert_type, certificateName.c_str(), cert.c_str(),
-                          len);
+  bool loadCertificate(String& certificateName, String& cert,
+                       const uint16_t len) {
+    return loadCertificate(certificateName.c_str(), cert.c_str(), len);
   }
 
   // delete a certificate by name from the module's filesystem
@@ -158,12 +129,20 @@ class TinyGsmSSL {
     return deleteCertificate(filename.c_str());
   }
 
+  // print the contents of a certificate file to a stream
+  bool printCertificate(const char* filename, Stream& print_stream) {
+    return thisModem().printCertificateImpl(filename, print_stream);
+  }
+  bool printCertificate(String& filename, Stream& print_stream) {
+    return printCertificate(filename.c_str(), print_stream);
+  }
+
   // setting a certificate assigns that certificate to be used by a specific
   // socket - ie, it puts the name of the certificate into the correct spot for
   // the mux in the certificate array
   bool setCertificate(CertificateType cert_type, const char* certificateName,
-                      const uint8_t mux = 0) {
-    if (mux >= muxCount) return false;
+                      const uint8_t mux) {
+    if (mux >= muxCount) { return false; }
     switch (cert_type) {
       case CLIENT_PSK_IDENTITY: {
         thisModem().pskIdents[mux] = certificateName;
@@ -190,7 +169,7 @@ class TinyGsmSSL {
     return true;
   }
   bool setCertificate(CertificateType cert_type, String& certificateName,
-                      const uint8_t mux = 0) {
+                      const uint8_t mux) {
     return setCertificate(cert_type, certificateName.c_str(), mux);
   }
 
@@ -268,11 +247,10 @@ class TinyGsmSSL {
     }
 
     void setSSLAuthMode(SSLAuthMode mode) {
-      if (ssl_mux != nullptr) { return; }
+      if (ssl_mux == nullptr) { return; }
       if (*ssl_mux < muxCount) {
         ssl_at->sslAuthModes[*ssl_mux] = mode;
       } else {
-        DBG("Tried to change SSL mode of invalid socket!");
       }
     }
 
@@ -280,31 +258,28 @@ class TinyGsmSSL {
     // modem
     bool setCertificate(CertificateType cert_type,
                         const char*     certificateName) {
-      if (ssl_mux != nullptr) { return false; }
+      if (ssl_mux == nullptr) { return false; }
       if (*ssl_mux < muxCount) {
         return ssl_at->setCertificate(cert_type, certificateName, *ssl_mux);
       } else {
-        DBG("Tried to set certificate of invalid socket!");
         return false;
       }
     }
     bool setCertificate(CertificateType cert_type, String& certificateName) {
-      if (ssl_mux != nullptr) { return false; }
+      if (ssl_mux == nullptr) { return false; }
       if (*ssl_mux < muxCount) {
         return ssl_at->setCertificate(cert_type, certificateName, *ssl_mux);
       } else {
-        DBG("Tried to set certificate of invalid socket!");
         return false;
       }
     }
 
     void setPreSharedKey(const char* pskIdent, const char* psKey) {
-      if (ssl_mux != nullptr) { return; }
+      if (ssl_mux == nullptr) { return; }
       if (*ssl_mux < muxCount) {
         ssl_at->pskIdents[*ssl_mux] = pskIdent;
         ssl_at->psKeys[*ssl_mux]    = psKey;
       } else {
-        DBG("Tried to set pre-shared key and identity of invalid socket!");
       }
     }
     // NOTE: For backwards compatibility, adding a certificate without a type
@@ -349,13 +324,12 @@ class TinyGsmSSL {
    * Secure socket layer (SSL) certificate management functions
    */
  protected:
-  bool addCertificateImpl(CertificateType cert_type,
-                          const char* filename) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool addCertificateImpl(CertificateType cert_type,
-                          const char* certificateName, const char* cert,
-                          const uint16_t len) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool loadCertificateImpl(const char* certificateName, const char* cert,
+                           const uint16_t len) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool
   deleteCertificateImpl(const char* filename) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool printCertificateImpl(const char* filename,
+                            Stream& print_stream) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool convertCertificateImpl(CertificateType cert_type, const char* filename)
       TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool convertClientCertificatesImpl(const char* client_cert_name,

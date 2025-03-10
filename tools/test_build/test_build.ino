@@ -102,12 +102,12 @@ void loop() {
   client.stop();
 
 #if defined(TINY_GSM_MODEM_HAS_SSL)
-  // modem.addCertificate("certificateName");  // Not available for all modems
-  // modem.addCertificate(
+  // modem.loadCertificate("certificateName");  // Not available for all modems
+  // modem.loadCertificate(
   //     String("certificateName"));  // Not available for all modems
-  // modem.addCertificate("certificateName", "certificate_content",
+  // modem.loadCertificate("certificateName", "certificate_content",
   //                      20);  // Not available for all modems
-  // modem.addCertificate(String("certificateName"),
+  // modem.loadCertificate(String("certificateName"),
   // String("certificate_content"),
   //                      20);                    // Not available for all
   //                      modems

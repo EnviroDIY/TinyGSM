@@ -230,11 +230,13 @@ class TinyGsmSim7000SSL
   // have type like ".pem" or ".der".
   // NOTE: Uploading the certificate only happens by filename, the type of
   // certificate does not matter here
-  bool addCertificateImpl(CertificateType, const char* certificateName,
-                          const char* cert, const uint16_t len) {
+  bool loadCertificateImpl(const char* certificateName, const char* cert,
+                           const uint16_t len) {
+    bool success = true;
     // Initialize AT relate to file system functions
     sendAT(GF("+CFSINIT"));
-    if (waitResponse() != 1) { return false; }
+    success &= waitResponse() == 1;
+    if (!success) { return false; }
 
     // Write File to the Flash Buffer Allocated by CFSINIT
     // AT+CFSWFILE=<index>,<file name>,<mode>,<file size>,<input time>
@@ -248,32 +250,106 @@ class TinyGsmSim7000SSL
     // <input time> Millisecond, should send file during this period or you
     // can’t send file when timeout. The value should be less than 10000 ms.
     // <len_filename> Integer type. Maximum length of parameter <file name>.
-    sendAT(GF("+CFSWFILE=3\""), certificateName, GF("\",0,"), len,
-           GF(",10000,"), strlen(certificateName));
-    if (waitResponse() != 1) { return false; }
+    sendAT(GF("+CFSWFILE=3,\""), certificateName, GF("\",0,"), len,
+           GF(",10000"));
+    success &= waitResponse(GF("DOWNLOAD")) == 1;
 
-    stream.write(cert, len);
-    stream.flush();
+    if (success) {
+      stream.write(cert, len);
+      stream.flush();
+    }
+    success &= waitResponse() == 1;
+
+    // Verify the size of the uploaded file
+    // AT+CFSGFIS=<index>,<filename>
+    //<index> 3: "/customer/" (always use customer for certificates)
+    //<file name> File name length should less or equal 230 characters
+    sendAT(GF("+CFSGFIS=3,\""), certificateName, GF("\""));
+    success &= waitResponse(GF("+CFSGFIS:")) == 1;
+    if (success) {
+      int16_t len_confirmed = stream.parseInt();
+      streamSkipUntil('\n');
+      success &= len_confirmed == len;
+    }
 
     // Release AT relates to file system functions.
+    // NOTE: We need to do this even if we didn't successfully write the file
     sendAT(GF("+CFSTERM"));
-    return waitResponse() == 1;
+    success &= waitResponse() == 1;
+
+    return success;
   }
 
   // NOTE: Deleting the certificate only happens by filename, the type of
   // certificate does not matter here
-  bool deleteCertificateImpl(const char* certificateName) {  // todo test
+  bool deleteCertificateImpl(const char* certificateName) {
+    bool success = true;
+
     // Initialize AT relate to file system functions
     sendAT(GF("+CFSINIT"));
     if (waitResponse() != 1) { return false; }
 
     // Delete file
-    sendAT(GF("+CFSDFILE=3"), certificateName);
-    if (waitResponse() != 1) { return false; }
+    sendAT(GF("+CFSDFILE=3,\""), certificateName, '"');
+    success &= waitResponse() == 1;
 
     // Release AT relates to file system functions.
+    // NOTE: We need to do this even if we didn't successfully delete the file
     sendAT(GF("+CFSTERM"));
-    return waitResponse() == 1;
+    return success & (waitResponse() == 1);
+  }
+
+  bool printCertificateImpl(const char* filename, Stream& print_stream) {
+    bool    success   = true;
+    int16_t print_len = 0;
+
+    // Initialize AT relate to file system functions
+    sendAT(GF("+CFSINIT"));
+    if (waitResponse() != 1) { return false; }
+
+    // Read the file
+    // AT+CFSRFILE=<index>,<filename>,<mode>,<filesize>,<position>
+    // <index> 3: "/customer/" (always use customer for certificates)
+    // <file name> File name length should less or equal 230 characters
+    // <mode> 0:Read data at the beginning of the file
+    // <filesize> File size should be less than 10240 bytes, we put 10240 here
+    //    because we want to read the whole file.
+    // <position> The starting position that will be read in the file.
+    sendAT(GF("+CFSRFILE=3,\""), filename, GF("\",0,10240,0"));
+    success &= waitResponse(GF("+CFSRFILE:")) == 1;
+    if (success) {
+      print_len = stream.parseInt();
+      streamSkipUntil('\n');
+    }
+
+    // wait for some characters to be available
+    uint32_t start = millis();
+    while (!stream.available() && millis() - start < 10000) {}
+
+    for (int i = 0; i < print_len; i++) {
+      int      c;
+      uint32_t _startMillis = millis();
+      do {
+        c = stream.read();
+        if (c >= 0) break;
+      } while (millis() - _startMillis < 50);
+      // Print the file to the buffer
+#ifndef DUMP_AT_COMMANDS
+      // NOTE: Only do this if we're not dumping the all AT, or we'll double
+      // print
+      print_stream.write(c);
+#endif
+      if (c < 0) { break; }  // if we run out of characters, stop
+    }
+    print_stream.flush();
+
+    // wait for the ending OK
+    success &= waitResponse() == 1;
+
+    // Release AT relates to file system functions.
+    // NOTE: We need to do this even if we didn't successfully delete the file
+    sendAT(GF("+CFSTERM"));
+    return success & (waitResponse() == 1);
   }
 
 
@@ -299,7 +375,7 @@ class TinyGsmSim7000SSL
       }
       case CA_CERTIFICATE:
       default: {
-        sendAT(GF("+CSSLCFG=\"CONVERT\",2,\""), filename, '"');
+        sendAT(GF("+CSSLCFG=\"convert\",2,\""), filename, '"');
         return waitResponse() == 1;
         // After conversion, the AT manual suggests you delete the files!
       }
@@ -314,7 +390,7 @@ class TinyGsmSim7000SSL
     // <ssltype> 1=QAPI_NET_SSL_CERTIFICATE_E
     // <cname> name of cert file
     // <keyname> name of key file (for PKI cert/key pairs)
-    sendAT(GF("+CSSLCFG=\"CONVERT\",1,\""), client_cert_name, GF("\",\""),
+    sendAT(GF("+CSSLCFG=\"convert\",1,\""), client_cert_name, GF("\",\""),
            client_cert_key, '"');
     return waitResponse() == 1;
     // After conversion, the AT manual suggests you delete the files!
@@ -328,7 +404,7 @@ class TinyGsmSim7000SSL
     // <cname> name of cert file
     // <keyname> name of key file (for PKI cert/key pairs)
     // <passkey>
-    sendAT(GF("+CSSLCFG=\"CONVERT\",3,\""), pskIdent, GF("\":\""), psk, '"');
+    sendAT(GF("+CSSLCFG=\"convert\",3,\""), pskIdent, GF("\":\""), psk, '"');
     return waitResponse() == 1;
     // After conversion, the AT manual suggests you delete the files!
   }

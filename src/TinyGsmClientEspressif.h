@@ -193,12 +193,14 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
  protected:
   int8_t getSignalQualityImpl() {
     thisModem().sendAT(GF("+CWJAP?"));
-    int8_t res1 = thisModem().waitResponse(GF("No AP"), GF("+CWJAP:"));
+    int8_t res1 = thisModem().waitResponse(GF("No AP"), GF("+CWJAP:"),
+                                           GFP(GSM_OK), GFP(GSM_ERROR));
     if (res1 != 2) {
       thisModem().waitResponse();
       thisModem().sendAT(GF("+CWJAP_CUR?"));  // attempt "current" as used by
                                               // some Non-OS firmware versions
-      int8_t res1 = thisModem().waitResponse(GF("No AP"), GF("+CWJAP_CUR:"));
+      int8_t res1 = thisModem().waitResponse(GF("No AP"), GF("+CWJAP_CUR:"),
+                                             GFP(GSM_OK), GFP(GSM_ERROR));
       if (res1 != 2) {
         thisModem().waitResponse();
         return 0;

@@ -286,8 +286,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   // Although these "functions" are not functional, they need to be implemented
   // for the SSL template to compile.
 
-  bool addCertificateImpl(CertificateType, const char*, const char*,
-                          const uint16_t) {
+  bool loadCertificateImpl(const char*, const char*, const uint16_t) {
     DBG("### The TinyGSM implementation of the AT commands for the BG96 "
         "does not support adding certificates to the module!  You must "
         "manually add your certificates.");
