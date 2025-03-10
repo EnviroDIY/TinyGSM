@@ -297,7 +297,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     sendAT(GF("+CFSGFIS=3,\""), certificateName, GF("\""));
     success &= waitResponse(GF("+CFSGFIS:")) == 1;
     if (success) {
-      int16_t len_confirmed = stream.parseInt();
+      uint16_t len_confirmed = stream.parseInt();
       streamSkipUntil('\n');
       success &= len_confirmed == len;
     }

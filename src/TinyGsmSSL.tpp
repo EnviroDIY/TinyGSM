@@ -55,7 +55,7 @@ typedef enum {
   bool set##cert_abbrev(const char* certificateName, const uint8_t mux) { \
     return setCertificate(cert_type, certificateName, mux);               \
   }                                                                       \
-  bool set##cert_abbrev(String& certificateName, const uint8_t mux) {     \
+  bool set##cert_abbrev(String certificateName, const uint8_t mux) {      \
     return setCertificate(cert_type, certificateName, mux);               \
   }                                                                       \
   bool convert##cert_abbrev(const char* filename) {                       \
@@ -74,7 +74,7 @@ typedef enum {
       return false;                                                        \
     }                                                                      \
   }                                                                        \
-  bool set##cert_abbrev(String& certificateName) {                         \
+  bool set##cert_abbrev(String certificateName) {                          \
     if (ssl_mux == nullptr) { return false; }                              \
     if (*ssl_mux < muxCount) {                                             \
       return ssl_at->setCertificate(cert_type, certificateName, *ssl_mux); \
