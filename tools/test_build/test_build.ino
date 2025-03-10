@@ -102,25 +102,24 @@ void loop() {
   client.stop();
 
 #if defined(TINY_GSM_MODEM_HAS_SSL)
-  // modem.loadCertificate("certificateName");  // Not available for all modems
-  // modem.loadCertificate(
-  //     String("certificateName"));  // Not available for all modems
-  // modem.loadCertificate("certificateName", "certificate_content",
-  //                      20);  // Not available for all modems
-  // modem.loadCertificate(String("certificateName"),
-  // String("certificate_content"),
-  //                      20);                    // Not available for all
-  //                      modems
-  // modem.deleteCertificate("certificateName");  // Not available for all
-  // modems
-  modem.setCertificate("certificateName", 0);
-  modem.setCertificate(String("certificateName"), 0);
   TinyGsmClientSecure client_secure(modem);
   TinyGsmClientSecure client_secure2(modem);
   TinyGsmClientSecure client_secure3(modem, 1);
   client_secure.init(&modem);
   client_secure.init(&modem, 1);
-
+#endif
+#if defined(TINY_GSM_MODEM_CAN_MANAGE_CERTS)
+  client_secure.setSSLAuthMode(NO_VALIDATION);
+  client_secure.setSSLAuthMode(MUTUAL_AUTHENTICATION);
+  modem.loadCertificate("certificateName", "certificate_content", 20);
+  modem.printCertificate("certificateName", Serial);
+  modem.deleteCertificate("certificateName");
+  modem.setCertificate("certificateName", 0);
+  modem.setCertificate(String("certificateName"), 0);
+  client_secure.setCertificate("certificateName");
+  client_secure.setCertificate(String("certificateName"));
+#endif
+#if defined(TINY_GSM_MODEM_HAS_SSL)
   client_secure.connect(server, 443);
 
   // Make a HTTP GET request:
