@@ -293,6 +293,12 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     return false;
   }
 
+  bool printCertificateImpl(const char*, Stream&) {
+    DBG("### The TinyGSM implementation of the AT commands for the ESP8266 "
+        "does not support printing certificates from the module!");
+    return false;
+  }
+
   bool deleteCertificateImpl(const char*) {
     DBG("### The TinyGSM implementation of the AT commands for the BG96 "
         "does not support deleting certificates from the module!  You must "

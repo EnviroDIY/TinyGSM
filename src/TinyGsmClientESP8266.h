@@ -190,6 +190,12 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     return false;
   }
 
+  bool printCertificateImpl(const char*, Stream&) {
+    DBG("### The TinyGSM implementation of the AT commands for the ESP8266 "
+        "does not support printing certificates from the module!");
+    return false;
+  }
+
   bool deleteCertificateImpl(const char*) {
     DBG("### The TinyGSM implementation of the AT commands for the ESP8266 "
         "does not support deleting certificates from the module!  You must "
