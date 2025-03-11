@@ -57,7 +57,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   ~TinyGsmEspressif() {}
 
   /*
-   * Constructor
+   * GSM Modem Constructor
    */
  public:
   explicit TinyGsmEspressif(Stream& stream) : stream(stream) {}

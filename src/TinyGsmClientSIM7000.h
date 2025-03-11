@@ -109,7 +109,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
   // NOTE:  Use modem TinyGsmSim7000SSL for a secure client!
 
   /*
-   * Constructor
+   * GSM Modem Constructor
    */
  public:
   explicit TinyGsmSim7000(Stream& stream)

@@ -214,7 +214,7 @@ class TinyGsmSequansMonarch
   };
 
   /*
-   * Constructor
+   * GSM Modem Constructor
    */
  public:
   explicit TinyGsmSequansMonarch(Stream& stream) : stream(stream) {

@@ -147,7 +147,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   // NOT SUPPORTED
 
   /*
-   * Constructor
+   * GSM Modem Constructor
    */
  public:
   explicit TinyGsmSim5360(Stream& stream) : stream(stream) {

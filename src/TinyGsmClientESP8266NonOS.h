@@ -129,7 +129,7 @@ class TinyGsmESP8266NonOS
   };
 
   /*
-   * Constructor
+   * GSM Modem Constructor
    */
  public:
   explicit TinyGsmESP8266NonOS(Stream& stream)

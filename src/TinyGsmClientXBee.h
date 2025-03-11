@@ -295,7 +295,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   };
 
   /*
-   * Constructor
+   * GSM Modem Constructor
    */
  public:
   explicit TinyGsmXBee(Stream& stream)

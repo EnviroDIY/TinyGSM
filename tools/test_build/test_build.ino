@@ -29,7 +29,9 @@ void loop() {
   modem.getModemRevision();
   modem.factoryDefault();
 
-#if not defined(TINY_GSM_MODEM_ESP8266) && not defined(TINY_GSM_MODEM_ESP32)
+#if not defined(TINY_GSM_MODEM_ESP32) &&   \
+    not defined(TINY_GSM_MODEM_ESP8266) && \
+    not defined(TINY_GSM_MODEM_ESP8266_NONOS)
   modem.getModemSerialNumber();
 #endif
 

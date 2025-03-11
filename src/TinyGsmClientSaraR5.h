@@ -189,7 +189,7 @@ public:
   };
 
   /*
-   * Constructor
+   * GSM Modem Constructor
    */
  public:
   explicit TinyGsmSaraR5(Stream& stream) : stream(stream) {

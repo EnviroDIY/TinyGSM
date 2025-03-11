@@ -178,7 +178,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   };
 
   /*
-   * Constructor
+   * GSM Modem Constructor
    */
  public:
   explicit TinyGsmSim800(Stream& stream) : stream(stream) {

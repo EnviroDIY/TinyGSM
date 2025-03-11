@@ -207,7 +207,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   };
 
   /*
-   * Constructor
+   * GSM Modem Constructor
    */
  public:
   explicit TinyGsmSaraR4(Stream& stream)

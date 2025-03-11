@@ -130,7 +130,7 @@ class TinyGsmSim7000SSL
   };
 
   /*
-   * Constructor
+   * GSM Modem Constructor
    */
  public:
   explicit TinyGsmSim7000SSL(Stream& stream)
