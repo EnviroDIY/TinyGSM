@@ -65,7 +65,9 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
     friend class TinyGsmM590;
 
    public:
-    GsmClientM590() {}
+    GsmClientM590() {
+      is_secure = false;
+    }
 
     explicit GsmClientM590(TinyGsmM590& modem, uint8_t mux = 0) {
       init(&modem, mux);
@@ -91,7 +93,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
       stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES

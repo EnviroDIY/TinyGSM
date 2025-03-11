@@ -54,7 +54,9 @@ class TinyGsmSim7000SSL
     friend class TinyGsmSim7000SSL;
 
    public:
-    GsmClientSim7000SSL() {}
+    GsmClientSim7000SSL() {
+      is_secure = false;
+    }
 
     explicit GsmClientSim7000SSL(TinyGsmSim7000SSL& modem, uint8_t mux = 0) {
       init(&modem, mux);
@@ -83,7 +85,7 @@ class TinyGsmSim7000SSL
       stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -114,7 +116,9 @@ class TinyGsmSim7000SSL
         public TinyGsmSSL<TinyGsmSim7000SSL,
                           TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    GsmClientSecureSim7000SSL() {}
+    GsmClientSecureSim7000SSL() {
+      is_secure = true;
+    }
 
     explicit GsmClientSecureSim7000SSL(TinyGsmSim7000SSL& modem,
                                        uint8_t            mux = 0)
@@ -123,16 +127,6 @@ class TinyGsmSim7000SSL
               &modem, &mux) {
       is_secure = true;
     }
-
-    virtual int connect(const char* host, uint16_t port,
-                        int timeout_s) override {
-      stop();
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-      return sock_connected;
-    }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
   /*
@@ -553,8 +547,9 @@ class TinyGsmSim7000SSL
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 75) {
+                    int timeout_s = 75) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+    bool     ssl        = sockets[mux]->is_secure;
 
     // set the connection (mux) identifier to use
     sendAT(GF("+CACID="), mux);

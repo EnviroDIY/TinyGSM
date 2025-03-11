@@ -53,7 +53,9 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     friend class TinyGsmSim7080;
 
    public:
-    GsmClientSim7080() {}
+    GsmClientSim7080() {
+      is_secure = false;
+    }
 
     explicit GsmClientSim7080(TinyGsmSim7080& modem, uint8_t mux = 0) {
       init(&modem, mux);
@@ -82,7 +84,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -112,7 +114,9 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       : public GsmClientSim7080,
         public TinyGsmSSL<TinyGsmSim7080, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    GsmClientSecureSim7080() {}
+    GsmClientSecureSim7080() {
+      is_secure = true;
+    }
 
     explicit GsmClientSecureSim7080(TinyGsmSim7080& modem, uint8_t mux = 0)
         : GsmClientSim7080(modem, mux),
@@ -120,16 +124,6 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
               &modem, &mux) {
       is_secure = true;
     }
-
-    virtual int connect(const char* host, uint16_t port,
-                        int timeout_s) override {
-      stop();
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-      return sock_connected;
-    }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
   /*
@@ -631,8 +625,9 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 75) {
+                    int timeout_s = 75) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+    bool     ssl        = sockets[mux]->is_secure;
 
     // set the connection (mux) identifier to use
     sendAT(GF("+CACID="), mux);

@@ -87,7 +87,9 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     friend class TinyGsmBG96;
 
    public:
-    GsmClientBG96() {}
+    GsmClientBG96() {
+      is_secure = false;
+    }
 
     explicit GsmClientBG96(TinyGsmBG96& modem, uint8_t mux = 0) {
       init(&modem, mux);
@@ -147,7 +149,9 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       : public GsmClientBG96,
         public TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    GsmClientSecureBG96() {}
+    GsmClientSecureBG96() {
+      is_secure = true;
+    }
 
     explicit GsmClientSecureBG96(TinyGsmBG96& modem, uint8_t mux = 0)
         : TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>::GsmSecureClient(&modem,

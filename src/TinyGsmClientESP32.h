@@ -58,7 +58,9 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     friend class TinyGsmESP32;
 
    public:
-    GsmClientESP32() {}
+    GsmClientESP32() {
+      is_secure = false;
+    }
 
     explicit GsmClientESP32(TinyGsmESP32& modem,
                             uint8_t       mux = static_cast<uint8_t>(-1)) {
@@ -93,7 +95,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       TINY_GSM_YIELD();
       rx.clear();
       uint8_t oldMux = mux;
-      sock_connected = at->modemConnect(host, port, &mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, &mux, timeout_s);
       if (mux != oldMux && oldMux < TINY_GSM_MUX_COUNT) {
         DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
         at->sockets[oldMux] = nullptr;
@@ -129,7 +131,9 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       : public GsmClientESP32,
         public TinyGsmSSL<TinyGsmESP32, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    GsmClientSecureESP32() {}
+    GsmClientSecureESP32() {
+      is_secure = true;
+    }
 
     explicit GsmClientSecureESP32(TinyGsmESP32& modem,
                                   uint8_t       mux = static_cast<uint8_t>(-1))
@@ -164,22 +168,6 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       strcat(key_name, key_number);
       return ssl_at->setCertificate(CLIENT_KEY, key_name, mux);
     }
-
-    virtual int connect(const char* host, uint16_t port,
-                        int timeout_s) override {
-      if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] != nullptr) { stop(); }
-      TINY_GSM_YIELD();
-      rx.clear();
-      uint8_t oldMux = mux;
-      sock_connected = at->modemConnect(host, port, &mux, true, timeout_s);
-      if (mux != oldMux && oldMux < TINY_GSM_MUX_COUNT) {
-        DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
-        at->sockets[oldMux] = nullptr;
-      }
-      at->sockets[mux] = this;
-      return sock_connected;
-    }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
   /*
@@ -701,9 +689,10 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
-                    bool ssl = false, int timeout_s = 75) {
+                    int timeout_s = 75) {
     uint32_t timeout_ms    = ((uint32_t)timeout_s) * 1000;
     uint8_t  requested_mux = *mux;
+    bool     ssl           = sockets[requested_mux]->is_secure;
     if (ssl) {
       if (!(requested_mux < TINY_GSM_MUX_COUNT)) {
         // If we didn't get a valid mux - the user wants us to assign the mux

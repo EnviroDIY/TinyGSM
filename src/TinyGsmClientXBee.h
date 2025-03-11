@@ -106,7 +106,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     friend class TinyGsmXBee;
 
    public:
-    GsmClientXBee() {}
+    GsmClientXBee() {
+      is_secure = false;
+    }
 
     explicit GsmClientXBee(TinyGsmXBee& modem, uint8_t mux = 0) {
       init(&modem, mux);
@@ -133,7 +135,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     virtual int connect(const char* host, uint16_t port, int timeout_s) {
       // NOTE:  Not calling stop() or yield() here
       at->streamClear();  // Empty anything in the buffer before starting
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     virtual int connect(const char* host, uint16_t port) override {
@@ -146,7 +148,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       }
       // NOTE:  Not calling stop() or yield() here
       at->streamClear();  // Empty anything in the buffer before starting
-      sock_connected = at->modemConnect(ip, port, mux, false);
+      sock_connected = at->modemConnect(ip, port, mux);
       return sock_connected;
     }
     int connect(IPAddress ip, uint16_t port) override {
@@ -273,7 +275,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   class GsmClientSecureXBee : public GsmClientXBee,
         public TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    GsmClientSecureXBee() {}
+    GsmClientSecureXBee() {is_secure = true;}
     explicit GsmClientSecureXBee(TinyGsmXBee& modem, uint8_t mux = 0)
         : GsmClientXBee(modem, mux),
           TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>::GsmSecureClient(
@@ -282,34 +284,13 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
 
   class GsmClientSecureXBee : public GsmClientXBee {
    public:
-    GsmClientSecureXBee() {}
+    GsmClientSecureXBee() {
+      is_secure = true;
+    }
 
     explicit GsmClientSecureXBee(TinyGsmXBee& modem, uint8_t mux = 0)
-        : GsmClientXBee(modem, mux) {}
-
-   public:
-    virtual int connect(const char* host, uint16_t port,
-                        int timeout_s) override {
-      // NOTE:  Not calling stop() or yield() here
-      at->streamClear();  // Empty anything in the buffer before starting
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-      return sock_connected;
-    }
-    virtual int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 75);
-    }
-
-    int connect(IPAddress ip, uint16_t port, int timeout_s) override {
-      if (timeout_s != 0) {
-        DBG("Timeout [", timeout_s, "] doesn't apply here.");
-      }
-      // NOTE:  Not calling stop() or yield() here
-      at->streamClear();  // Empty anything in the buffer before starting
-      sock_connected = at->modemConnect(ip, port, mux, true);
-      return sock_connected;
-    }
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, 0);
+        : GsmClientXBee(modem, mux) {
+      is_secure = true;
     }
   };
 
@@ -1221,7 +1202,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   }
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0,
-                    bool ssl = false, int timeout_s = 75) {
+                    int timeout_s = 75) {
     bool retVal = false;
     XBEE_COMMAND_START_DECORATOR(5, false)
 
@@ -1241,7 +1222,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     // If we now have a valid IP address, use it to connect
     if (savedHostIP != IPAddress(0, 0, 0, 0)) {
       // Only re-set connection information if we have an IP address
-      retVal = modemConnect(savedHostIP, port, mux, ssl);
+      retVal = modemConnect(savedHostIP, port, mux);
     }
 
     XBEE_COMMAND_END_DECORATOR
@@ -1249,10 +1230,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     return retVal;
   }
 
-  bool modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0,
-                    bool ssl = false) {
+  bool modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0) {
     bool success     = true;
     bool changesMade = false;
+    bool ssl         = sockets[mux]->is_secure;
 
     if (mux != 0) {
       DBG("XBee only supports 1 IP channel in transparent mode!");

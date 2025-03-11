@@ -88,7 +88,9 @@ class TinyGsmSequansMonarch
     friend class TinyGsmSequansMonarch;
 
    public:
-    GsmClientSequansMonarch() {}
+    GsmClientSequansMonarch() {
+      is_secure = false;
+    }
 
     explicit GsmClientSequansMonarch(TinyGsmSequansMonarch& modem,
                                      uint8_t                mux = 1) {
@@ -120,7 +122,7 @@ class TinyGsmSequansMonarch
       if (sock_connected) stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -152,7 +154,7 @@ class TinyGsmSequansMonarch
       : public GsmClientSequansMonarch,
         public TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    GsmClientSecureSequansMonarch() {}
+    GsmClientSecureSequansMonarch() {is_secure = true;}
 
     explicit GsmClientSecureSequansMonarch(TinyGsmSequansMonarch& modem,
                                            uint8_t                mux = 1)
@@ -163,11 +165,15 @@ class TinyGsmSequansMonarch
 
   class GsmClientSecureSequansMonarch : public GsmClientSequansMonarch {
    public:
-    GsmClientSecureSequansMonarch() {}
+    GsmClientSecureSequansMonarch() {
+      is_secure = true;
+    }
 
     explicit GsmClientSecureSequansMonarch(TinyGsmSequansMonarch& modem,
                                            uint8_t                mux = 1)
-        : GsmClientSequansMonarch(modem, mux) {}
+        : GsmClientSequansMonarch(modem, mux) {
+      is_secure = true;
+    }
 
    protected:
     bool strictSSL = false;
@@ -197,7 +203,7 @@ class TinyGsmSequansMonarch
         return false;
       }
 
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -500,10 +506,11 @@ class TinyGsmSequansMonarch
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 75) {
+                    int timeout_s = 75) {
     int8_t   rsp;
-    uint32_t startMillis = millis();
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
+    bool     ssl         = sockets[mux]->is_secure;
+    uint32_t startMillis = millis();
 
     if (ssl) {
       // enable SSL and use security profile 1

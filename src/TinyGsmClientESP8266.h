@@ -58,7 +58,9 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     friend class TinyGsmESP8266;
 
    public:
-    GsmClientESP8266() {}
+    GsmClientESP8266() {
+      is_secure = false;
+    }
 
     explicit GsmClientESP8266(TinyGsmESP8266& modem, uint8_t mux = 0) {
       init(&modem, mux);
@@ -84,7 +86,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
       stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -115,7 +117,9 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
       : public GsmClientESP8266,
         public TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    GsmClientSecureESP8266() {}
+    GsmClientSecureESP8266() {
+      is_secure = true;
+    }
 
     explicit GsmClientSecureESP8266(TinyGsmESP8266& modem, uint8_t mux = 0)
         : GsmClientESP8266(modem, mux),
@@ -123,16 +127,6 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
               &modem, &mux) {
       is_secure = true;
     }
-
-    virtual int connect(const char* host, uint16_t port,
-                        int timeout_s) override {
-      stop();
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-      return sock_connected;
-    }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
   /*
@@ -430,8 +424,9 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 75) {
+                    int timeout_s = 75) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+    bool     ssl        = sockets[mux]->is_secure;
     if (ssl) {
       if (sslAuthModes[mux] == PRE_SHARED_KEYS) {
         // The ESP8266 does not support SSL using pre-shared keys with AT
