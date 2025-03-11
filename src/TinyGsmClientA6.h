@@ -132,7 +132,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
   // Doesn't support SSL
 
   /*
-   * Constructor
+   * GSM Modem Constructor
    */
  public:
   explicit TinyGsmA6(Stream& stream) : stream(stream) {

@@ -127,7 +127,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   };
 
   /*
-   * Constructor
+   * GSM Modem Constructor
    */
  public:
   explicit TinyGsmSim7080(Stream& stream)

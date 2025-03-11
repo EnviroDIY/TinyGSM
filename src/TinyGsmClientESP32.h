@@ -171,7 +171,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   };
 
   /*
-   * Constructor
+   * GSM Modem Constructor
    */
  public:
   explicit TinyGsmESP32(Stream& stream)

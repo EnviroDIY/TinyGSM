@@ -130,7 +130,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   };
 
   /*
-   * Constructor
+   * GSM Modem Constructor
    */
  public:
   explicit TinyGsmESP8266(Stream& stream)
