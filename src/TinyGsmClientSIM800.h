@@ -162,8 +162,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
 
     explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 0)
         : GsmClientSim800(modem, mux),
-          TinyGsmSSL<TinyGsmSim800, TINY_GSM_MUX_COUNT>::GsmSecureClient(
-              &modem, &mux) {is_secure = true;}
+          TinyGsmSSL<TinyGsmSim800, TINY_GSM_MUX_COUNT>::GsmSecureClient() {is_secure = true;}
 #endif
 
   class GsmClientSecureSim800 : public GsmClientSim800 {

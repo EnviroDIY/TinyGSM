@@ -125,8 +125,7 @@ class TinyGsmSim7000SSL
     explicit GsmClientSecureSim7000SSL(TinyGsmSim7000SSL& modem,
                                        uint8_t            mux = 0)
         : GsmClientSim7000SSL(modem, mux),
-          TinyGsmSSL<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>::GsmSecureClient(
-              &modem, &mux) {
+          TinyGsmSSL<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>::GsmSecureClient() {
       is_secure = true;
     }
   };
@@ -266,7 +265,7 @@ class TinyGsmSim7000SSL
     sendAT(GF("+CFSGFIS=3,\""), certificateName, GF("\""));
     success &= waitResponse(GF("+CFSGFIS:")) == 1;
     if (success) {
-      int16_t len_confirmed = stream.parseInt();
+      uint16_t len_confirmed = stream.parseInt();
       streamSkipUntil('\n');
       success &= len_confirmed == len;
     }
@@ -355,9 +354,6 @@ class TinyGsmSim7000SSL
   bool convertCertificateImpl(CertificateType cert_type, const char* filename) {
     // Convert certificate into something the module will use and save it to
     // file
-    //  AT+CSSLCFG="CONVERT",<ssltype>,<cname>[,<keyname>[,<passkey>]]
-    // <ssltype> 2=QAPI_NET_SSL_CA_LIST_E
-    // <cname> name of cert file
     switch (cert_type) {
       case CLIENT_PSK:
       case CLIENT_PSK_IDENTITY: {
@@ -374,11 +370,17 @@ class TinyGsmSim7000SSL
       }
       case CA_CERTIFICATE:
       default: {
-        sendAT(GF("+CSSLCFG=\"convert\",2,\""), filename, '"');
-        return waitResponse() == 1;
-        // After conversion, the AT manual suggests you delete the files!
+        return convertCACertificateImpl(filename);
       }
     }
+  }
+  bool convertCACertificateImpl(const char* ca_cert_name) {
+    //  AT+CSSLCFG="CONVERT",<ssltype>,<cname>[,<keyname>[,<passkey>]]
+    // <ssltype> 2=QAPI_NET_SSL_CA_LIST_E
+    // <cname> name of certificate file
+    sendAT(GF("+CSSLCFG=\"convert\",2,\""), ca_cert_name, '"');
+    return waitResponse() == 1;
+    // After conversion, the AT manual suggests you delete the files!
   }
 
   bool convertClientCertificatesImpl(const char* client_cert_name,
@@ -387,23 +389,24 @@ class TinyGsmSim7000SSL
     // file
     //  AT+CSSLCFG="CONVERT",<ssltype>,<cname>[,<keyname>[,<passkey>]]
     // <ssltype> 1=QAPI_NET_SSL_CERTIFICATE_E
-    // <cname> name of cert file
-    // <keyname> name of key file (for PKI cert/key pairs)
+    // <cname> name of certificate file
+    // <keyname> name of key file (for client cert/key pairs)
+    // <passkey> passkey for the client key file [NOT SUPPORTED BY TINYGSM]
     sendAT(GF("+CSSLCFG=\"convert\",1,\""), client_cert_name, GF("\",\""),
            client_cert_key, '"');
     return waitResponse() == 1;
     // After conversion, the AT manual suggests you delete the files!
   }
 
-  bool convertPSKandIDImpl(const char* psk, const char* pskIdent) {
+  bool convertPSKTableImpl(const char* psk_table_name) {
     // Convert certificate into something the module will use and save it to
     // file
     //  AT+CSSLCFG="CONVERT",<ssltype>,<cname>[,<keyname>[,<passkey>]]
     // <ssltype> 3=QAPI_NET_SSL_PSK_TABLE_E
-    // <cname> name of cert file
-    // <keyname> name of key file (for PKI cert/key pairs)
-    // <passkey>
-    sendAT(GF("+CSSLCFG=\"convert\",3,\""), pskIdent, GF("\":\""), psk, '"');
+    // <cname> name of PSK table file
+    // <keyname> not used for PSK tables
+    // <passkey> not used for PSK tables
+    sendAT(GF("+CSSLCFG=\"convert\",3,\""), psk_table_name, '"');
     return waitResponse() == 1;
     // After conversion, the AT manual suggests you delete the files!
   }
@@ -586,6 +589,17 @@ class TinyGsmSim7000SSL
     waitResponse();
 
     if (ssl) {
+      // If we have a secure socket, use a static cast to get the authentication
+      // mode and certificate names. This isn't really "safe" but since we've
+      // already checked that the socket is a secure one, we're pretty sure of
+      // the type and it should work.
+      GsmClientSecureSim7000SSL* thisClient =
+          static_cast<GsmClientSecureSim7000SSL*>(sockets[mux]);
+      SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
+      const char* CAcertName     = thisClient->CAcertName;
+      const char* clientCertName = thisClient->clientCertName;
+      const char* pskTableName   = thisClient->pskTableName;
+
       // Query all the parameters that have been set for this SSL context
       // TODO(@SRGDamia1): Skip this?
       // AT+CSSLCFG="ctxindex" ,<ctxindex>
@@ -596,36 +610,35 @@ class TinyGsmSim7000SSL
       waitResponse();
 
       // apply the correct certificates to the connection
-      if (CAcerts[mux] != nullptr &&
-          (sslAuthModes[mux] == CA_VALIDATION ||
-           sslAuthModes[mux] == MUTUAL_AUTHENTICATION)) {
+      if (CAcertName != nullptr &&
+          (sslAuthMode == CA_VALIDATION ||
+           sslAuthMode == MUTUAL_AUTHENTICATION)) {
         // AT+CASSLCFG=<cid>,"cacert",<caname>
         // <cid> Application connection ID (set with AT+CACID above)
         // <certname> certificate name
-        sendAT(GF("+CASSLCFG="), mux, GF(",cacert,\""), CAcerts[mux], "\"");
+        sendAT(GF("+CASSLCFG="), mux, GF(",cacert,\""), CAcertName, "\"");
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
-      if (clientCerts[mux] != nullptr &&
-          (sslAuthModes[mux] == MUTUAL_AUTHENTICATION)) {
+      if (clientCertName != nullptr && (sslAuthMode == MUTUAL_AUTHENTICATION)) {
         // AT+CASSLCFG=<cid>,"clientcert",<certname>
         // <cid> Application connection ID (set with AT+CACID above)
         // <certname> Alphanumeric ASCII text string up to 64 characters. Client
         // certificate name that has been configured by AT+CSSLCFG.
         // NOTE: The AT+CSSLCFG convert function for the client cert combines
         // the certificate and the key in a single certificate name
-        sendAT(GF("+CASSLCFG="), mux, GF("\"clientcert\",\""), clientCerts[mux],
+        sendAT(GF("+CASSLCFG="), mux, GF("\"clientcert\",\""), clientCertName,
                GF("\""));
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
-      if (psKeys[mux] != nullptr && (sslAuthModes[mux] == PRE_SHARED_KEYS)) {
-        // AT+CASSLCFG=<cid>,"psktable",<pskname>
+      if (pskTableName != nullptr && (sslAuthMode == PRE_SHARED_KEYS)) {
+        // AT+CASSLCFG=<cid>,"psktable",<pskTableName>
         // <cid> Application connection ID (set with AT+CACID above)
-        // <pskname> Alphanumeric ASCII text string up to 64 characters. PSK
-        // table name that has been configured by AT+CSSLCFG. File content
+        // <pskTableName> Alphanumeric ASCII text string up to 64 characters.
+        // PSK table name that has been configured by AT+CSSLCFG. File content
         // format is <identity>:<hex string>.
-        sendAT(GF("+CASSLCFG=\"psktable\","), mux, GF(",\""), clientKeys[mux],
+        sendAT(GF("+CASSLCFG=\"psktable\","), mux, GF(",\""), pskTableName,
                GF("\""));
         if (waitResponse(5000L) != 1) return false;
       }

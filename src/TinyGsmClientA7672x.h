@@ -150,9 +150,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
 
     explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux = 0)
         : GsmClientA7672X(modem, mux),
-          TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>::GsmSecureClient(&modem,
-                                                                         &mux) {
-    }
+          TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>::GsmSecureClient() {}
 
    public:
     bool loadCertificate(const char* certificateName, const char* cert,
@@ -331,16 +329,21 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return waitResponse() == 1;
   }
 
+  // no certificate conversion needed
   bool convertCertificateImpl(CertificateType, const char*) {
-    return true;  // no conversion needed
+    return true;
   }
-
+  bool convertCACertificateImpl(const char*) {
+    return true;
+  }
   bool convertClientCertificatesImpl(const char*, const char*) {
-    return true;  // no conversion needed
+    return true;
   }
-
   bool convertPSKandIDImpl(const char*, const char*) {
-    return true;  // no conversion needed
+    return true;
+  }
+  bool convertPSKTableImpl(const char* psk_table_name) {
+    return true;
   }
 
   /*
@@ -511,7 +514,20 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     if (waitResponse(2000L) != 1) { return false; }
 
     if (ssl) {
-      if (sslAuthModes[mux] == PRE_SHARED_KEYS) {
+      // If we have a secure socket, use a static cast to get the authentication
+      // mode and certificate names. This isn't really "safe" but since we've
+      // already checked that the socket is a secure one, we're pretty sure of
+      // the type and it should work.
+      GsmClientSecureA7672X* thisClient =
+          static_cast<GsmClientSecureA7672X*>(sockets[mux]);
+      SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
+      const char* CAcertName     = thisClient->CAcertName;
+      const char* clientCertName = thisClient->clientCertName;
+      const char* clientKeyName  = thisClient->clientKeyName;
+      // const char* pskIdent       = thisClient->pskIdent;
+      // const char* psKey          = thisClient->psKey;
+
+      if (sslAuthMode == PRE_SHARED_KEYS) {
         DBG("### The A7672x does not support SSL using pre-shared keys.");
         return false;
       }
@@ -543,7 +559,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       //            2: server and client authentication (MUTUAL_AUTHENTICATION)
       //            3: client authentication and no server authentication
       //            (CLIENT_VALIDATION)
-      switch (sslAuthModes[mux]) {
+      switch (sslAuthMode) {
         case CA_VALIDATION: {
           sendAT(GF("+CSSLCFG=\"authmode\",0,1"));
           break;
@@ -564,26 +580,26 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       if (waitResponse(5000L) != 1) return false;
 
       // apply the correct certificates to the connection
-      if (CAcerts[mux] != nullptr &&
-          (sslAuthModes[mux] == CA_VALIDATION ||
-           sslAuthModes[mux] == MUTUAL_AUTHENTICATION)) {
+      if (CAcertName != nullptr &&
+          (sslAuthMode == CA_VALIDATION ||
+           sslAuthMode == MUTUAL_AUTHENTICATION)) {
         /* Configure the server root CA of the specified SSL context
         AT + CSSLCFG = "cacert", <ssl_ctx_index>,<ca_file> */
-        sendAT(GF("+CSSLCFG=\"cacert\",0,"), CAcerts[mux]);
+        sendAT(GF("+CSSLCFG=\"cacert\",0,"), CAcertName);
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
-      if (clientCerts[mux] != nullptr &&
-          (sslAuthModes[mux] == MUTUAL_AUTHENTICATION ||
-           sslAuthModes[mux] == CLIENT_VALIDATION)) {
-        sendAT(GF("+CSSLCFG=\"clientcert\",0,"), clientCerts[mux]);
+      if (clientCertName != nullptr &&
+          (sslAuthMode == MUTUAL_AUTHENTICATION ||
+           sslAuthMode == CLIENT_VALIDATION)) {
+        sendAT(GF("+CSSLCFG=\"clientcert\",0,"), clientCertName);
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
-      if (clientKeys[mux] != nullptr &&
-          (sslAuthModes[mux] == MUTUAL_AUTHENTICATION ||
-           sslAuthModes[mux] == CLIENT_VALIDATION)) {
-        sendAT(GF("+CSSLCFG=\"clientkey\",0,"), clientKeys[mux]);
+      if (clientKeyName != nullptr &&
+          (sslAuthMode == MUTUAL_AUTHENTICATION ||
+           sslAuthMode == CLIENT_VALIDATION)) {
+        sendAT(GF("+CSSLCFG=\"clientkey\",0,"), clientKeyName);
         if (waitResponse(5000L) != 1) return false;
       }
 
