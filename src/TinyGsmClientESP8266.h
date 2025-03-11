@@ -116,6 +116,8 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   class GsmClientSecureESP8266
       : public GsmClientESP8266,
         public TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>::GsmSecureClient {
+    friend class TinyGsmESP8266;
+
    public:
     GsmClientSecureESP8266() {
       is_secure = true;

@@ -177,6 +177,8 @@ public:
 #endif
 
   class GsmClientSecureR5 : public GsmClientSaraR5 {
+    friend class TinyGsmSaraR5;
+
    public:
     GsmClientSecureR5() {
       is_secure = true;

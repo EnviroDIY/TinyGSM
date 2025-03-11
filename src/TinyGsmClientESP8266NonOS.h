@@ -116,6 +116,8 @@ class TinyGsmESP8266NonOS
    */
  public:
   class GsmClientSecureESP8266NonOS : public GsmClientESP8266NonOS {
+    friend class TinyGsmESP8266NonOS;
+
    public:
     GsmClientSecureESP8266NonOS() {
       is_secure = true;

@@ -115,6 +115,8 @@ class TinyGsmSim7000SSL
       : public GsmClientSim7000SSL,
         public TinyGsmSSL<TinyGsmSim7000SSL,
                           TINY_GSM_MUX_COUNT>::GsmSecureClient {
+    friend class TinyGsmSim7000SSL;
+
    public:
     GsmClientSecureSim7000SSL() {
       is_secure = true;

@@ -274,6 +274,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
  // These will be needed if certificate management functions are ever added
   class GsmClientSecureXBee : public GsmClientXBee,
         public TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>::GsmSecureClient {
+          friend class TinyGsmXBee;
    public:
     GsmClientSecureXBee() {is_secure = true;}
     explicit GsmClientSecureXBee(TinyGsmXBee& modem, uint8_t mux = 0)
@@ -283,6 +284,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
 #endif
 
   class GsmClientSecureXBee : public GsmClientXBee {
+    friend class TinyGsmXBee;
+
    public:
     GsmClientSecureXBee() {
       is_secure = true;

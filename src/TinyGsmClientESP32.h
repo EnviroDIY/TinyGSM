@@ -130,6 +130,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   class GsmClientSecureESP32
       : public GsmClientESP32,
         public TinyGsmSSL<TinyGsmESP32, TINY_GSM_MUX_COUNT>::GsmSecureClient {
+    friend class TinyGsmESP32;
+
    public:
     GsmClientSecureESP32() {
       is_secure = true;

@@ -156,6 +156,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
 // These will be needed if certificate management functions are ever added
   class GsmClientSecureSim800 : public GsmClientSim800,
         public TinyGsmSSL<TinyGsmSim800, TINY_GSM_MUX_COUNT>::GsmSecureClient {
+          friend class TinyGsmSim800;
    public:
     GsmClientSecureSim800() {is_secure = true;}
 
@@ -166,6 +167,8 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
 #endif
 
   class GsmClientSecureSim800 : public GsmClientSim800 {
+    friend class TinyGsmSim800;
+
    public:
     GsmClientSecureSim800() {
       is_secure = true;

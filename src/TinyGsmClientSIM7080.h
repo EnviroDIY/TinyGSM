@@ -113,6 +113,8 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   class GsmClientSecureSim7080
       : public GsmClientSim7080,
         public TinyGsmSSL<TinyGsmSim7080, TINY_GSM_MUX_COUNT>::GsmSecureClient {
+    friend class TinyGsmSim7080;
+
    public:
     GsmClientSecureSim7080() {
       is_secure = true;
