@@ -62,6 +62,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
 
     explicit GsmClientESP8266(TinyGsmESP8266& modem, uint8_t mux = 0) {
       init(&modem, mux);
+      is_secure = false;
     }
 
     bool init(TinyGsmESP8266* modem, uint8_t mux = 0) {
@@ -119,7 +120,9 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     explicit GsmClientSecureESP8266(TinyGsmESP8266& modem, uint8_t mux = 0)
         : GsmClientESP8266(modem, mux),
           TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>::GsmSecureClient(
-              &modem, &mux) {}
+              &modem, &mux) {
+      is_secure = true;
+    }
 
     virtual int connect(const char* host, uint16_t port,
                         int timeout_s) override {

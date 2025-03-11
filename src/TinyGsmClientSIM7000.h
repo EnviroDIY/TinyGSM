@@ -54,6 +54,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
 
     explicit GsmClientSim7000(TinyGsmSim7000& modem, uint8_t mux = 0) {
       init(&modem, mux);
+      is_secure = false;
     }
 
     bool init(TinyGsmSim7000* modem, uint8_t mux = 0) {

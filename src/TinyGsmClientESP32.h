@@ -63,6 +63,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     explicit GsmClientESP32(TinyGsmESP32& modem,
                             uint8_t       mux = static_cast<uint8_t>(-1)) {
       init(&modem, mux);
+      is_secure = false;
     }
 
     bool init(TinyGsmESP32* modem, uint8_t mux = static_cast<uint8_t>(-1)) {
@@ -134,7 +135,9 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
                                   uint8_t       mux = static_cast<uint8_t>(-1))
         : GsmClientESP32(modem, mux),
           TinyGsmSSL<TinyGsmESP32, TINY_GSM_MUX_COUNT>::GsmSecureClient(&modem,
-                                                                        &mux) {}
+                                                                        &mux) {
+      is_secure = true;
+    }
 
     bool setCACertificateNumber(uint8_t certNumber) {
       // convert the certificate number and type into the proper certificate

@@ -79,6 +79,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
 
     explicit GsmClientM95(TinyGsmM95& modem, uint8_t mux = 0) {
       init(&modem, mux);
+      is_secure = false;
     }
 
     bool init(TinyGsmM95* modem, uint8_t mux = 0) {

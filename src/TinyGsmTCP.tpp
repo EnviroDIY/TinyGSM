@@ -335,6 +335,7 @@ class TinyGsmTCP {
     uint32_t   prev_check;
     bool       sock_connected;
     bool       got_data;
+    bool       is_secure;
     RxFifo     rx;
   };
 

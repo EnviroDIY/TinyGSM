@@ -58,6 +58,7 @@ class TinyGsmSim7000SSL
 
     explicit GsmClientSim7000SSL(TinyGsmSim7000SSL& modem, uint8_t mux = 0) {
       init(&modem, mux);
+      is_secure = false;
     }
 
     bool init(TinyGsmSim7000SSL* modem, uint8_t mux = 0) {
@@ -119,7 +120,9 @@ class TinyGsmSim7000SSL
                                        uint8_t            mux = 0)
         : GsmClientSim7000SSL(modem, mux),
           TinyGsmSSL<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>::GsmSecureClient(
-              &modem, &mux) {}
+              &modem, &mux) {
+      is_secure = true;
+    }
 
     virtual int connect(const char* host, uint16_t port,
                         int timeout_s) override {

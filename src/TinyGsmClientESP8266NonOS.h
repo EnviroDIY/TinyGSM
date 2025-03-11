@@ -64,6 +64,7 @@ class TinyGsmESP8266NonOS
     explicit GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem,
                                    uint8_t              mux = 0) {
       init(&modem, mux);
+      is_secure = false;
     }
 
     bool init(TinyGsmESP8266NonOS* modem, uint8_t mux = 0) {

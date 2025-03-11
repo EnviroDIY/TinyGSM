@@ -110,6 +110,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
 
     explicit GsmClientXBee(TinyGsmXBee& modem, uint8_t mux = 0) {
       init(&modem, mux);
+      is_secure = false;
     }
 
     bool init(TinyGsmXBee* modem, uint8_t = 0) {
@@ -276,7 +277,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     explicit GsmClientSecureXBee(TinyGsmXBee& modem, uint8_t mux = 0)
         : GsmClientXBee(modem, mux),
           TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>::GsmSecureClient(
-              &modem, &mux) {}
+              &modem, &mux) {is_secure = true;}
 #endif
 
   class GsmClientSecureXBee : public GsmClientXBee {
