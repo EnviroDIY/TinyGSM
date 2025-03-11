@@ -85,6 +85,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
 
     explicit GsmClientA7672X(TinyGsmA7672X& modem, uint8_t mux = 0) {
       init(&modem, mux);
+      is_secure = false;
     }
 
     bool init(TinyGsmA7672X* modem, uint8_t mux = 0) {
@@ -319,7 +320,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   // NOTE: Uploading the certificate only happens by filename, the type of
   // certificate does not matter here
   bool loadCertificateImpl(const char* certificateName, const char* cert,
-                            const uint16_t len) {
+                           const uint16_t len) {
     sendAT(GF("+CCERTDOWN="), certificateName, GF(","), len);
     if (waitResponse(GF(">")) != 1) { return false; }
     stream.write(cert, len);

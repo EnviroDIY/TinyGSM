@@ -92,6 +92,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
 
     explicit GsmClientSim5360(TinyGsmSim5360& modem, uint8_t mux = 0) {
       init(&modem, mux);
+      is_secure = false;
     }
 
     bool init(TinyGsmSim5360* modem, uint8_t mux = 0) {

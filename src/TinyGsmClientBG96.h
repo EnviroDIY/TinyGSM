@@ -90,8 +90,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     GsmClientBG96() {}
 
     explicit GsmClientBG96(TinyGsmBG96& modem, uint8_t mux = 0) {
-      ssl_sock = false;
       init(&modem, mux);
+      is_secure = false;
     }
 
     bool init(TinyGsmBG96* modem, uint8_t mux = 0) {
@@ -137,9 +137,6 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
      */
 
     String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
-   protected:
-    bool ssl_sock;
   };
 
   /*
@@ -155,7 +152,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     explicit GsmClientSecureBG96(TinyGsmBG96& modem, uint8_t mux = 0)
         : TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>::GsmSecureClient(&modem,
                                                                        &mux) {
-      ssl_sock = true;
+      is_secure = true;
     }
 
     void stop(uint32_t maxWaitMs) override {
@@ -667,7 +664,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     int timeout_s = 150) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
-    bool     ssl        = sockets[mux]->ssl_sock;
+    bool     ssl        = sockets[mux]->is_secure;
 
     if (ssl) {
       // NOTE: The SSL context (<sslctxID>) is not the same as the connection
@@ -783,7 +780,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    bool ssl = sockets[mux]->ssl_sock;
+    bool ssl = sockets[mux]->is_secure;
     if (ssl) {
       sendAT(GF("+QSSLSEND="), mux, ',', (uint16_t)len);
     } else {
@@ -799,7 +796,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
 
   size_t modemRead(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
-    bool ssl = sockets[mux]->ssl_sock;
+    bool ssl = sockets[mux]->is_secure;
     if (ssl) {
       sendAT(GF("+QSSLRECV="), mux, ',', (uint16_t)size);
       if (waitResponse(GF("+QSSLRECV:")) != 1) {
@@ -823,7 +820,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
 
   size_t modemGetAvailable(uint8_t mux) {
     if (!sockets[mux]) return 0;
-    bool   ssl    = sockets[mux]->ssl_sock;
+    bool   ssl    = sockets[mux]->is_secure;
     size_t result = 0;
     if (ssl) {
       sendAT(GF("+QSSLRECV="), mux, GF(",0"));
@@ -849,7 +846,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   }
 
   bool modemGetConnected(uint8_t mux) {
-    bool ssl = sockets[mux]->ssl_sock;
+    bool ssl = sockets[mux]->is_secure;
     if (ssl) {
       sendAT(GF("+QSSLSTATE=1,"), mux);
       // +QSSLSTATE: 0,"TCP","151.139.237.11",80,5087,4,1,0,0,"uart1"

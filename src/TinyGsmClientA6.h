@@ -79,6 +79,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
 
     explicit GsmClientA6(TinyGsmA6& modem, uint8_t = 0) {
       init(&modem, -1);
+      is_secure = false;
     }
 
     bool init(TinyGsmA6* modem, uint8_t = 0) {
