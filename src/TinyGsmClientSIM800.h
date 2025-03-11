@@ -95,7 +95,9 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     friend class TinyGsmSim800;
 
    public:
-    GsmClientSim800() {}
+    GsmClientSim800() {
+      is_secure = false;
+    }
 
     explicit GsmClientSim800(TinyGsmSim800& modem, uint8_t mux = 0) {
       init(&modem, mux);
@@ -124,7 +126,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
       stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -155,7 +157,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   class GsmClientSecureSim800 : public GsmClientSim800,
         public TinyGsmSSL<TinyGsmSim800, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    GsmClientSecureSim800() {}
+    GsmClientSecureSim800() {is_secure = true;}
 
     explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 0)
         : GsmClientSim800(modem, mux),
@@ -165,20 +167,14 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
 
   class GsmClientSecureSim800 : public GsmClientSim800 {
    public:
-    GsmClientSecureSim800() {}
+    GsmClientSecureSim800() {
+      is_secure = true;
+    }
 
     explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 0)
-        : GsmClientSim800(modem, mux) {}
-
-    virtual int connect(const char* host, uint16_t port,
-                        int timeout_s) override {
-      stop();
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-      return sock_connected;
+        : GsmClientSim800(modem, mux) {
+      is_secure = true;
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
   /*
@@ -551,10 +547,11 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 75) {
+                    int timeout_s = 75) {
     int8_t   rsp;
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
 #if !defined(TINY_GSM_MODEM_SIM900)
+    bool ssl = sockets[mux]->is_secure;
     sendAT(GF("+CIPSSL="), ssl);
     rsp = waitResponse();
     if (ssl && rsp != 1) { return false; }

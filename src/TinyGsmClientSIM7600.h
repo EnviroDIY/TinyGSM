@@ -90,7 +90,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     friend class TinyGsmSim7600;
 
    public:
-    GsmClientSim7600() {}
+    GsmClientSim7600() {
+      is_secure = false;
+    }
 
     explicit GsmClientSim7600(TinyGsmSim7600& modem, uint8_t mux = 0) {
       init(&modem, mux);
@@ -119,7 +121,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -637,8 +639,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 15) {
-    if (ssl) { DBG("SSL not yet supported on this module!"); }
+                    int timeout_s = 15) {
     // Make sure we'll be getting data manually on this connection
     sendAT(GF("+CIPRXGET=1"));
     if (waitResponse() != 1) { return false; }

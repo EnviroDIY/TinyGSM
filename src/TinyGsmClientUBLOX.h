@@ -83,7 +83,9 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     friend class TinyGsmUBLOX;
 
    public:
-    GsmClientUBLOX() {}
+    GsmClientUBLOX() {
+      is_secure = false;
+    }
 
     explicit GsmClientUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 0) {
       init(&modem, mux);
@@ -114,7 +116,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
       rx.clear();
 
       uint8_t oldMux = mux;
-      sock_connected = at->modemConnect(host, port, &mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, &mux, timeout_s);
       if (mux != oldMux) {
         DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
         at->sockets[oldMux] = nullptr;
@@ -152,7 +154,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   class GsmClientSecureUBLOX : public GsmClientUBLOX,
         public TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    GsmClientSecureUBLOX() {}
+    GsmClientSecureUBLOX() {is_secure = true;}
     explicit GsmClientSecureUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 0)
         : GsmClientUBLOX(modem, mux),
           TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>::GsmSecureClient(
@@ -161,10 +163,14 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
   class GsmClientSecureUBLOX : public GsmClientUBLOX {
    public:
-    GsmClientSecureUBLOX() {}
+    GsmClientSecureUBLOX() {
+      is_secure = true;
+    }
 
     explicit GsmClientSecureUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 0)
-        : GsmClientUBLOX(modem, mux) {}
+        : GsmClientUBLOX(modem, mux) {
+      is_secure = true;
+    }
 
     virtual int connect(const char* host, uint16_t port,
                         int timeout_s) override {
@@ -172,7 +178,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
       TINY_GSM_YIELD();
       rx.clear();
       uint8_t oldMux = mux;
-      sock_connected = at->modemConnect(host, port, &mux, true, timeout_s);
+      sock_connected = at->modemConnect(host, port, &mux, timeout_s);
       if (mux != oldMux) {
         DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
         at->sockets[oldMux] = nullptr;
@@ -673,8 +679,9 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
-                    bool ssl = false, int timeout_s = 120) {
+                    int timeout_s = 120) {
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
+    bool     ssl         = sockets[*mux]->is_secure;
     uint32_t startMillis = millis();
 
     // create a socket

@@ -88,7 +88,9 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     friend class TinyGsmSim5360;
 
    public:
-    GsmClientSim5360() {}
+    GsmClientSim5360() {
+      is_secure = false;
+    }
 
     explicit GsmClientSim5360(TinyGsmSim5360& modem, uint8_t mux = 0) {
       init(&modem, mux);
@@ -117,7 +119,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
       stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -617,8 +619,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 15) {
-    if (ssl) { DBG("SSL not yet supported on this module!"); }
+                    int timeout_s = 15) {
     // Make sure we'll be getting data manually on this connection
     sendAT(GF("+CIPRXGET=1"));
     if (waitResponse() != 1) { return false; }

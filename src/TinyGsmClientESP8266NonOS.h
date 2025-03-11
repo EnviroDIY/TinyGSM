@@ -59,7 +59,9 @@ class TinyGsmESP8266NonOS
     friend class TinyGsmESP8266NonOS;
 
    public:
-    GsmClientESP8266NonOS() {}
+    GsmClientESP8266NonOS() {
+      is_secure = false;
+    }
 
     explicit GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem,
                                    uint8_t              mux = 0) {
@@ -86,7 +88,7 @@ class TinyGsmESP8266NonOS
       stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -115,22 +117,15 @@ class TinyGsmESP8266NonOS
  public:
   class GsmClientSecureESP8266NonOS : public GsmClientESP8266NonOS {
    public:
-    GsmClientSecureESP8266NonOS() {}
+    GsmClientSecureESP8266NonOS() {
+      is_secure = true;
+    }
 
     explicit GsmClientSecureESP8266NonOS(TinyGsmESP8266NonOS& modem,
                                          uint8_t              mux = 0)
-        : GsmClientESP8266NonOS(modem, mux) {}
-
-   public:
-    virtual int connect(const char* host, uint16_t port,
-                        int timeout_s) override {
-      stop();
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-      return sock_connected;
+        : GsmClientESP8266NonOS(modem, mux) {
+      is_secure = true;
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
   /*
@@ -263,8 +258,9 @@ class TinyGsmESP8266NonOS
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 75) {
+                    int timeout_s = 75) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+    bool     ssl        = sockets[mux]->is_secure;
     if (ssl) {
       sendAT(GF("+CIPSSLCCONF="), mux, ',', '0');
       if (waitResponse() != 1) {

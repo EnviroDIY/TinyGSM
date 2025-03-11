@@ -83,7 +83,9 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     friend class TinyGsmSaraR4;
 
    public:
-    GsmClientSaraR4() {}
+    GsmClientSaraR4() {
+      is_secure = false;
+    }
 
     explicit GsmClientSaraR4(TinyGsmSaraR4& modem, uint8_t mux = 0) {
       init(&modem, mux);
@@ -114,7 +116,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
       rx.clear();
 
       uint8_t oldMux = mux;
-      sock_connected = at->modemConnect(host, port, &mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, &mux, timeout_s);
       if (mux != oldMux) {
         DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
         at->sockets[oldMux] = nullptr;
@@ -185,7 +187,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
    class GsmClientSecureR4 : public GsmClientR4,
         public TinyGsmSSL<TinyGsmR4, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    GsmClientSecureR4() {}
+    GsmClientSecureR4() {is_secure = true;}
     explicit GsmClientSecureR4(TinyGsmSaraR4& modem, uint8_t mux = 0)
         : GsmClientSaraR4(modem, mux),
           TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>::GsmSecureClient(
@@ -194,35 +196,13 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
 
   class GsmClientSecureR4 : public GsmClientSaraR4 {
    public:
-    GsmClientSecureR4() {}
+    GsmClientSecureR4() {
+      is_secure = true;
+    }
 
     explicit GsmClientSecureR4(TinyGsmSaraR4& modem, uint8_t mux = 0)
-        : GsmClientSaraR4(modem, mux) {}
-
-   public:
-    virtual int connect(const char* host, uint16_t port,
-                        int timeout_s) override {
-      // stop();  // DON'T stop!
-      TINY_GSM_YIELD();
-      rx.clear();
-      uint8_t oldMux = mux;
-      sock_connected = at->modemConnect(host, port, &mux, true, timeout_s);
-      if (mux != oldMux) {
-        DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
-        at->sockets[oldMux] = nullptr;
-      }
-      at->sockets[mux] = this;
-      at->maintain();
-      return sock_connected;
-    }
-    int connect(IPAddress ip, uint16_t port, int timeout_s) override {
-      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
-    }
-    virtual int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 120);
-    }
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, 120);
+        : GsmClientSaraR4(modem, mux) {
+      is_secure = true;
     }
   };
 
@@ -703,8 +683,9 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
-                    bool ssl = false, int timeout_s = 120) {
+                    int timeout_s = 120) {
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
+    bool     ssl         = sockets[*mux]->is_secure;
     uint32_t startMillis = millis();
 
     // create a socket

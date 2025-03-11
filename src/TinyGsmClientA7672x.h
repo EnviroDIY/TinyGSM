@@ -81,7 +81,9 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     friend class TinyGsmA7672X;
 
    public:
-    GsmClientA7672X() {}
+    GsmClientA7672X() {
+      is_secure = false;
+    }
 
     explicit GsmClientA7672X(TinyGsmA7672X& modem, uint8_t mux = 0) {
       init(&modem, mux);
@@ -110,7 +112,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -140,7 +142,9 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       : public GsmClientA7672X,
         public TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>::GsmSecureClient {
    public:
-    GsmClientSecureA7672X() {}
+    GsmClientSecureA7672X() {
+      is_secure = true;
+    }
 
     explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux = 0)
         : GsmClientA7672X(modem, mux),
@@ -157,16 +161,6 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     bool deleteCertificate(const char* certificateName) {
       return at->deleteCertificate(certificateName);
     }
-
-    virtual int connect(const char* host, uint16_t port,
-                        int timeout_s) override {
-      stop();
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-      return sock_connected;
-    }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     virtual void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
@@ -505,9 +499,10 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 75) {
+                    int timeout_s = 75) {
     int8_t   rsp;
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+    bool     ssl        = sockets[mux]->is_secure;
 
     // +CTCPKA:<keepalive>,<keepidle>,<keepcount>,<keepinterval>
     sendAT(GF("+CTCPKA=1,2,5,1"));

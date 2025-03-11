@@ -78,7 +78,9 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
     friend class TinyGsmMC60;
 
    public:
-    GsmClientMC60() {}
+    GsmClientMC60() {
+      is_secure = false;
+    }
 
     explicit GsmClientMC60(TinyGsmMC60& modem, uint8_t mux = 0) {
       init(&modem, mux);
@@ -105,7 +107,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
       stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -420,9 +422,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 75) {
-    if (ssl) { DBG("SSL not yet supported on this module!"); }
-
+                    int timeout_s = 75) {
     // By default, MC60 expects IP address as 'host' parameter.
     // If it is a domain name, "AT+QIDNSIP=1" should be executed.
     // "AT+QIDNSIP=0" is for dotted decimal IP address.

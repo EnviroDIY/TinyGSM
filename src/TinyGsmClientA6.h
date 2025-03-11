@@ -75,7 +75,9 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     friend class TinyGsmA6;
 
    public:
-    GsmClientA6() {}
+    GsmClientA6() {
+      is_secure = false;
+    }
 
     explicit GsmClientA6(TinyGsmA6& modem, uint8_t = 0) {
       init(&modem, -1);
