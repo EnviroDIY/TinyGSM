@@ -141,6 +141,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   class GsmClientSecureA7672X
       : public GsmClientA7672X,
         public TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>::GsmSecureClient {
+    friend class TinyGsmA7672X;
+
    public:
     GsmClientSecureA7672X() {
       is_secure = true;

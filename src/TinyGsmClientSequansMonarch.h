@@ -153,6 +153,7 @@ class TinyGsmSequansMonarch
   class GsmClientSecureSequansMonarch
       : public GsmClientSequansMonarch,
         public TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>::GsmSecureClient {
+          friend class TinyGsmSequansMonarch;
    public:
     GsmClientSecureSequansMonarch() {is_secure = true;}
 
@@ -164,6 +165,8 @@ class TinyGsmSequansMonarch
 #endif
 
   class GsmClientSecureSequansMonarch : public GsmClientSequansMonarch {
+    friend class TinyGsmSequansMonarch;
+
    public:
     GsmClientSecureSequansMonarch() {
       is_secure = true;
