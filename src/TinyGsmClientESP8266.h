@@ -125,10 +125,66 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
 
     explicit GsmClientSecureESP8266(TinyGsmESP8266& modem, uint8_t mux = 0)
         : GsmClientESP8266(modem, mux),
-          TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>::GsmSecureClient(
-              &modem, &mux) {
+          TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>::GsmSecureClient() {
       is_secure = true;
     }
+
+    virtual void setCACertName(const char* CAcertName) {
+      this->CAcertName = CAcertName;
+      // parse the certificate name into a number and namespace
+      char*   cert_namespace = new char[14]();
+      uint8_t certNumber     = 0;
+      at->parseCertificateName(CAcertName, cert_namespace, certNumber);
+      ca_number = certNumber;
+    }
+
+    virtual void setClientCertName(const char* clientCertName) {
+      this->clientCertName = clientCertName;
+      // parse the certificate name into a number and namespace
+      char*   cert_namespace = new char[14]();
+      uint8_t certNumber     = 0;
+      at->parseCertificateName(clientCertName, cert_namespace, certNumber);
+      pki_number = certNumber;
+    }
+
+    virtual void setPrivateKeyName(const char* clientKeyName) {
+      this->clientKeyName = clientKeyName;
+      // parse the certificate name into a number and namespace
+      char*   cert_namespace = new char[14]();
+      uint8_t certNumber     = 0;
+      at->parseCertificateName(clientKeyName, cert_namespace, certNumber);
+      pki_number = certNumber;
+    }
+
+    void setCACertificateNumber(uint8_t certNumber) {
+      ca_number = certNumber;
+      // convert the certificate number and type into the proper certificate
+      // names for the ESP32
+      char* cert_name      = new char[16]();
+      char* cert_namespace = new char[14]();
+      at->getCertificateName(CA_CERTIFICATE, certNumber, cert_name,
+                             cert_namespace);
+      CAcertName = cert_name;
+    }
+    void setClientCertificateNumber(uint8_t certNumber) {
+      pki_number           = certNumber;
+      char* cert_name      = new char[16]();
+      char* cert_namespace = new char[14]();
+      at->getCertificateName(CLIENT_CERTIFICATE, certNumber, cert_name,
+                             cert_namespace);
+      CAcertName = cert_name;
+    }
+    void setPrivateKeyNumber(uint8_t keyNumber) {
+      pki_number           = keyNumber;
+      char* cert_name      = new char[16]();
+      char* cert_namespace = new char[14]();
+      at->getCertificateName(CLIENT_KEY, keyNumber, cert_name, cert_namespace);
+      CAcertName = cert_name;
+    }
+
+   protected:
+    int8_t ca_number;
+    int8_t pki_number;
   };
 
   /*
@@ -176,49 +232,63 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // Follows functions as inherited from TinyGsmSSL.tpp for setting the
-  // certificate name and the SSL connection type, but this library does **NOT**
-  // currently support uploading or deleting certificates on the modem.
-  // Although these "functions" are not functional, they need to be implemented
-  // for the SSL template to compile.
+  // Uses the secure client inherited from TinyGsmSSL.tpp for setting the
+  // certificate name and the SSL connection type so those can be called at
+  // connection time, but this library does **NOT** currently support uploading,
+  // deleting, or converting certificates on the modem.
 
-  bool loadCertificateImpl(const char*, const char*, const uint16_t) {
-    DBG("### The TinyGSM implementation of the AT commands for the ESP8266 "
-        "does not support adding certificates to the module!  You must "
-        "manually add your certificates.");
-    return false;
+#undef TINY_GSM_MODEM_CAN_LOAD_CERTS
+
+ private:
+  void parseCertificateName(const char* cert_name, char* parsed_namespace,
+                            uint8_t& parsed_number) {
+    // pull the namespace out of the name
+    Serial.write(cert_name, strlen(cert_name) - 2);
+    memcpy(parsed_namespace, cert_name, strlen(cert_name) - 2);
+    parsed_namespace[strlen(cert_name) - 2] = '\0';
+    // pull the number out of the name
+    char certNumber[2];
+    memcpy(certNumber, cert_name + strlen(cert_name) - 1, 1);
+    parsed_number = atoi(certNumber);
   }
 
-  bool printCertificateImpl(const char*, Stream&) {
-    DBG("### The TinyGSM implementation of the AT commands for the ESP8266 "
-        "does not support printing certificates from the module!");
-    return false;
-  }
+  void getCertificateName(CertificateType cert_type, uint8_t certNumber,
+                          char* cert_name, char* cert_namespace) {
+    char cert_number[2];
+    itoa(certNumber, cert_number, 10);
 
-  bool deleteCertificateImpl(const char*) {
-    DBG("### The TinyGSM implementation of the AT commands for the ESP8266 "
-        "does not support deleting certificates from the module!  You must "
-        "manually delete your certificates.");
-    return false;
-  }
-
-  bool convertCertificateImpl(CertificateType cert_type, const char*) {
-    if (cert_type == CLIENT_PSK || cert_type == CLIENT_PSK_IDENTITY) {
-      // The ESP8266 does not support SSL using pre-shared keys with AT
-      // firmware.
-      return false;
+    switch (cert_type) {
+      case CLIENT_PSK_IDENTITY:
+      case CLIENT_PSK: {
+        // The ESP32 does not support SSL using pre-shared keys with AT
+        // firmware.
+        strcpy(cert_namespace, "\0");
+        strcpy(cert_name, "\0");
+        return;
+      }
+      case CLIENT_KEY: {
+        const char* client_key_namespace = "client_key";
+        strcpy(cert_namespace, client_key_namespace);
+        strcpy(cert_name, client_key_namespace);
+        break;
+      }
+      case CLIENT_CERTIFICATE: {
+        const char* client_cert_namespace = "client_cert";
+        strcpy(cert_namespace, client_cert_namespace);
+        strcpy(cert_name, client_cert_namespace);
+        break;
+      }
+      case CA_CERTIFICATE:
+      default: {
+        const char* ca_cert_namespace = "client_ca";
+        strcpy(cert_namespace, ca_cert_namespace);
+        strcpy(cert_name, ca_cert_namespace);
+        break;
+      }
     }
-    return true;  // no conversion needed on the ESP8266
-  }
-
-  bool convertClientCertificatesImpl(const char*, const char*) {
-    return true;  // no conversion needed on the ESP8266
-  }
-
-  bool convertPSKandIDImpl(const char*, const char*) {
-    // The ESP8266 does not support SSL using pre-shared keys with AT
-    // firmware.
-    return false;
+    strcpy(cert_name, ".");
+    strcpy(cert_name, cert_number);
+    return;
   }
 
   /*
@@ -429,17 +499,29 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
                     int timeout_s = 75) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
+
+    // Blank holders for the SSL auth mode and certificates
+    SSLAuthMode sslAuthMode = NO_VALIDATION;
+    uint8_t     ca_number   = 0;
+    uint8_t     pki_number  = 0;
+    // If we actually have a secure socket populate the above with real values
+    if (GsmClientSecureESP8266* thisClient =
+            static_cast<GsmClientSecureESP8266*>(sockets[mux])) {
+      sslAuthMode = thisClient->sslAuthMode;
+      ca_number   = thisClient->ca_number;
+      pki_number  = thisClient->pki_number;
+    }
+
     if (ssl) {
-      if (sslAuthModes[mux] == PRE_SHARED_KEYS) {
+      if (sslAuthMode == PRE_SHARED_KEYS) {
         // The ESP8266 does not support SSL using pre-shared keys with AT
         // firmware.
         return false;
       }
       // SSL certificate checking will not work without a valid timestamp!
       if (sockets[mux] != nullptr &&
-          (sslAuthModes[mux] == CLIENT_VALIDATION ||
-           sslAuthModes[mux] == CA_VALIDATION ||
-           sslAuthModes[mux] == MUTUAL_AUTHENTICATION) &&
+          (sslAuthMode == CLIENT_VALIDATION || sslAuthMode == CA_VALIDATION ||
+           sslAuthMode == MUTUAL_AUTHENTICATION) &&
           !waitForTimeSync(timeout_s)) {
         DBG("### WARNING: The module timestamp must be valid for SSL auth. "
             "Please use setTimeZone(...) or NTPServerSync(...) to enable "
@@ -471,27 +553,11 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
       // (or were not) put into the customized certificate partitions.
       // The default firmware comes with espressif certificates in slots 0
       // and 1.
-      if (sockets[mux] == nullptr || (sslAuthModes[mux] == NO_VALIDATION)) {
+      if (sockets[mux] == nullptr || (sslAuthMode == NO_VALIDATION)) {
         sendAT(GF("+CIPSSLCCONF="), mux, GF(",0"));
       } else {
-        uint8_t _pkiIndex = 0;
-        uint8_t _caIndex  = 0;
-        char    tempbuf[2];
-        // extract the cert number from the name
-        if (CAcerts[mux] != nullptr) {
-          memcpy(tempbuf, CAcerts[mux] + strlen(CAcerts[mux]) - 1, 1);
-          tempbuf[1] = '\0';
-          _caIndex   = atoi(tempbuf);
-        }
-        // extract the cert number from the name
-        if (clientCerts[mux] != nullptr) {
-          memcpy(tempbuf, clientCerts[mux] + strlen(clientCerts[mux]) - 1, 1);
-          tempbuf[1] = '\0';
-          _pkiIndex  = atoi(tempbuf);
-        }
-        sendAT(GF("+CIPSSLCCONF="), mux, ',',
-               static_cast<uint8_t>(sslAuthModes[mux]), ',', _pkiIndex, ',',
-               _caIndex);
+        sendAT(GF("+CIPSSLCCONF="), mux, ',', static_cast<uint8_t>(sslAuthMode),
+               ',', pki_number, ',', ca_number);
       }
       waitResponse();
 

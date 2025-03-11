@@ -158,8 +158,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     GsmClientSecureUBLOX() {is_secure = true;}
     explicit GsmClientSecureUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 0)
         : GsmClientUBLOX(modem, mux),
-          TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>::GsmSecureClient(
-              &modem, &mux) {is_secure = true;}
+          TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>::GsmSecureClient() {is_secure = true;}
 #endif
 
   class GsmClientSecureUBLOX : public GsmClientUBLOX {

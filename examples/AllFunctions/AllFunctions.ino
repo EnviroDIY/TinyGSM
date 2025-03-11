@@ -297,10 +297,10 @@ void loop() {
 #if TINY_GSM_TEST_SSL && defined TINY_GSM_MODEM_HAS_SSL
   TinyGsmClientSecure secureClient(modem, 0);
 
-#if defined(TINY_GSM_MODEM_CAN_MANAGE_CERTS)
+#if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
   secureClient.setSSLAuthMode(NO_VALIDATION);
 
-#if defined(TEST_BUILD_ADD_CERTS)
+#if defined(TEST_BUILD_ADD_CERTS) && defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
   // WARNING:  Never run this section with an actual board attached!!
   // If you run this, you will overwrite already installed certificates with
   // junk and probably cause SSL to stop working on your module.

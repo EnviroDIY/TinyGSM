@@ -110,16 +110,36 @@ void loop() {
   client_secure.init(&modem);
   client_secure.init(&modem, 1);
 #endif
-#if defined(TINY_GSM_MODEM_CAN_MANAGE_CERTS)
+#if defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
+  modem.loadCertificate("certificateName", "certificate_content", 20);
+#if !defined(TINY_GSM_MODEM_A7672X)
+  modem.printCertificate("certificateName", Serial);
+#endif
+  modem.deleteCertificate("certificateName");
+
+  modem.convertCertificate(CA_CERTIFICATE, "filename");
+  modem.convertCertificate(CA_CERTIFICATE, String("filename"));
+  modem.convertCACertificate("ca_cert_name");
+  modem.convertCACertificate(String("ca_cert_name"));
+  modem.convertClientCertificates("client_cert_name", "client_cert_key");
+  modem.convertClientCertificates(String("client_cert_name"),
+                                  String("client_cert_key"));
+  // modem.convertPSKandID("psk", "pskIdent");
+  // modem.convertPSKandID(String("psk"), String("pskIdent"));
+  modem.convertPSKTable("psk_table_name");
+  modem.convertPSKTable(String("psk_table_name"));
+#endif
+#if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
   client_secure.setSSLAuthMode(NO_VALIDATION);
   client_secure.setSSLAuthMode(MUTUAL_AUTHENTICATION);
-  modem.loadCertificate("certificateName", "certificate_content", 20);
-  modem.printCertificate("certificateName", Serial);
-  modem.deleteCertificate("certificateName");
-  modem.setCertificate("certificateName", 0);
-  modem.setCertificate(String("certificateName"), 0);
-  client_secure.setCertificate("certificateName");
-  client_secure.setCertificate(String("certificateName"));
+  client_secure.setCACertName("certificateName");
+  client_secure.setCACertName(String("certificateName"));
+  client_secure.setClientCertName("certificateName");
+  client_secure.setClientCertName(String("certificateName"));
+  client_secure.setPrivateKeyName("certificateName");
+  client_secure.setPrivateKeyName(String("certificateName"));
+  client_secure.setPreSharedKey("pskIdent", "psKey");
+  client_secure.setPreSharedKey(String("pskIdent"), String("psKey"));
 #endif
 #if defined(TINY_GSM_MODEM_HAS_SSL)
   client_secure.connect(server, 443);

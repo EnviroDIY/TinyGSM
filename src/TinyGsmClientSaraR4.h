@@ -191,8 +191,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     GsmClientSecureR4() {is_secure = true;}
     explicit GsmClientSecureR4(TinyGsmSaraR4& modem, uint8_t mux = 0)
         : GsmClientSaraR4(modem, mux),
-          TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>::GsmSecureClient(
-              &modem, &mux) {is_secure = true;}
+          TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>::GsmSecureClient() {is_secure = true;}
 #endif
 
   class GsmClientSecureR4 : public GsmClientSaraR4 {

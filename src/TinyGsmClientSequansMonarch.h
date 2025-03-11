@@ -160,8 +160,7 @@ class TinyGsmSequansMonarch
     explicit GsmClientSecureSequansMonarch(TinyGsmSequansMonarch& modem,
                                            uint8_t                mux = 1)
         : GsmClientSequansMonarch(modem, mux),
-          TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>::GsmSecureClient(
-              &modem, &mux) {is_secure = true;}
+          TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>::GsmSecureClient() {is_secure = true;}
 #endif
 
   class GsmClientSecureSequansMonarch : public GsmClientSequansMonarch {

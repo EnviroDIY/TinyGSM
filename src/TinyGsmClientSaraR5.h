@@ -168,12 +168,12 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
     // These will be needed if certificate management is ever added
    class GsmClientSecureR5 : public GsmClientR5,
    public TinyGsmSSL<TinyGsmR5, TINY_GSM_MUX_COUNT>::GsmSecureClient {
+    friend class TinyGsmSaraR5;
 public:
      GsmClientSecureR5() {is_secure = true;}
      explicit GsmClientSecureR5(TinyGsmSaraR5& modem, uint8_t mux = 0)
          : GsmClientSaraR5(modem, mux),
-          TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>::GsmSecureClient(
-              &modem, &mux) {is_secure = true;}
+          TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>::GsmSecureClient() {is_secure = true;}
 #endif
 
   class GsmClientSecureR5 : public GsmClientSaraR5 {

@@ -157,8 +157,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
 
     explicit GsmClientSecureBG96(TinyGsmBG96& modem, uint8_t mux = 0)
         : GsmClientBG96(modem, mux),
-          TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>::GsmSecureClient(&modem,
-                                                                       &mux) {
+          TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>::GsmSecureClient() {
       is_secure = true;
     }
 
@@ -283,53 +282,12 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // Follows functions as inherited from TinyGsmSSL.tpp for setting the
-  // certificate name and the SSL connection type, but this library does **NOT**
-  // currently support uploading,deleting, or converting certificates on the
-  // modem.
-  // Although these "functions" are not functional, they need to be implemented
-  // for the SSL template to compile.
+  // Uses the secure client inherited from TinyGsmSSL.tpp for setting the
+  // certificate name and the SSL connection type so those can be called at
+  // connection time, but this library does **NOT** currently support uploading,
+  // deleting, or converting certificates on the modem.
 
-  bool loadCertificateImpl(const char*, const char*, const uint16_t) {
-    DBG("### The TinyGSM implementation of the AT commands for the BG96 "
-        "does not support adding certificates to the module!  You must "
-        "manually add your certificates.");
-    return false;
-  }
-
-  bool printCertificateImpl(const char*, Stream&) {
-    DBG("### The TinyGSM implementation of the AT commands for the ESP8266 "
-        "does not support printing certificates from the module!");
-    return false;
-  }
-
-  bool deleteCertificateImpl(const char*) {
-    DBG("### The TinyGSM implementation of the AT commands for the BG96 "
-        "does not support deleting certificates from the module!  You must "
-        "manually delete your certificates.");
-    return false;
-  }
-
-  bool convertCertificateImpl(CertificateType, const char*) {
-    DBG("### The TinyGSM implementation of the AT commands for the BG96 "
-        "does not support converting certificates for the module!  You must "
-        "manually convert your certificates.");
-    return false;
-  }
-
-  bool convertClientCertificatesImpl(const char*, const char*) {
-    DBG("### The TinyGSM implementation of the AT commands for the BG96 "
-        "does not support converting certificates for the module!  You must "
-        "manually convert your certificates.");
-    return false;
-  }
-
-  bool convertPSKandIDImpl(const char*, const char*) {
-    DBG("### The TinyGSM implementation of the AT commands for the BG96 "
-        "does not support converting certificates for the module!  You must "
-        "manually convert your certificates.");
-    return false;
-  }
+#undef TINY_GSM_MODEM_CAN_LOAD_CERTS
 
   /*
    * WiFi functions
@@ -674,6 +632,17 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     bool     ssl        = sockets[mux]->is_secure;
 
     if (ssl) {
+      // If we have a secure socket, use a static cast to get the authentication
+      // mode and certificate names. This isn't really "safe" but since we've
+      // already checked that the socket is a secure one, we're pretty sure of
+      // the type and it should work.
+      GsmClientSecureBG96* thisClient =
+          static_cast<GsmClientSecureBG96*>(sockets[mux]);
+      SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
+      const char* CAcertName     = thisClient->CAcertName;
+      const char* clientCertName = thisClient->clientCertName;
+      const char* clientKeyName  = thisClient->clientKeyName;
+
       // NOTE: The SSL context (<sslctxID>) is not the same as the connection
       // identifier.  The SSL context is the grouping of SSL settings, the
       // connection identifier is the mux/socket number.
@@ -710,7 +679,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       //             1: Manage server authentication (CA_VALIDATION)
       //             2: Manage server and client authentication if requested by
       //             the remote server (MUTUAL_AUTHENTICATION)
-      switch (sslAuthModes[mux]) {
+      switch (sslAuthMode) {
         case CA_VALIDATION: {
           sendAT(GF("+QSSLCFG=\"seclevel\",0,1"));
           break;
@@ -727,27 +696,25 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       if (waitResponse(5000L) != 1) return false;
 
       // apply the correct certificates to the connection
-      if (CAcerts[mux] == nullptr &&
-          (sslAuthModes[mux] == CA_VALIDATION ||
-           sslAuthModes[mux] == MUTUAL_AUTHENTICATION)) {
+      if (CAcertName == nullptr &&
+          (sslAuthMode == CA_VALIDATION ||
+           sslAuthMode == MUTUAL_AUTHENTICATION)) {
         // AT+QSSLCFG="cacert",<sslctxID>,<cacertpath>
         // <sslctxID> SSL Context ID, range 0-5; we always use 0
         // <cacertpath> certificate file path
-        sendAT(GF("+QSSLCFG=\"cacert\",0,\""), CAcerts[mux], GF("\""));
+        sendAT(GF("+QSSLCFG=\"cacert\",0,\""), CAcertName, GF("\""));
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
-      if (clientCerts[mux] != nullptr &&
-          (sslAuthModes[mux] == MUTUAL_AUTHENTICATION)) {
+      if (clientCertName != nullptr && (sslAuthMode == MUTUAL_AUTHENTICATION)) {
         // AT+QSSLCFG="clientcert",<sslctxID>,<client_cert_path>
-        sendAT(GF("+QSSLCFG=\"clientcert\",0,\""), clientCerts[mux], GF("\""));
+        sendAT(GF("+QSSLCFG=\"clientcert\",0,\""), clientCertName, GF("\""));
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
-      if (clientKeys[mux] != nullptr &&
-          (sslAuthModes[mux] == MUTUAL_AUTHENTICATION)) {
+      if (clientKeyName != nullptr && (sslAuthMode == MUTUAL_AUTHENTICATION)) {
         // AT+QSSLCFG="clientkey",<sslctxID>[,<client_key_path>]
-        sendAT(GF("+QSSLCFG=\"clientkey\",0,\""), clientKeys[mux], GF("\""));
+        sendAT(GF("+QSSLCFG=\"clientkey\",0,\""), clientKeyName, GF("\""));
         if (waitResponse(5000L) != 1) return false;
       }
 

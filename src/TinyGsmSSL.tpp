@@ -12,7 +12,8 @@
 #include "TinyGsmCommon.h"
 
 #define TINY_GSM_MODEM_HAS_SSL
-#define TINY_GSM_MODEM_CAN_MANAGE_CERTS
+#define TINY_GSM_MODEM_CAN_SPECIFY_CERTS
+#define TINY_GSM_MODEM_CAN_LOAD_CERTS
 
 typedef enum {
   CA_CERTIFICATE      = 0,
@@ -50,38 +51,6 @@ typedef enum {
   PRE_SHARED_KEYS       = 4,
 } SSLAuthMode;
 
-// macro function to help create more functions
-#define TINY_GSM_MAKE_SSL_FUNCTIONS(cert_abbrev, cert_type)               \
-  bool set##cert_abbrev(const char* certificateName, const uint8_t mux) { \
-    return setCertificate(cert_type, certificateName, mux);               \
-  }                                                                       \
-  bool set##cert_abbrev(String certificateName, const uint8_t mux) {      \
-    return setCertificate(cert_type, certificateName, mux);               \
-  }                                                                       \
-  bool convert##cert_abbrev(const char* filename) {                       \
-    return thisModem().convertCertificateImpl(cert_type, filename);       \
-  }                                                                       \
-  bool convert##cert_abbrev(String& filename) {                           \
-    return thisModem().convertCertificate(cert_type, filename.c_str());   \
-  }
-
-#define TINY_GSM_MAKE_CLIENT_SET_FUNCTIONS(cert_abbrev, cert_type)         \
-  bool set##cert_abbrev(const char* certificateName) {                     \
-    if (ssl_mux == nullptr) { return false; }                              \
-    if (*ssl_mux < muxCount) {                                             \
-      return ssl_at->setCertificate(cert_type, certificateName, *ssl_mux); \
-    } else {                                                               \
-      return false;                                                        \
-    }                                                                      \
-  }                                                                        \
-  bool set##cert_abbrev(String certificateName) {                          \
-    if (ssl_mux == nullptr) { return false; }                              \
-    if (*ssl_mux < muxCount) {                                             \
-      return ssl_at->setCertificate(cert_type, certificateName, *ssl_mux); \
-    } else {                                                               \
-      return false;                                                        \
-    }                                                                      \
-  }
 
 template <class modemType, uint8_t muxCount>
 class TinyGsmSSL {
@@ -94,17 +63,7 @@ class TinyGsmSSL {
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  TinyGsmSSL() {
-    // fill arrays with empty values
-    for (uint8_t i = 0; i < muxCount; i++) {
-      sslAuthModes[i] = NO_VALIDATION;
-      CAcerts[i]      = nullptr;
-      clientCerts[i]  = nullptr;
-      clientKeys[i]   = nullptr;
-      pskIdents[i]    = nullptr;
-      psKeys[i]       = nullptr;
-    }
-  }
+  TinyGsmSSL() {}
 
   // Load a new certificate onto the module, including the whole text of the
   // certificate
@@ -114,7 +73,7 @@ class TinyGsmSSL {
                        const uint16_t len) {
     return thisModem().loadCertificateImpl(certificateName, cert, len);
   }
-  bool loadCertificate(String& certificateName, String& cert,
+  bool loadCertificate(String certificateName, String cert,
                        const uint16_t len) {
     return loadCertificate(certificateName.c_str(), cert.c_str(), len);
   }
@@ -125,7 +84,7 @@ class TinyGsmSSL {
   bool deleteCertificate(const char* filename) {
     return thisModem().deleteCertificateImpl(filename);
   }
-  bool deleteCertificate(String& filename) {
+  bool deleteCertificate(String filename) {
     return deleteCertificate(filename.c_str());
   }
 
@@ -133,44 +92,8 @@ class TinyGsmSSL {
   bool printCertificate(const char* filename, Stream& print_stream) {
     return thisModem().printCertificateImpl(filename, print_stream);
   }
-  bool printCertificate(String& filename, Stream& print_stream) {
+  bool printCertificate(String filename, Stream& print_stream) {
     return printCertificate(filename.c_str(), print_stream);
-  }
-
-  // setting a certificate assigns that certificate to be used by a specific
-  // socket - ie, it puts the name of the certificate into the correct spot for
-  // the mux in the certificate array
-  bool setCertificate(CertificateType cert_type, const char* certificateName,
-                      const uint8_t mux) {
-    if (mux >= muxCount) { return false; }
-    switch (cert_type) {
-      case CLIENT_PSK_IDENTITY: {
-        thisModem().pskIdents[mux] = certificateName;
-        break;
-      }
-      case CLIENT_PSK: {
-        thisModem().psKeys[mux] = certificateName;
-        break;
-      }
-      case CLIENT_KEY: {
-        thisModem().clientKeys[mux] = certificateName;
-        break;
-      }
-      case CLIENT_CERTIFICATE: {
-        thisModem().clientCerts[mux] = certificateName;
-        break;
-      }
-      case CA_CERTIFICATE:
-      default: {
-        thisModem().CAcerts[mux] = certificateName;
-        break;
-      }
-    }
-    return true;
-  }
-  bool setCertificate(CertificateType cert_type, String& certificateName,
-                      const uint8_t mux) {
-    return setCertificate(cert_type, certificateName.c_str(), mux);
   }
 
   // for many (but not all!) modules, the certificate must be "converted" from a
@@ -179,8 +102,15 @@ class TinyGsmSSL {
   bool convertCertificate(CertificateType cert_type, const char* filename) {
     return thisModem().convertCertificateImpl(cert_type, filename);
   }
-  bool convertCertificate(CertificateType cert_type, String& filename) {
+  bool convertCertificate(CertificateType cert_type, String filename) {
     return thisModem().convertCertificate(cert_type, filename.c_str());
+  }
+  // Convert a certificate authority certificate
+  bool convertCACertificate(const char* ca_cert_name) {
+    return thisModem().convertCACertificateImpl(ca_cert_name);
+  }
+  bool convertCACertificate(String ca_cert_name) {
+    return thisModem().convertCACertificate(ca_cert_name.c_str());
   }
   // in some cases, the two parts of the client certificate (the certificate
   // itself and the key to it) need to be converted together
@@ -189,8 +119,8 @@ class TinyGsmSSL {
     return thisModem().convertClientCertificatesImpl(client_cert_name,
                                                      client_cert_key);
   }
-  bool convertClientCertificates(String& client_cert_name,
-                                 String& client_cert_key) {
+  bool convertClientCertificates(String client_cert_name,
+                                 String client_cert_key) {
     return thisModem().convertClientCertificates(client_cert_name.c_str(),
                                                  client_cert_key.c_str());
   }
@@ -199,24 +129,16 @@ class TinyGsmSSL {
   bool convertPSKandID(const char* psk, const char* pskIdent) {
     return thisModem().convertPSKandIDImpl(psk, pskIdent);
   }
-  bool convertPSKandID(String& psk, String& pskIdent) {
+  bool convertPSKandID(String psk, String pskIdent) {
     return thisModem().convertPSKandID(psk.c_str(), pskIdent.c_str());
   }
-
-  // NOTE: For backwards compatibility, adding a certificate without a type
-  // assumes it's from a certificate authority
-  // Rename for CA certificates; ie add/setCertificate(..)
-  TINY_GSM_MAKE_SSL_FUNCTIONS(Certificate, CA_CERTIFICATE)
-  // functions for client certs; ie add/setCACert(..)
-  TINY_GSM_MAKE_SSL_FUNCTIONS(CACert, CA_CERTIFICATE)
-  // functions for client certs; ie add/setClientCert(..)
-  TINY_GSM_MAKE_SSL_FUNCTIONS(ClientCert, CLIENT_CERTIFICATE)
-  // functions for client keys; ie add/setPrivateKey(..)
-  TINY_GSM_MAKE_SSL_FUNCTIONS(PrivateKey, CLIENT_KEY)
-  // functions for pre-shared keys; ie add/setPSK(..)
-  TINY_GSM_MAKE_SSL_FUNCTIONS(PSK, CLIENT_PSK)
-  // functions for pre-shared key identities; ie add/setPSKID(..)
-  TINY_GSM_MAKE_SSL_FUNCTIONS(PSKID, CLIENT_PSK_IDENTITY)
+  // Convert a single PSK table file
+  bool convertPSKTable(const char* psk_table_name) {
+    return thisModem().convertPSKTableImpl(psk_table_name);
+  }
+  bool convertPSKTable(String psk_table_name) {
+    return thisModem().convertPSKTable(psk_table_name.c_str());
+  }
 
  protected:
   // destructor (protected!)
@@ -240,78 +162,92 @@ class TinyGsmSSL {
     friend class TinyGsmSSL<modemType, muxCount>;
 
    public:
-    GsmSecureClient() {}
-    explicit GsmSecureClient(modemType* modem, uint8_t* mux = nullptr) {
-      this->ssl_at  = modem;
-      this->ssl_mux = mux;
+    GsmSecureClient() {
+      this->sslAuthMode    = NO_VALIDATION;
+      this->CAcertName     = nullptr;
+      this->clientCertName = nullptr;
+      this->clientKeyName  = nullptr;
+      this->pskIdent       = nullptr;
+      this->psKey          = nullptr;
+    }
+    explicit GsmSecureClient(SSLAuthMode sslAuthMode,
+                             const char* CAcertName     = nullptr,
+                             const char* clientCertName = nullptr,
+                             const char* clientKeyName  = nullptr) {
+      this->sslAuthMode    = sslAuthMode;
+      this->CAcertName     = CAcertName;
+      this->clientCertName = clientCertName;
+      this->clientKeyName  = clientKeyName;
+      this->pskIdent       = nullptr;
+      this->psKey          = nullptr;
+    }
+    explicit GsmSecureClient(const char* pskIdent, const char* psKey) {
+      this->sslAuthMode    = PRE_SHARED_KEYS;
+      this->CAcertName     = nullptr;
+      this->clientCertName = nullptr;
+      this->clientKeyName  = nullptr;
+      this->pskIdent       = pskIdent;
+      this->psKey          = psKey;
     }
 
-    void setSSLAuthMode(SSLAuthMode mode) {
-      if (ssl_mux == nullptr) { return; }
-      if (*ssl_mux < muxCount) {
-        ssl_at->sslAuthModes[*ssl_mux] = mode;
-      } else {
-      }
+    virtual void setSSLAuthMode(SSLAuthMode mode) {
+      this->sslAuthMode = mode;
     }
 
-    // set the name of the certificate into the certificate name buffer of the
-    // modem
-    bool setCertificate(CertificateType cert_type,
-                        const char*     certificateName) {
-      if (ssl_mux == nullptr) { return false; }
-      if (*ssl_mux < muxCount) {
-        return ssl_at->setCertificate(cert_type, certificateName, *ssl_mux);
-      } else {
-        return false;
-      }
+    virtual void setCACertName(const char* CAcertName) {
+      this->CAcertName = CAcertName;
     }
-    bool setCertificate(CertificateType cert_type, String& certificateName) {
-      if (ssl_mux == nullptr) { return false; }
-      if (*ssl_mux < muxCount) {
-        return ssl_at->setCertificate(cert_type, certificateName, *ssl_mux);
-      } else {
-        return false;
-      }
+    virtual void setCACertName(String CAcertName) {
+      setCACertName(CAcertName.c_str());
     }
 
-    void setPreSharedKey(const char* pskIdent, const char* psKey) {
-      if (ssl_mux == nullptr) { return; }
-      if (*ssl_mux < muxCount) {
-        ssl_at->pskIdents[*ssl_mux] = pskIdent;
-        ssl_at->psKeys[*ssl_mux]    = psKey;
-      } else {
-      }
+    virtual void setClientCertName(const char* clientCertName) {
+      this->clientCertName = clientCertName;
     }
-    // NOTE: For backwards compatibility, adding a certificate without a type
-    // assumes it's from a certificate authority
-    // Rename for CA certificates; ie setCertificate(..)
-    TINY_GSM_MAKE_CLIENT_SET_FUNCTIONS(Certificate, CA_CERTIFICATE)
-    // functions for client certs; ie setCACert(..)
-    TINY_GSM_MAKE_CLIENT_SET_FUNCTIONS(CACert, CA_CERTIFICATE)
-    // functions for client certs; ie setClientCert(..)
-    TINY_GSM_MAKE_CLIENT_SET_FUNCTIONS(ClientCert, CLIENT_CERTIFICATE)
-    // functions for client keys; ie setPrivateKey(..)
-    TINY_GSM_MAKE_CLIENT_SET_FUNCTIONS(PrivateKey, CLIENT_KEY)
-    // functions for pre-shared keys; ie setPSK(..)
-    TINY_GSM_MAKE_CLIENT_SET_FUNCTIONS(PSK, CLIENT_PSK)
-    // functions for pre-shared key identities; ie setPSKID(..)
-    TINY_GSM_MAKE_CLIENT_SET_FUNCTIONS(PSKID, CLIENT_PSK_IDENTITY)
+    virtual void setClientCertName(String clientCertName) {
+      setClientCertName(clientCertName.c_str());
+    }
+
+    virtual void setPrivateKeyName(const char* clientKeyName) {
+      this->clientKeyName = clientKeyName;
+    }
+    virtual void setPrivateKeyName(String clientKeyName) {
+      setPrivateKeyName(clientKeyName.c_str());
+    }
+
+    virtual void setPSKTableName(const char* pskTableName) {
+      this->pskTableName = pskTableName;
+    }
+    virtual void setPSKTableName(String pskTableName) {
+      setPSKTableName(pskTableName.c_str());
+    }
+    virtual void setPreSharedKey(const char* pskIdent, const char* psKey) {
+      this->pskIdent = pskIdent;
+      this->psKey    = psKey;
+    }
+    virtual void setPreSharedKey(String pskIdent, String psKey) {
+      setPreSharedKey(pskIdent.c_str(), psKey.c_str());
+    }
 
     // destructor - need to remove self from the socket pointer array
-    virtual ~GsmSecureClient() {
-      if (ssl_mux != nullptr) {
-        ssl_at->sslAuthModes[*ssl_mux] = NO_VALIDATION;
-        ssl_at->CAcerts[*ssl_mux]      = nullptr;
-        ssl_at->clientCerts[*ssl_mux]  = nullptr;
-        ssl_at->clientKeys[*ssl_mux]   = nullptr;
-        ssl_at->pskIdents[*ssl_mux]    = nullptr;
-        ssl_at->psKeys[*ssl_mux]       = nullptr;
-      }
-    }
+    virtual ~GsmSecureClient() {}
 
    protected:
-    modemType* ssl_at;
-    uint8_t*   ssl_mux;
+    /// The SSL authorization mode to use for this connection
+    SSLAuthMode sslAuthMode;
+    /// The FILE NAME of the certificate authority certificate loaded onto the
+    /// module
+    const char* CAcertName;
+    /// The FILE NAME of the client certificate loaded onto the module
+    const char* clientCertName;
+    /// The FILE NAME of the client private key loaded onto the module
+    const char* clientKeyName;
+    /// The FILE NAME of an identity for PSK cipher suites
+    const char* pskTableName;
+    /// The identity VALUE for PSK cipher suites
+    const char* pskIdent;
+    /// The VALUE of the key in hex for PSK cipher suites
+    const char* psKey;
   };
 
   /* =========================================== */
@@ -332,21 +268,15 @@ class TinyGsmSSL {
                             Stream& print_stream) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool convertCertificateImpl(CertificateType cert_type, const char* filename)
       TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool convertCACertificateImpl(const char* ca_cert_name)
+      TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool convertClientCertificatesImpl(const char* client_cert_name,
                                      const char* client_cert_key)
       TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool convertPSKandIDImpl(const char* psk,
                            const char* pskIdent) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
-  // NOTE: These are all stored within the SSL modem object instead of the
-  // secure client object so secure and insecure clients can be mixed in the
-  // same socket array
-  SSLAuthMode sslAuthModes[muxCount];
-  const char* CAcerts[muxCount];
-  const char* clientCerts[muxCount];
-  const char* clientKeys[muxCount];
-  const char* pskIdents[muxCount];  // identity for PSK cipher suites
-  const char* psKeys[muxCount];     // key in hex for PSK cipher suites
+  bool
+  convertPSKTableImpl(const char* psk_table_name) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
 #endif  // SRC_TINYGSMSSL_H_
