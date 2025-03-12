@@ -297,6 +297,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       // sockets
       return 0;
 #endif
+      at->sendAT(GF("+CCHRECV="), mux, ',', (uint16_t)size);
+      if (at->waitResponse(GF("+CCHRECV:")) != 1) { return 0; }
       at->streamSkipUntil(',');  // Skip the word "DATA"
       at->streamSkipUntil(',');  // Skip mux/cid (connecion id)
       int16_t len_returned = at->streamGetIntBefore('\n');
