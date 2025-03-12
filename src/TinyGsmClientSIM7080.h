@@ -13,6 +13,11 @@
 // #define TINY_GSM_USE_HEX
 
 #define TINY_GSM_MUX_COUNT 12
+#define TINY_GSM_SECURE_MUX_COUNT 12
+// Also supports 6 SSL contexts (0-5)
+// The SSL context is collection of SSL settings, not the connection identifier.
+// This library always uses SSL context 0.
+
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 
 #include "TinyGsmClientSIM70xx.h"

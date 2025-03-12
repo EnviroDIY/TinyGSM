@@ -13,6 +13,8 @@
 // #define TINY_GSM_USE_HEX
 
 #define TINY_GSM_MUX_COUNT 2
+#define TINY_GSM_SECURE_MUX_COUNT 2
+
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 
 #include "TinyGsmClientSIM70xx.h"
