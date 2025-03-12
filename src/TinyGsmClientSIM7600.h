@@ -126,8 +126,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, SSLVersion::NO_SSL,
-                                        timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -152,66 +151,29 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   /*
    * Inner Secure Client
    */
+ public:
+  class GsmClientSecureSim7600
+      : public GsmClientSim7600,
+        public TinyGsmSSL<TinyGsmSim7600, TINY_GSM_MUX_COUNT>::GsmSecureClient {
+    friend class TinyGsmSim7600;
 
-
-  class GsmClientSecureSim7600 : public GsmClientSim7600 {
    public:
-    GsmClientSecureSim7600() {}
+    GsmClientSecureSim7600() {
+      is_secure = true;
+    }
 
     explicit GsmClientSecureSim7600(TinyGsmSim7600& modem, uint8_t mux = 0)
-        : GsmClientSim7600(modem, mux) {}
-
-   protected:
-    String     certificates[TINY_GSM_MUX_COUNT];
-    String     clientCertificates[TINY_GSM_MUX_COUNT];
-    String     clientPrivateKeys[TINY_GSM_MUX_COUNT];
-    bool       certValidation = true;
-    SSLVersion sslVersion     = SSLVersion::ALL_SSL;
-
-   public:
-    bool addCertificate(const char* certificateName, const char* cert,
-                        const uint16_t len) {
-      return at->addCertificate(certificateName, cert, len);
+        : GsmClientSim7600(modem, mux),
+          TinyGsmSSL<TinyGsmSim7600, TINY_GSM_MUX_COUNT>::GsmSecureClient() {
+      is_secure = true;
     }
 
-    bool deleteCertificate(const char* certificateName) {
-      return at->deleteCertificate(certificateName);
-    }
-
-    bool setCertificate(const char* certificateName) {
-      return at->setCertificate(certificateName, mux);
-    }
-
-    bool setClientCertificate(const char* certificateName) {
-      return at->setClientCertificate(certificateName, mux);
-    }
-
-    bool setClientKey(const char* certificateName) {
-      return at->setClientPrivateKey(certificateName, mux);
-    }
-
-    void setCertValidation(bool validation = true) {
-      certValidation = validation;
-    }
-
-    protected:
-
-    int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(15000L);
-      TINY_GSM_YIELD();
-      rx.clear();
-      if (certValidation && at->certificates[mux].length() == 0) { return -1; }
-      sock_connected = at->modemConnect(host, port, mux, sslVersion, timeout_s);
-      return sock_connected;
-    }
-
-    void stop(uint32_t maxWaitMs) override {
+    virtual void stop(uint32_t maxWaitMs) override {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CCHCLOSE="), mux);
       sock_connected = false;
       at->waitResponse();
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
   /*
@@ -363,8 +325,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    * Secure socket layer (SSL) certificate management functions
    */
  public:
-  bool addCertificate(const char* certificateName, const char* cert,
-                      const uint16_t len) {
+  bool loadCertificateImpl(const char* certificateName, const char* cert,
+                           const uint16_t len) {
     sendAT(GF("+CCERTDOWN=\""), certificateName, GF("\","), len);
     if (!waitResponse(GF(">"))) { return false; }
     stream.write(cert, len);
@@ -372,11 +334,27 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     return waitResponse() == 1;
   }
 
-  bool deleteCertificate(const char* certificateName) {
+  bool deleteCertificateImpl(const char* certificateName) {
     sendAT(GF("+CCERTDELE=\""), certificateName, GF("\""));
     return waitResponse() == 1;
   }
 
+  // no certificate conversion needed
+  bool convertCertificateImpl(CertificateType, const char*) {
+    return true;
+  }
+  bool convertCACertificateImpl(const char*) {
+    return true;
+  }
+  bool convertClientCertificatesImpl(const char*, const char*) {
+    return true;
+  }
+  bool convertPSKandIDImpl(const char*, const char*) {
+    return true;
+  }
+  bool convertPSKTableImpl(const char* psk_table_name) {
+    return true;
+  }
 
   /*
    * WiFi functions
@@ -788,72 +766,75 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       sendAT(GF("+CSSLCFG=\"sslversion\",0,"), static_cast<int8_t>(sslVersion));
       if (waitResponse(5000L) != 1) return false;
 
-      if (certificates[mux].length() != 0) {
-        sendAT(GF("+CSSLCFG=\"cacert\","), mux, ",\"",
-               certificates[mux].c_str(), "\"");  // set root CA
-        if (waitResponse(5000L) != 1) return false;
-        authmode = 1;
-      }
-
-      if (clientCertificates[mux].length() != 0) {
-        sendAT(GF("+CSSLCFG=\"clientcert\","), mux, ",\"",
-               clientCertificates[mux].c_str(), "\"");  // set clientcertificate
+      // apply the correct certificates to the connection
+      if (CAcertName != nullptr &&
+          (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
+           sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
+        /* Configure the server root CA of the specified SSL context
+        AT + CSSLCFG = "cacert", <ssl_ctx_index>,<ca_file> */
+        sendAT(GF("+CSSLCFG=\"cacert\",0,"), CAcertName);
         if (waitResponse(5000L) != 1) return false;
       }
-
-      if (clientPrivateKeys[mux].length() != 0) {
-        sendAT(GF("+CSSLCFG=\"clientkey\","), mux, ",\"",
-               clientPrivateKeys[mux].c_str(), "\"");  // set the clientkey
+      if (clientCertName != nullptr &&
+          (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
+           sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
+        sendAT(GF("+CSSLCFG=\"clientcert\",0,"), clientCertName);
+        if (waitResponse(5000L) != 1) return false;
+      }
+      if (clientKeyName != nullptr &&
+          (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
+           sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
+        sendAT(GF("+CSSLCFG=\"clientkey\",0,"), clientKeyName);
         if (waitResponse(5000L) != 1) return false;
       }
 
-      if (certificates[mux].length() != 0 &&
-          clientCertificates[mux].length() != 0 &&
-          clientPrivateKeys[mux].length() != 0) {
-        authmode = 2;
-      } else if (certificates[mux].length() == 0 &&
-                 clientCertificates[mux].length() != 0 &&
-                 clientPrivateKeys[mux].length() != 0) {
-        authmode = 3;
-      }
-
-      // set authenticationmode
-      sendAT(GF("+CSSLCFG=\"authmode\","), mux, ',', authmode);
+      // set authentication mode
+      // AT+CSSLCFG="authmode",<ssl_ctx_index>,<authmode>
+      // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
+      // <authmode> 0: No authentication (SSLAuthMode::NO_VALIDATION)
+      //            1: server authentication (SSLAuthMode::CA_VALIDATION)
+      //            2: server and client authentication
+      //            (SSLAuthMode::MUTUAL_AUTHENTICATION)
+      //            3: client authentication and no server authentication
+      //            (SSLAuthMode::CLIENT_VALIDATION)
+      sendAT(GF("+CSSLCFG=\"authmode\",0,"), static_cast<int8_t>(sslAuthMode));
       if (waitResponse(5000L) != 1) return false;
-    }
 
-    // Make sure we'll be getting data manually on this connection
-    sendAT(GF("+CIPRXGET=1"));
-    if (waitResponse() != 1) { return false; }
-
-    // Establish a connection in multi-socket mode
-    uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
-    if (sslVersion != SSLVersion::NO_SSL) {
       // set the configured SSL context for the session
       // AT+CCHSSLCFG=<session_id>,<ssl_ctx_index>
-      sendAT(GF("+CCHSSLCFG="), mux, ',', mux);
-      if (waitResponse(5000L) != 1) return false;
+      sendAT(GF("+CCHSSLCFG="), mux, GF(",0"));
+      if (waitResponse(5000L) != 1) { return false; }
 
-      sendAT(GF("+CCHOPEN="), mux, ',', GF("\""), host, GF("\","), port);
-      // The reply is OK followed by +CIPOPEN: <link_num>,<err> where <link_num>
-      // is the mux number and <err> should be 0 if there's no error
-      if (waitResponse(timeout_ms, GF(AT_NL "+CCHOPEN:")) != 1) {
-        return false;
-      }
-
+      // Establish a connection in multi-socket mode
+      // AT+CCHOPEN=<session_id>,"<host>",<port>[,<client_type>,[<bind_port>]]
+      // TODO: Should we specify the client_type as 2=SSL/TLS?
+      sendAT(GF("+CCHOPEN="), mux, GF(",\""), host, GF("\","), port);
+      // The reply is OK or ERROR followed by +CCHOPEN: <session_id>,<err> where
+      // <session_id> is the mux number and <err> should be 0 if there's no
+      // error
+      rsp = waitResponse(timeout_ms);  // capture the OK or ERROR
+      rsp &= waitResponse(timeout_ms, GF(AT_NL "+CCHOPEN:")) != 1;
+      // TODO: verify this
     } else {
+      // AT+CIPOPEN=<link_num>,"TCP",<serverIP>,<serverPort>[,<localPort>]
       sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host,
              GF("\","), port);
-      // The reply is OK followed by +CIPOPEN: <link_num>,<err> where <link_num>
-      // is the mux number and <err> should be 0 if there's no error
-      if (waitResponse(timeout_ms, GF(AT_NL "+CIPOPEN:")) != 1) {
-        return false;
-      }
+      // The reply is OK or ERROR followed by +CIPOPEN: <link_num>,<err> where
+      // <link_num> is the mux number and <err> should be 0 if there's no
+      // error
+      // There may also be an ERROR returned after the +CIPOPEN: line if the PDP
+      // context wasn't activated first. We ignore this case.
+      rsp = waitResponse(timeout_ms);  // capture the OK or ERROR
+      if (rsp) { rsp &= waitResponse(timeout_ms, GF(AT_NL "+CIPOPEN:")) != 1; }
     }
 
-    uint8_t opened_mux    = streamGetIntBefore(',');
-    uint8_t opened_result = streamGetIntBefore('\n');
-    if (opened_mux != mux || opened_result != 0) return false;
+    // Since both CIPOPEN and CCHOPEN return the same response, we can handle it
+    // here
+    if (rsp) {
+      uint8_t opened_mux    = streamGetIntBefore(',');
+      uint8_t opened_result = streamGetIntBefore('\n');
+      if (opened_mux != mux || opened_result != 0) return false;
+    }
     return true;
   }
 
