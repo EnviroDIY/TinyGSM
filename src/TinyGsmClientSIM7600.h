@@ -151,9 +151,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
         at->waitResponse();
       }
       // DBG("### Available:", result, "on", mux);
-      if (!result) {
-        at->sockets[mux]->sock_connected = at->modemGetConnected(mux);
-      }
+      if (!result) { sock_connected = at->modemGetConnected(mux); }
       return result;
     }
 
@@ -206,17 +204,16 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
         buf[1] = stream.read();
         char c = strtol(buf, NULL, 16);
 #else
-        while (!at->stream.available() &&
-               (millis() - startMillis < at->sockets[mux]->_timeout)) {
+        while (!at->stream.available() && (millis() - startMillis < _timeout)) {
           TINY_GSM_YIELD();
         }
         char c = at->stream.read();
 #endif
-        at->sockets[mux]->rx.put(c);
+        rx.put(c);
       }
       // DBG("### READ:", len_returned, "from", mux);
       // sockets[mux]->sock_available = modemGetAvailable(mux);
-      at->sockets[mux]->sock_available = len_remaining;
+      sock_available = len_remaining;
       at->waitResponse();
       return len_returned;
     }
@@ -306,18 +303,17 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       // ^^ The data length which not read in the buffer
       for (int i = 0; i < len_returned; i++) {
         uint32_t startMillis = millis();
-        while (!at->stream.available() &&
-               (millis() - startMillis < at->sockets[mux]->_timeout)) {
+        while (!at->stream.available() && (millis() - startMillis < _timeout)) {
           TINY_GSM_YIELD();
         }
         char c = at->stream.read();
-        at->sockets[mux]->rx.put(c);
+        rx.put(c);
       }
       // DBG("### READ:", len_returned, "from", mux);
       // Returns +CCHRECV: {mux},0 after the data
       String await_response = "+CCHRECV: " + String(mux) + ",0";
       at->waitResponse(await_response.c_str());
-      at->sockets[mux]->sock_available = (uint16_t)modemGetAvailable(mux);
+      sock_available = (uint16_t)modemGetAvailable();
       return len_returned;
     }
 
