@@ -443,7 +443,11 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     sendAT(GF("+CIPTIMEOUT="), 75000, ',', 15000, ',', 15000);
     waitResponse();
 
-    // Start the socket service
+    // Set to get data manually on TCP (unsecured) sockets
+    sendAT(GF("+CIPRXGET=1"));
+    if (waitResponse() != 1) { return false; }
+
+    // Start the (unsecured) socket service
 
     // This activates and attaches to the external PDP context that is tied
     // to the embedded context for TCP/IP (ie AT+CGACT=1,1 and AT+CGATT=1)
@@ -453,9 +457,21 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     sendAT(GF("+NETOPEN"));
     if (waitResponse(75000L, GF(AT_NL "+NETOPEN: 0")) != 1) { return false; }
 
-    // Set the module to require manual reading of  rx buffer data.
-    sendAT(GF("+CCHSET=0,1"));
+    // Set the module to require manual reading of rx buffer data on SSL sockets
+
+    // Configure the report mode of sending and receiving data
+    // +CCHSET=<report_send_result>,<recv_mode>
+    // <report_send_result> Whether to report result of CCHSEND, the default
+    //   value is 0: 0 No. 1 Yes. Module will report +CCHSEND:
+    // <session_id>,<err> to MCU when complete sending data.
+    // <recv_mode> The receiving mode, the default value is 0:
+    //   0 Output the data to MCU whenever received data.
+    //   1 Module caches the received data and notifies MCU with+CCHEVENT:
+    // <session_id>,RECV EVENT. MCU can use AT+CCHRECV to receive the cached
+    //   data (only in manual receiving mode).
+    sendAT(GF("+CCHSET=1,1"));
     waitResponse(5000L);
+
     // Start the SSL client (doesn't mean we have to use it!)
     sendAT(GF("+CCHSTART"));  // Start the SSL client
     if (waitResponse(5000L) != 1) return false;
@@ -466,14 +482,16 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   bool gprsDisconnectImpl() {
     // Close all sockets and stop the socket service
     // Note: On the LTE models, this single command closes all sockets and the
-    // service
+    // service and deactivates the PDP context
     sendAT(GF("+NETCLOSE"));
     waitResponse(60000L, GF(AT_NL "+NETCLOSE: 0"));
 
-    // We assume this works, so we can do ssh disconnect too
-    // stop the SSH client
+    // We assume this works, so we can do SSL disconnect too
+    // stop the SSL client
     sendAT(GF("+CCHSTOP"));
     return (waitResponse(60000L, GF(AT_NL "+CCHSTOP: 0")) != 1);
+
+    // TODO: Should CCHSTOP come before NETCLOSE?
   }
 
   bool isGprsConnectedImpl() {
@@ -720,11 +738,11 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    */
  protected:
   // get temperature in degree celsius
-  uint16_t getTemperatureImpl() {
+  float getTemperatureImpl() {
     sendAT(GF("+CPMUTEMP"));
     if (waitResponse(GF(AT_NL "+CPMUTEMP:")) != 1) { return 0; }
     // return temperature in C
-    uint16_t res = streamGetIntBefore('\n');
+    float res = streamGetIntBefore('\n');
     // Wait for final OK
     waitResponse();
     return res;
@@ -823,16 +841,28 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     bool ssl = sockets[mux]->is_secure;
     if (ssl) {
       sendAT(GF("+CCHSEND="), mux, ',', (uint16_t)len);
-      if (waitResponse(GF(">")) != 1) { return 0; }
-      stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-      stream.flush();
-      if (waitResponse() != 1) { return 0; }
-      return len;
     } else {
       sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
-      if (waitResponse(GF(">")) != 1) { return 0; }
-      stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-      stream.flush();
+    }
+    if (waitResponse(GF(">")) != 1) { return 0; }
+    stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+    stream.flush();
+
+    if (waitResponse() != 1) { return 0; }
+
+    if (ssl) {
+      // Because we set CCHSET to return the send result, we should get a
+      // +CCHSEND: <session_id>,<err>
+      if (waitResponse(10000L, GF("+CCHSEND:"), GF("ERROR" AT_NL),
+                       GF("CLOSE OK" AT_NL)) != 1) {
+        return 0;
+      }
+      streamSkipUntil(',');  // skip the outgoing mux
+      // TODO: validate mux
+      streamSkipUntil('\n');  // skip the error code
+      return len;
+    } else {
+      // after OK, returns +CIPSEND: <link_num>,<reqSendLength>,<cnfSendLength>
       if (waitResponse(GF(AT_NL "+CIPSEND:")) != 1) { return 0; }
       streamSkipUntil(',');  // Skip mux
       // TODO(?):  verify the returned mux
@@ -860,12 +890,14 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     int8_t rx_mode = 2;
 #endif
     if (ssl) {
+      // AT+CCHRECV=<session_id>[,<max_recv_len>]
       sendAT(GF("+CCHRECV="), mux, ',', (uint16_t)size);
-      if (waitResponse(GF("+CCHRECV:")) != 1)
-        streamSkipUntil(',');  // Skip the word "DATA"
-      streamSkipUntil(',');    // Skip mux/cid (connecion id)
-      int16_t len_returned = streamGetIntBefore('\n');
-      // ^^ The data length which not read in the buffer
+      // response is +CCHRECV: DATA, <session_id>,<len>\n<data>
+      if (waitResponse(GF("+CCHRECV:")) != 1) { return 0; }
+      streamSkipUntil(',');  // Skip the word "DATA"
+      streamSkipUntil(',');  // Skip mux/cid (connecion id)
+      // TODO: validate mux
+      len_returned = streamGetIntBefore('\n');
     } else {
       sendAT(GF("+CIPRXGET="), rx_mode, ',', mux, ',', (uint16_t)size);
       if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
@@ -876,13 +908,12 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
       streamSkipUntil(',');  // Skip mux/cid (connecion id)
       // TODO: verify the mux/cid number
-      int16_t len_returned = streamGetIntBefore(',');
-      //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-      int16_t len_remaining = streamGetIntBefore('\n');
-      // ^^ The data length which not read in the buffer
+      len_returned = streamGetIntBefore(',');
+      // ^^ Integer type, the length of data that has been read.
+      len_remaining = streamGetIntBefore('\n');
+      // ^^ Integer type, the length of data which has not been read in the
+      // buffer.
     }
-
-    // DBG("### READ:", len_returned, "from", mux);
     for (int i = 0; i < len_returned; i++) {
       uint32_t startMillis = millis();
 #ifdef TINY_GSM_USE_HEX
@@ -905,13 +936,15 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 #endif
       sockets[mux]->rx.put(c);
     }
-
+    // DBG("### READ:", len_returned, " bytes from connection ", mux);
     if (ssl) {
       // Returns +CCHRECV: {mux},0 after the data
       String await_response = "+CCHRECV: " + String(mux) + ",0";
       waitResponse(await_response.c_str());
+      // we need to check how much is left after the read
       sockets[mux]->sock_available = (uint16_t)modemGetAvailable(mux);
     } else {
+      // the read call already told us how much is left
       sockets[mux]->sock_available = len_remaining;
       waitResponse();
     }
@@ -920,8 +953,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
   size_t modemGetAvailable(uint8_t mux) {
     if (!sockets[mux]) return 0;
-    size_t result = 0;
     bool   ssl    = sockets[mux]->is_secure;
+    size_t result = 0;
     if (ssl) {
       // NOTE: Only two SSL sockets are supported (0 and 1) and AT+CCHRECV?
       // returns the number of characters availalable on both.
@@ -930,12 +963,19 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       // <cache_len_0> = The length of RX data cached for connection 0.
       // <cache_len_1> = The length of RX data cached for connection 1.
       if (waitResponse(GF(AT_NL "+CCHRECV: ")) != 1) { return 0; }
-      streamSkipUntil(',');  // Skip the text "LEN"
+      streamSkipUntil(',');                        // Skip the text "LEN"
+      size_t len_on_0 = streamGetIntBefore(',');   // read cache_len_0
+      size_t len_on_1 = streamGetIntBefore('\n');  // read cache_len_1
+
+      // set the sock available for both sockets (if they exist)
       if (mux == 1) {
-        streamSkipUntil(',');               // Skip cache_len_0
-        result = streamGetIntBefore('\n');  // read cache_len_1
+        result                 = len_on_1;
+        GsmClientSim7600* sock = sockets[mux];
+        if (sock) { sock->sock_available = len_on_1; }
       } else if (mux == 0) {
-        result = streamGetIntBefore(',');  // read cache_len_0
+        result                 = len_on_0;
+        GsmClientSim7600* sock = sockets[mux];
+        if (sock) { sock->sock_available = len_on_0; }
       } else {
         DBG("### ERROR: Invalid mux number");
         result = 0;
@@ -951,7 +991,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     }
     waitResponse();  // final ok
     // DBG("### Available:", result, "on", mux);
-    if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
+    if (result == 0) { sockets[mux]->sock_connected = modemGetConnected(mux); }
     return result;
   }
 
