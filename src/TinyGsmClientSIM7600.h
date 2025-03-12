@@ -162,6 +162,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       at->stream.flush();
       if (at->waitResponse(GF(AT_NL "+CIPSEND:")) != 1) { return 0; }
       at->streamSkipUntil(',');  // Skip mux
+      // TODO(?):  verify the returned mux
       at->streamSkipUntil(',');  // Skip requested bytes to send
       // TODO(?):  make sure requested and confirmed bytes match
       return at->streamGetIntBefore('\n');
@@ -170,19 +171,26 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     virtual size_t modemRead(size_t size, uint8_t mux) {
       if (!at->sockets[mux]) return 0;
 #ifdef TINY_GSM_USE_HEX
-      sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
-      if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
+      // <mode> - 3 – read data in HEX form, the max read length is 750
+      int8_t rx_mode = 3;
 #else
-      at->sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
-      if (at->waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
+      // <mode> - 2 – read data in ASCII, the max read length is 1500
+      int8_t rx_mode = 2;
 #endif
+      at->sendAT(GF("+CIPRXGET="), rx_mode, ',', mux, ',', (uint16_t)size);
+      if (at->waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
+      //+CIPRXGET: <mode>,<link_num>,<read_len>,<rest_len><data_in_hex>
+      //<read_len> Integer type, the length of data that has been read.
+      //<rest_len> Integer type, the length of data which has not been read in
+      // the buffer.
       at->streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
       at->streamSkipUntil(',');  // Skip mux/cid (connecion id)
-      int16_t len_requested = at->streamGetIntBefore(',');
+      // TODO: verify the mux/cid number
+      int16_t len_returned = at->streamGetIntBefore(',');
       //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-      int16_t len_confirmed = at->streamGetIntBefore('\n');
+      int16_t len_remaining = at->streamGetIntBefore('\n');
       // ^^ The data length which not read in the buffer
-      for (int i = 0; i < len_requested; i++) {
+      for (int i = 0; i < len_returned; i++) {
         uint32_t startMillis = millis();
 #ifdef TINY_GSM_USE_HEX
         while (stream.available() < 2 &&
@@ -204,11 +212,11 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 #endif
         at->sockets[mux]->rx.put(c);
       }
-      // DBG("### READ:", len_requested, "from", mux);
+      // DBG("### READ:", len_returned, "from", mux);
       // sockets[mux]->sock_available = modemGetAvailable(mux);
-      at->sockets[mux]->sock_available = len_confirmed;
+      at->sockets[mux]->sock_available = len_remaining;
       at->waitResponse();
-      return len_requested;
+      return len_returned;
     }
 
     virtual void stop(uint32_t maxWaitMs) {
@@ -285,48 +293,29 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     size_t modemRead(size_t size, uint8_t mux) override {
       if (!at->sockets[mux]) return 0;
 #ifdef TINY_GSM_USE_HEX
-      // (todo) Don't know how to implement this!
-      sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
-      if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
-#else
-      at->sendAT(GF("+CCHRECV="), mux, ',', (uint16_t)size);
-      if (at->waitResponse(GF("+CCHRECV:")) != 1) { return 0; }
+      // it does not appear to be possible to send/recieve hex data on SSL
+      // sockets
+      return 0;
 #endif
-      at->streamSkipUntil(',');  // Skip DATA
+      at->streamSkipUntil(',');  // Skip the word "DATA"
       at->streamSkipUntil(',');  // Skip mux/cid (connecion id)
-      // int16_t len_requested = streamGetIntBefore(',');
-      //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-      int16_t len_confirmed = at->streamGetIntBefore('\n');
+      int16_t len_returned = at->streamGetIntBefore('\n');
       // ^^ The data length which not read in the buffer
-      for (int i = 0; i < len_confirmed; i++) {
+      for (int i = 0; i < len_returned; i++) {
         uint32_t startMillis = millis();
-#ifdef TINY_GSM_USE_HEX
-        // (todo) Don't know how to implement this!
-        while (stream.available() < 2 &&
-               (millis() - startMillis < sockets[mux]->_timeout)) {
-          TINY_GSM_YIELD();
-        }
-        char buf[4] = {
-            0,
-        };
-        buf[0] = stream.read();
-        buf[1] = stream.read();
-        char c = strtol(buf, NULL, 16);
-#else
         while (!at->stream.available() &&
                (millis() - startMillis < at->sockets[mux]->_timeout)) {
           TINY_GSM_YIELD();
         }
         char c = at->stream.read();
-#endif
         at->sockets[mux]->rx.put(c);
       }
-      // DBG("### READ:", len_requested, "from", mux);
-      // sockets[mux]->sock_available = len_confirmed;
+      // DBG("### READ:", len_returned, "from", mux);
+      // Returns +CCHRECV: {mux},0 after the data
       String await_response = "+CCHRECV: " + String(mux) + ",0";
       at->waitResponse(await_response.c_str());
       at->sockets[mux]->sock_available = (uint16_t)modemGetAvailable(mux);
-      return len_confirmed;
+      return len_returned;
     }
 
     size_t modemGetAvailable(uint8_t mux) override {
@@ -971,14 +960,16 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   }
 
 
-  // Secure specific overides
+  // NOTE: The implementations of modemSend(...), modemRead(...), and
+  // modemGetAvailable(...) are almost completely different for SSL and
+  // unsecured sockets, so this is implemented within the GsmClientSim7600 and
+  // GsmClientSecureSim7600 classes.
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
     return sockets[mux]->modemSend(buff, len, mux);
   }
   size_t modemRead(size_t size, uint8_t mux) {
     return sockets[mux]->modemRead(size, mux);
   }
-
   size_t modemGetAvailable(uint8_t mux) {
     return sockets[mux]->modemGetAvailable(mux);
   }
