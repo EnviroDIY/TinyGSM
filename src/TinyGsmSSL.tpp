@@ -96,53 +96,19 @@ class TinyGsmSSL {
     return printCertificate(filename.c_str(), print_stream);
   }
 
-  // for many (but not all!) modules, the certificate must be "converted" from a
-  // file stored somewhere in the flash file system into a certificate ready to
-  // be used by the connection
-  bool convertCertificate(CertificateType cert_type, const char* filename) {
-    return thisModem().convertCertificateImpl(cert_type, filename);
-  }
-  bool convertCertificate(CertificateType cert_type, String filename) {
-    return thisModem().convertCertificate(cert_type, filename.c_str());
-  }
-  // Convert a certificate authority certificate
-  bool convertCACertificate(const char* ca_cert_name) {
-    return thisModem().convertCACertificateImpl(ca_cert_name);
-  }
-  bool convertCACertificate(String ca_cert_name) {
-    return thisModem().convertCACertificate(ca_cert_name.c_str());
-  }
-  // in some cases, the two parts of the client certificate (the certificate
-  // itself and the key to it) need to be converted together
-  bool convertClientCertificates(const char* client_cert_name,
-                                 const char* client_cert_key) {
-    return thisModem().convertClientCertificatesImpl(client_cert_name,
-                                                     client_cert_key);
-  }
-  bool convertClientCertificates(String client_cert_name,
-                                 String client_cert_key) {
-    return thisModem().convertClientCertificates(client_cert_name.c_str(),
-                                                 client_cert_key.c_str());
-  }
-  // in some cases, the two parts of the pre-shared key must be converted
-  // together (the PSK and the identity assigned to it)
-  bool convertPSKandID(const char* psk, const char* pskIdent) {
-    return thisModem().convertPSKandIDImpl(psk, pskIdent);
-  }
-  bool convertPSKandID(String psk, String pskIdent) {
-    return thisModem().convertPSKandID(psk.c_str(), pskIdent.c_str());
-  }
-  // Convert a single PSK table file
-  bool convertPSKTable(const char* psk_table_name) {
-    return thisModem().convertPSKTableImpl(psk_table_name);
-  }
-  bool convertPSKTable(String psk_table_name) {
-    return thisModem().convertPSKTable(psk_table_name.c_str());
+  bool setClientCertificate(const String& certificateName,
+                            const uint8_t mux = 0) {
+    if (mux >= muxCount) return false;
+    clientCertificates[mux] = certificateName;
+    return true;
   }
 
- protected:
-  // destructor (protected!)
-  ~TinyGsmSSL() {}
+  bool setClientPrivateKey(const String& certificateName,
+                           const uint8_t mux = 0) {
+    if (mux >= muxCount) return false;
+    clientPrivateKeys[mux] = certificateName;
+    return true;
+  }
 
   /*
    * CRTP Helper
@@ -264,19 +230,10 @@ class TinyGsmSSL {
                            const uint16_t len) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool
   deleteCertificateImpl(const char* filename) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool printCertificateImpl(const char* filename,
-                            Stream& print_stream) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool convertCertificateImpl(CertificateType cert_type, const char* filename)
-      TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool convertCACertificateImpl(const char* ca_cert_name)
-      TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool convertClientCertificatesImpl(const char* client_cert_name,
-                                     const char* client_cert_key)
-      TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool convertPSKandIDImpl(const char* psk,
-                           const char* pskIdent) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool
-  convertPSKTableImpl(const char* psk_table_name) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  String certificates[muxCount];
+  String clientCertificates[muxCount];
+  String clientPrivateKeys[muxCount];
 };
 
 #endif  // SRC_TINYGSMSSL_H_
