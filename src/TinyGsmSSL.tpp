@@ -15,13 +15,13 @@
 #define TINY_GSM_MODEM_CAN_SPECIFY_CERTS
 #define TINY_GSM_MODEM_CAN_LOAD_CERTS
 
-typedef enum {
+enum class CertificateType : int8_t {
   CA_CERTIFICATE      = 0,
   CLIENT_CERTIFICATE  = 1,
   CLIENT_KEY          = 2,
   CLIENT_PSK          = 3,
   CLIENT_PSK_IDENTITY = 4,
-} CertificateType;
+};
 
 // <auth_mode>:
 //     0: no validation
@@ -43,13 +43,22 @@ typedef enum {
 //        services. In this case you must load 3 certs to your device:
 //        The server's CA cert, the client cert, and the client key.
 //     4: pre-shared key encryption
-typedef enum {
+enum class SSLAuthMode : int8_t {
   NO_VALIDATION         = 0,
   CLIENT_VALIDATION     = 1,
   CA_VALIDATION         = 2,
   MUTUAL_AUTHENTICATION = 3,
   PRE_SHARED_KEYS       = 4,
-} SSLAuthMode;
+};
+
+enum class SSLVersion : int8_t {
+  NO_SSL  = -1,
+  SSL3_0  = 0,
+  TLS1_0  = 1,
+  TLS1_1  = 2,
+  TLS1_2  = 3,
+  ALL_SSL = 4
+};
 
 
 template <class modemType, uint8_t muxCount>
@@ -163,7 +172,8 @@ class TinyGsmSSL {
 
    public:
     GsmSecureClient() {
-      this->sslAuthMode    = NO_VALIDATION;
+      this->sslAuthMode    = SSLAuthMode::NO_VALIDATION;
+      this->sslVersion     = SSLVersion::TLS1_2;
       this->CAcertName     = nullptr;
       this->clientCertName = nullptr;
       this->clientKeyName  = nullptr;
@@ -182,7 +192,7 @@ class TinyGsmSSL {
       this->psKey          = nullptr;
     }
     explicit GsmSecureClient(const char* pskIdent, const char* psKey) {
-      this->sslAuthMode    = PRE_SHARED_KEYS;
+      this->sslAuthMode    = SSLAuthMode::PRE_SHARED_KEYS;
       this->CAcertName     = nullptr;
       this->clientCertName = nullptr;
       this->clientKeyName  = nullptr;
@@ -192,6 +202,10 @@ class TinyGsmSSL {
 
     virtual void setSSLAuthMode(SSLAuthMode mode) {
       this->sslAuthMode = mode;
+    }
+
+    virtual void setSSLVersion(SSLVersion version) {
+      this->sslVersion = version;
     }
 
     virtual void setCACertName(const char* CAcertName) {
@@ -235,6 +249,8 @@ class TinyGsmSSL {
    protected:
     /// The SSL authorization mode to use for this connection
     SSLAuthMode sslAuthMode;
+    /// The SSL version to use for this connection
+    SSLVersion sslVersion;
     /// The FILE NAME of the certificate authority certificate loaded onto the
     /// module
     const char* CAcertName;

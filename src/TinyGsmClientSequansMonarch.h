@@ -12,6 +12,12 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_MUX_COUNT 6
+#define TINY_GSM_SECURE_MUX_COUNT 6
+// NOTE: Unlike most modules, the sockets are numbered starting at 1, not 0.
+// Also supports 6 "security profiles" (1-6)
+// The security profiles is collection of SSL settings, not the connection
+// identifier.
+
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #ifdef AT_NL
 #undef AT_NL

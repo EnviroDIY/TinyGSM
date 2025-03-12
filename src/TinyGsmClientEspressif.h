@@ -13,6 +13,12 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_MUX_COUNT 5
+#define TINY_GSM_SECURE_MUX_COUNT 5
+// NOTE: There's a total limit of 5 sockets, any of them can be SSL. BUT the
+// manual warns that module may not be able to handle more than 1 SSL socket at
+// a time.
+// These modules don't have "SSL Contexts" per-say, but they only support 2
+// certificate sets.
 
 #ifdef AT_NL
 #undef AT_NL
