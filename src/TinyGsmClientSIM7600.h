@@ -144,8 +144,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       at->sendAT(GF("+CIPRXGET=4,"), mux);
       size_t result = 0;
       if (at->waitResponse(GF("+CIPRXGET:")) == 1) {
-        at->streamSkipUntil(',');  // Skip mode 4
+        at->streamSkipUntil(',');  // Skip returned mode (4)
         at->streamSkipUntil(',');  // Skip mux
+        // TODO(?): verify the mux number
         result = at->streamGetIntBefore('\n');
         at->waitResponse();
       }
@@ -321,31 +322,29 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     }
 
     size_t modemGetAvailable() override {
+      // NOTE: Only two SSL sockets are supported (0 and 1) and AT+CCHRECV?
+      // returns the number of characters availalable on both.
       size_t result = 0;
       if (!at->sockets[mux]) return 0;
       at->sendAT(GF("+CCHRECV?"));
+      // +CCHRECV: LEN,<cache_len_0>,<cache_len_1>
+      // <cache_len_0> = The length of RX data cached for connection 0.
+      // <cache_len_1> = The length of RX data cached for connection 1.
       if (at->waitResponse(GF(AT_NL "+CCHRECV: ")) != 1) {
-        at->sendAT(GF("+CIPRXGET=4,"), mux);
-        size_t result = 0;
-        if (at->waitResponse(GF("+CIPRXGET:")) == 1) {
-          at->streamSkipUntil(',');  // Skip mode 4
-          at->streamSkipUntil(',');  // Skip mux
-          result = at->streamGetIntBefore('\n');
-          at->waitResponse();
-        }
-        // DBG("### Available:", result, "on", mux);
-        if (!result) {
-          at->sockets[mux]->sock_connected = at->modemGetConnected(mux);
-        }
-        return result;
+        // TODO(?): remove this? is this valid?
+        return GsmClientSim7600::modemGetAvailable();
       }
-      at->streamSkipUntil(',');  // Skip mode 4
-      if (mux) {
-        at->streamSkipUntil(',');  // Skip mode 4
-        result = at->streamGetIntBefore('\n');
+      at->streamSkipUntil(',');  // Skip the text "LEN"
+      if (mux == 1) {
+        at->streamSkipUntil(',');               // Skip cache_len_0
+        result = at->streamGetIntBefore('\n');  // read cache_len_1
+      } else if (mux == 0) {
+        result = at->streamGetIntBefore(',');  // read cache_len_0
       } else {
-        result = at->streamGetIntBefore(',');
+        DBG("### ERROR: Invalid mux number");
+        result = 0;
       }
+      at->waitResponse();  // final ok
       return result;
     }
 
