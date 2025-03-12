@@ -138,7 +138,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    virtual size_t modemGetAvailable(uint8_t mux) {
+   protected:
+    virtual size_t modemGetAvailable() {
       if (!at->sockets[mux]) return 0;
       at->sendAT(GF("+CIPRXGET=4,"), mux);
       size_t result = 0;
@@ -155,7 +156,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       return result;
     }
 
-    virtual int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+    virtual int16_t modemSend(const void* buff, size_t len) {
       at->sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
       if (at->waitResponse(GF(">")) != 1) { return 0; }
       at->stream.write(reinterpret_cast<const uint8_t*>(buff), len);
@@ -168,7 +169,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       return at->streamGetIntBefore('\n');
     }
 
-    virtual size_t modemRead(size_t size, uint8_t mux) {
+    virtual size_t modemRead(size_t size) {
       if (!at->sockets[mux]) return 0;
 #ifdef TINY_GSM_USE_HEX
       // <mode> - 3 – read data in HEX form, the max read length is 750
@@ -281,7 +282,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       certValidation = validation;
     }
 
-    int16_t modemSend(const void* buff, size_t len, uint8_t mux) override {
+   protected:
+    int16_t modemSend(const void* buff, size_t len) override {
       at->sendAT(GF("+CCHSEND="), mux, ',', (uint16_t)len);
       if (at->waitResponse(GF(">")) != 1) { return 0; }
       at->stream.write(reinterpret_cast<const uint8_t*>(buff), len);
@@ -290,7 +292,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       return len;
     }
 
-    size_t modemRead(size_t size, uint8_t mux) override {
+    size_t modemRead(size_t size) override {
       if (!at->sockets[mux]) return 0;
 #ifdef TINY_GSM_USE_HEX
       // it does not appear to be possible to send/recieve hex data on SSL
@@ -318,7 +320,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       return len_returned;
     }
 
-    size_t modemGetAvailable(uint8_t mux) override {
+    size_t modemGetAvailable() override {
       size_t result = 0;
       if (!at->sockets[mux]) return 0;
       at->sendAT(GF("+CCHRECV?"));
@@ -965,13 +967,13 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   // unsecured sockets, so this is implemented within the GsmClientSim7600 and
   // GsmClientSecureSim7600 classes.
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    return sockets[mux]->modemSend(buff, len, mux);
+    return sockets[mux]->modemSend(buff, len);
   }
   size_t modemRead(size_t size, uint8_t mux) {
-    return sockets[mux]->modemRead(size, mux);
+    return sockets[mux]->modemRead(size);
   }
   size_t modemGetAvailable(uint8_t mux) {
-    return sockets[mux]->modemGetAvailable(mux);
+    return sockets[mux]->modemGetAvailable();
   }
 
   bool modemGetConnected(uint8_t mux) {
