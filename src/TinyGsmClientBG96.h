@@ -639,6 +639,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       GsmClientSecureBG96* thisClient =
           static_cast<GsmClientSecureBG96*>(sockets[mux]);
       SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
+      SSLVersion  sslVersion     = thisClient->sslVersion;
       const char* CAcertName     = thisClient->CAcertName;
       const char* clientCertName = thisClient->clientCertName;
       const char* clientKeyName  = thisClient->clientKeyName;
@@ -657,8 +658,33 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
       //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
       //              4: ALL
-      // NOTE:  despite docs using caps, "sslversion" must be in lower case
-      sendAT(GF("+QSSLCFG=\"sslversion\",0,3"));  // TLS 1.2
+
+      int8_t q_ssl_version = 3;
+      // convert the ssl version into the format for this command
+      switch (sslVersion) {
+        case SSLVersion::NO_SSL:
+        case SSLVersion::ALL_SSL: {
+          q_ssl_version = 4;
+          break;
+        }
+        case SSLVersion::SSL3_0: {
+          q_ssl_version = 0;
+          break;
+        }
+        case SSLVersion::TLS1_0: {
+          q_ssl_version = 1;
+          break;
+        }
+        case SSLVersion::TLS1_1: {
+          q_ssl_version = 2;
+          break;
+        }
+        case SSLVersion::TLS1_2: {
+          q_ssl_version = 3;
+          break;
+        }
+      }
+      sendAT(GF("+CSSLCFG=\"sslversion\",0,"), ',', q_ssl_version);
       if (waitResponse(5000L) != 1) return false;
       // set the ssl cipher_suite
       // AT+QSSLCFG="ciphersuite",<sslctxID>,<cipher_suite>
@@ -675,16 +701,17 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       // set the ssl sec level
       // AT+QSSLCFG="seclevel",<sslctxID>,<sec_level>
       // <sslctxID> SSL Context ID, range 0-5; we always use 0
-      // <sec_level> 0: No authentication (NO_VALIDATION)
-      //             1: Manage server authentication (CA_VALIDATION)
+      // <sec_level> 0: No authentication (SSLAuthMode::NO_VALIDATION)
+      //             1: Manage server authentication
+      //             (SSLAuthMode::CA_VALIDATION)
       //             2: Manage server and client authentication if requested by
-      //             the remote server (MUTUAL_AUTHENTICATION)
+      //             the remote server (SSLAuthMode::MUTUAL_AUTHENTICATION)
       switch (sslAuthMode) {
-        case CA_VALIDATION: {
+        case SSLAuthMode::CA_VALIDATION: {
           sendAT(GF("+QSSLCFG=\"seclevel\",0,1"));
           break;
         }
-        case MUTUAL_AUTHENTICATION: {
+        case SSLAuthMode::MUTUAL_AUTHENTICATION: {
           sendAT(GF("+QSSLCFG=\"seclevel\",0,2"));
           break;
         }
@@ -697,8 +724,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
 
       // apply the correct certificates to the connection
       if (CAcertName == nullptr &&
-          (sslAuthMode == CA_VALIDATION ||
-           sslAuthMode == MUTUAL_AUTHENTICATION)) {
+          (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
+           sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
         // AT+QSSLCFG="cacert",<sslctxID>,<cacertpath>
         // <sslctxID> SSL Context ID, range 0-5; we always use 0
         // <cacertpath> certificate file path
@@ -706,13 +733,15 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
-      if (clientCertName != nullptr && (sslAuthMode == MUTUAL_AUTHENTICATION)) {
+      if (clientCertName != nullptr &&
+          (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
         // AT+QSSLCFG="clientcert",<sslctxID>,<client_cert_path>
         sendAT(GF("+QSSLCFG=\"clientcert\",0,\""), clientCertName, GF("\""));
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
-      if (clientKeyName != nullptr && (sslAuthMode == MUTUAL_AUTHENTICATION)) {
+      if (clientKeyName != nullptr &&
+          (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
         // AT+QSSLCFG="clientkey",<sslctxID>[,<client_key_path>]
         sendAT(GF("+QSSLCFG=\"clientkey\",0,\""), clientKeyName, GF("\""));
         if (waitResponse(5000L) != 1) return false;

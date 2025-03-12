@@ -117,8 +117,8 @@ void loop() {
 #endif
   modem.deleteCertificate("certificateName");
 
-  modem.convertCertificate(CA_CERTIFICATE, "filename");
-  modem.convertCertificate(CA_CERTIFICATE, String("filename"));
+  modem.convertCertificate(CertificateType::CA_CERTIFICATE, "filename");
+  modem.convertCertificate(CertificateType::CA_CERTIFICATE, String("filename"));
   modem.convertCACertificate("ca_cert_name");
   modem.convertCACertificate(String("ca_cert_name"));
   modem.convertClientCertificates("client_cert_name", "client_cert_key");
@@ -130,8 +130,8 @@ void loop() {
   modem.convertPSKTable(String("psk_table_name"));
 #endif
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
-  client_secure.setSSLAuthMode(NO_VALIDATION);
-  client_secure.setSSLAuthMode(MUTUAL_AUTHENTICATION);
+  client_secure.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
+  client_secure.setSSLAuthMode(SSLAuthMode::MUTUAL_AUTHENTICATION);
   client_secure.setCACertName("certificateName");
   client_secure.setCACertName(String("certificateName"));
   client_secure.setClientCertName("certificateName");

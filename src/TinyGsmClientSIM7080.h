@@ -385,20 +385,20 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // Convert certificate into something the module will use and save it to
     // file
     switch (cert_type) {
-      case CLIENT_PSK:
-      case CLIENT_PSK_IDENTITY: {
+      case CertificateType::CLIENT_PSK:
+      case CertificateType::CLIENT_PSK_IDENTITY: {
         DBG("### WARNING: The PSK and PSK identity must be converted together "
             "on the SIM7080.  Please use the convertPSKandID(..) function.");
         return false;
       }
-      case CLIENT_CERTIFICATE:
-      case CLIENT_KEY: {
+      case CertificateType::CLIENT_CERTIFICATE:
+      case CertificateType::CLIENT_KEY: {
         DBG("### WARNING: The client certificate and matching key must be "
             "converted together on the SIM7080.  Please use the "
             "convertClientCertificates(..) function.");
         return false;
       }
-      case CA_CERTIFICATE:
+      case CertificateType::CA_CERTIFICATE:
       default: {
         return convertCACertificateImpl(filename);
       }
@@ -643,6 +643,8 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // connection identifier is the mux/socket number.
     // For this, we will *always* configure SSL context 0, just as we always
     // configured PDP context 1.
+    // CSSLCFG commands reference the SSL context number; C**A**SSLCFG commands
+    // reference the connection number (aka, the mux).
 
     if (ssl) {
       // set the ssl version
@@ -655,7 +657,29 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       //              4: QAPI_NET_SSL_PROTOCOL_DTLS_1_0
       //              5: QAPI_NET_SSL_PROTOCOL_DTLS_1_2
       // NOTE:  despite docs using caps, "sslversion" must be in lower case
-      sendAT(GF("+CSSLCFG=\"sslversion\",0,3"));  // TLS 1.2
+      int8_t s70x_ssl_version = 3;
+      // convert the ssl version into the format for this command
+      switch (sslVersion) {
+        case SSLVersion::NO_SSL:
+        case SSLVersion::ALL_SSL:
+        case SSLVersion::SSL3_0: {
+          s70x_ssl_version = 0;
+          break;
+        }
+        case SSLVersion::TLS1_0: {
+          s70x_ssl_version = 1;
+          break;
+        }
+        case SSLVersion::TLS1_1: {
+          s70x_ssl_version = 2;
+          break;
+        }
+        case SSLVersion::TLS1_2: {
+          s70x_ssl_version = 3;
+          break;
+        }
+      }
+      sendAT(GF("+CSSLCFG=\"sslversion\",0,"), ',', s70x_ssl_version);
       if (waitResponse(5000L) != 1) return false;
     }
 
@@ -676,6 +700,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       GsmClientSecureSim7080* thisClient =
           static_cast<GsmClientSecureSim7080*>(sockets[mux]);
       SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
+      SSLVersion  sslVersion     = thisClient->sslVersion;
       const char* CAcertName     = thisClient->CAcertName;
       const char* clientCertName = thisClient->clientCertName;
       const char* pskTableName   = thisClient->pskTableName;
@@ -693,16 +718,16 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
 
       // apply the correct certificates to the connection
       if (CAcertName != nullptr &&
-          (sslAuthMode == CA_VALIDATION ||
-           sslAuthMode == MUTUAL_AUTHENTICATION)) {
+          (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
+           sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
         // AT+CASSLCFG=<cid>,"CACERT",<caname>
         // <cid> Application connection ID (set with AT+CACID above)
         // <certname> certificate name
         sendAT(GF("+CASSLCFG="), mux, ",CACERT,\"", CAcertName, "\"");
         if (waitResponse(5000L) != 1) return false;
       }
-      // SRGD WARNING: UNTESTED!!
-      if (clientCertName != nullptr && (sslAuthMode == MUTUAL_AUTHENTICATION)) {
+      if (clientCertName != nullptr &&
+          (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
         // AT+CASSLCFG=<cid>,"CERT",<certname>
         // <cid> Application connection ID (set with AT+CACID above)
         // <certname> Alphanumeric ASCII text string up to 64 characters.
@@ -714,7 +739,8 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
-      if (pskTableName != nullptr && (sslAuthMode == PRE_SHARED_KEYS)) {
+      if (pskTableName != nullptr &&
+          (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS)) {
         // AT+CASSLCFG=<cid>,"PSKTABLE",<pskTableName>
         // <cid> Application connection ID (set with AT+CACID above)
         // <pskTableName> Alphanumeric ASCII text string up to 64 characters.
@@ -725,8 +751,8 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
         if (waitResponse(5000L) != 1) return false;
       }
 
-      // set the connection identifier that the above SSL context settings
-      // apply to (ie, tie connection mux to SSL context)
+      // set the connection identifier that the above SSL context settings apply
+      // to (ie, tie connection mux to SSL context)
       // AT+CASSLCFG=<cid>,"CRINDEX",<crindex>
       // <cid> Application connection ID (set with AT+CACID above)
       // <crindex> SSL context identifier (<ctxindex>) - we always use 0

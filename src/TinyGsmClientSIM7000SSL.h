@@ -355,20 +355,20 @@ class TinyGsmSim7000SSL
     // Convert certificate into something the module will use and save it to
     // file
     switch (cert_type) {
-      case CLIENT_PSK:
-      case CLIENT_PSK_IDENTITY: {
+      case CertificateType::CLIENT_PSK:
+      case CertificateType::CLIENT_PSK_IDENTITY: {
         DBG("### WARNING: The PSK and PSK identity must be converted together "
             "on the SIM7080.  Please use the convertPSKandID(..) function.");
         return false;
       }
-      case CLIENT_CERTIFICATE:
-      case CLIENT_KEY: {
+      case CertificateType::CLIENT_CERTIFICATE:
+      case CertificateType::CLIENT_KEY: {
         DBG("### WARNING: The client certificate and matching key must be "
             "converted together on the SIM7080.  Please use the "
             "convertClientCertificates(..) function.");
         return false;
       }
-      case CA_CERTIFICATE:
+      case CertificateType::CA_CERTIFICATE:
       default: {
         return convertCACertificateImpl(filename);
       }
@@ -556,6 +556,25 @@ class TinyGsmSim7000SSL
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
 
+    // Blank holders before casting
+    SSLAuthMode sslAuthMode    = SSLAuthMode::NO_VALIDATION;
+    SSLVersion  sslVersion     = SSLVersion::TLS1_2;
+    const char* CAcertName     = nullptr;
+    const char* clientCertName = nullptr;
+    const char* pskTableName   = nullptr;
+    // If we have a secure socket, use a static cast to get the authentication
+    // mode and certificate names. This isn't ideal but since we've already
+    // checked that the socket is a secure one, we're pretty sure of the type
+    // and it should work. We cannot use a dynamic cast because Arduino
+    // compiles with -fno-rtti.
+    GsmClientSecureSim7000SSL* thisClient =
+        static_cast<GsmClientSecureSim7000SSL*>(sockets[mux]);
+    sslAuthMode    = thisClient->sslAuthMode;
+    sslVersion     = thisClient->sslVersion;
+    CAcertName     = thisClient->CAcertName;
+    clientCertName = thisClient->clientCertName;
+    pskTableName   = thisClient->pskTableName;
+
     // set the connection (mux) identifier to use
     sendAT(GF("+CACID="), mux);
     if (waitResponse(timeout_ms) != 1) return false;
@@ -565,6 +584,8 @@ class TinyGsmSim7000SSL
     // connection identifier is the mux/socket number.
     // For this, we will *always* configure SSL context 0, just as we always
     // configured PDP context 1.
+    // CSSLCFG commands reference the SSL context number; C**A**SSLCFG commands
+    // reference the connection number (aka, the mux).
 
     if (ssl) {
       // set the ssl version
@@ -576,7 +597,29 @@ class TinyGsmSim7000SSL
       //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
       //              4: QAPI_NET_SSL_PROTOCOL_DTLS_1_0
       //              5: QAPI_NET_SSL_PROTOCOL_DTLS_1_2
-      sendAT(GF("+CSSLCFG=\"sslversion\",0,3"));  // TLS 1.2
+      int8_t s70x_ssl_version = 3;
+      // convert the ssl version into the format for this command
+      switch (sslVersion) {
+        case SSLVersion::NO_SSL:
+        case SSLVersion::ALL_SSL:
+        case SSLVersion::SSL3_0: {
+          s70x_ssl_version = 0;
+          break;
+        }
+        case SSLVersion::TLS1_0: {
+          s70x_ssl_version = 1;
+          break;
+        }
+        case SSLVersion::TLS1_1: {
+          s70x_ssl_version = 2;
+          break;
+        }
+        case SSLVersion::TLS1_2: {
+          s70x_ssl_version = 3;
+          break;
+        }
+      }
+      sendAT(GF("+CSSLCFG=\"sslversion\",0,"), ',', s70x_ssl_version);
       if (waitResponse(5000L) != 1) return false;
     }
 
@@ -589,17 +632,6 @@ class TinyGsmSim7000SSL
     waitResponse();
 
     if (ssl) {
-      // If we have a secure socket, use a static cast to get the authentication
-      // mode and certificate names. This isn't really "safe" but since we've
-      // already checked that the socket is a secure one, we're pretty sure of
-      // the type and it should work.
-      GsmClientSecureSim7000SSL* thisClient =
-          static_cast<GsmClientSecureSim7000SSL*>(sockets[mux]);
-      SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
-      const char* CAcertName     = thisClient->CAcertName;
-      const char* clientCertName = thisClient->clientCertName;
-      const char* pskTableName   = thisClient->pskTableName;
-
       // Query all the parameters that have been set for this SSL context
       // TODO(@SRGDamia1): Skip this?
       // AT+CSSLCFG="ctxindex" ,<ctxindex>
@@ -611,8 +643,8 @@ class TinyGsmSim7000SSL
 
       // apply the correct certificates to the connection
       if (CAcertName != nullptr &&
-          (sslAuthMode == CA_VALIDATION ||
-           sslAuthMode == MUTUAL_AUTHENTICATION)) {
+          (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
+           sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
         // AT+CASSLCFG=<cid>,"cacert",<caname>
         // <cid> Application connection ID (set with AT+CACID above)
         // <certname> certificate name
@@ -620,7 +652,8 @@ class TinyGsmSim7000SSL
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
-      if (clientCertName != nullptr && (sslAuthMode == MUTUAL_AUTHENTICATION)) {
+      if (clientCertName != nullptr &&
+          (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
         // AT+CASSLCFG=<cid>,"clientcert",<certname>
         // <cid> Application connection ID (set with AT+CACID above)
         // <certname> Alphanumeric ASCII text string up to 64 characters. Client
@@ -632,7 +665,8 @@ class TinyGsmSim7000SSL
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
-      if (pskTableName != nullptr && (sslAuthMode == PRE_SHARED_KEYS)) {
+      if (pskTableName != nullptr &&
+          (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS)) {
         // AT+CASSLCFG=<cid>,"psktable",<pskTableName>
         // <cid> Application connection ID (set with AT+CACID above)
         // <pskTableName> Alphanumeric ASCII text string up to 64 characters.
