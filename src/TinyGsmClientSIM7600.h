@@ -58,14 +58,6 @@ enum SIM7600RegStatus {
   REG_OK_ROAMING   = 5,
   REG_UNKNOWN      = 4,
 };
-enum class SSLVersion : int8_t {
-  NO_SSL  = -1,
-  SSL3_0  = 0,
-  TLS1_0  = 1,
-  TLS1_1  = 2,
-  TLS1_2  = 3,
-  ALL_SSL = 4
-};
 
 class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
                        public TinyGsmGPRS<TinyGsmSim7600>,
@@ -753,14 +745,45 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    SSLVersion sslVersion, int timeout_s = 15) {
-    if (sslVersion != SSLVersion::NO_SSL) {
-      uint8_t authmode = 0;
+                    int timeout_s = 15) {
+    int8_t   rsp;
+    uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+    bool     ssl        = sockets[mux]->is_secure;
+
+    if (ssl) {
+      // If we have a secure socket, use a static cast to get the authentication
+      // mode and certificate names. This isn't really "safe" but since we've
+      // already checked that the socket is a secure one, we're pretty sure of
+      // the type and it should work.
+      GsmClientSecureSim7600* thisClient =
+          static_cast<GsmClientSecureSim7600*>(sockets[mux]);
+      SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
+      SSLVersion  sslVersion     = thisClient->sslVersion;
+      const char* CAcertName     = thisClient->CAcertName;
+      const char* clientCertName = thisClient->clientCertName;
+      const char* clientKeyName  = thisClient->clientKeyName;
+      // const char* pskIdent       = thisClient->pskIdent;
+      // const char* psKey          = thisClient->psKey;
+
       // List the certs available
       //   sendAT(GF("+CCERTLIST"));
       //   waitResponse(5000L);
-      sendAT(GF("+CSSLCFG=\"sslversion\","), mux, ',',
-             static_cast<int>(sslVersion));
+
+      // NOTE: The SSL context (<ssl_ctx_index>) is not the same as the
+      // connection identifier.  The SSL context is the grouping of SSL
+      // settings, the connection identifier is the mux/socket number. For this,
+      // we will *always* configure SSL context 0, just as we always configured
+      // PDP context 1.
+
+      // set the ssl version
+      // AT+CSSLCFG="sslversion",<ssl_ctx_index>,<sslversion>
+      // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
+      // <sslversion> 0: SSL3.0
+      //              1: TLS1.0
+      //              2: TLS1.1
+      //              3: TLS1.2
+      //              4: All
+      sendAT(GF("+CSSLCFG=\"sslversion\",0,"), static_cast<int8_t>(sslVersion));
       if (waitResponse(5000L) != 1) return false;
 
       if (certificates[mux].length() != 0) {

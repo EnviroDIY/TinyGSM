@@ -522,13 +522,14 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       GsmClientSecureA7672X* thisClient =
           static_cast<GsmClientSecureA7672X*>(sockets[mux]);
       SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
+      SSLVersion  sslVersion     = thisClient->sslVersion;
       const char* CAcertName     = thisClient->CAcertName;
       const char* clientCertName = thisClient->clientCertName;
       const char* clientKeyName  = thisClient->clientKeyName;
       // const char* pskIdent       = thisClient->pskIdent;
       // const char* psKey          = thisClient->psKey;
 
-      if (sslAuthMode == PRE_SHARED_KEYS) {
+      if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
         DBG("### The A7672x does not support SSL using pre-shared keys.");
         return false;
       }
@@ -548,56 +549,39 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       //              2: TLS1.1
       //              3: TLS1.2
       //              4: All
-      // NOTE:  despite docs using caps, "sslversion" must be in lower case
-      sendAT(GF("+CSSLCFG=\"sslversion\",0,3"));  // TLS 1.2
+      sendAT(GF("+CSSLCFG=\"sslversion\",0,"), static_cast<int8_t>(sslVersion));
       if (waitResponse(5000L) != 1) return false;
 
-      // set the ssl sec level
-      // AT+QSSLCFG="authmode",<ssl_ctx_index>,<authmode>
+      // set authentication mode
+      // AT+CSSLCFG="authmode",<ssl_ctx_index>,<authmode>
       // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
-      // <authmode> 0: No authentication (NO_VALIDATION)
-      //            1: server authentication (CA_VALIDATION)
-      //            2: server and client authentication (MUTUAL_AUTHENTICATION)
+      // <authmode> 0: No authentication (SSLAuthMode::NO_VALIDATION)
+      //            1: server authentication (SSLAuthMode::CA_VALIDATION)
+      //            2: server and client authentication
+      //            (SSLAuthMode::MUTUAL_AUTHENTICATION)
       //            3: client authentication and no server authentication
-      //            (CLIENT_VALIDATION)
-      switch (sslAuthMode) {
-        case CA_VALIDATION: {
-          sendAT(GF("+CSSLCFG=\"authmode\",0,1"));
-          break;
-        }
-        case MUTUAL_AUTHENTICATION: {
-          sendAT(GF("+CSSLCFG=\"authmode\",0,2"));
-          break;
-        }
-        case CLIENT_VALIDATION: {
-          sendAT(GF("+CSSLCFG=\"authmode\",0,3"));
-          break;
-        }
-        default: {
-          sendAT(GF("+CSSLCFG=\"authmode\",0,0"));
-          break;
-        }
-      }
+      //            (SSLAuthMode::CLIENT_VALIDATION)
+      sendAT(GF("+CSSLCFG=\"authmode\",0,"), static_cast<int8_t>(sslAuthMode));
       if (waitResponse(5000L) != 1) return false;
 
       // apply the correct certificates to the connection
       if (CAcertName != nullptr &&
-          (sslAuthMode == CA_VALIDATION ||
-           sslAuthMode == MUTUAL_AUTHENTICATION)) {
+          (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
+           sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
         /* Configure the server root CA of the specified SSL context
         AT + CSSLCFG = "cacert", <ssl_ctx_index>,<ca_file> */
         sendAT(GF("+CSSLCFG=\"cacert\",0,"), CAcertName);
         if (waitResponse(5000L) != 1) return false;
       }
       if (clientCertName != nullptr &&
-          (sslAuthMode == MUTUAL_AUTHENTICATION ||
-           sslAuthMode == CLIENT_VALIDATION)) {
+          (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
+           sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
         sendAT(GF("+CSSLCFG=\"clientcert\",0,"), clientCertName);
         if (waitResponse(5000L) != 1) return false;
       }
       if (clientKeyName != nullptr &&
-          (sslAuthMode == MUTUAL_AUTHENTICATION ||
-           sslAuthMode == CLIENT_VALIDATION)) {
+          (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
+           sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
         sendAT(GF("+CSSLCFG=\"clientkey\",0,"), clientKeyName);
         if (waitResponse(5000L) != 1) return false;
       }
@@ -731,7 +715,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       // TODO: validate mux
       len_returned = streamGetIntBefore('\n');
     } else {
-      sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
+      sendAT(GF("+CIPRXGET="), rx_mode, ',', mux, ',', (uint16_t)size);
       if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
       streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
       streamSkipUntil(',');  // Skip mux/cid (connecion id)

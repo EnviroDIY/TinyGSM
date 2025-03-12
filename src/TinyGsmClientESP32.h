@@ -177,23 +177,24 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       // names for the ESP32
       char* cert_name      = new char[16]();
       char* cert_namespace = new char[14]();
-      at->getCertificateName(CA_CERTIFICATE, certNumber, cert_name,
-                             cert_namespace);
+      at->getCertificateName(CertificateType::CA_CERTIFICATE, certNumber,
+                             cert_name, cert_namespace);
       CAcertName = cert_name;
     }
     void setClientCertificateNumber(uint8_t certNumber) {
       pki_number           = certNumber;
       char* cert_name      = new char[16]();
       char* cert_namespace = new char[14]();
-      at->getCertificateName(CLIENT_CERTIFICATE, certNumber, cert_name,
-                             cert_namespace);
+      at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
+                             cert_name, cert_namespace);
       CAcertName = cert_name;
     }
     void setPrivateKeyNumber(uint8_t keyNumber) {
       pki_number           = keyNumber;
       char* cert_name      = new char[16]();
       char* cert_namespace = new char[14]();
-      at->getCertificateName(CLIENT_KEY, keyNumber, cert_name, cert_namespace);
+      at->getCertificateName(CertificateType::CLIENT_KEY, keyNumber, cert_name,
+                             cert_namespace);
       CAcertName = cert_name;
     }
 
@@ -260,21 +261,25 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   // in auth mode 2 and 3
   // This is the value client_ca_0x.crt in the AT firmware
   bool loadCACert(uint8_t certNumber, const char* cert, const uint16_t len) {
-    return loadCertificateByNumber(CA_CERTIFICATE, certNumber, cert, len);
+    return loadCertificateByNumber(CertificateType::CA_CERTIFICATE, certNumber,
+                                   cert, len);
   }
 
   bool loadClientCert(uint8_t certNumber, const char* cert,
                       const uint16_t len) {
-    return loadCertificateByNumber(CLIENT_CERTIFICATE, certNumber, cert, len);
+    return loadCertificateByNumber(CertificateType::CLIENT_CERTIFICATE,
+                                   certNumber, cert, len);
   }
 
   bool loadPrivateKey(uint8_t keyNumber, const char* key, const uint16_t len) {
-    return loadCertificateByNumber(CLIENT_KEY, keyNumber, key, len);
+    return loadCertificateByNumber(CertificateType::CLIENT_KEY, keyNumber, key,
+                                   len);
   }
 
   bool loadCertificateByNumber(CertificateType cert_type, uint8_t certNumber,
                                const char* cert, const uint16_t len) {
-    if (cert_type == CLIENT_PSK || cert_type == CLIENT_PSK_IDENTITY) {
+    if (cert_type == CertificateType::CLIENT_PSK ||
+        cert_type == CertificateType::CLIENT_PSK_IDENTITY) {
       return false;
     }
     // convert the certificate number and type into the proper certificate names
@@ -288,7 +293,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
   bool deleteCertificateByNumber(CertificateType cert_type,
                                  uint8_t         certNumber) {
-    if (cert_type == CLIENT_PSK || cert_type == CLIENT_PSK_IDENTITY) {
+    if (cert_type == CertificateType::CLIENT_PSK ||
+        cert_type == CertificateType::CLIENT_PSK_IDENTITY) {
       return false;
     }
     // convert the certificate number and type into the proper certificate names
@@ -303,7 +309,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
   bool printCertificateByNumber(CertificateType cert_type, uint8_t certNumber,
                                 Stream& print_stream) {
-    if (cert_type == CLIENT_PSK || cert_type == CLIENT_PSK_IDENTITY) {
+    if (cert_type == CertificateType::CLIENT_PSK ||
+        cert_type == CertificateType::CLIENT_PSK_IDENTITY) {
       return false;
     }
     // convert the certificate number and type into the proper certificate names
@@ -335,27 +342,27 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     itoa(certNumber, cert_number, 10);
 
     switch (cert_type) {
-      case CLIENT_PSK_IDENTITY:
-      case CLIENT_PSK: {
+      case CertificateType::CLIENT_PSK_IDENTITY:
+      case CertificateType::CLIENT_PSK: {
         // The ESP32 does not support SSL using pre-shared keys with AT
         // firmware.
         strcpy(cert_namespace, "\0");
         strcpy(cert_name, "\0");
         return;
       }
-      case CLIENT_KEY: {
+      case CertificateType::CLIENT_KEY: {
         const char* client_key_namespace = "client_key";
         strcpy(cert_namespace, client_key_namespace);
         strcpy(cert_name, client_key_namespace);
         break;
       }
-      case CLIENT_CERTIFICATE: {
+      case CertificateType::CLIENT_CERTIFICATE: {
         const char* client_cert_namespace = "client_cert";
         strcpy(cert_namespace, client_cert_namespace);
         strcpy(cert_name, client_cert_namespace);
         break;
       }
-      case CA_CERTIFICATE:
+      case CertificateType::CA_CERTIFICATE:
       default: {
         const char* ca_cert_namespace = "client_ca";
         strcpy(cert_namespace, ca_cert_namespace);
@@ -477,7 +484,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   }
 
   bool convertCertificateImpl(CertificateType cert_type, const char*) {
-    if (cert_type == CLIENT_PSK || cert_type == CLIENT_PSK_IDENTITY) {
+    if (cert_type == CertificateType::CLIENT_PSK ||
+        cert_type == CertificateType::CLIENT_PSK_IDENTITY) {
       // The ESP32 does not support SSL using pre-shared keys with AT firmware.
       return false;
     }
@@ -715,7 +723,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     bool     ssl           = sockets[requested_mux]->is_secure;
 
     // Blank holders for the SSL auth mode and certificates
-    SSLAuthMode sslAuthMode = NO_VALIDATION;
+    SSLAuthMode sslAuthMode = SSLAuthMode::NO_VALIDATION;
     uint8_t     ca_number   = 0;
     uint8_t     pki_number  = 0;
     // If we actually have a secure socket populate the above with real values
@@ -750,12 +758,13 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
         }
       }
 
-      if (sslAuthMode == PRE_SHARED_KEYS) { return false; }
+      if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) { return false; }
 
       // SSL certificate checking will not work without a valid timestamp!
       if (sockets[requested_mux] != nullptr &&
-          (sslAuthMode == CLIENT_VALIDATION || sslAuthMode == CA_VALIDATION ||
-           sslAuthMode == MUTUAL_AUTHENTICATION) &&
+          (sslAuthMode == SSLAuthMode::CLIENT_VALIDATION ||
+           sslAuthMode == SSLAuthMode::CA_VALIDATION ||
+           sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION) &&
           !waitForTimeSync(timeout_s)) {
         DBG("### WARNING: The module timestamp must be valid for SSL auth. "
             "Please use setTimeZone(...) or NTPServerSync(...) to enable "
@@ -787,7 +796,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       // (or were not) put into the customized certificate partitions.
       // The default firmware comes with espressif certificates in slots 0
       // and 1.
-      if (sockets[requested_mux] == nullptr || (sslAuthMode == NO_VALIDATION)) {
+      if (sockets[requested_mux] == nullptr ||
+          (sslAuthMode == SSLAuthMode::NO_VALIDATION)) {
         sendAT(GF("+CIPSSLCCONF="), requested_mux, GF(",0"));
       } else {
         sendAT(GF("+CIPSSLCCONF="), requested_mux, ',',

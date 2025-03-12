@@ -326,7 +326,7 @@ void setup() {
   // =================== SET CERTIFICATES FOR THE CONNECTION ===================
   // AWS IoT Core requires mutual authentication
   DBG("Requiring mutual authentication on socket");
-  secureClient.setSSLAuthMode(MUTUAL_AUTHENTICATION);
+  secureClient.setSSLAuthMode(SSLAuthMode::MUTUAL_AUTHENTICATION);
   // attach the uploaded certificates to the secure client
   DBG("Assigning", root_ca_name, "as certificate authority on socket");
   secureClient.setCACert(root_ca_name);
