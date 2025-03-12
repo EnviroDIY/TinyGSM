@@ -298,7 +298,7 @@ void loop() {
   TinyGsmClientSecure secureClient(modem, 0);
 
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
-  secureClient.setSSLAuthMode(NO_VALIDATION);
+  secureClient.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
 
 #if defined(TEST_BUILD_ADD_CERTS) && defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
   // WARNING:  Never run this section with an actual board attached!!
