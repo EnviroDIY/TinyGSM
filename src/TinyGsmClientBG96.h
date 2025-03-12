@@ -13,6 +13,12 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_MUX_COUNT 12
+#define TINY_GSM_SECURE_MUX_COUNT 12
+// supports 12 sockets (0-11); any of them can be SSL
+// Also supports 6 SSL contexts (0-5)
+// The SSL context is collection of SSL settings, not the connection identifier.
+// This library always uses SSL context 0.
+
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #ifdef AT_NL
 #undef AT_NL

@@ -13,6 +13,14 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_MUX_COUNT 7
+#define TINY_GSM_SECURE_MUX_COUNT 7
+// I **think** all sockets can be SSL, but the manual is not clear (to me).
+// Also supports 5 SSL contexts (0-4)
+// The SSL context is collection of SSL settings, not the connection identifier.
+// WARNING: You cannot control the socket mux number on this module! The module
+// opens the connection and returns the connection number it opened.
+
+
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #ifdef AT_NL
 #undef AT_NL

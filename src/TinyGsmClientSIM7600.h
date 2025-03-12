@@ -13,6 +13,8 @@
 // #define TINY_GSM_USE_HEX
 
 #define TINY_GSM_MUX_COUNT 10
+#define TINY_GSM_SECURE_MUX_COUNT 2
+
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #ifdef AT_NL
 #undef AT_NL

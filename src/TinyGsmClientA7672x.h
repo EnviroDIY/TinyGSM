@@ -12,6 +12,12 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_MUX_COUNT 10
+#define TINY_GSM_SECURE_MUX_COUNT 2
+// supports 10 TCP sockets or 2 SSL
+// also supports 10 SSL contexts,
+// The SSL context is collection of SSL settings, not the connection identifier.
+// This library always uses SSL context 0.
+
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #ifdef AT_NL
 #undef AT_NL
