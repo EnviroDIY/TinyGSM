@@ -128,15 +128,15 @@ class TinyGsmModem {
    * @param r2 The second output to test against, optional with a default value
    * of "ERROR"
    * @param r3 The third output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @param r4 The fourth output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @param r5 The fifth output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @param r6 The sixth output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @param r7 The seventh output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @return *int8_t* the index of the response input
    */
   int8_t waitResponse(uint32_t timeout_ms, String& data,
@@ -157,15 +157,15 @@ class TinyGsmModem {
    * @param r2 The second output to test against, optional with a default value
    * of "ERROR"
    * @param r3 The third output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @param r4 The fourth output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @param r5 The fifth output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @param r6 The sixth output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @param r7 The seventh output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @return *int8_t* the index of the response input
    */
   int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
@@ -185,15 +185,15 @@ class TinyGsmModem {
    * @param r2 The second output to test against, optional with a default value
    * of "ERROR"
    * @param r3 The third output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @param r4 The fourth output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @param r5 The fifth output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @param r6 The sixth output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @param r7 The seventh output to test against, optional with a default value
-   * of NULL
+   * of nullptr
    * @return *int8_t* the index of the response input
    */
   int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
