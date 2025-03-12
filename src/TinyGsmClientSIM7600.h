@@ -754,6 +754,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       // settings, the connection identifier is the mux/socket number. For this,
       // we will *always* configure SSL context 0, just as we always configured
       // PDP context 1.
+      // CSSLCFG commands reference the SSL context number; C**A**SSLCFG
+      // commands reference the connection number (aka, the mux).
 
       // set the ssl version
       // AT+CSSLCFG="sslversion",<ssl_ctx_index>,<sslversion>

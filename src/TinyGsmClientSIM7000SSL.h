@@ -565,9 +565,8 @@ class TinyGsmSim7000SSL
     const char* clientCertName = nullptr;
     const char* pskTableName   = nullptr;
     // If we have a secure socket, use a static cast to get the authentication
-    // mode and certificate names. This isn't ideal but since we've already
-    // checked that the socket is a secure one, we're pretty sure of the type
-    // and it should work. We cannot use a dynamic cast because Arduino
+    // mode and certificate names. This isn't ideal; hopefully the compiler will
+    // save us from ourselves. We cannot use a dynamic cast because Arduino
     // compiles with -fno-rtti.
     GsmClientSecureSim7000SSL* thisClient =
         static_cast<GsmClientSecureSim7000SSL*>(sockets[mux]);

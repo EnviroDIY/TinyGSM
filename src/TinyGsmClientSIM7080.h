@@ -639,6 +639,24 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
 
+    // Blank holders before casting
+    SSLAuthMode sslAuthMode    = SSLAuthMode::NO_VALIDATION;
+    SSLVersion  sslVersion     = SSLVersion::TLS1_2;
+    const char* CAcertName     = nullptr;
+    const char* clientCertName = nullptr;
+    const char* pskTableName   = nullptr;
+    // If we have a secure socket, use a static cast to get the authentication
+    // mode and certificate names. This isn't ideal; hopefully the compiler will
+    // save us from ourselves. We cannot use a dynamic cast because Arduino
+    // compiles with -fno-rtti.
+    GsmClientSecureSim7080* thisClient =
+        static_cast<GsmClientSecureSim7080*>(sockets[mux]);
+    sslAuthMode    = thisClient->sslAuthMode;
+    sslVersion     = thisClient->sslVersion;
+    CAcertName     = thisClient->CAcertName;
+    clientCertName = thisClient->clientCertName;
+    pskTableName   = thisClient->pskTableName;
+
     // set the connection (mux) identifier to use
     sendAT(GF("+CACID="), mux);
     if (waitResponse(timeout_ms) != 1) return false;
@@ -697,19 +715,6 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     waitResponse();
 
     if (ssl) {
-      // If we have a secure socket, use a static cast to get the authentication
-      // mode and certificate names. This isn't ideal but since we've already
-      // checked that the socket is a secure one, we're pretty sure of the type
-      // and it should work. We cannot use a dynamic cast because Arduino
-      // compiles with -fno-rtti.
-      GsmClientSecureSim7080* thisClient =
-          static_cast<GsmClientSecureSim7080*>(sockets[mux]);
-      SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
-      SSLVersion  sslVersion     = thisClient->sslVersion;
-      const char* CAcertName     = thisClient->CAcertName;
-      const char* clientCertName = thisClient->clientCertName;
-      const char* pskTableName   = thisClient->pskTableName;
-
       // Query all the parameters that have been set for this SSL context
       // TODO(@SRGDamia1): Skip this?
       // AT+CSSLCFG="CTXINDEX" ,<ctxindex>
