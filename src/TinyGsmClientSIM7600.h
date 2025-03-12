@@ -326,10 +326,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       // +CCHRECV: LEN,<cache_len_0>,<cache_len_1>
       // <cache_len_0> = The length of RX data cached for connection 0.
       // <cache_len_1> = The length of RX data cached for connection 1.
-      if (at->waitResponse(GF(AT_NL "+CCHRECV: ")) != 1) {
-        // TODO(?): remove this? is this valid?
-        return GsmClientSim7600::modemGetAvailable();
-      }
+      if (at->waitResponse(GF(AT_NL "+CCHRECV: ")) != 1) { return 0; }
       at->streamSkipUntil(',');  // Skip the text "LEN"
       if (mux == 1) {
         at->streamSkipUntil(',');               // Skip cache_len_0
