@@ -112,7 +112,7 @@ void loop() {
 #endif
 #if defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
   modem.loadCertificate("certificateName", "certificate_content", 20);
-#if !defined(TINY_GSM_MODEM_A7672X)
+#if !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600)
   modem.printCertificate("certificateName", Serial);
 #endif
   modem.deleteCertificate("certificateName");

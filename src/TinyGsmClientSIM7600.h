@@ -174,6 +174,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       sock_connected = false;
       at->waitResponse();
     }
+    void stop() override {
+      stop(15000L);
+    }
   };
 
   /*
@@ -352,7 +355,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   bool convertPSKandIDImpl(const char*, const char*) {
     return true;
   }
-  bool convertPSKTableImpl(const char* psk_table_name) {
+  bool convertPSKTableImpl(const char*) {
     return true;
   }
 
@@ -948,7 +951,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     if (ssl) {
       // Returns +CCHRECV: {mux},0 after the data
       String await_response = "+CCHRECV: " + String(mux) + ",0";
-      waitResponse(await_response.c_str());
+      waitResponse(GFP(await_response.c_str()));
       // we need to check how much is left after the read
       sockets[mux]->sock_available = (uint16_t)modemGetAvailable(mux);
     } else {
