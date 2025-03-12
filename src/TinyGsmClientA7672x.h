@@ -159,23 +159,11 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
           TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>::GsmSecureClient() {}
 
    public:
-    bool loadCertificate(const char* certificateName, const char* cert,
-                         const uint16_t len) {
-      return at->loadCertificate(certificateName, cert, len);
-    }
-
-    bool deleteCertificate(const char* certificateName) {
-      return at->deleteCertificate(certificateName);
-    }
-
-    virtual void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) override {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CCHCLOSE="), mux);  //, GF(",1"));  // Quick close
       sock_connected = false;
       at->waitResponse();
-    }
-    void stop() override {
-      stop(15000L);
     }
   };
 
@@ -289,11 +277,15 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return (A7672xRegStatus)getRegistrationStatusXREG("CREG");
   }
 
-  String getLocalIPImpl() {
-    if (hasSSL) {
+  String getLocalIPImpl(bool getSecureAddress = false) {
+    // TODO: figure out when to use each command properly
+    if (getSecureAddress) {
+      // AT+CCHADDR is used to get the IPv4 address after calling AT+CCHSTART.
       sendAT(GF("+CCHADDR"));
       if (waitResponse(GF("+CCHADDR:")) != 1) { return ""; }
     } else {
+      // The write command returns a list of PDP addresses for the specified
+      // context identifiers.
       sendAT(GF("+CGPADDR=1"));
       if (waitResponse(GF("+CGPADDR:")) != 1) { return ""; }
     }
@@ -355,7 +347,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   /*
    * WiFi functions
    */
-  // No functions of this type supported
+  // No functions of this type supported (but the modem does support WiFi)
 
   /*
    * GPRS functions
@@ -485,7 +477,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   /*
    * BLE functions
    */
-  // No functions of this type supported
+  // No functions of this type supported, but the module does support
+  // Bluetooth/BLE
 
   /*
    * Battery functions
@@ -545,8 +538,9 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       // settings, the connection identifier is the mux/socket number. For this,
       // we will *always* configure SSL context 0, just as we always configured
       // PDP context 1.
+      // CSSLCFG commands reference the SSL context number; C**A**SSLCFG
+      // commands reference the connection number (aka, the mux).
 
-      hasSSL = true;
       // set the ssl version
       // AT+CSSLCFG="sslversion",<ssl_ctx_index>,<sslversion>
       // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
@@ -924,7 +918,6 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
 
  protected:
   GsmClientA7672X* sockets[TINY_GSM_MUX_COUNT];
-  bool             hasSSL = false;
 };
 
 #endif  // SRC_TINYGSMCLIENTA7672X_H_
