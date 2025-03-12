@@ -308,7 +308,7 @@ void loop() {
   const char* fake_cert_name   = "myFakeCert.crt";
 
   modem.addCACert(fake_cert_name, fake_certificate, strlen(fake_certificate));
-  modem.convertCACert(fake_cert_name);
+  modem.convertCACertificate(fake_cert_name);
 
   modem.addClientCert(fake_cert_name, fake_certificate,
                       strlen(fake_certificate));
@@ -322,9 +322,9 @@ void loop() {
 
   modem.deleteCertificate(fake_cert_name);
 
-  secureClient.setCACert(fake_cert_name);
-  secureClient.setClientCert(fake_cert_name);
-  secureClient.setPrivateKey(fake_cert_name);
+  secureClient.setCACertName(fake_cert_name);
+  secureClient.setClientCertName(fake_cert_name);
+  secureClient.setPrivateKeyName(fake_cert_name);
   secureClient.setPSK(fake_certificate);
   secureClient.setPSKID(fake_certificate);
   secureClient.setPreSharedKey(fake_certificate, fake_certificate);
