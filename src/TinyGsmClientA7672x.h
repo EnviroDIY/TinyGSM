@@ -165,6 +165,9 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       sock_connected = false;
       at->waitResponse();
     }
+    void stop() override {
+      stop(15000L);
+    }
   };
 
   /*
@@ -340,7 +343,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   bool convertPSKandIDImpl(const char*, const char*) {
     return true;
   }
-  bool convertPSKTableImpl(const char* psk_table_name) {
+  bool convertPSKTableImpl(const char*) {
     return true;
   }
 

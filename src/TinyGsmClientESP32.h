@@ -152,6 +152,9 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       at->parseCertificateName(CAcertName, cert_namespace, certNumber);
       ca_number = certNumber;
     }
+    virtual void setCACertName(String CAcertName) {
+      setCACertName(CAcertName.c_str());
+    }
 
     virtual void setClientCertName(const char* clientCertName) {
       this->clientCertName = clientCertName;
@@ -161,6 +164,9 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       at->parseCertificateName(clientCertName, cert_namespace, certNumber);
       pki_number = certNumber;
     }
+    virtual void setClientCertName(String clientCertName) {
+      setClientCertName(clientCertName.c_str());
+    }
 
     virtual void setPrivateKeyName(const char* clientKeyName) {
       this->clientKeyName = clientKeyName;
@@ -169,6 +175,9 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       uint8_t certNumber     = 0;
       at->parseCertificateName(clientKeyName, cert_namespace, certNumber);
       pki_number = certNumber;
+    }
+    virtual void setPrivateKeyName(String clientKeyName) {
+      setPrivateKeyName(clientKeyName.c_str());
     }
 
     void setCACertificateNumber(uint8_t certNumber) {
@@ -501,7 +510,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // The ESP32 does not support SSL using pre-shared keys with AT firmware.
     return false;
   }
-  bool convertPSKTableImpl(const char* psk_table_name) {
+  bool convertPSKTableImpl(const char*) {
     return true;
   }
 
