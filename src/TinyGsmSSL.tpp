@@ -57,7 +57,8 @@ enum class SSLVersion : int8_t {
   TLS1_0  = 1,
   TLS1_1  = 2,
   TLS1_2  = 3,
-  ALL_SSL = 4
+  ALL_SSL = 4,
+  TLS1_3  = 5
 };
 
 

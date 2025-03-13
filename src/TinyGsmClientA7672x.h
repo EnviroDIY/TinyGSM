@@ -549,6 +549,11 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       //              2: TLS1.1
       //              3: TLS1.2
       //              4: All
+      if (static_cast<int8_t>(sslVersion) < 0 ||
+          static_cast<int8_t>(sslVersion) > 4) {
+        // Not supported; select "ALL" and hope for the best
+        sslVersion = SSLVersion::ALL_SSL;
+      }
       sendAT(GF("+CSSLCFG=\"sslversion\",0,"), static_cast<int8_t>(sslVersion));
       if (waitResponse(5000L) != 1) return false;
 
