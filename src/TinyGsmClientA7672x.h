@@ -144,9 +144,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureA7672X
-      : public GsmClientA7672X,
-        public TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>::GsmSecureClient {
+  class GsmClientSecureA7672X : public GsmClientA7672X, public GsmSecureClient {
     friend class TinyGsmA7672X;
 
    public:
@@ -155,8 +153,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     }
 
     explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux = 0)
-        : GsmClientA7672X(modem, mux),
-          TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>::GsmSecureClient() {}
+        : GsmClientA7672X(modem, mux) {}
 
    public:
     virtual void stop(uint32_t maxWaitMs) override {

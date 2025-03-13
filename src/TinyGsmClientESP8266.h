@@ -113,9 +113,8 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureESP8266
-      : public GsmClientESP8266,
-        public TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>::GsmSecureClient {
+  class GsmClientSecureESP8266 : public GsmClientESP8266,
+                                 public GsmSecureClient {
     friend class TinyGsmESP8266;
 
    public:
@@ -124,8 +123,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     }
 
     explicit GsmClientSecureESP8266(TinyGsmESP8266& modem, uint8_t mux = 0)
-        : GsmClientESP8266(modem, mux),
-          TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>::GsmSecureClient() {
+        : GsmClientESP8266(modem, mux) {
       is_secure = true;
     }
 

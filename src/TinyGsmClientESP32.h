@@ -127,9 +127,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureESP32
-      : public GsmClientESP32,
-        public TinyGsmSSL<TinyGsmESP32, TINY_GSM_MUX_COUNT>::GsmSecureClient {
+  class GsmClientSecureESP32 : public GsmClientESP32, public GsmSecureClient {
     friend class TinyGsmESP32;
 
    public:
@@ -139,8 +137,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
     explicit GsmClientSecureESP32(TinyGsmESP32& modem,
                                   uint8_t       mux = static_cast<uint8_t>(-1))
-        : GsmClientESP32(modem, mux),
-          TinyGsmSSL<TinyGsmESP32, TINY_GSM_MUX_COUNT>::GsmSecureClient() {
+        : GsmClientESP32(modem, mux) {
       is_secure = true;
     }
 
