@@ -120,14 +120,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     friend class TinyGsmSim7080;
 
    public:
-    GsmClientSecureSim7080() {
-      is_secure = true;
-    }
-
-    explicit GsmClientSecureSim7080(TinyGsmSim7080& modem, uint8_t mux = 0)
-        : GsmClientSim7080(modem, mux) {
-      is_secure = true;
-    }
+    TINY_GSM_SECURE_CLIENT_CTORS(Sim7080)
   };
 
   /*

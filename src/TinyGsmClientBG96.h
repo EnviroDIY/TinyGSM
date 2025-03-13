@@ -155,14 +155,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     friend class TinyGsmBG96;
 
    public:
-    GsmClientSecureBG96() {
-      is_secure = true;
-    }
-
-    explicit GsmClientSecureBG96(TinyGsmBG96& modem, uint8_t mux = 0)
-        : GsmClientBG96(modem, mux) {
-      is_secure = true;
-    }
+    TINY_GSM_SECURE_CLIENT_CTORS(BG96)
 
     void stop(uint32_t maxWaitMs) override {
       uint32_t startMillis = millis();

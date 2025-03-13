@@ -118,14 +118,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     friend class TinyGsmESP8266;
 
    public:
-    GsmClientSecureESP8266() {
-      is_secure = true;
-    }
-
-    explicit GsmClientSecureESP8266(TinyGsmESP8266& modem, uint8_t mux = 0)
-        : GsmClientESP8266(modem, mux) {
-      is_secure = true;
-    }
+    TINY_GSM_SECURE_CLIENT_CTORS(ESP8266)
 
     virtual void setCACertName(const char* CAcertName) {
       this->CAcertName = CAcertName;

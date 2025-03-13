@@ -157,14 +157,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     friend class TinyGsmSim7600;
 
    public:
-    GsmClientSecureSim7600() {
-      is_secure = true;
-    }
-
-    explicit GsmClientSecureSim7600(TinyGsmSim7600& modem, uint8_t mux = 0)
-        : GsmClientSim7600(modem, mux) {
-      is_secure = true;
-    }
+    TINY_GSM_SECURE_CLIENT_CTORS(Sim7600)
 
     virtual void stop(uint32_t maxWaitMs) override {
       dumpModemBuffer(maxWaitMs);

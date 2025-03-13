@@ -211,6 +211,7 @@ class GsmSecureClient {
     this->psKey          = nullptr;
   }
   explicit GsmSecureClient(SSLAuthMode sslAuthMode,
+                           SSLVersion  sslVersion     = SSLVersion::TLS1_2,
                            const char* CAcertName     = nullptr,
                            const char* clientCertName = nullptr,
                            const char* clientKeyName  = nullptr) {
@@ -218,16 +219,31 @@ class GsmSecureClient {
     this->CAcertName     = CAcertName;
     this->clientCertName = clientCertName;
     this->clientKeyName  = clientKeyName;
+    this->pskTableName   = nullptr;
     this->pskIdent       = nullptr;
     this->psKey          = nullptr;
   }
-  explicit GsmSecureClient(const char* pskIdent, const char* psKey) {
+  explicit GsmSecureClient(const char* pskIdent, const char* psKey,
+                           SSLVersion sslVersion = SSLVersion::TLS1_2) {
     this->sslAuthMode    = SSLAuthMode::PRE_SHARED_KEYS;
+    this->sslVersion     = sslVersion;
     this->CAcertName     = nullptr;
     this->clientCertName = nullptr;
     this->clientKeyName  = nullptr;
+    this->pskTableName   = nullptr;
     this->pskIdent       = pskIdent;
     this->psKey          = psKey;
+  }
+  explicit GsmSecureClient(const char* pskTableName,
+                           SSLVersion  sslVersion = SSLVersion::TLS1_2) {
+    this->sslAuthMode    = SSLAuthMode::PRE_SHARED_KEYS;
+    this->sslVersion     = sslVersion;
+    this->CAcertName     = nullptr;
+    this->clientCertName = nullptr;
+    this->clientKeyName  = nullptr;
+    this->pskTableName   = pskTableName;
+    this->pskIdent       = nullptr;
+    this->psKey          = nullptr;
   }
 
   virtual void setSSLAuthMode(SSLAuthMode mode) {
@@ -295,5 +311,65 @@ class GsmSecureClient {
   /// The VALUE of the key in hex for PSK cipher suites
   const char* psKey;
 };
+
+
+// short-cut macro for constructors
+#define TINY_GSM_SECURE_CLIENT_CTORS(modemAbbrev)                             \
+  GsmClientSecure##modemAbbrev() {                                            \
+    is_secure = true;                                                         \
+  }                                                                           \
+  explicit GsmClientSecure##modemAbbrev(TinyGsm##modemAbbrev& modem,          \
+                                        uint8_t               mux = 0)        \
+      : GsmClient##modemAbbrev(modem, mux) {                                  \
+    is_secure = true;                                                         \
+  }                                                                           \
+  explicit GsmClientSecure##modemAbbrev(                                      \
+      TinyGsm##modemAbbrev& modem, uint8_t mux, SSLAuthMode sslAuthMode,      \
+      SSLVersion  sslVersion = SSLVersion::TLS1_2,                            \
+      const char* CAcertName = nullptr, const char* clientCertName = nullptr, \
+      const char* clientKeyName = nullptr)                                    \
+      : GsmClient##modemAbbrev(modem, mux),                                   \
+        GsmSecureClient(sslAuthMode, sslVersion, CAcertName, clientCertName,  \
+                        clientKeyName) {                                      \
+    is_secure = true;                                                         \
+  }                                                                           \
+  explicit GsmClientSecure##modemAbbrev(                                      \
+      TinyGsm##modemAbbrev& modem, SSLAuthMode sslAuthMode,                   \
+      SSLVersion  sslVersion = SSLVersion::TLS1_2,                            \
+      const char* CAcertName = nullptr, const char* clientCertName = nullptr, \
+      const char* clientKeyName = nullptr)                                    \
+      : GsmClient##modemAbbrev(modem, mux),                                   \
+        GsmSecureClient(sslAuthMode, sslVersion, CAcertName, clientCertName,  \
+                        clientKeyName) {                                      \
+    is_secure = true;                                                         \
+  }                                                                           \
+  explicit GsmClientSecure##modemAbbrev(                                      \
+      TinyGsm##modemAbbrev& modem, const char* pskIdent, const char* psKey,   \
+      SSLVersion sslVersion = SSLVersion::TLS1_2)                             \
+      : GsmClient##modemAbbrev(modem),                                        \
+        GsmSecureClient(pskIdent, psKey, sslVersion) {                        \
+    is_secure = true;                                                         \
+  }                                                                           \
+  explicit GsmClientSecure##modemAbbrev(                                      \
+      TinyGsm##modemAbbrev& modem, uint8_t mux, const char* pskIdent,         \
+      const char* psKey, SSLVersion sslVersion = SSLVersion::TLS1_2)          \
+      : GsmClient##modemAbbrev(modem, mux),                                   \
+        GsmSecureClient(pskIdent, psKey, sslVersion) {                        \
+    is_secure = true;                                                         \
+  }                                                                           \
+  explicit GsmClientSecure##modemAbbrev(                                      \
+      TinyGsm##modemAbbrev& modem, const char* pskTableName,                  \
+      SSLVersion sslVersion = SSLVersion::TLS1_2)                             \
+      : GsmClient##modemAbbrev(modem),                                        \
+        GsmSecureClient(pskTableName, sslVersion) {                           \
+    is_secure = true;                                                         \
+  }                                                                           \
+  explicit GsmClientSecure##modemAbbrev(                                      \
+      TinyGsm##modemAbbrev& modem, uint8_t mux, const char* pskTableName,     \
+      SSLVersion sslVersion = SSLVersion::TLS1_2)                             \
+      : GsmClient##modemAbbrev(modem, mux),                                   \
+        GsmSecureClient(pskTableName, sslVersion) {                           \
+    is_secure = true;                                                         \
+  }
 
 #endif  // SRC_TINYGSMSSL_H_
