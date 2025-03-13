@@ -295,7 +295,7 @@ void loop() {
 #endif
 
 #if TINY_GSM_TEST_SSL && defined TINY_GSM_MODEM_HAS_SSL
-  TinyGsmClientSecure secureClient(modem, 0);
+  TinyGsmClientSecure secureClient(modem, (uint8_t)0);
 
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
   secureClient.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
@@ -517,7 +517,7 @@ void loop() {
     }
   }
   DBG("Retrieving time again as a string");
-  String time = modem.getGSMDateTime(DATE_FULL);
+  String time = modem.getGSMDateTime(TinyGSMDateTimeFormat::DATE_FULL);
   DBG("Current Network Time:", time);
 #endif
 

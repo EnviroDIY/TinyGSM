@@ -472,12 +472,16 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     String res;
 
     switch (format) {
-      case DATE_FULL: res = stream.readStringUntil('"'); break;
-      case DATE_TIME:
+      case TinyGSMDateTimeFormat::DATE_FULL:
+        res = stream.readStringUntil('"');
+        break;
+      case TinyGSMDateTimeFormat::DATE_TIME:
         streamSkipUntil(',');
         res = stream.readStringUntil('"');
         break;
-      case DATE_DATE: res = stream.readStringUntil(','); break;
+      case TinyGSMDateTimeFormat::DATE_DATE:
+        res = stream.readStringUntil(',');
+        break;
     }
     waitResponse();  // Ends with OK
     return res;

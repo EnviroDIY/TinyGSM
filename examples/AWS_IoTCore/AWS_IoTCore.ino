@@ -106,8 +106,8 @@ TinyGsm        modem(debugger);
 #else
 TinyGsm modem(SerialAT);
 #endif
-// NOTE: you should manually set the socket number (here 0)
-TinyGsmClientSecure secureClient(modem, 0);
+
+TinyGsmClientSecure secureClient(modem, (uint8_t)0);
 PubSubClient        mqtt(secureClient);
 
 #define LED_PIN 13
