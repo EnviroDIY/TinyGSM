@@ -437,7 +437,8 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
                              int* minute, int* second,
                              float* timezone) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  uint32_t getNetworkEpochImpl(TinyGSM_EpochStart epoch = UNIX) {
+  uint32_t
+  getNetworkEpochImpl(TinyGSM_EpochStart epoch = TinyGSM_EpochStart::UNIX) {
     // Returns unix timestamp.  Will match SNTP after SNTP syncs.
     sendAT(GF("+SYSTIMESTAMP?"));
     if (waitResponse(2000L, GF("+SYSTIMESTAMP:")) != 1) { return 0; }
@@ -456,9 +457,9 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
 
     if (modem_time != 0) {
       switch (epoch) {
-        case UNIX: modem_time += 0; break;
-        case Y2K: modem_time += 946684800; break;
-        case GPS: modem_time += 315878400; break;
+        case TinyGSM_EpochStart::UNIX: modem_time += 0; break;
+        case TinyGSM_EpochStart::Y2K: modem_time += 946684800; break;
+        case TinyGSM_EpochStart::GPS: modem_time += 315878400; break;
       }
     }
 

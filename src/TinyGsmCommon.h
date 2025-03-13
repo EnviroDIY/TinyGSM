@@ -28,6 +28,8 @@
 #include <Client.h>
 #endif
 
+#include "TinyGsmEnums.h"
+
 #ifndef TINY_GSM_YIELD_MS
 #define TINY_GSM_YIELD_MS 0
 #endif

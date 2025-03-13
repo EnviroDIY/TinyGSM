@@ -13,19 +13,6 @@
 
 #define TINY_GSM_MODEM_HAS_TIME
 
-enum TinyGSMDateTimeFormat { DATE_FULL = 0, DATE_TIME = 1, DATE_DATE = 2 };
-/**
- * @brief Set the epoch start value.
- */
-enum TinyGSM_EpochStart {
-  UNIX = 0,  ///< Use a Unix epoch, starting 1/1/1970 (946684800s behind of Y2K
-             ///< epoch, 315878400ss behind of GPS epoch)
-  Y2K = 1,   ///< Use an epoch starting 1/1/2000, as some RTC's and Arduinos do
-            ///< (946684800s ahead of UNIX epoch, 630806400s ahead of GPS epoch)
-  GPS = 2  ///< Use the GPS epoch starting Jan 5, 1980 (315878400s ahead of UNIX
-           ///< epoch, 630806400s behind of Y2K epoch)
-};
-
 template <class modemType>
 class TinyGsmTime {
   /* =========================================== */
@@ -41,8 +28,9 @@ class TinyGsmTime {
   /**
    * @brief Get the Date Time as a String
    *
-   * @param format The date or time part to get: DATE_FULL,
-   * DATE_TIME, or DATE_DATE
+   * @param format The date or time part to get:
+   * TinyGSMDateTimeFormat::DATE_FULL, TinyGSMDateTimeFormat::DATE_TIME, or
+   * TinyGSMDateTimeFormat::DATE_DATE
    * @return *String*  The date and/or time from the module
    */
   String getGSMDateTime(TinyGSMDateTimeFormat format) {
@@ -95,7 +83,8 @@ class TinyGsmTime {
    * @param epoch The epoch start to use.
    * @return *uint32_t* The offset from the start of the epoch
    */
-  uint32_t getNetworkEpoch(TinyGSM_EpochStart epoch = UNIX) {
+  uint32_t
+  getNetworkEpoch(TinyGSM_EpochStart epoch = TinyGSM_EpochStart::UNIX) {
     return thisModem().getNetworkEpochImpl(epoch);
   }
 
@@ -130,12 +119,16 @@ class TinyGsmTime {
     String res;
 
     switch (format) {
-      case DATE_FULL: res = thisModem().stream.readStringUntil('"'); break;
-      case DATE_TIME:
+      case TinyGSMDateTimeFormat::DATE_FULL:
+        res = thisModem().stream.readStringUntil('"');
+        break;
+      case TinyGSMDateTimeFormat::DATE_TIME:
         thisModem().streamSkipUntil(',');
         res = thisModem().stream.readStringUntil('"');
         break;
-      case DATE_DATE: res = thisModem().stream.readStringUntil(','); break;
+      case TinyGSMDateTimeFormat::DATE_DATE:
+        res = thisModem().stream.readStringUntil(',');
+        break;
     }
     thisModem().waitResponse();  // Ends with OK
     return res;
@@ -184,7 +177,8 @@ class TinyGsmTime {
                              int* minute, int* second,
                              float* timezone) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  uint32_t getNetworkEpochImpl(TinyGSM_EpochStart epoch = UNIX)
+  uint32_t
+  getNetworkEpochImpl(TinyGSM_EpochStart epoch = TinyGSM_EpochStart::UNIX)
       TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 

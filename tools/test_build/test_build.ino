@@ -5,6 +5,7 @@
  *
  **************************************************************/
 #include <TinyGsmClient.h>
+#include <TinyGsmEnums.h>
 
 TinyGsm modem(Serial);
 
@@ -106,7 +107,28 @@ void loop() {
 #if defined(TINY_GSM_MODEM_HAS_SSL)
   TinyGsmClientSecure client_secure(modem);
   TinyGsmClientSecure client_secure2(modem);
-  TinyGsmClientSecure client_secure3(modem, 1);
+  TinyGsmClientSecure client_secure3(modem, (uint8_t)0);
+
+#if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
+  TinyGsmClientSecure client_secure4(modem, 1);
+  TinyGsmClientSecure(modem, SSLAuthMode::MUTUAL_AUTHENTICATION);
+  TinyGsmClientSecure(modem, SSLAuthMode::MUTUAL_AUTHENTICATION,
+                      SSLVersion::TLS1_2);
+  TinyGsmClientSecure(modem, SSLAuthMode::MUTUAL_AUTHENTICATION,
+                      SSLVersion::TLS1_2, "CAcertName");
+  TinyGsmClientSecure(modem, SSLAuthMode::MUTUAL_AUTHENTICATION,
+                      SSLVersion::TLS1_2, "CAcertName", "clientCertName");
+  TinyGsmClientSecure(modem, 0, SSLAuthMode::MUTUAL_AUTHENTICATION,
+                      SSLVersion::TLS1_2, "CAcertName", "clientCertName",
+                      "clientKeyName");
+  TinyGsmClientSecure(modem, "pskIdent", "psKey");
+  TinyGsmClientSecure(modem, "pskIdent", "psKey", SSLVersion::TLS1_2);
+  TinyGsmClientSecure(modem, 0, "pskIdent", "psKey", SSLVersion::TLS1_2);
+  TinyGsmClientSecure(modem, "pskTableName", SSLVersion::TLS1_2);
+  TinyGsmClientSecure(modem, "pskTableName");
+  TinyGsmClientSecure(modem, (uint8_t)0, "pskTableName", SSLVersion::TLS1_2);
+#endif
+
   client_secure.init(&modem);
   client_secure.init(&modem, 1);
 #endif
@@ -247,7 +269,7 @@ void loop() {
 
 // Test the Network time function
 #if defined(TINY_GSM_MODEM_HAS_TIME) && not defined(__AVR_ATmega32U4__)
-  modem.getGSMDateTime(DATE_FULL);
+  modem.getGSMDateTime(TinyGSMDateTimeFormat::DATE_FULL);
   int   ntp_year     = 0;
   int   ntp_month    = 0;
   int   ntp_day      = 0;
