@@ -270,18 +270,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
    * Inner Secure Client
    */
  public:
-#if 0
- // These will be needed if certificate management functions are ever added
-  class GsmClientSecureXBee : public GsmClientXBee,
-        public TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>::GsmSecureClient {
-          friend class TinyGsmXBee;
-   public:
-    GsmClientSecureXBee() {is_secure = true;}
-    explicit GsmClientSecureXBee(TinyGsmXBee& modem, uint8_t mux = 0)
-        : GsmClientXBee(modem, mux),
-          TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>::GsmSecureClient() {is_secure = true;}
-#endif
-
   class GsmClientSecureXBee : public GsmClientXBee {
     friend class TinyGsmXBee;
 
@@ -866,8 +854,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   //    constructor's initializer list
   //  - Add `friend class TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>;` to the
   //    friend list.
-  //  - Remove the #if 0 directive and change the constructor of the secure
-  //    inner client
+  //  - Make the secure client inherit from the secure client class in the SSL
+  //  template.
 
   /*
    * WiFi functions

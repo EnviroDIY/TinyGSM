@@ -172,18 +172,6 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
    * Inner Secure Client
    */
  public:
-#if 0
-    // These will be needed if certificate management is ever added
-   class GsmClientSecureR5 : public GsmClientR5,
-   public TinyGsmSSL<TinyGsmR5, TINY_GSM_MUX_COUNT>::GsmSecureClient {
-    friend class TinyGsmSaraR5;
-public:
-     GsmClientSecureR5() {is_secure = true;}
-     explicit GsmClientSecureR5(TinyGsmSaraR5& modem, uint8_t mux = 0)
-         : GsmClientSaraR5(modem, mux),
-          TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>::GsmSecureClient() {is_secure = true;}
-#endif
-
   class GsmClientSecureR5 : public GsmClientSaraR5 {
     friend class TinyGsmSaraR5;
 
@@ -368,8 +356,8 @@ public:
   //    constructor's initializer list
   //  - Add `friend class TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>;` to the
   //    friend list.
-  //  - Remove the #if 0 directive and change the constructor of the secure
-  //    inner client
+  //  - Make the secure client inherit from the secure client class in the SSL
+  //  template.
 
   /*
    * WiFi functions
