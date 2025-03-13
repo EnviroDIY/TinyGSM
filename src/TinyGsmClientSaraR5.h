@@ -658,16 +658,6 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
   // No functions of this type supported
 
   /*
-   * NTP server functions
-   */
-  // No functions of this type supported
-
-  /*
-   * BLE functions
-   */
-  // No functions of this type supported
-
-  /*
    * Battery functions
    */
  protected:
