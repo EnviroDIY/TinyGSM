@@ -131,15 +131,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     friend class TinyGsmESP32;
 
    public:
-    GsmClientSecureESP32() {
-      is_secure = true;
-    }
-
-    explicit GsmClientSecureESP32(TinyGsmESP32& modem,
-                                  uint8_t       mux = static_cast<uint8_t>(-1))
-        : GsmClientESP32(modem, mux) {
-      is_secure = true;
-    }
+    TINY_GSM_SECURE_CLIENT_CTORS(ESP32)
 
     virtual void setCACertName(const char* CAcertName) {
       this->CAcertName = CAcertName;

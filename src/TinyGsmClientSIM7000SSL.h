@@ -118,15 +118,7 @@ class TinyGsmSim7000SSL
     friend class TinyGsmSim7000SSL;
 
    public:
-    GsmClientSecureSim7000SSL() {
-      is_secure = true;
-    }
-
-    explicit GsmClientSecureSim7000SSL(TinyGsmSim7000SSL& modem,
-                                       uint8_t            mux = 0)
-        : GsmClientSim7000SSL(modem, mux) {
-      is_secure = true;
-    }
+    TINY_GSM_SECURE_CLIENT_CTORS(Sim7000SSL)
   };
 
   /*

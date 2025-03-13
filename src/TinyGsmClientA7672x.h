@@ -148,12 +148,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     friend class TinyGsmA7672X;
 
    public:
-    GsmClientSecureA7672X() {
-      is_secure = true;
-    }
-
-    explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux = 0)
-        : GsmClientA7672X(modem, mux) {}
+    TINY_GSM_SECURE_CLIENT_CTORS(A7672X)
 
    public:
     virtual void stop(uint32_t maxWaitMs) override {
