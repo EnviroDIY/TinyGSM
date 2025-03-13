@@ -216,6 +216,7 @@ class GsmSecureClient {
                            const char* clientCertName = nullptr,
                            const char* clientKeyName  = nullptr) {
     this->sslAuthMode    = sslAuthMode;
+    this->sslVersion     = sslVersion;
     this->CAcertName     = CAcertName;
     this->clientCertName = clientCertName;
     this->clientKeyName  = clientKeyName;
