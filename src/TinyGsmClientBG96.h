@@ -665,11 +665,6 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       int8_t q_ssl_version = 3;
       // convert the ssl version into the format for this command
       switch (sslVersion) {
-        case SSLVersion::NO_SSL:
-        case SSLVersion::ALL_SSL: {
-          q_ssl_version = 4;
-          break;
-        }
         case SSLVersion::SSL3_0: {
           q_ssl_version = 0;
           break;
@@ -684,6 +679,10 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
         }
         case SSLVersion::TLS1_2: {
           q_ssl_version = 3;
+          break;
+        }
+        default: {
+          q_ssl_version = 4;
           break;
         }
       }

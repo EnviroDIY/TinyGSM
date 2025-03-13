@@ -598,12 +598,6 @@ class TinyGsmSim7000SSL
       int8_t s70x_ssl_version = 3;
       // convert the ssl version into the format for this command
       switch (sslVersion) {
-        case SSLVersion::NO_SSL:
-        case SSLVersion::ALL_SSL:
-        case SSLVersion::SSL3_0: {
-          s70x_ssl_version = 0;
-          break;
-        }
         case SSLVersion::TLS1_0: {
           s70x_ssl_version = 1;
           break;
@@ -614,6 +608,10 @@ class TinyGsmSim7000SSL
         }
         case SSLVersion::TLS1_2: {
           s70x_ssl_version = 3;
+          break;
+        }
+        default: {
+          s70x_ssl_version = 0;
           break;
         }
       }
