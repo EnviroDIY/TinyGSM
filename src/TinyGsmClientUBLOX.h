@@ -157,18 +157,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    * Inner Secure Client
    */
  public:
-#if 0
- // These will be needed if certificate management functions are ever added
-  class GsmClientSecureUBLOX : public GsmClientUBLOX,
-        public TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>::GsmSecureClient {
-          friend class TinyGsmUBLOX;
-   public:
-    GsmClientSecureUBLOX() {is_secure = true;}
-    explicit GsmClientSecureUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 0)
-        : GsmClientUBLOX(modem, mux),
-          TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>::GsmSecureClient() {is_secure = true;}
-#endif
-
   class GsmClientSecureUBLOX : public GsmClientUBLOX {
     friend class TinyGsmUBLOX;
 
@@ -356,8 +344,8 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   //    constructor's initializer list
   //  - Add `friend class TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>;` to the
   //    friend list.
-  //  - Remove the #if 0 directive and change the constructor of the secure
-  //    inner client
+  //  - Make the secure client inherit from the secure client class in the SSL
+  //  template.
 
   /*
    * WiFi functions

@@ -154,20 +154,6 @@ class TinyGsmSequansMonarch
    * Inner Secure Client
    */
  public:
-#if 0
- // These will be needed if certificate management functions are ever added
-  class GsmClientSecureSequansMonarch
-      : public GsmClientSequansMonarch,
-        public GsmSecureClient {
-          friend class TinyGsmSequansMonarch;
-   public:
-    GsmClientSecureSequansMonarch() {is_secure = true;}
-
-    explicit GsmClientSecureSequansMonarch(TinyGsmSequansMonarch& modem,
-                                           uint8_t                mux = 1)
-        : GsmClientSequansMonarch(modem, mux){is_secure = true;}
-#endif
-
   class GsmClientSecureSequansMonarch : public GsmClientSequansMonarch {
     friend class TinyGsmSequansMonarch;
 
@@ -374,8 +360,8 @@ class TinyGsmSequansMonarch
   //    the constructor's initializer list
   //  - Add `friend class TinyGsmSSL<TinyGsmSequansMonarch,
   //    TINY_GSM_MUX_COUNT>;` to the friend list.
-  //  - Remove the #if 0 directive and change the constructor of the secure
-  //    inner client
+  //  - Make the secure client inherit from the secure client class in the SSL
+  //  template.
 
   /*
    * WiFi functions
