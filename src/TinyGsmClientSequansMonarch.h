@@ -158,15 +158,14 @@ class TinyGsmSequansMonarch
  // These will be needed if certificate management functions are ever added
   class GsmClientSecureSequansMonarch
       : public GsmClientSequansMonarch,
-        public TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>::GsmSecureClient {
+        public GsmSecureClient {
           friend class TinyGsmSequansMonarch;
    public:
     GsmClientSecureSequansMonarch() {is_secure = true;}
 
     explicit GsmClientSecureSequansMonarch(TinyGsmSequansMonarch& modem,
                                            uint8_t                mux = 1)
-        : GsmClientSequansMonarch(modem, mux),
-          TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>::GsmSecureClient() {is_secure = true;}
+        : GsmClientSequansMonarch(modem, mux){is_secure = true;}
 #endif
 
   class GsmClientSecureSequansMonarch : public GsmClientSequansMonarch {

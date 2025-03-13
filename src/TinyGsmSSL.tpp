@@ -163,109 +163,6 @@ class TinyGsmSSL {
     return static_cast<modemType&>(*this);
   }
 
-  /*
-   * Inner Secure Client
-   */
- public:
-  class GsmSecureClient {
-    friend class TinyGsmSSL<modemType, muxCount>;
-
-   public:
-    GsmSecureClient() {
-      this->sslAuthMode    = SSLAuthMode::NO_VALIDATION;
-      this->sslVersion     = SSLVersion::TLS1_2;
-      this->CAcertName     = nullptr;
-      this->clientCertName = nullptr;
-      this->clientKeyName  = nullptr;
-      this->pskIdent       = nullptr;
-      this->psKey          = nullptr;
-    }
-    explicit GsmSecureClient(SSLAuthMode sslAuthMode,
-                             const char* CAcertName     = nullptr,
-                             const char* clientCertName = nullptr,
-                             const char* clientKeyName  = nullptr) {
-      this->sslAuthMode    = sslAuthMode;
-      this->CAcertName     = CAcertName;
-      this->clientCertName = clientCertName;
-      this->clientKeyName  = clientKeyName;
-      this->pskIdent       = nullptr;
-      this->psKey          = nullptr;
-    }
-    explicit GsmSecureClient(const char* pskIdent, const char* psKey) {
-      this->sslAuthMode    = SSLAuthMode::PRE_SHARED_KEYS;
-      this->CAcertName     = nullptr;
-      this->clientCertName = nullptr;
-      this->clientKeyName  = nullptr;
-      this->pskIdent       = pskIdent;
-      this->psKey          = psKey;
-    }
-
-    virtual void setSSLAuthMode(SSLAuthMode mode) {
-      this->sslAuthMode = mode;
-    }
-
-    virtual void setSSLVersion(SSLVersion version) {
-      this->sslVersion = version;
-    }
-
-    virtual void setCACertName(const char* CAcertName) {
-      this->CAcertName = CAcertName;
-    }
-    virtual void setCACertName(String CAcertName) {
-      setCACertName(CAcertName.c_str());
-    }
-
-    virtual void setClientCertName(const char* clientCertName) {
-      this->clientCertName = clientCertName;
-    }
-    virtual void setClientCertName(String clientCertName) {
-      setClientCertName(clientCertName.c_str());
-    }
-
-    virtual void setPrivateKeyName(const char* clientKeyName) {
-      this->clientKeyName = clientKeyName;
-    }
-    virtual void setPrivateKeyName(String clientKeyName) {
-      setPrivateKeyName(clientKeyName.c_str());
-    }
-
-    virtual void setPSKTableName(const char* pskTableName) {
-      this->pskTableName = pskTableName;
-    }
-    virtual void setPSKTableName(String pskTableName) {
-      setPSKTableName(pskTableName.c_str());
-    }
-    virtual void setPreSharedKey(const char* pskIdent, const char* psKey) {
-      this->pskIdent = pskIdent;
-      this->psKey    = psKey;
-    }
-    virtual void setPreSharedKey(String pskIdent, String psKey) {
-      setPreSharedKey(pskIdent.c_str(), psKey.c_str());
-    }
-
-    // destructor - need to remove self from the socket pointer array
-    virtual ~GsmSecureClient() {}
-
-   protected:
-    /// The SSL authorization mode to use for this connection
-    SSLAuthMode sslAuthMode;
-    /// The SSL version to use for this connection
-    SSLVersion sslVersion;
-    /// The FILE NAME of the certificate authority certificate loaded onto the
-    /// module
-    const char* CAcertName;
-    /// The FILE NAME of the client certificate loaded onto the module
-    const char* clientCertName;
-    /// The FILE NAME of the client private key loaded onto the module
-    const char* clientKeyName;
-    /// The FILE NAME of an identity for PSK cipher suites
-    const char* pskTableName;
-    /// The identity VALUE for PSK cipher suites
-    const char* pskIdent;
-    /// The VALUE of the key in hex for PSK cipher suites
-    const char* psKey;
-  };
-
   /* =========================================== */
   /* =========================================== */
   /*
@@ -293,6 +190,109 @@ class TinyGsmSSL {
                            const char* pskIdent) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool
   convertPSKTableImpl(const char* psk_table_name) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+};
+
+
+/*
+ * Secure Client
+ * NOTE: This is a base class for secure clients, but it is NOT an inner class
+ * of the TinyGsmSSL class.
+ */
+class GsmSecureClient {
+ public:
+  GsmSecureClient() {
+    this->sslAuthMode    = SSLAuthMode::NO_VALIDATION;
+    this->sslVersion     = SSLVersion::TLS1_2;
+    this->CAcertName     = nullptr;
+    this->clientCertName = nullptr;
+    this->clientKeyName  = nullptr;
+    this->pskIdent       = nullptr;
+    this->psKey          = nullptr;
+  }
+  explicit GsmSecureClient(SSLAuthMode sslAuthMode,
+                           const char* CAcertName     = nullptr,
+                           const char* clientCertName = nullptr,
+                           const char* clientKeyName  = nullptr) {
+    this->sslAuthMode    = sslAuthMode;
+    this->CAcertName     = CAcertName;
+    this->clientCertName = clientCertName;
+    this->clientKeyName  = clientKeyName;
+    this->pskIdent       = nullptr;
+    this->psKey          = nullptr;
+  }
+  explicit GsmSecureClient(const char* pskIdent, const char* psKey) {
+    this->sslAuthMode    = SSLAuthMode::PRE_SHARED_KEYS;
+    this->CAcertName     = nullptr;
+    this->clientCertName = nullptr;
+    this->clientKeyName  = nullptr;
+    this->pskIdent       = pskIdent;
+    this->psKey          = psKey;
+  }
+
+  virtual void setSSLAuthMode(SSLAuthMode mode) {
+    this->sslAuthMode = mode;
+  }
+
+  virtual void setSSLVersion(SSLVersion version) {
+    this->sslVersion = version;
+  }
+
+  virtual void setCACertName(const char* CAcertName) {
+    this->CAcertName = CAcertName;
+  }
+  virtual void setCACertName(String CAcertName) {
+    setCACertName(CAcertName.c_str());
+  }
+
+  virtual void setClientCertName(const char* clientCertName) {
+    this->clientCertName = clientCertName;
+  }
+  virtual void setClientCertName(String clientCertName) {
+    setClientCertName(clientCertName.c_str());
+  }
+
+  virtual void setPrivateKeyName(const char* clientKeyName) {
+    this->clientKeyName = clientKeyName;
+  }
+  virtual void setPrivateKeyName(String clientKeyName) {
+    setPrivateKeyName(clientKeyName.c_str());
+  }
+
+  virtual void setPSKTableName(const char* pskTableName) {
+    this->pskTableName = pskTableName;
+  }
+  virtual void setPSKTableName(String pskTableName) {
+    setPSKTableName(pskTableName.c_str());
+  }
+  virtual void setPreSharedKey(const char* pskIdent, const char* psKey) {
+    this->pskIdent = pskIdent;
+    this->psKey    = psKey;
+  }
+  virtual void setPreSharedKey(String pskIdent, String psKey) {
+    setPreSharedKey(pskIdent.c_str(), psKey.c_str());
+  }
+
+  // destructor - need to remove self from the socket pointer array
+  virtual ~GsmSecureClient() {}
+
+ protected:
+  /// The SSL authorization mode to use for this connection
+  SSLAuthMode sslAuthMode;
+  /// The SSL version to use for this connection
+  SSLVersion sslVersion;
+  /// The FILE NAME of the certificate authority certificate loaded onto the
+  /// module
+  const char* CAcertName;
+  /// The FILE NAME of the client certificate loaded onto the module
+  const char* clientCertName;
+  /// The FILE NAME of the client private key loaded onto the module
+  const char* clientKeyName;
+  /// The FILE NAME of an identity for PSK cipher suites
+  const char* pskTableName;
+  /// The identity VALUE for PSK cipher suites
+  const char* pskIdent;
+  /// The VALUE of the key in hex for PSK cipher suites
+  const char* psKey;
 };
 
 #endif  // SRC_TINYGSMSSL_H_

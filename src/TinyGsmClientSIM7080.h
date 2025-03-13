@@ -115,9 +115,8 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureSim7080
-      : public GsmClientSim7080,
-        public TinyGsmSSL<TinyGsmSim7080, TINY_GSM_MUX_COUNT>::GsmSecureClient {
+  class GsmClientSecureSim7080 : public GsmClientSim7080,
+                                 public GsmSecureClient {
     friend class TinyGsmSim7080;
 
    public:
@@ -126,8 +125,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     }
 
     explicit GsmClientSecureSim7080(TinyGsmSim7080& modem, uint8_t mux = 0)
-        : GsmClientSim7080(modem, mux),
-          TinyGsmSSL<TinyGsmSim7080, TINY_GSM_MUX_COUNT>::GsmSecureClient() {
+        : GsmClientSim7080(modem, mux) {
       is_secure = true;
     }
   };
