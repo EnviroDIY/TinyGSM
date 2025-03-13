@@ -325,17 +325,17 @@ class GsmSecureClient {
     is_secure = true;                                                         \
   }                                                                           \
   explicit GsmClientSecure##modemAbbrev(                                      \
-      TinyGsm##modemAbbrev& modem, uint8_t mux, SSLAuthMode sslAuthMode,      \
+      TinyGsm##modemAbbrev& modem, SSLAuthMode sslAuthMode,                   \
       SSLVersion  sslVersion = SSLVersion::TLS1_2,                            \
       const char* CAcertName = nullptr, const char* clientCertName = nullptr, \
       const char* clientKeyName = nullptr)                                    \
-      : GsmClient##modemAbbrev(modem, mux),                                   \
+      : GsmClient##modemAbbrev(modem),                                        \
         GsmSecureClient(sslAuthMode, sslVersion, CAcertName, clientCertName,  \
                         clientKeyName) {                                      \
     is_secure = true;                                                         \
   }                                                                           \
   explicit GsmClientSecure##modemAbbrev(                                      \
-      TinyGsm##modemAbbrev& modem, SSLAuthMode sslAuthMode,                   \
+      TinyGsm##modemAbbrev& modem, uint8_t mux, SSLAuthMode sslAuthMode,      \
       SSLVersion  sslVersion = SSLVersion::TLS1_2,                            \
       const char* CAcertName = nullptr, const char* clientCertName = nullptr, \
       const char* clientKeyName = nullptr)                                    \
