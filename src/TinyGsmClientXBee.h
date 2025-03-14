@@ -38,12 +38,7 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
-
-// NOTE: This module supports SSL, but we do not support any certificate
-// management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
-// so as not to waste space.
-#define TINY_GSM_MODEM_HAS_SSL
-
+#include "TinyGsmSSL.tpp"
 #include "TinyGsmWifi.tpp"
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmSMS.tpp"
@@ -270,18 +265,11 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureXBee : public GsmClientXBee {
+  class GsmClientSecureXBee : public GsmClientXBee, public GsmSecureClient {
     friend class TinyGsmXBee;
 
    public:
-    GsmClientSecureXBee() {
-      is_secure = true;
-    }
-
-    explicit GsmClientSecureXBee(TinyGsmXBee& modem, uint8_t mux = 0)
-        : GsmClientXBee(modem, mux) {
-      is_secure = true;
-    }
+    TINY_GSM_SECURE_CLIENT_CTORS(XBee)
   };
 
   /*
@@ -844,18 +832,13 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // This module supports SSL, but there are no certificate management functions
-  // are supported yet.
-  // If you wish to add certificate management for this module you must (in
-  // addition to adding the functions here):
-  //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
-  //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  //  - Add `public TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>,` to the
-  //    constructor's initializer list
-  //  - Add `friend class TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>;` to the
-  //    friend list.
-  //  - Make the secure client inherit from the secure client class in the SSL
-  //  template.
+  // Uses the secure client inherited from TinyGsmSSL.tpp for setting the
+  // certificate name and the SSL connection type so those can be called at
+  // connection time, but this library does **NOT** currently support uploading,
+  // deleting, or converting certificates on the modem.
+  // Uploading the certificates is easy using the Digi XBee Studio program.
+
+#undef TINY_GSM_MODEM_CAN_LOAD_CERTS
 
   /*
    * WiFi functions
@@ -1248,8 +1231,45 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       host += ip[3];
 
       if (ssl) {
+        // If we have a secure socket, use a static cast to get the
+        // authentication mode and certificate names. This isn't really "safe"
+        // but since we've already checked that the socket is a secure one,
+        // we're pretty sure of the type and it should work.
+        GsmClientSecureXBee* thisClient =
+            static_cast<GsmClientSecureXBee*>(sockets[mux]);
+        SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
+        SSLVersion  sslVersion     = thisClient->sslVersion;
+        const char* CAcertName     = thisClient->CAcertName;
+        const char* clientCertName = thisClient->clientCertName;
+        const char* clientKeyName  = thisClient->clientKeyName;
+
         // Put in SSL over TCP communication mode
         changesMade |= changeSettingIfNeeded(GF("IP"), 0x4);
+
+        // NOTE: We will always configure TLS profile 0 ($0)
+
+        // set the ssl version
+        // The XBee only supports TLS 1.2 (0x3) and 1.3 (0x4, set as default)
+        changesMade |= changeSettingIfNeeded(
+            GF("TL"), sslVersion == SSLVersion::TLS1_2 ? 0x3 : 0x4);
+
+        // apply the correct certificates to the connection
+        // NOTE: We supply the number of certs we expect to use!
+        if (sslAuthMode == SSLAuthMode::NO_VALIDATION) {
+          changesMade |= changeSettingIfNeeded(GF("$0"), GF(";;"));
+        } else if (sslAuthMode == SSLAuthMode::CA_VALIDATION &&
+                   CAcertName != nullptr) {
+          String newTLSProfile = String(CAcertName) + ";;";
+          changesMade |= changeSettingIfNeeded(GF("$0"), newTLSProfile);
+        } else if (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION &&
+                   CAcertName != nullptr && clientCertName != nullptr &&
+                   clientKeyName != nullptr) {
+          String newTLSProfile = String(CAcertName) + ";" + clientCertName +
+              ";" + clientKeyName;
+          changesMade |= changeSettingIfNeeded(GF("$0"), newTLSProfile);
+        } else {
+          success = false;
+        }
       } else {
         // Put in unsecured TCP mode
         changesMade |= changeSettingIfNeeded(GF("IP"), 0x1);
