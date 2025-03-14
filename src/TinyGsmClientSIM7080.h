@@ -706,7 +706,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
           break;
         }
       }
-      sendAT(GF("+CSSLCFG=\"sslversion\",0,"), ',', s70x_ssl_version);
+      sendAT(GF("+CSSLCFG=\"sslversion\",0,"), s70x_ssl_version);
       if (waitResponse(5000L) != 1) return false;
     }
 

@@ -622,7 +622,7 @@ class TinyGsmSim7000SSL
           break;
         }
       }
-      sendAT(GF("+CSSLCFG=\"sslversion\",0,"), ',', s70x_ssl_version);
+      sendAT(GF("+CSSLCFG=\"sslversion\",0,"), s70x_ssl_version);
       if (waitResponse(5000L) != 1) return false;
     }
 
