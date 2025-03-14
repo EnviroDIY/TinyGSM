@@ -686,6 +686,8 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
       //              4: QAPI_NET_SSL_PROTOCOL_DTLS_1_0
       //              5: QAPI_NET_SSL_PROTOCOL_DTLS_1_2
+      //              6: QAPI_NET_SSL_PROTOCOL_TLS_1_3 (only supported with2117
+      //              f irmware baseline)
       // NOTE:  despite docs using caps, "sslversion" must be in lower case
       int8_t s70x_ssl_version = 3;
       // convert the ssl version into the format for this command
@@ -702,13 +704,99 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
           s70x_ssl_version = 3;
           break;
         }
+        case SSLVersion::TLS1_3: {
+          s70x_ssl_version = 6;
+          break;
+        }
         default: {
           s70x_ssl_version = 0;
           break;
         }
       }
       sendAT(GF("+CSSLCFG=\"sslversion\",0,"), s70x_ssl_version);
-      if (waitResponse(5000L) != 1) return false;
+      if (waitResponse(5000L) != 1) {
+        if (sslVersion != SSLVersion::TLS1_3) {
+          return false;
+        } else {
+          // try lowering the SSL version to TLS 1.2 - not all firmwares
+          // support 1.3
+          sslVersion = SSLVersion::TLS1_2;
+          sendAT(GF("+CSSLCFG=\"sslversion\",0,3"));
+          if (waitResponse(5000L) != 1) { return false; }
+        }
+      }
+
+      // set the SSL protocol
+      // AT+CSSLCFG="PROTOCOL",<ctxindex>,<protocol>
+      // <ctxindex> SSL context identifier - we always use 0
+      // <protocol> Sever name (we use the host)
+      //            1 - QAPI_NET_SSL_TLS_E (TCP)
+      //            2 - QAPI_NET_SSL_DTLS_E (UDP)
+      // NOTE:  despite docs using caps, "protocol" must be in lower case
+      sendAT(GF("+CSSLCFG=\"protocol\",0,1"));
+      waitResponse();
+
+      // set the SSL cipher suite(s)
+      // AT+CSSLCFG="CIPHERSUITE",<ctxindex>,<cipher_index>,<ciphersuite>
+      // <ctxindex> SSL context identifier - we always use 0
+      // <cipher_index> 0-7
+      // <ciphersuite> Hex code for the suite - there's a long list
+      // NOTE:  despite docs using caps, "ciphersuite" must be in lower case
+      if (sslVersion == SSLVersion::TLS1_3) {
+        sendAT(GF("+CSSLCFG=\"ciphersuite\",0,0,0x1301"));
+        waitResponse();
+        // ^^ QAPI_NET_TLS13_AES_128_GCM_SHA256
+        sendAT(GF("+CSSLCFG=\"ciphersuite\",0,1,0x1302"));
+        waitResponse();
+        // ^^ QAPI_NET_TLS13_AES_256_GCM_SHA384
+        sendAT(GF("+CSSLCFG=\"ciphersuite\",0,2,0x1303"));
+        waitResponse();
+        // ^^ QAPI_NET_TLS13_CHACHA20_POLY1305_SHA256
+      } else {
+        // These are selected from this AWS list:
+        // https://docs.aws.amazon.com/iot/latest/developerguide/transport-security.html
+        sendAT(GF("+CSSLCFG=\"ciphersuite\",0,0,0xC031"));
+        waitResponse();
+        // ^^ QAPI_NET_TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256
+        sendAT(GF("+CSSLCFG=\"ciphersuite\",0,1,0xC029"));
+        waitResponse();
+        // ^^ QAPI_NET_TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256
+        sendAT(GF("+CSSLCFG=\"ciphersuite\",0,2,0xC00E"));
+        waitResponse();
+        // ^^ QAPI_NET_TLS_ECDH_RSA_WITH_AES_128_CBC_SHA
+        sendAT(GF("+CSSLCFG=\"ciphersuite\",0,3,0xC032"));
+        waitResponse();
+        // ^^ QAPI_NET_TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384
+        sendAT(GF("+CSSLCFG=\"ciphersuite\",0,4,0xC02A"));
+        waitResponse();
+        // ^^ QAPI_NET_TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384
+        sendAT(GF("+CSSLCFG=\"ciphersuite\",0,5,0xC00F"));
+        waitResponse();
+        // ^^ QAPI_NET_TLS_ECDH_RSA_WITH_AES_256_CBC_SHA
+        sendAT(GF("+CSSLCFG=\"ciphersuite\",0,6,0x008C"));
+        waitResponse();
+        // ^^ QAPI_NET_TLS_PSK_WITH_AES_128_CBC_SHA
+        sendAT(GF("+CSSLCFG=\"ciphersuite\",0,7,0x00A9"));
+        waitResponse();
+        // ^^ QAPI_NET_TLS_PSK_WITH_AES_256_GCM_SHA384
+        waitResponse();
+      }
+
+      // set the SSL SNI (server name indication)
+      // AT+CSSLCFG="SNI",<ctxindex>,<servername>
+      // <ctxindex> SSL context identifier - we always use 0
+      // <servername> Sever name (we use the host)
+      // NOTE:  despite docs using caps, "sni" must be in lower case
+      sendAT(GF("+CSSLCFG=\"sni\",0,"), GF("\""), host, GF("\""));
+      waitResponse();
+
+      // Ignore the RTC time?
+      // AT+CSSLCFG="IGNORERTCTIME",<ctxindex>,<ignorertctime>
+      // <ctxindex> SSL context identifier - we always use 0
+      // <ignorertctime> 0 to ignore, 1 to use
+      // NOTE:  despite docs using caps, "sni" must be in lower case
+      sendAT(GF("+CSSLCFG=\"ignorertctime\",0,0"));
+      waitResponse();
     }
 
     // enable or disable ssl
@@ -716,10 +804,18 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // <cid> Application connection ID (set with AT+CACID above)
     // <sslFlag> 0: Not support SSL
     //           1: Support SSL
-    sendAT(GF("+CASSLCFG="), mux, ',', GF("SSL,"), ssl);
+    sendAT(GF("+CASSLCFG="), mux, ',', GF("\"SSL\","), ssl);
     waitResponse();
 
     if (ssl) {
+      // set the connection identifier that the above SSL context settings apply
+      // to (ie, tie connection mux to SSL context)
+      // AT+CASSLCFG=<cid>,"CRINDEX",<crindex>
+      // <cid> Application connection ID (set with AT+CACID above)
+      // <crindex> SSL context identifier (<ctxindex>) - we always use 0
+      sendAT(GF("+CASSLCFG="), mux, ',', GF("\"CRINDEX\",0"));
+      waitResponse();
+
       // Query all the parameters that have been set for this SSL context
       // TODO(@SRGDamia1): Skip this?
       // AT+CSSLCFG="CTXINDEX" ,<ctxindex>
@@ -738,7 +834,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
         // AT+CASSLCFG=<cid>,"CACERT",<caname>
         // <cid> Application connection ID (set with AT+CACID above)
         // <certname> certificate name
-        sendAT(GF("+CASSLCFG="), mux, ",CACERT,\"", CAcertName, "\"");
+        sendAT(GF("+CASSLCFG="), mux, ",\"CACERT\",\"", CAcertName, '"');
         if (waitResponse(5000L) != 1) return false;
       }
       if (clientCertName != nullptr &&
@@ -749,8 +845,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
         // Client certificate name that has been configured by AT+CSSLCFG.
         // NOTE: The AT+CSSLCFG convert function for the client cert combines
         // the certificate and the key in a single certificate name
-        sendAT(GF("+CASSLCFG="), mux, GF(",\"CERT\",\""), clientCertName,
-               GF("\""));
+        sendAT(GF("+CASSLCFG="), mux, GF(",\"CERT\",\""), clientCertName, '"');
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
@@ -765,22 +860,6 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
                GF("\""));
         if (waitResponse(5000L) != 1) return false;
       }
-
-      // set the connection identifier that the above SSL context settings apply
-      // to (ie, tie connection mux to SSL context)
-      // AT+CASSLCFG=<cid>,"CRINDEX",<crindex>
-      // <cid> Application connection ID (set with AT+CACID above)
-      // <crindex> SSL context identifier (<ctxindex>) - we always use 0
-      sendAT(GF("+CASSLCFG="), mux, ',', GF("\"CRINDEX\",0"));
-      waitResponse();
-
-      // set the SSL SNI (server name indication)
-      // AT+CSSLCFG="SNI",<ctxindex>,<servername>
-      // <ctxindex> SSL context identifier - we always use 0
-      // <servername> Sever name (we use the host)
-      // NOTE:  despite docs using caps, "sni" must be in lower case
-      sendAT(GF("+CSSLCFG=\"sni\",0,"), GF("\""), host, GF("\""));
-      waitResponse();
     }
 
     // actually open the connection
@@ -816,6 +895,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     //          26: Certificate’s common name does not match and time expired
     //          27: Connect failed
     streamSkipUntil(',');  // Skip mux
+    // TODO(SRGD): validate mux
 
     // make sure the connection really opened
     int8_t res = streamGetIntBefore('\n');
@@ -827,7 +907,11 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
     // send data on prompt
     sendAT(GF("+CASEND="), mux, ',', (uint16_t)len);
-    if (waitResponse(GF(">")) != 1) { return 0; }
+    if (waitResponse(GF(">")) != 1) {
+      // if we get a send error, make sure we're connected!
+      modemGetConnected(mux);
+      return 0;
+    }
 
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
