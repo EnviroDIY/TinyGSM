@@ -75,6 +75,7 @@ enum XBeeType {
   XBEE_3G        = 0xB02,  // Digi XBee Cellular 3G
   XBEE3_LTE1_ATT = 0xB06,  // Digi XBee3 Cellular LTE CAT 1
   XBEE3_LTEM_ATT = 0xB08,  // Digi XBee3 Cellular LTE-M
+  XBEE3_LTEM3    = 0xB0E,  // Digi XBee3 Cellular LTE-M3
 };
 
 class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
@@ -377,6 +378,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       case XBEE_3G: return "XBee Cellular 3G";
       case XBEE3_LTE1_ATT: return "XBee3 Cellular LTE CAT 1";
       case XBEE3_LTEM_ATT: return "XBee3 Cellular LTE-M";
+      case XBEE3_LTEM3: return "XBee3 Cellular LTE-M3";
       default: return "XBee Unknown";
     }
   }
@@ -516,6 +518,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       case XBEE_3G: return "Digi XBee Cellular 3G";
       case XBEE3_LTE1_ATT: return "Digi XBee3 Cellular LTE CAT 1";
       case XBEE3_LTEM_ATT: return "Digi XBee3 Cellular LTE-M";
+      case XBEE3_LTEM3: return "XBee3 Cellular LTE-M3";
       default: return "Digi XBee Unknown";
     }
   }
@@ -1053,6 +1056,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
    * Time functions
    */
   // No functions of this type supported
+  // ATDT0 - as secs since 1/1/2000
+  // ATDO1 - as ISO8601 format
 
   /*
    * NTP server functions
@@ -1504,7 +1509,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     int8_t  res;
     bool    success         = false;
     uint8_t triesUntilReset = 4;  // reset after number of tries
-    if (beeType == XBEE_S6B_WIFI) { triesUntilReset = 9; }
+    if (beeType == XBEE_S6B_WIFI || beeType == XBEE3_LTEM3) {
+      triesUntilReset = 9;
+    }
     streamClear();  // Empty everything in the buffer before starting
 
     while (!success && triesMade < retries) {
@@ -1513,7 +1520,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       delay(guardTime + 10);
       streamWrite(GF("+++"));  // enter command mode
 
-      if (beeType != XBEE_S6B_WIFI) {
+      if (beeType != XBEE_S6B_WIFI && beeType != XBEE3_LTEM3) {
         res = waitResponse(guardTime * 2);
       } else {
         // S6B wait a full second for OK
