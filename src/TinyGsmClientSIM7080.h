@@ -587,11 +587,24 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
                                // does not work!
     waitResponse(10000L);
 
-    // Set NTP server and timezone
-    sendAT(GF("+CNTP=\""), server, "\",", String(TimeZone));
+    // Set NTP server and timezone - write command
+    // AT+CNTP=<ntpserver>[,<time zone>][,<cid>][,<mode>]
+    sendAT(GF("+CNTP=\""), server, "\",", String(TimeZone * 4), ",0,2");
+    // <ntpserver> - NTP server’s url
+    // <time zone> - Local time zone, the range is (-47 to 48), in fact, time
+    // zone range (-12 to 12), but taking into account that some countries and
+    // regions will use half time zone, or even fourth time zone, so the entire
+    // extended four time zones X, so that when the time zone of the input
+    // integers are used, without the need for decimal. Time zone in front of
+    // the West if it is a negative number indicates the time zone.
+    // <cid> - Bearer profile identifier, refer to <pdpidx> of AT+CNACT
+    // <mode> - print UTC time on uart and set to local time
+    //        - 0 Just set UTC to localtime
+    //        - 1 Just output UTC time to AT port
+    //        - 2 Set UTC to localtime and output UTC time to AT port
     if (waitResponse(10000L) != 1) { return -1; }
 
-    // Request network synchronization
+    // Request network synchronization - execution command
     sendAT(GF("+CNTP"));
     if (waitResponse(10000L, GF("+CNTP:"))) {
       String result = stream.readStringUntil('\n');
@@ -605,18 +618,6 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       return -1;
     }
     return -1;
-  }
-
-  String ShowNTPErrorImpl(byte error) {
-    switch (error) {
-      case 1: return "Network time synchronization is successful";
-      case 61: return "Network error";
-      case 62: return "DNS resolution error";
-      case 63: return "Connection error";
-      case 64: return "Service response error";
-      case 65: return "Service response timeout";
-      default: return "Unknown error: " + String(error);
-    }
   }
 
   /*
