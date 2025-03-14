@@ -653,13 +653,15 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // mode and certificate names. This isn't ideal; hopefully the compiler will
     // save us from ourselves. We cannot use a dynamic cast because Arduino
     // compiles with -fno-rtti.
-    GsmClientSecureSim7080* thisClient =
-        static_cast<GsmClientSecureSim7080*>(sockets[mux]);
-    sslAuthMode    = thisClient->sslAuthMode;
-    sslVersion     = thisClient->sslVersion;
-    CAcertName     = thisClient->CAcertName;
-    clientCertName = thisClient->clientCertName;
-    pskTableName   = thisClient->pskTableName;
+    if (ssl) {
+      GsmClientSecureSim7080* thisClient =
+          static_cast<GsmClientSecureSim7080*>(sockets[mux]);
+      sslAuthMode    = thisClient->sslAuthMode;
+      sslVersion     = thisClient->sslVersion;
+      CAcertName     = thisClient->CAcertName;
+      clientCertName = thisClient->clientCertName;
+      pskTableName   = thisClient->pskTableName;
+    }
 
     // set the connection (mux) identifier to use
     sendAT(GF("+CACID="), mux);
