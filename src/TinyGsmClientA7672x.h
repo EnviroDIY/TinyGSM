@@ -10,6 +10,7 @@
 #define SRC_TINYGSMCLIENTA7672X_H_
 
 // #define TINY_GSM_DEBUG Serial
+// #define TINY_GSM_USE_HEX
 
 #define TINY_GSM_MUX_COUNT 10
 #define TINY_GSM_SECURE_MUX_COUNT 2
@@ -17,6 +18,11 @@
 // also supports 10 SSL contexts,
 // The SSL context is collection of SSL settings, not the connection identifier.
 // This library always uses SSL context 0.
+// SRGD Note: I think these two numbers are independent of each other and
+// managed completely differently.  That is, I think there can be two connection
+// 0's, one using the SSL application on the module and the other using the TCP
+// application on the module.
+// TODO(?) Could someone who has this module test this?
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #ifdef AT_NL
@@ -103,9 +109,23 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       sock_connected = false;
       got_data       = false;
 
-      if (mux < TINY_GSM_MUX_COUNT) {
+      // The A7672x generally lets you choose the mux number, but we want to try
+      // to find an empty place in the socket array for it.
+
+      // TODO: Ensure the secure socket mux isn't out of range
+
+      // if it's a valid mux number, and that mux number isn't in use (or it's
+      // already this), accept the mux number
+      if (mux < TINY_GSM_MUX_COUNT &&
+          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
+        // If the mux number is in use or out of range, find the next available
+        // one
+      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
+        this->mux = at->findFirstUnassignedMux();
       } else {
+        // If we can't find anything available, overwrite something, useing mod
+        // to make sure we're in range
         this->mux = (mux % TINY_GSM_MUX_COUNT);
       }
       at->sockets[this->mux] = this;
@@ -805,6 +825,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   }
 
   bool modemGetConnected(uint8_t mux) {
+    // TODO(SRGD): Does this work?  It's not the right command by the manual
     int8_t res = 0;
     bool   ssl = sockets[mux]->is_secure;
     if (ssl) {
@@ -918,6 +939,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
 
  protected:
   GsmClientA7672X* sockets[TINY_GSM_MUX_COUNT];
+  // TODO(SRGD): I suspect we need to have two separate socket arrays, a secure
+  // and not secure one
 };
 
 #endif  // SRC_TINYGSMCLIENTA7672X_H_

@@ -62,29 +62,39 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       is_secure = false;
     }
 
-    explicit GsmClientESP32(TinyGsmESP32& modem,
-                            uint8_t       mux = static_cast<uint8_t>(-1)) {
+    explicit GsmClientESP32(TinyGsmESP32& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
     }
 
-    bool init(TinyGsmESP32* modem, uint8_t mux = static_cast<uint8_t>(-1)) {
+    bool init(TinyGsmESP32* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_connected = false;
 
-      // if it's a valid mux number, and that mux number isn't in use, accept
-      // the mux number
-      if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] == nullptr) {
-        this->mux              = mux;
-        at->sockets[this->mux] = this;
-      } else if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] == this) {
-        this->mux              = mux;
-        at->sockets[this->mux] = this;
-      } else if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] != this) {
-        this->mux = static_cast<uint8_t>(-1);
+      // NOTE: Although the ESP32 would be happy to give us a mux number, we
+      // need to assign a mux number here first so that we can assign the
+      // pointer for the client in the socket array and in-turn allow the modem
+      // to look back at the properties of the client to check if the client
+      // needs SSL and, if so, what the SSL specs are.
+      // If the mux number returned at the end of the connection process is
+      // different from the one we assigned here, we update the position of the
+      // pointer to this in the socket array after the connection finishes.
+
+      // if it's a valid mux number, and that mux number isn't in use (or it's
+      // already this), accept the mux number
+      if (mux < TINY_GSM_MUX_COUNT &&
+          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
+        this->mux = mux;
+        // If the mux number is in use or out of range, find the next available
+        // one
+      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
+        this->mux = at->findFirstUnassignedMux();
       } else {
-        this->mux = static_cast<uint8_t>(-1);
+        // If we can't find anything available, overwrite something, useing mod
+        // to make sure we're in range
+        this->mux = (mux % TINY_GSM_MUX_COUNT);
       }
+      at->sockets[this->mux] = this;
 
       return true;
     }
@@ -96,8 +106,21 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       rx.clear();
       uint8_t oldMux = mux;
       sock_connected = at->modemConnect(host, port, &mux, timeout_s);
-      if (mux != oldMux && oldMux < TINY_GSM_MUX_COUNT) {
-        DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
+      if (mux != oldMux) {
+        DBG(GF("###  Mux number changed from"), oldMux, GF("to"), mux);
+        if (!(mux < TINY_GSM_MUX_COUNT &&
+              (at->sockets[mux] == nullptr || at->sockets[mux] == this))) {
+          DBG(GF("WARNING: This new mux number had already been assigned to a "
+                 "different client, attempting to move it!"));
+          uint8_t next_empty_mux = at->findFirstUnassignedMux();
+          if (next_empty_mux != static_cast<uint8_t>(-1)) {
+            DBG(GF("### Socket previously assigned as"), mux, GF("moved to"),
+                next_empty_mux);
+            at->sockets[next_empty_mux] = at->sockets[mux];
+          } else {
+            DBG(GF("WARNING: Failed to move socket, it will be overwritten!"));
+          }
+        }
         at->sockets[oldMux] = nullptr;
       }
       at->sockets[mux] = this;
@@ -132,6 +155,10 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
    public:
     TINY_GSM_SECURE_CLIENT_CTORS(ESP32)
+
+    // Because we have the same potetial range of mux numbers for secure and
+    // insecure connections, we don't need to re-check for mux number
+    // availability.
 
     virtual void setCACertName(const char* CAcertName) {
       this->CAcertName = CAcertName;
@@ -734,29 +761,6 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     }
 
     if (ssl) {
-      if (!(requested_mux < TINY_GSM_MUX_COUNT)) {
-        // If we didn't get a valid mux - the user wants us to assign the mux
-        // for them. If we're using SSL, in order to set the proper auth type
-        // and certs before opening the socket, we need to open the socket with
-        // a known mux rather than using CIPSTARTEX. Thus, we'l find the next
-        // available unattached mux this way:
-        bool got_next_mux = false;
-        int  next_mux     = 0;
-        for (; next_mux < TINY_GSM_MUX_COUNT; next_mux++) {
-          if (sockets[next_mux] == nullptr) {
-            got_next_mux = true;
-            break;
-          }
-        }
-        if (got_next_mux) {
-          requested_mux = next_mux;
-        } else {
-          DBG("### WARNING: No empty mux sockets found, please select the mux "
-              "you want in the client constructor.");
-          return false;
-        }
-      }
-
       if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) { return false; }
 
       // SSL certificate checking will not work without a valid timestamp!
@@ -815,23 +819,13 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // Make the connection
     // If we know the mux number we want to use, use CIPSTART, if we want the
     // module to assign a mux number for us, use CIPSTARTEX
-    if (requested_mux < TINY_GSM_MUX_COUNT) {
-      sendAT(GF("+CIPSTART="), requested_mux, ',',
-             ssl ? GF("\"SSL") : GF("\"TCP"), GF("\",\""), host, GF("\","), port
+    sendAT(GF("+CIPSTART="), requested_mux, ',',
+           ssl ? GF("\"SSL") : GF("\"TCP"), GF("\",\""), host, GF("\","), port
 #if defined(TINY_GSM_KEEPALIVE)
-             ,
-             ',', TINY_GSM_KEEPALIVE
+           ,
+           ',', TINY_GSM_KEEPALIVE
 #endif
-      );
-    } else {
-      sendAT(GF("+CIPSTARTEX="), ssl ? GF("\"SSL") : GF("\"TCP"), GF("\",\""),
-             host, GF("\","), port
-#if defined(TINY_GSM_KEEPALIVE)
-             ,
-             ',', TINY_GSM_KEEPALIVE
-#endif
-      );
-    }
+    );
 
     String data;
     int8_t rsp = waitResponse(timeout_ms, data, GFP(GSM_OK), GFP(GSM_ERROR),

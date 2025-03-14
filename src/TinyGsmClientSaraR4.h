@@ -15,7 +15,7 @@
 #define TINY_GSM_MUX_COUNT 7
 #define TINY_GSM_SECURE_MUX_COUNT 4
 // Per the manual, 7 standard sockets or 4 SSL sockets can be managed.
-// Also supports 5 SSL contexts (0-4)
+// Also supports 5 SSL contexts (0-4), but this library hard-codes to 0.
 // The SSL context is collection of SSL settings, not the connection identifier.
 // WARNING: You cannot control the socket mux number on this module! The module
 // opens the connection and returns the connection number it opened.
@@ -106,9 +106,33 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
       sock_connected = false;
       got_data       = false;
 
-      if (mux < TINY_GSM_MUX_COUNT) {
+      // The SARA R4 does NOT allow you to choose the mux number; this is an
+      // initial place holder for before connection. We need to assign a mux
+      // number here first so that we can assign the pointer for the client in
+      // the socket array and in-turn allow the modem to look back at the
+      // properties of the client to check if the client needs SSL and, if so,
+      // what the SSL specs are. If the mux number returned at the end of the
+      // connection process is different from the one we assigned here, we
+      // update the position of the pointer to this in the socket array after
+      // the connection finishes.
+
+      // NOTE: Because we can't control the mux number, we don't need to worry
+      // about attempting to assign a mux number for a secure socket that is out
+      // of range of because the number of secure sockets is smaller than the
+      // number of standard sockets.
+
+      // if it's a valid mux number, and that mux number isn't in use (or it's
+      // already this), accept the mux number
+      if (mux < TINY_GSM_MUX_COUNT &&
+          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
+        // If the mux number is in use or out of range, find the next available
+        // one
+      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
+        this->mux = at->findFirstUnassignedMux();
       } else {
+        // If we can't find anything available, overwrite something, useing mod
+        // to make sure we're in range
         this->mux = (mux % TINY_GSM_MUX_COUNT);
       }
       at->sockets[this->mux] = this;
@@ -125,7 +149,20 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
       uint8_t oldMux = mux;
       sock_connected = at->modemConnect(host, port, &mux, timeout_s);
       if (mux != oldMux) {
-        DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
+        DBG(GF("###  Mux number changed from"), oldMux, GF("to"), mux);
+        if (!(mux < TINY_GSM_MUX_COUNT &&
+              (at->sockets[mux] == nullptr || at->sockets[mux] == this))) {
+          DBG(GF("WARNING: This new mux number had already been assigned to a "
+                 "different client, attempting to move it!"));
+          uint8_t next_empty_mux = at->findFirstUnassignedMux();
+          if (next_empty_mux != static_cast<uint8_t>(-1)) {
+            DBG(GF("### Socket previously assigned as"), mux, GF("moved to"),
+                next_empty_mux);
+            at->sockets[next_empty_mux] = at->sockets[mux];
+          } else {
+            DBG(GF("WARNING: Failed to move socket, it will be overwritten!"));
+          }
+        }
         at->sockets[oldMux] = nullptr;
       }
       at->sockets[mux] = this;
@@ -133,6 +170,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
 
       return sock_connected;
     }
+    // Manually override these to default to a much longer timeout
     virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
       return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
     }
@@ -176,6 +214,11 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     }
     void stop() override {
       stop(135000L);
+    }
+
+    virtual ~GsmClientSaraR4() {
+      // remove self from the socket array
+      at->sockets[this->mux] = nullptr;
     }
 
     /*
