@@ -160,7 +160,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // insecure connections, we don't need to re-check for mux number
     // availability.
 
-    virtual void setCACertName(const char* CAcertName) {
+    void setCACertName(const char* CAcertName) override {
       this->CAcertName = CAcertName;
       // parse the certificate name into a number and namespace
       char*   cert_namespace = new char[14]();
@@ -168,11 +168,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       at->parseCertificateName(CAcertName, cert_namespace, certNumber);
       ca_number = certNumber;
     }
-    virtual void setCACertName(String CAcertName) {
-      setCACertName(CAcertName.c_str());
-    }
 
-    virtual void setClientCertName(const char* clientCertName) {
+    void setClientCertName(const char* clientCertName) override {
       this->clientCertName = clientCertName;
       // parse the certificate name into a number and namespace
       char*   cert_namespace = new char[14]();
@@ -180,20 +177,14 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       at->parseCertificateName(clientCertName, cert_namespace, certNumber);
       pki_number = certNumber;
     }
-    virtual void setClientCertName(String clientCertName) {
-      setClientCertName(clientCertName.c_str());
-    }
 
-    virtual void setPrivateKeyName(const char* clientKeyName) {
+    void setPrivateKeyName(const char* clientKeyName) override {
       this->clientKeyName = clientKeyName;
       // parse the certificate name into a number and namespace
       char*   cert_namespace = new char[14]();
       uint8_t certNumber     = 0;
       at->parseCertificateName(clientKeyName, cert_namespace, certNumber);
       pki_number = certNumber;
-    }
-    virtual void setPrivateKeyName(String clientKeyName) {
-      setPrivateKeyName(clientKeyName.c_str());
     }
 
     void setCACertificateNumber(uint8_t certNumber) {
@@ -753,8 +744,9 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     uint8_t     ca_number   = 0;
     uint8_t     pki_number  = 0;
     // If we actually have a secure socket populate the above with real values
-    if (GsmClientSecureESP32* thisClient =
-            static_cast<GsmClientSecureESP32*>(sockets[requested_mux])) {
+    if (ssl) {
+      GsmClientSecureESP32* thisClient =
+          static_cast<GsmClientSecureESP32*>(sockets[requested_mux]);
       sslAuthMode = thisClient->sslAuthMode;
       ca_number   = thisClient->ca_number;
       pki_number  = thisClient->pki_number;
