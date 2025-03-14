@@ -109,9 +109,21 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       sock_connected = false;
       got_data       = false;
 
-      if (mux < TINY_GSM_MUX_COUNT) {
+      // The BG96 generally lets you choose the mux number, but we want to try
+      // to find an empty place in the socket array for it.
+
+      // if it's a valid mux number, and that mux number isn't in use (or it's
+      // already this), accept the mux number
+      if (mux < TINY_GSM_MUX_COUNT &&
+          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
+        // If the mux number is in use or out of range, find the next available
+        // one
+      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
+        this->mux = at->findFirstUnassignedMux();
       } else {
+        // If we can't find anything available, overwrite something, useing mod
+        // to make sure we're in range
         this->mux = (mux % TINY_GSM_MUX_COUNT);
       }
       at->sockets[this->mux] = this;
@@ -156,6 +168,10 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
 
    public:
     TINY_GSM_SECURE_CLIENT_CTORS(BG96)
+
+    // Because we have the same potetial range of mux numbers for secure and
+    // insecure connections, we don't need to re-check for mux number
+    // availability.
 
     void stop(uint32_t maxWaitMs) override {
       uint32_t startMillis = millis();

@@ -14,6 +14,11 @@
 
 #define TINY_GSM_MUX_COUNT 10
 #define TINY_GSM_SECURE_MUX_COUNT 2
+// SRGD Note: I think these two numbers are independent of each other and
+// managed completely differently.  That is, I think there can be two connection
+// 0's, one using the SSL application on the module and the other using the TCP
+// application on the module.
+// TODO(?) Could someone who has this module test this?
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #ifdef AT_NL
@@ -111,9 +116,23 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       sock_connected = false;
       got_data       = false;
 
-      if (mux < TINY_GSM_MUX_COUNT) {
+      // The SIM7600 series generally lets you choose the mux number, but we
+      // want to try to find an empty place in the socket array for it.
+
+      // TODO: Ensure the secure socket mux isn't out of range
+
+      // if it's a valid mux number, and that mux number isn't in use (or it's
+      // already this), accept the mux number
+      if (mux < TINY_GSM_MUX_COUNT &&
+          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
+        // If the mux number is in use or out of range, find the next available
+        // one
+      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
+        this->mux = at->findFirstUnassignedMux();
       } else {
+        // If we can't find anything available, overwrite something, useing mod
+        // to make sure we're in range
         this->mux = (mux % TINY_GSM_MUX_COUNT);
       }
       at->sockets[this->mux] = this;
@@ -457,7 +476,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     sendAT(GF("+CCHSTOP"));
     return (waitResponse(60000L, GF(AT_NL "+CCHSTOP: 0")) != 1);
 
-    // TODO: Should CCHSTOP come before NETCLOSE?
+    // TODO: Should CCHSTOP come before NETCLOSE?  Is it needed in addition to
+    // NETCLOSE?
   }
 
   bool isGprsConnectedImpl() {
@@ -1003,6 +1023,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   }
 
   bool modemGetConnected(uint8_t mux) {
+    // TODO(SRGD): I think this only returns the TCP socket connection status,
+    // not the SSL connection status
     // Read the status of all sockets at once
     sendAT(GF("+CIPOPEN?"));
     if (waitResponse(GF("+CIPOPEN:")) != 1) { return false; }
@@ -1070,6 +1092,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
  protected:
   GsmClientSim7600* sockets[TINY_GSM_MUX_COUNT];
+  // TODO(SRGD): I suspect we need to have two separate socket arrays, a secure
+  // and not secure one
 };
 
 #endif  // SRC_TINYGSMCLIENTSIM7600_H_
