@@ -813,9 +813,9 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // module to assign a mux number for us, use CIPSTARTEX
     sendAT(GF("+CIPSTART="), requested_mux, ',',
            ssl ? GF("\"SSL") : GF("\"TCP"), GF("\",\""), host, GF("\","), port
-#if defined(TINY_GSM_KEEPALIVE)
+#if defined(TINY_GSM_TCP_KEEP_ALIVE)
            ,
-           ',', TINY_GSM_KEEPALIVE
+           ',', TINY_GSM_TCP_KEEP_ALIVE
 #endif
     );
 
