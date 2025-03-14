@@ -699,7 +699,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
           break;
         }
       }
-      sendAT(GF("+CSSLCFG=\"sslversion\",0,"), ',', q_ssl_version);
+      sendAT(GF("+CSSLCFG=\"sslversion\",0,"), q_ssl_version);
       if (waitResponse(5000L) != 1) return false;
       // set the ssl cipher_suite
       // AT+QSSLCFG="ciphersuite",<sslctxID>,<cipher_suite>
