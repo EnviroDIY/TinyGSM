@@ -294,12 +294,104 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // Uses the secure client inherited from TinyGsmSSL.tpp for setting the
-  // certificate name and the SSL connection type so those can be called at
-  // connection time, but this library does **NOT** currently support uploading,
-  // deleting, or converting certificates on the modem.
+ protected:
+  // The name of the certificate/key/password file. The file name must
+  // have type like ".pem" or ".der".
+  // The certificate like - const char ca_cert[] PROGMEM =  R"EOF(-----BEGIN...
+  // len of certificate like - sizeof(ca_cert)
+  // NOTE: Uploading the certificate only happens by filename, the type of
+  // certificate does not matter here
+  // AT+QSECWRITE=<filename>,<filesize> [,<timeout>]
+  // <filename> - The name of the certificate/key/password file. The file name
+  // has to be prefixed with "RAM:" or "NVRAM:".
+  bool loadCertificateImpl(const char* certificateName, const char* cert,
+                           const uint16_t len) {
+    sendAT(GF("+QSECWRITE=\"RAM:"), certificateName, GF("\","), len, GF(",10"));
+    if (waitResponse(GF("CONNECT")) != 1) {
+      sendAT(GF("+QIGETERROR"));
+      waitResponse();
+      return false;
+    }
+    stream.write(cert, len);
+    stream.flush();
+    // After module switches to data mode, and the certificate or key data can
+    // be inputted. When the size of the inputted data reaches <filesize> (unit:
+    // byte) or module receives "+++" sequence from UART, module will return to
+    // command mode and reply the following codes.
+    // +QSECWRITE:<uploadsize>,<checksum>
+    bool success = true;
+    success &= waitResponse(GF("+QSECWRITE:")) == 1;
+    if (success) {
+      uint16_t len_confirmed = stream.parseInt();
+      streamSkipUntil('\n');  // skip the checksum
+      success &= len_confirmed == len;
+    }
+    return success && waitResponse() == 1;
+  }
 
-#undef TINY_GSM_MODEM_CAN_LOAD_CERTS
+  // NOTE: You cannot print/view the content of a certificate after uploading it
+  // to the modem This only prints the checksum
+  bool printCertificateImpl(const char* filename, Stream& print_stream) {
+    bool success = true;
+
+    // Read the file's checksum and checksum match
+    // AT+QSECREAD=<filename>
+    // Responds with +QSECREAD=<good>,<checksum>
+    sendAT(GF("+QSECREAD=\"RAM:"), filename, '"');
+    success &= waitResponse(GF("+QSECREAD:")) == 1;
+    if (success) { success = stream.parseInt() == 1; }
+    if (!success) { return false; }
+
+    // wait for some characters to be available
+    uint32_t start = millis();
+    while (!stream.available() && millis() - start < 10000) {}
+
+    while (stream.available()) {
+      int      c;
+      uint32_t _startMillis = millis();
+      do {
+        c = stream.read();
+        if (c >= 0) break;
+      } while (millis() - _startMillis < 50);
+      // Print the file to the buffer
+#ifndef DUMP_AT_COMMANDS
+      // NOTE: Only do this if we're not dumping the all AT, or we'll double
+      // print
+      print_stream.write(c);
+#endif
+      if (c < 0) { break; }  // if we run out of characters, stop
+    }
+    print_stream.flush();
+
+    // wait for the ending OK
+    success &= waitResponse() == 1;
+    return success;
+  }
+
+  // NOTE: Deleting the certificate only happens by filename, the type of
+  // certificate does not matter here
+  // AT+QSECDEL=<filename>
+  bool deleteCertificateImpl(const char* certificateName) {
+    sendAT(GF("+QSECDEL=\"RAM:"), certificateName, '"');
+    return waitResponse() == 1;
+  }
+
+  // no certificate conversion needed
+  bool convertCertificateImpl(CertificateType, const char*) {
+    return true;
+  }
+  bool convertCACertificateImpl(const char*) {
+    return true;
+  }
+  bool convertClientCertificatesImpl(const char*, const char*) {
+    return true;
+  }
+  bool convertPSKandIDImpl(const char*, const char*) {
+    return true;
+  }
+  bool convertPSKTableImpl(const char*) {
+    return true;
+  }
 
   /*
    * WiFi functions
@@ -674,7 +766,6 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
       //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
       //              4: ALL
-
       int8_t q_ssl_version = 3;
       // convert the ssl version into the format for this command
       switch (sslVersion) {
@@ -708,9 +799,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       //              1: TODO
       //              0X0035: TLS_RSA_WITH_AES_256_CBC_SHA
       //              0XFFFF: ALL
-      // NOTE:  despite docs using caps, "sslversion" must be in lower case
       sendAT(GF(
-          "+QSSLCFG=\"ciphersuite\",0,0X0035"));  // TLS_RSA_WITH_AES_256_CBC_SHA
+          "+QSSLCFG=\"ciphersuite\",0,0XFFFF"));  // TLS_RSA_WITH_AES_256_CBC_SHA
       if (waitResponse(5000L) != 1) return false;
 
       // set the ssl sec level
