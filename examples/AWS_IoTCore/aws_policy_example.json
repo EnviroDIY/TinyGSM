@@ -4,25 +4,22 @@
     {
       "Effect": "Allow",
       "Action": "iot:Connect",
-      "Resource": "arn:aws:iot:us-east-1:xxx:client/${iot:Connection.Thing.ThingName}"
+      "Resource": "arn:aws:iot:YOUR_REGION:YOUR_ARN:client/${iot:Connection.Thing.ThingName}"
     },
     {
       "Effect": "Allow",
       "Action": "iot:Publish",
-      "Resource": "arn:aws:iot:us-east-1:xxx:topic/${iot:Connection.Thing.ThingName}*"
-    },
-    {
-      "Effect": "Deny",
-      "Action": "iot:Connect",
-      "Resource": [
-        "arn:aws:iot:us-east-1:xxx:client/client1",
-        "arn:aws:iot:us-east-1:xxx:client/client2"
-      ]
+      "Resource": "arn:aws:iot:YOUR_REGION:YOUR_ARN:topic/${iot:Connection.Thing.ThingName}*"
     },
     {
       "Effect": "Allow",
-      "Action": "iot:Connect",
-      "Resource": "arn:aws:iot:us-east-1:xxx:client/${iot:Connection.Thing.ThingName}"
+      "Action": "iot:Receive",
+      "Resource": "arn:aws:iot:YOUR_REGION:YOUR_ARN:topic/${iot:Connection.Thing.ThingName}*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:Subscribe",
+      "Resource": "arn:aws:iot:YOUR_REGION:YOUR_ARN:topicfilter/${iot:Connection.Thing.ThingName}*"
     }
   ]
 }
