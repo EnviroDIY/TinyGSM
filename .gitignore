@@ -58,3 +58,4 @@ examples/AWS_IoTCore/aws_iot_config.h
 *.crt
 *.pem
 *.key
+src/CipherSuiteCodes.csv
