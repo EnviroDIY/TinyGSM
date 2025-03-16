@@ -85,8 +85,10 @@ uint16_t port = 8883;
 // the client ID should be the name of your "thing" in AWS IoT Core
 const char* clientId = THING_NAME;
 
+static const char topicInit[] TINY_GSM_PROGMEM = THING_NAME "/init";
+static const char msgInit[] TINY_GSM_PROGMEM   = "{\"" THING_NAME
+                                               "\":\"connected\"}";
 static const char topicLed[] TINY_GSM_PROGMEM       = THING_NAME "/led";
-static const char topicInit[] TINY_GSM_PROGMEM      = THING_NAME "/init";
 static const char topicLedStatus[] TINY_GSM_PROGMEM = THING_NAME "/ledStatus";
 
 // whether to print certs after uploading
@@ -102,6 +104,29 @@ bool delete_certs = false;
 // be deleted.
 #if defined(TINY_GSM_MODEM_ESP32) && defined(TINY_GSM_MODEM_BG96)
 delete_certs = false;
+#endif
+
+
+// The certificates should generally be formatted as ".pem", ".der", or (for
+// some modules) ".p7b" files.
+
+// For most modules the actual filename doesn't matter much but it CANNOT HAVE
+// SPACES.
+
+// For Espressif modules, only two certificate sets are supported and the
+// certificates must be named "client_ca.{0|1}", "client_cert.{0|1}", or
+// "client_key.{0|1}"
+#ifdef TINY_GSM_MODEM_ESP32
+const char* root_ca_name     = "client_ca.1";
+const char* client_cert_name = "client_cert.1";
+const char* client_key_name  = "client_key.1";
+#else
+// const char* root_ca_name = "root_ca_1.crt";
+const char* root_ca_name = "AmazonRootCA1.pem";
+// const char* root_ca_name = "pca3-g5.crt.pem";
+// const char* root_ca_name = "SFSRootCAG2.pem";
+const char* client_cert_name = "client_cert_1.crt";
+const char* client_key_name  = "client_key_1.key";
 #endif
 
 // Just in case someone defined the wrong thing..
@@ -170,7 +195,7 @@ boolean mqttConnect() {
 
   SerialMon.print("Publishing a message to ");
   SerialMon.println(topicInit);
-  bool got_pub = mqtt.publish(topicInit, "{\"" THING_NAME "\":\"connected\"}");
+  bool got_pub = mqtt.publish(topicInit, msgInit);
   SerialMon.println(got_pub ? "published" : "failed to publish");
   SerialMon.print("Subscribing to ");
   SerialMon.println(topicLed);
@@ -185,6 +210,8 @@ void setup() {
   // Set console baud rate
   SerialMon.begin(921600);
   delay(10);
+
+  while (!SerialMon && millis() < 10000L) {}
 
   pinMode(LED_PIN, OUTPUT);
 
@@ -292,28 +319,6 @@ void setup() {
   const char* client_cert = AWS_CLIENT_CERTIFICATE;
   const char* client_key  = AWS_CLIENT_PRIVATE_KEY;
 
-  // The certificates should generally be formatted as ".pem", ".der", or (for
-  // some modules) ".p7b" files.
-
-  // For most modules the actual filename doesn't matter much but it CANNOT HAVE
-  // SPACES.
-
-  // For Espressif modules, only two certificate sets are supported and the
-  // certificates must be named "client_ca.{0|1}", "client_cert.{0|1}", or
-  // "client_key.{0|1}"
-#ifdef TINY_GSM_MODEM_ESP32
-  const char* root_ca_name     = "client_ca.1";
-  const char* client_cert_name = "client_cert.1";
-  const char* client_key_name  = "client_key.1";
-#else
-  // const char* root_ca_name     = "root_ca_1.crt";
-  // const char* root_ca_name = "AmazonRootCA1.pem";
-  // const char* root_ca_name = "pca3-g5.crt.pem";
-  const char* root_ca_name     = "SFSRootCAG2.pem";
-  const char* client_cert_name = "client_cert_1.crt";
-  const char* client_key_name  = "client_key_1.key";
-#endif
-
 #ifdef TINY_GSM_MODEM_CAN_LOAD_CERTS
   // ======================== CA CERTIFICATE LOADING ========================
   bool cert_success = true;
@@ -342,6 +347,7 @@ void setup() {
   SerialMon.println("Converting Certificate Authority Certificate");
   cert_success &= modem.convertCACertificate(root_ca_name);
   if (delete_certs) { cert_success &= modem.deleteCertificate(root_ca_name); }
+  delay(1000);
 
   // ======================= CLIENT CERTIFICATE LOADING =======================
   // add the client's certificate and private key to the modem
@@ -351,6 +357,7 @@ void setup() {
     // print out the certificate to make sure it matches
     modem.printCertificate(client_cert_name, SerialMon);
   }
+  delay(1000);
   cert_success &= modem.loadCertificate(client_key_name, client_key,
                                         strlen(client_key));
   if (print_certs) {
@@ -364,6 +371,7 @@ void setup() {
     cert_success &= modem.deleteCertificate(client_cert_name);
     cert_success &= modem.deleteCertificate(client_key_name);
   }
+  delay(1000);
 #endif
 
   // =================== SET CERTIFICATES FOR THE CONNECTION ===================
@@ -371,8 +379,7 @@ void setup() {
   DBG("Requiring mutual authentication on socket");
   secureClient.setSSLAuthMode(SSLAuthMode::MUTUAL_AUTHENTICATION);
   DBG("Requesting TLS 1.3 on socket");
-  secureClient.setSSLVersion(SSLVersion::ALL_SSL);
-  // secureClient.setSSLVersion(SSLVersion::TLS1_3);
+  secureClient.setSSLVersion(SSLVersion::TLS1_3);
   // attach the uploaded certificates to the secure client
   DBG("Assigning", root_ca_name, "as certificate authority on socket");
   secureClient.setCACertName(root_ca_name);
