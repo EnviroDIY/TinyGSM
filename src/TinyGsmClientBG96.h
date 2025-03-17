@@ -15,9 +15,11 @@
 #define TINY_GSM_MUX_COUNT 12
 #define TINY_GSM_SECURE_MUX_COUNT 12
 // supports 12 sockets (0-11); any of them can be SSL
+
 // Also supports 6 SSL contexts (0-5)
 // The SSL context is collection of SSL settings, not the connection identifier.
 // This library always uses SSL context 0.
+#define BG96_SSL_CTXINDEX 0
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #ifdef AT_NL
@@ -295,12 +297,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    * Secure socket layer (SSL) certificate management functions
    */
  protected:
-  // The name of the certificate/key/password file. The file name must
-  // have type like ".pem" or ".der".
-  // The certificate like - const char ca_cert[] PROGMEM =  R"EOF(-----BEGIN...
-  // len of certificate like - sizeof(ca_cert)
-  // NOTE: Uploading the certificate only happens by filename, the type of
-  // certificate does not matter here
+#if 0
   // AT+QSECWRITE=<filename>,<filesize> [,<timeout>]
   // <filename> - The name of the certificate/key/password file. The file name
   // has to be prefixed with "RAM:" or "NVRAM:".
@@ -308,8 +305,6 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
                            const uint16_t len) {
     sendAT(GF("+QSECWRITE=\"RAM:"), certificateName, GF("\","), len, GF(",10"));
     if (waitResponse(GF("CONNECT")) != 1) {
-      sendAT(GF("+QIGETERROR"));
-      waitResponse();
       return false;
     }
     stream.write(cert, len);
@@ -373,6 +368,77 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   // AT+QSECDEL=<filename>
   bool deleteCertificateImpl(const char* certificateName) {
     sendAT(GF("+QSECDEL=\"RAM:"), certificateName, '"');
+    return waitResponse() == 1;
+  }
+#endif
+
+  // AT+QFUPL=<filename>[,<file_size>[,<timeout>[,<ackmode>]]]
+  bool loadCertificateImpl(const char* certificateName, const char* cert,
+                           const uint16_t len) {
+    sendAT(GF("+QFUPL=\""), certificateName, GF("\","), len, GF(",10"));
+    if (waitResponse(GF("CONNECT")) != 1) { return false; }
+    stream.write(cert, len);
+    stream.flush();
+    // TA switches to the data mode (transparent access mode), and the binary
+    // data of file can be inputted. When the total size of the inputted data
+    // reaches <file_size> (unit: byte), TA will return to command mode and
+    // reply the following codes:
+    // +QFUPL: <upload_size>,<checksum>
+    bool success = true;
+    success &= waitResponse(GF("+QFUPL:")) == 1;
+    if (success) {
+      uint16_t len_confirmed = stream.parseInt();
+      streamSkipUntil('\n');  // skip the checksum
+      success &= len_confirmed == len;
+    }
+    return success && waitResponse() == 1;
+  }
+
+  // NOTE: You cannot print/view the content of a certificate after uploading it
+  // to the modem This only prints the checksum
+  bool printCertificateImpl(const char* filename, Stream& print_stream) {
+    bool    success   = true;
+    int16_t print_len = 0;
+
+    // Download the file
+    // AT+QFDWL=<filename>
+    sendAT(GF("+QFDWL=\""), filename, '"');
+    success &= waitResponse(GF("+QFDWL")) == 1;
+    if (success) {
+      print_len = streamGetIntBefore(',');
+      streamSkipUntil('\n');  // skip the checksum
+    }
+
+    // wait for some characters to be available
+    uint32_t start = millis();
+    while (!stream.available() && millis() - start < 10000) {}
+
+    for (int i = 0; i < print_len; i++) {
+      int      c;
+      uint32_t _startMillis = millis();
+      do {
+        c = stream.read();
+        if (c >= 0) break;
+      } while (millis() - _startMillis < 50);
+      // Print the file to the buffer
+#ifndef DUMP_AT_COMMANDS
+      // NOTE: Only do this if we're not dumping the all AT, or we'll double
+      // print
+      print_stream.write(c);
+#endif
+      if (c < 0) { break; }  // if we run out of characters, stop
+    }
+    print_stream.flush();
+
+    // wait for the ending OK
+    success &= waitResponse() == 1;
+  }
+
+  // NOTE: Deleting the certificate only happens by filename, the type of
+  // certificate does not matter here
+  // AT+QFDEL=<filename>
+  bool deleteCertificateImpl(const char* certificateName) {
+    sendAT(GF("+QFDEL=\""), certificateName, '"');
     return waitResponse() == 1;
   }
 
@@ -733,6 +799,127 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   /*
    * Client related functions
    */
+ public:
+  bool configureSSLContext(uint8_t context_id, const char* sni,
+                           SSLAuthMode sslAuthMode, SSLVersion sslVersion,
+                           const char* CAcertName, const char* clientCertName,
+                           const char* clientKeyName) {
+    bool success = true;
+
+    // NOTE: The SSL context (<sslctxID>) is not the same as the connection
+    // identifier.  The SSL context is the grouping of SSL settings, the
+    // connection identifier is the mux/socket number.
+    // For this, we will *always* configure SSL context 0, just as we always
+    // configured PDP context 1.
+
+    // apply the correct certificates to the connection
+    if (CAcertName == nullptr &&
+        (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
+         sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
+      // AT+QSSLCFG="cacert",<sslctxID>,<cacertpath>
+      // <sslctxID> SSL Context ID, range 0-5; we always use 0
+      // <cacertpath> certificate file path
+      sendAT(GF("+QSSLCFG=\"cacert\","), context_id, GF(",\""), CAcertName,
+             GF("\""));
+      success &= waitResponse(5000L) == 1;
+    }
+    // SRGD WARNING: UNTESTED!!
+    if (clientCertName != nullptr &&
+        (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
+      // AT+QSSLCFG="clientcert",<sslctxID>,<client_cert_path>
+      sendAT(GF("+QSSLCFG=\"clientcert\","), context_id, GF(",\""),
+             clientCertName, GF("\""));
+      success &= waitResponse(5000L) == 1;
+    }
+    // SRGD WARNING: UNTESTED!!
+    if (clientKeyName != nullptr &&
+        (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
+      // AT+QSSLCFG="clientkey",<sslctxID>[,<client_key_path>]
+      sendAT(GF("+QSSLCFG=\"clientkey\","), context_id, GF(",\""),
+             clientKeyName, GF("\""));
+      success &= waitResponse(5000L) == 1;
+    }
+
+    // set the ssl cipher_suite
+    // AT+QSSLCFG="ciphersuite",<sslctxID>,<cipher_suite>
+    // <sslctxID> SSL Context ID, range 0-5; we always use 0
+    // <cipher_suite> 0: TODO
+    //              1: TODO
+    //              0X0035: TLS_RSA_WITH_AES_256_CBC_SHA
+    //              0XFFFF: ALL
+    sendAT(GF("+QSSLCFG=\"ciphersuite\","), context_id,
+           GF(",0XFFFF"));  // All available
+    success &= waitResponse(5000L) == 1;
+
+    // set the ssl version
+    // AT+QSSLCFG="sslversion",<sslctxID>,<sslversion>
+    // <sslctxID> SSL Context ID, range 0-5; we always use 0
+    // <sslversion> 0: QAPI_NET_SSL_3.0
+    //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
+    //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
+    //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
+    //              4: ALL
+    int8_t q_ssl_version = 3;
+    // convert the ssl version into the format for this command
+    switch (sslVersion) {
+      case SSLVersion::SSL3_0: {
+        q_ssl_version = 0;
+        break;
+      }
+      case SSLVersion::TLS1_0: {
+        q_ssl_version = 1;
+        break;
+      }
+      case SSLVersion::TLS1_1: {
+        q_ssl_version = 2;
+        break;
+      }
+      case SSLVersion::TLS1_2: {
+        q_ssl_version = 3;
+        break;
+      }
+      default: {
+        q_ssl_version = 4;
+        break;
+      }
+    }
+    sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, GF(","), q_ssl_version);
+    success &= waitResponse(5000L) == 1;
+
+    // set the ssl sec level
+    // AT+QSSLCFG="seclevel",<sslctxID>,<sec_level>
+    // <sslctxID> SSL Context ID, range 0-5; we always use 0
+    // <sec_level> 0: No authentication (SSLAuthMode::NO_VALIDATION)
+    //             1: Manage server authentication
+    //             (SSLAuthMode::CA_VALIDATION)
+    //             2: Manage server and client authentication if requested
+    //             by the remote server (SSLAuthMode::MUTUAL_AUTHENTICATION)
+    switch (sslAuthMode) {
+      case SSLAuthMode::CA_VALIDATION: {
+        sendAT(GF("+QSSLCFG=\"seclevel\","), context_id, GF(",1"));
+        break;
+      }
+      case SSLAuthMode::MUTUAL_AUTHENTICATION: {
+        sendAT(GF("+QSSLCFG=\"seclevel\","), context_id, GF(",2"));
+        break;
+      }
+      default: {
+        sendAT(GF("+QSSLCFG=\"seclevel\","), context_id, GF(",0"));
+        break;
+      }
+    }
+    success &= waitResponse(5000L) == 1;
+
+    // Ignore the RTC time?
+    // AT+QSSLCFG="ignorelocaltime",<SSL_ctxID>[,<ignore_ltime>]
+    // <sslctxID> SSL Context ID, range 0-5; we always use 0
+    // <ignore_ltime> 0 to use the time, 1 to ignore it (default 1)
+    sendAT(GF("+QSSLCFG=\"ignorertctime\","), context_id, GF(",0"));
+    success &= waitResponse() == 1;
+
+    return success;
+  }
+
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     int timeout_s = 150) {
@@ -752,113 +939,16 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       const char* clientCertName = thisClient->clientCertName;
       const char* clientKeyName  = thisClient->clientKeyName;
 
-      // NOTE: The SSL context (<sslctxID>) is not the same as the connection
-      // identifier.  The SSL context is the grouping of SSL settings, the
-      // connection identifier is the mux/socket number.
-      // For this, we will *always* configure SSL context 0, just as we always
-      // configured PDP context 1.
-
-      // set the ssl version
-      // AT+QSSLCFG="sslversion",<sslctxID>,<sslversion>
-      // <sslctxID> SSL Context ID, range 0-5; we always use 0
-      // <sslversion> 0: QAPI_NET_SSL_3.0
-      //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
-      //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
-      //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
-      //              4: ALL
-      int8_t q_ssl_version = 3;
-      // convert the ssl version into the format for this command
-      switch (sslVersion) {
-        case SSLVersion::SSL3_0: {
-          q_ssl_version = 0;
-          break;
-        }
-        case SSLVersion::TLS1_0: {
-          q_ssl_version = 1;
-          break;
-        }
-        case SSLVersion::TLS1_1: {
-          q_ssl_version = 2;
-          break;
-        }
-        case SSLVersion::TLS1_2: {
-          q_ssl_version = 3;
-          break;
-        }
-        default: {
-          q_ssl_version = 4;
-          break;
-        }
-      }
-      sendAT(GF("+CSSLCFG=\"sslversion\",0,"), q_ssl_version);
-      if (waitResponse(5000L) != 1) return false;
-      // set the ssl cipher_suite
-      // AT+QSSLCFG="ciphersuite",<sslctxID>,<cipher_suite>
-      // <sslctxID> SSL Context ID, range 0-5; we always use 0
-      // <cipher_suite> 0: TODO
-      //              1: TODO
-      //              0X0035: TLS_RSA_WITH_AES_256_CBC_SHA
-      //              0XFFFF: ALL
-      sendAT(GF(
-          "+QSSLCFG=\"ciphersuite\",0,0XFFFF"));  // TLS_RSA_WITH_AES_256_CBC_SHA
-      if (waitResponse(5000L) != 1) return false;
-
-      // set the ssl sec level
-      // AT+QSSLCFG="seclevel",<sslctxID>,<sec_level>
-      // <sslctxID> SSL Context ID, range 0-5; we always use 0
-      // <sec_level> 0: No authentication (SSLAuthMode::NO_VALIDATION)
-      //             1: Manage server authentication
-      //             (SSLAuthMode::CA_VALIDATION)
-      //             2: Manage server and client authentication if requested by
-      //             the remote server (SSLAuthMode::MUTUAL_AUTHENTICATION)
-      switch (sslAuthMode) {
-        case SSLAuthMode::CA_VALIDATION: {
-          sendAT(GF("+QSSLCFG=\"seclevel\",0,1"));
-          break;
-        }
-        case SSLAuthMode::MUTUAL_AUTHENTICATION: {
-          sendAT(GF("+QSSLCFG=\"seclevel\",0,2"));
-          break;
-        }
-        default: {
-          sendAT(GF("+QSSLCFG=\"seclevel\",0,0"));
-          break;
-        }
-      }
-      if (waitResponse(5000L) != 1) return false;
-
-      // apply the correct certificates to the connection
-      if (CAcertName == nullptr &&
-          (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
-           sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
-        // AT+QSSLCFG="cacert",<sslctxID>,<cacertpath>
-        // <sslctxID> SSL Context ID, range 0-5; we always use 0
-        // <cacertpath> certificate file path
-        sendAT(GF("+QSSLCFG=\"cacert\",0,\""), CAcertName, GF("\""));
-        if (waitResponse(5000L) != 1) return false;
-      }
-      // SRGD WARNING: UNTESTED!!
-      if (clientCertName != nullptr &&
-          (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
-        // AT+QSSLCFG="clientcert",<sslctxID>,<client_cert_path>
-        sendAT(GF("+QSSLCFG=\"clientcert\",0,\""), clientCertName, GF("\""));
-        if (waitResponse(5000L) != 1) return false;
-      }
-      // SRGD WARNING: UNTESTED!!
-      if (clientKeyName != nullptr &&
-          (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
-        // AT+QSSLCFG="clientkey",<sslctxID>[,<client_key_path>]
-        sendAT(GF("+QSSLCFG=\"clientkey\",0,\""), clientKeyName, GF("\""));
-        if (waitResponse(5000L) != 1) return false;
-      }
+      configureSSLContext(BG96_SSL_CTXINDEX, host, sslAuthMode, sslVersion,
+                          CAcertName, clientCertName, clientKeyName);
 
       // AT+QSSLOPEN=<pdpctxID>,<sslctxID>,<clientID>,<serveraddr>,<server_port>[,<access_mode>]
       // <PDPcontextID>(1-16) - we always use 1, which we configured above
       // <sslctxID> SSL Context ID, range 0-5; we always use 0
       // <connectID>(0-11), - socket index (mux)
       // may need previous AT+QSSLCFG
-      sendAT(GF("+QSSLOPEN=1,0,"), mux, GF(",\""), host, GF("\","), port,
-             GF(",0"));
+      sendAT(GF("+QSSLOPEN=1,"), BG96_SSL_CTXINDEX, GF(","), mux, GF(",\""),
+             host, GF("\","), port, GF(",0"));
       waitResponse();
 
       if (waitResponse(timeout_ms, GF(AT_NL "+QSSLOPEN:")) != 1) {
