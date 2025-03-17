@@ -15,14 +15,16 @@
 #define TINY_GSM_MUX_COUNT 10
 #define TINY_GSM_SECURE_MUX_COUNT 2
 // supports 10 TCP sockets or 2 SSL
-// also supports 10 SSL contexts,
-// The SSL context is collection of SSL settings, not the connection identifier.
-// This library always uses SSL context 0.
 // SRGD Note: I think these two numbers are independent of each other and
 // managed completely differently.  That is, I think there can be two connection
 // 0's, one using the SSL application on the module and the other using the TCP
 // application on the module.
 // TODO(?) Could someone who has this module test this?
+
+#define A7672_SSL_CTXINDEX 0
+// also supports 10 SSL contexts,
+// The SSL context is collection of SSL settings, not the connection identifier.
+// This library always uses SSL context 0.
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #ifdef AT_NL
@@ -517,6 +519,87 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   /*
    * Client related functions
    */
+ public:
+  bool configureSSLContext(uint8_t context_id, const char* sni,
+                           SSLAuthMode sslAuthMode, SSLVersion sslVersion,
+                           const char* CAcertName, const char* clientCertName,
+                           const char* clientKeyName) {
+    bool success = true;
+
+    if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+      DBG("### The A7672x does not support SSL using pre-shared keys.");
+      return false;
+    }
+
+    // NOTE: The SSL context (<ssl_ctx_index>) is not the same as the
+    // connection identifier.  The SSL context is the grouping of SSL
+    // settings, the connection identifier is the mux/socket number. For this,
+    // we will *always* configure SSL context 0, just as we always configured
+    // PDP context 1.
+    // CSSLCFG commands reference the SSL context number; C**A**SSLCFG
+    // commands reference the connection number (aka, the mux).
+
+    // set the ssl version
+    // AT+CSSLCFG="sslversion",<ssl_ctx_index>,<sslversion>
+    // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
+    // <sslversion> 0: SSL3.0
+    //              1: TLS1.0
+    //              2: TLS1.1
+    //              3: TLS1.2
+    //              4: All
+    if (static_cast<int8_t>(sslVersion) < 0 ||
+        static_cast<int8_t>(sslVersion) > 4) {
+      // Not supported; select "ALL" and hope for the best
+      sslVersion = SSLVersion::ALL_SSL;
+    }
+    sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, GF(","),
+           static_cast<int8_t>(sslVersion));
+    success &= waitResponse(5000L) == 1;
+
+    // set authentication mode
+    // AT+CSSLCFG="authmode",<ssl_ctx_index>,<authmode>
+    // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
+    // <authmode> 0: No authentication (SSLAuthMode::NO_VALIDATION)
+    //            1: server authentication (SSLAuthMode::CA_VALIDATION)
+    //            2: server and client authentication
+    //            (SSLAuthMode::MUTUAL_AUTHENTICATION)
+    //            3: client authentication and no server authentication
+    //            (SSLAuthMode::CLIENT_VALIDATION)
+    sendAT(GF("+CSSLCFG=\"authmode\","), context_id, GF(","),
+           static_cast<int8_t>(sslAuthMode));
+    success &= waitResponse(5000L) == 1;
+
+    // apply the correct certificates to the connection
+    if (CAcertName != nullptr &&
+        (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
+         sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
+      /* Configure the server root CA of the specified SSL context
+      AT + CSSLCFG = "cacert", <ssl_ctx_index>,<ca_file> */
+      sendAT(GF("+CSSLCFG=\"cacert\","), context_id, GF(","), CAcertName);
+      success &= waitResponse(5000L) == 1;
+    }
+    if (clientCertName != nullptr &&
+        (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
+         sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
+      sendAT(GF("+CSSLCFG=\"clientcert\","), context_id, GF(","),
+             clientCertName);
+      success &= waitResponse(5000L) == 1;
+    }
+    if (clientKeyName != nullptr &&
+        (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
+         sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
+      sendAT(GF("+CSSLCFG=\"clientkey\","), context_id, GF(","), clientKeyName);
+      success &= waitResponse(5000L) == 1;
+    }
+
+    // set the SSL SNI (server name indication)
+    // AT+CSSLCFG="enableSNI",<ssl_ctx_index>,<enableSNI_flag>
+    sendAT(GF("+CSSLCFG=\"enableSNI\","), context_id, GF(",1"));
+    success &= waitResponse(2000L) == 1;
+
+    return success;
+  }
+
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     int timeout_s = 75) {
@@ -529,6 +612,19 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     if (waitResponse(2000L) != 1) { return false; }
 
     if (ssl) {
+      // Configure the report mode of sending and receiving data
+      // +CCHSET=<report_send_result>,<recv_mode>
+      // <report_send_result> Whether to report result of CCHSEND, the default
+      //   value is 0: 0 No. 1 Yes. Module will report +CCHSEND:
+      // <session_id>,<err> to MCU when complete sending data.
+      // <recv_mode> The receiving mode, the default value is 0:
+      //   0 Output the data to MCU whenever received data.
+      //   1 Module caches the received data and notifies MCU with+CCHEVENT:
+      // <session_id>,RECV EVENT. MCU can use AT+CCHRECV to receive the cached
+      //   data (only in manual receiving mode).
+      sendAT(GF("+CCHSET=1,1"));
+      if (waitResponse(2000L) != 1) { return false; }
+
       // If we have a secure socket, use a static cast to get the authentication
       // mode and certificate names. This isn't really "safe" but since we've
       // already checked that the socket is a secure one, we're pretty sure of
@@ -543,86 +639,9 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       // const char* pskIdent       = thisClient->pskIdent;
       // const char* psKey          = thisClient->psKey;
 
-      if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
-        DBG("### The A7672x does not support SSL using pre-shared keys.");
-        return false;
-      }
 
-      // NOTE: The SSL context (<ssl_ctx_index>) is not the same as the
-      // connection identifier.  The SSL context is the grouping of SSL
-      // settings, the connection identifier is the mux/socket number. For this,
-      // we will *always* configure SSL context 0, just as we always configured
-      // PDP context 1.
-      // CSSLCFG commands reference the SSL context number; C**A**SSLCFG
-      // commands reference the connection number (aka, the mux).
-
-      // set the ssl version
-      // AT+CSSLCFG="sslversion",<ssl_ctx_index>,<sslversion>
-      // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
-      // <sslversion> 0: SSL3.0
-      //              1: TLS1.0
-      //              2: TLS1.1
-      //              3: TLS1.2
-      //              4: All
-      if (static_cast<int8_t>(sslVersion) < 0 ||
-          static_cast<int8_t>(sslVersion) > 4) {
-        // Not supported; select "ALL" and hope for the best
-        sslVersion = SSLVersion::ALL_SSL;
-      }
-      sendAT(GF("+CSSLCFG=\"sslversion\",0,"), static_cast<int8_t>(sslVersion));
-      if (waitResponse(5000L) != 1) return false;
-
-      // set authentication mode
-      // AT+CSSLCFG="authmode",<ssl_ctx_index>,<authmode>
-      // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
-      // <authmode> 0: No authentication (SSLAuthMode::NO_VALIDATION)
-      //            1: server authentication (SSLAuthMode::CA_VALIDATION)
-      //            2: server and client authentication
-      //            (SSLAuthMode::MUTUAL_AUTHENTICATION)
-      //            3: client authentication and no server authentication
-      //            (SSLAuthMode::CLIENT_VALIDATION)
-      sendAT(GF("+CSSLCFG=\"authmode\",0,"), static_cast<int8_t>(sslAuthMode));
-      if (waitResponse(5000L) != 1) return false;
-
-      // apply the correct certificates to the connection
-      if (CAcertName != nullptr &&
-          (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
-           sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
-        /* Configure the server root CA of the specified SSL context
-        AT + CSSLCFG = "cacert", <ssl_ctx_index>,<ca_file> */
-        sendAT(GF("+CSSLCFG=\"cacert\",0,"), CAcertName);
-        if (waitResponse(5000L) != 1) return false;
-      }
-      if (clientCertName != nullptr &&
-          (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
-           sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
-        sendAT(GF("+CSSLCFG=\"clientcert\",0,"), clientCertName);
-        if (waitResponse(5000L) != 1) return false;
-      }
-      if (clientKeyName != nullptr &&
-          (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
-           sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
-        sendAT(GF("+CSSLCFG=\"clientkey\",0,"), clientKeyName);
-        if (waitResponse(5000L) != 1) return false;
-      }
-
-      // set the SSL SNI (server name indication)
-      // AT+CSSLCFG="enableSNI",<ssl_ctx_index>,<enableSNI_flag>
-      sendAT(GF("+CSSLCFG=\"enableSNI\",0,1"));
-      if (waitResponse(2000L) != 1) { return false; }
-
-      // Configure the report mode of sending and receiving data
-      // +CCHSET=<report_send_result>,<recv_mode>
-      // <report_send_result> Whether to report result of CCHSEND, the default
-      //   value is 0: 0 No. 1 Yes. Module will report +CCHSEND:
-      // <session_id>,<err> to MCU when complete sending data.
-      // <recv_mode> The receiving mode, the default value is 0:
-      //   0 Output the data to MCU whenever received data.
-      //   1 Module caches the received data and notifies MCU with+CCHEVENT:
-      // <session_id>,RECV EVENT. MCU can use AT+CCHRECV to receive the cached
-      //   data (only in manual receiving mode).
-      sendAT(GF("+CCHSET=1,1"));
-      if (waitResponse(2000L) != 1) { return false; }
+      configureSSLContext(A7672_SSL_CTXINDEX, host, sslAuthMode, sslVersion,
+                          CAcertName, clientCertName, clientKeyName);
 
       // Start SSL service
       sendAT(GF("+CCHSTART"));
@@ -631,7 +650,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       // set the connection identifier that the above SSL context settings
       // apply to (ie, tie connection mux to SSL context)
       // AT+CCHSSLCFG=<session_id>,<ssl_ctx_index>
-      sendAT(GF("+CCHSSLCFG="), mux, GF(",0"));
+      sendAT(GF("+CCHSSLCFG="), mux, ',', A7672_SSL_CTXINDEX);
       if (waitResponse(2000L) != 1) { return false; }
 
       // Connect to server

@@ -12,6 +12,8 @@
 // #define TINY_GSM_DEBUG Serial
 // #define TINY_GSM_USE_HEX
 
+#define SIM7000_SSL_CTXINDEX 0
+
 #define TINY_GSM_MUX_COUNT 2
 #define TINY_GSM_SECURE_MUX_COUNT 2
 
@@ -554,6 +556,149 @@ class TinyGsmSim7000SSL
   /*
    * Client related functions
    */
+ public:
+  bool configureSSLContext(uint8_t context_id, const char* sni,
+                           SSLAuthMode sslAuthMode, SSLVersion sslVersion) {
+    bool success = true;
+
+    // NOTE: The SSL context (<ctxindex>) is not the same as the connection
+    // identifier.  The SSL context is the grouping of SSL settings, the
+    // connection identifier is the mux/socket number.
+    // CSSLCFG commands reference the SSL context number;
+    // C**A**SSLCFG commands reference the connection number (aka, the mux).
+
+    // NOTE: If you want to tie the same SSL context to an MQTT application on
+    // the module, you need to add one to the index in the SMSSL command (ie,
+    // SMSSL=1,... will call settings configured for SSL context 0)
+
+    // set the ssl version
+    // AT+CSSLCFG="SSLVERSION",<ctxindex>,<sslversion>
+    // <ctxindex> SSL context identifier
+    // <sslversion> 0: QAPI_NET_SSL_PROTOCOL_UNKNOWN
+    //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
+    //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
+    //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
+    //              4: QAPI_NET_SSL_PROTOCOL_DTLS_1_0
+    //              5: QAPI_NET_SSL_PROTOCOL_DTLS_1_2
+    int8_t s70x_ssl_version = 3;
+    // convert the ssl version into the format for this command
+    switch (sslVersion) {
+      case SSLVersion::TLS1_0: {
+        s70x_ssl_version = 1;
+        break;
+      }
+      case SSLVersion::TLS1_1: {
+        s70x_ssl_version = 2;
+        break;
+      }
+      case SSLVersion::TLS1_2: {
+        s70x_ssl_version = 3;
+        break;
+      }
+      default: {
+        s70x_ssl_version = 0;
+        break;
+      }
+    }
+    sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, ',', s70x_ssl_version);
+    if (waitResponse(5000L) != 1) {
+      if (sslVersion != SSLVersion::TLS1_3) {
+        success = false;
+      } else {
+        // try lowering the SSL version to TLS 1.2 - not all firmwares
+        // support 1.3
+        sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, GF(",3"));
+
+        success &= waitResponse(5000L) == 1;
+      }
+    }
+
+    // set the SSL protocol
+    // AT+CSSLCFG="PROTOCOL",<ctxindex>,<protocol>
+    // <ctxindex> SSL context identifier
+    // <protocol> Sever name (we use the host)
+    //            1 - QAPI_NET_SSL_TLS_E (TCP)
+    //            2 - QAPI_NET_SSL_DTLS_E (UDP)
+    // NOTE:  despite docs using caps, "protocol" must be in lower case
+    sendAT(GF("+CSSLCFG=\"protocol\","), context_id, GF(",1"));
+    success &= waitResponse() == 1;
+
+    // set the SSL cipher suite(s)
+    // AT+CSSLCFG="CIPHERSUITE",<ctxindex>,<cipher_index>,<ciphersuite>
+    // <ctxindex> SSL context identifier
+    // <cipher_index> 0-7
+    // <ciphersuite> Hex code for the suite - there's a long list
+    // NOTE:  despite docs using caps, "ciphersuite" must be in lower case
+
+    if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+      const char* ciphersuites[8] = {
+           "0xC0A9", "0xC0A8", "0xC0A5", "0xC0A4", "0xC095", "0xC094",
+           "0x00B1", "0x00B0", /*"0x00AF", "0x00AE", "0x00A9", "0x00A8",
+           "0x008D", "0x008C", "0x008B", "0x008A", "0x002C"*/};
+      for (uint8_t i = 0; i < 8; i++) {
+        sendAT(GF("+CSSLCFG=\"ciphersuite\","), context_id, ',', i, ',',
+               ciphersuites[i]);
+        waitResponse();
+      }
+    } else if (sslVersion == SSLVersion::TLS1_3) {
+      const char* ciphersuites[3] = {"0x1301", "0x1302", "0x1303"};
+      for (uint8_t i = 0; i < 3; i++) {
+        sendAT(GF("+CSSLCFG=\"ciphersuite\","), context_id, ',', i, ',',
+               ciphersuites[i]);
+        waitResponse();
+      }
+    } else {
+      // These are selected from this AWS list:
+      // https://docs.aws.amazon.com/iot/latest/developerguide/transport-security.html
+      const char* ciphersuites[] = {
+          /*"0xC014", "0xC013", "0xC00A", "0xC009",*/  // not on my firmware
+          "0xC02C",
+          "0xC02B",
+          "0xC030",
+          "0xC02F",
+          /*"0xC028", "0xC027", "0xC024", "0xC023",*/  // not on my firmware
+          /*"0x009D", "0x009C",*/                      // not on my firmware
+          /*"0x003D", "0x003C",*/                      // not on my firmware
+          "0x0035",
+          "0x002F",  // not for all SSL versions
+      };
+      for (uint8_t i = 0; i < sizeof(ciphersuites) / sizeof(ciphersuites[0]);
+           i++) {
+        sendAT(GF("+CSSLCFG=\"ciphersuite\","), context_id, ',', i, ',',
+               ciphersuites[i]);
+        waitResponse();
+      }
+    }
+
+    // set the SSL SNI (server name indication)
+    // AT+CSSLCFG="SNI",<ctxindex>,<servername>
+    // <ctxindex> SSL context identifier
+    // <servername> Sever name (we use the host)
+    // NOTE:  despite docs using caps, "sni" must be in lower case
+    sendAT(GF("+CSSLCFG=\"sni\","), context_id, GF(",\""), sni, GF("\""));
+    success &= waitResponse() == 1;
+
+    // Ignore the RTC time?
+    // AT+CSSLCFG="IGNORERTCTIME",<ctxindex>,<ignorertctime>
+    // <ctxindex> SSL context identifier
+    // <ignorertctime> 0 to ignore, 1 to use
+    sendAT(GF("+CSSLCFG=\"ignorertctime\","), context_id, GF(",1"));
+    success &= waitResponse() == 1;
+
+    // Query all the parameters that have been set for this SSL context
+    // TODO(@SRGDamia1): Skip this?
+    // AT+CSSLCFG="CTXINDEX" ,<ctxindex>
+    // <ctxindex> SSL context identifier
+    // NOTE:  despite docs using "CTXINDEX" in all caps, the module only
+    // accepts the command "CTXINDEX" and it must be in lower case
+    sendAT(GF("+CSSLCFG=\"ctxindex\","), context_id);
+    if (waitResponse(5000L, GF("+CSSLCFG:")) != 1) return false;
+    streamSkipUntil('\n');  // read out the certificate information
+    waitResponse();
+
+    return success;
+  }
+
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     int timeout_s = 75) {
@@ -566,6 +711,7 @@ class TinyGsmSim7000SSL
     const char* CAcertName     = nullptr;
     const char* clientCertName = nullptr;
     const char* pskTableName   = nullptr;
+    const char* clientKeyName  = nullptr;
     // If we have a secure socket, use a static cast to get the authentication
     // mode and certificate names. This isn't ideal; hopefully the compiler will
     // save us from ourselves. We cannot use a dynamic cast because Arduino
@@ -577,100 +723,62 @@ class TinyGsmSim7000SSL
       sslVersion     = thisClient->sslVersion;
       CAcertName     = thisClient->CAcertName;
       clientCertName = thisClient->clientCertName;
+      clientKeyName  = thisClient->clientKeyName;
       pskTableName   = thisClient->pskTableName;
     }
+
+    if (ssl) {
+      configureSSLContext(SIM7000_SSL_CTXINDEX, host, sslAuthMode, sslVersion);
+    }
+
 
     // set the connection (mux) identifier to use
     sendAT(GF("+CACID="), mux);
     if (waitResponse(timeout_ms) != 1) return false;
-
-    // NOTE: The SSL context (<ctxindex>) is not the same as the connection
-    // identifier.  The SSL context is the grouping of SSL settings, the
-    // connection identifier is the mux/socket number.
-    // For this, we will *always* configure SSL context 0, just as we always
-    // configured PDP context 1.
-    // CSSLCFG commands reference the SSL context number; C**A**SSLCFG commands
-    // reference the connection number (aka, the mux).
-
-    if (ssl) {
-      // set the ssl version
-      // AT+CSSLCFG="sslversion",<ctxindex>,<sslversion>
-      // <ctxindex> SSL context identifier - we always use 0
-      // <sslversion> 0: QAPI_NET_SSL_PROTOCOL_UNKNOWN
-      //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
-      //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
-      //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
-      //              4: QAPI_NET_SSL_PROTOCOL_DTLS_1_0
-      //              5: QAPI_NET_SSL_PROTOCOL_DTLS_1_2
-      int8_t s70x_ssl_version = 3;
-      // convert the ssl version into the format for this command
-      switch (sslVersion) {
-        case SSLVersion::TLS1_0: {
-          s70x_ssl_version = 1;
-          break;
-        }
-        case SSLVersion::TLS1_1: {
-          s70x_ssl_version = 2;
-          break;
-        }
-        case SSLVersion::TLS1_2: {
-          s70x_ssl_version = 3;
-          break;
-        }
-        default: {
-          s70x_ssl_version = 0;
-          break;
-        }
-      }
-      sendAT(GF("+CSSLCFG=\"sslversion\",0,"), s70x_ssl_version);
-      if (waitResponse(5000L) != 1) return false;
-    }
 
     // enable or disable ssl
     // AT+CASSLCFG=<cid>,"SSL",<sslFlag>
     // <cid> Application connection ID (set with AT+CACID above)
     // <sslFlag> 0: Not support SSL
     //           1: Support SSL
-    sendAT(GF("+CASSLCFG="), mux, ',', GF("ssl,"), ssl);
+    sendAT(GF("+CASSLCFG="), mux, ',', GF("\"ssl\","), ssl);
     waitResponse();
 
     if (ssl) {
-      // Query all the parameters that have been set for this SSL context
-      // TODO(@SRGDamia1): Skip this?
-      // AT+CSSLCFG="ctxindex" ,<ctxindex>
-      // <ctxindex> SSL context identifier - we always use 0
-      sendAT(GF("+CSSLCFG=\"ctxindex\",0"));
-      if (waitResponse(5000L, GF("+CSSLCFG:")) != 1) return false;
-      streamSkipUntil('\n');  // read out the certificate information
+      // set the connection identifier that the above SSL context settings apply
+      // to (ie, tie connection mux to SSL context)
+      // AT+CASSLCFG=<cid>,"CRINDEX",<crindex>
+      // <cid> Application connection ID (set with AT+CACID above)
+      // <crindex> SSL context identifier (<ctxindex>)
+      sendAT(GF("+CASSLCFG="), mux, ',', GF("\"crindex\","),
+             SIM7000_SSL_CTXINDEX);
       waitResponse();
 
       // apply the correct certificates to the connection
       if (CAcertName != nullptr &&
           (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
            sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
-        // AT+CASSLCFG=<cid>,"cacert",<caname>
+        // AT+CASSLCFG=<cid>,"CACERT",<caname>
         // <cid> Application connection ID (set with AT+CACID above)
         // <certname> certificate name
-        sendAT(GF("+CASSLCFG="), mux, GF(",cacert,\""), CAcertName, "\"");
+        sendAT(GF("+CASSLCFG="), mux, ",\"cacert\",\"", CAcertName, '"');
         if (waitResponse(5000L) != 1) return false;
       }
-      // SRGD WARNING: UNTESTED!!
       if (clientCertName != nullptr &&
           (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
-        // AT+CASSLCFG=<cid>,"clientcert",<certname>
+        // AT+CASSLCFG=<cid>,"CERT",<certname>
         // <cid> Application connection ID (set with AT+CACID above)
-        // <certname> Alphanumeric ASCII text string up to 64 characters. Client
-        // certificate name that has been configured by AT+CSSLCFG.
+        // <certname> Alphanumeric ASCII text string up to 64 characters.
+        // Client certificate name that has been configured by AT+CSSLCFG.
         // NOTE: The AT+CSSLCFG convert function for the client cert combines
         // the certificate and the key in a single certificate name
-        sendAT(GF("+CASSLCFG="), mux, GF("\"clientcert\",\""), clientCertName,
-               GF("\""));
+        sendAT(GF("+CASSLCFG="), mux, GF(",\"cert\",\""), clientCertName, '"');
         if (waitResponse(5000L) != 1) return false;
       }
       // SRGD WARNING: UNTESTED!!
       if (pskTableName != nullptr &&
           (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS)) {
-        // AT+CASSLCFG=<cid>,"psktable",<pskTableName>
+        // AT+CASSLCFG=<cid>,"PSKTABLE",<pskTableName>
         // <cid> Application connection ID (set with AT+CACID above)
         // <pskTableName> Alphanumeric ASCII text string up to 64 characters.
         // PSK table name that has been configured by AT+CSSLCFG. File content
@@ -679,26 +787,6 @@ class TinyGsmSim7000SSL
                GF("\""));
         if (waitResponse(5000L) != 1) return false;
       }
-
-      // set the connection protocol for SSL - we only support TCP
-      // 0:  TCP; 1: UDP
-      sendAT(GF("+CASSLCFG="), mux, ',', GF("\"protocol\",0"));
-      waitResponse();
-
-      // set the connection identifier that the above SSL context settings apply
-      // to (ie, tie connection mux to SSL context)
-      // AT+CASSLCFG=<cid>,"crindex",<crindex>
-      // <cid> Application connection ID (set with AT+CACID above)
-      // <crindex> SSL context identifier (<ctxindex>) - we always use 0
-      sendAT(GF("+CASSLCFG="), mux, ',', GF("\"crindex\",0"));
-      waitResponse();
-
-      // set the SSL SNI (server name indication)
-      // AT+CSSLCFG="SNI",<ctxindex>,<servername>
-      // <ctxindex> SSL context identifier - we always use 0
-      // <servername> Sever name (we use the host)
-      sendAT(GF("+CSSLCFG=\"sni\",0,\""), host, GF("\""));
-      waitResponse();
     }
 
     // actually open the connection
@@ -726,6 +814,7 @@ class TinyGsmSim7000SSL
     //          26: Certificate’s common name does not match and time expired
     //          27: Connect failed
     streamSkipUntil(',');  // Skip mux
+    // TODO(SRGD): validate mux
 
     // make sure the connection really opened
     int8_t res = streamGetIntBefore('\n');
