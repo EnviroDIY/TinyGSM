@@ -49,7 +49,9 @@
 // The cellular Bee's often freeze up and won't respond when attempting
 // to enter command mode too many times.
 #define XBEE_COMMAND_START_DECORATOR(nAttempts, failureReturn)                \
-  bool wasInCommandMode = inCommandMode;                                      \
+  bool wasInCommandMode = inCommandMode &&                                    \
+      millis() - lastCommandModeMillis <=                                     \
+          static_cast<uint32_t>(guardTime * 2);                               \
   if (!wasInCommandMode) { /* don't re-enter command mode if already in it */ \
     if (!commandMode(nAttempts))                                              \
       return failureReturn; /* Return immediately if fails */                 \
@@ -257,8 +259,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
      */
 
     String remoteIP() {
-      IPAddress savedIP = at->savedIP;
-      return TinyGsmStringFromIp(savedIP);
+      IPAddress atLastIP = at->savedIP;
+      return TinyGsmStringFromIp(atLastIP);
     }
   };
 
@@ -287,7 +289,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
         savedHostIP(IPAddress(0, 0, 0, 0)),
         savedOperatingIP(IPAddress(0, 0, 0, 0)),
         inCommandMode(false),
-        lastCommandModeMillis(0) {
+        lastCommandModeMillis(0),
+        lastHostLookupMillis(0) {
     // Start not knowing what kind of bee it is
     // Start with the default guard time of 1 second
     memset(sockets, 0, sizeof(sockets));
@@ -303,7 +306,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
         savedHostIP(IPAddress(0, 0, 0, 0)),
         savedOperatingIP(IPAddress(0, 0, 0, 0)),
         inCommandMode(false),
-        lastCommandModeMillis(0) {
+        lastCommandModeMillis(0),
+        lastHostLookupMillis(0) {
     // Start not knowing what kind of bee it is
     // Start with the default guard time of 1 second
     memset(sockets, 0, sizeof(sockets));
@@ -1157,6 +1161,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     // name
     // NOTE: the lookup can take a while
     while ((millis() - startMillis) < timeout_ms) {
+      DBG("Looking up IP address for host:", host);
       sendAT(GF("LA"), host);
       while (stream.available() < 4 && (millis() - startMillis < timeout_ms)) {
         TINY_GSM_YIELD()
@@ -1164,7 +1169,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       strIP = stream.readStringUntil('\r');  // read result
       strIP.trim();
       if (strIP != "" && strIP != GF("ERROR")) {
-        gotIP = true;
+        gotIP                = true;
+        lastHostLookupMillis = millis();
         break;
       }
       delay(2500);  // wait a bit before trying again
@@ -1179,10 +1185,79 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     }
   }
 
+  bool configureConnection(const char* host, uint16_t port) {
+    XBEE_COMMAND_START_DECORATOR(5, false)
+    bool success     = true;
+    bool changesMade = false;
+    bool ssl         = sockets[0]->is_secure;
+
+    if (ssl) {
+      // If we have a secure socket, use a static cast to get the
+      // authentication mode and certificate names. This isn't really "safe"
+      // but since we've already checked that the socket is a secure one,
+      // we're pretty sure of the type and it should work.
+      GsmClientSecureXBee* thisClient =
+          static_cast<GsmClientSecureXBee*>(sockets[0]);
+      SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
+      SSLVersion  sslVersion     = thisClient->sslVersion;
+      const char* CAcertName     = thisClient->CAcertName;
+      const char* clientCertName = thisClient->clientCertName;
+      const char* clientKeyName  = thisClient->clientKeyName;
+
+      // Put in SSL over TCP communication mode
+      changesMade |= changeSettingIfNeeded(GF("IP"), 0x4);
+
+      // NOTE: We will always configure TLS profile 0 ($0)
+
+      // set the ssl version
+      // The XBee only supports TLS 1.2 (0x3) and 1.3 (0x4, set as default)
+      changesMade |= changeSettingIfNeeded(
+          GF("TL"), sslVersion == SSLVersion::TLS1_2 ? 0x3 : 0x4);
+
+      // apply the correct certificates to the connection
+      // NOTE: We supply the number of certs we expect to use!
+      if (sslAuthMode == SSLAuthMode::NO_VALIDATION) {
+        changesMade |= changeSettingIfNeeded(GF("$0"), GF(";;"));
+      } else if (sslAuthMode == SSLAuthMode::CA_VALIDATION &&
+                 CAcertName != nullptr) {
+        String newTLSProfile = String(CAcertName) + ";;";
+        changesMade |= changeSettingIfNeeded(GF("$0"), newTLSProfile);
+      } else if (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION &&
+                 CAcertName != nullptr && clientCertName != nullptr &&
+                 clientKeyName != nullptr) {
+        String newTLSProfile = String(CAcertName) + ";" + clientCertName + ";" +
+            clientKeyName;
+        changesMade |= changeSettingIfNeeded(GF("$0"), newTLSProfile);
+      } else {
+        success = false;
+      }
+    } else {
+      // Put in unsecured TCP mode
+      changesMade |= changeSettingIfNeeded(GF("IP"), 0x1);
+    }
+    bool changesMadeSSL = changesMade;
+
+    // Ignore these changes for the WiFi Bee (why?)
+    changesMade |= changeSettingIfNeeded(
+        GF("DL"), String(host), 2500L);  // Set the "Destination Address Low"
+    String newPort = String(port, HEX);
+    newPort.toUpperCase();  // port is returned in uppercase
+    changesMade |= changeSettingIfNeeded(GF("DE"),
+                                         newPort);  // Set the destination port
+
+    // WiFi Bee is different
+    if (beeType == XBEE_S6B_WIFI) { changesMade = changesMadeSSL; }
+
+    if (changesMade) { success &= writeChanges(); }
+
+    XBEE_COMMAND_END_DECORATOR
+    return success;
+  }
+
   bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0,
                     int timeout_s = 75) {
-    bool retVal = false;
-    XBEE_COMMAND_START_DECORATOR(5, false)
+    bool retVal  = false;
+    bool success = true;
 
     // If this is a new host name, replace the saved host and wipe out the saved
     // host IP
@@ -1191,8 +1266,36 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       savedHostIP     = IPAddress(0, 0, 0, 0);
     }
 
+    XBEE_COMMAND_START_DECORATOR(5, false)
+
+    // confirm the XBee type if needed so we know if we can know if connected
+    if (beeType == XBEE_UNKNOWN) { getSeries(); }
+
+    if (beeType != XBEE_S6B_WIFI && beeType != XBEE_LTE1_VZN &&
+        beeType != XBEE_3G) {
+      // the newer cellular modules can look up the address on the fly
+      // this is definitely the better option
+      success &= configureConnection(host, port);
+      DBG("Attempting to ping the host");
+      sendAT(GF("PG"), host);
+      readResponseString(2500L);
+      uint16_t ci = getConnectionIndicator();
+      // if (ci == 0xFF || ci == 0x28) {
+      //   DBG("Checking rejection status");
+      //   sendAT(GF("RJ"));
+      //   readResponseString(10000L);
+      // }
+      // we'll accept either unknown or connected
+      success &= (ci == 0x00 || ci == 0xFF || ci == 0x28);
+      XBEE_COMMAND_END_DECORATOR
+      return success;
+    }
+
+    // For the pre XBee3 Bees, we need to look up the IP address manually
+
     // If we don't have a good IP for the host, we need to do a DNS search
-    if (savedHostIP == IPAddress(0, 0, 0, 0)) {
+    if (savedHostIP == IPAddress(0, 0, 0, 0) || lastHostLookupMillis == 0 ||
+        millis() - lastHostLookupMillis > 43200000LL) {
       // This will return 0.0.0.0 if lookup fails
       savedHostIP = lookupHostIP(host, timeout_s);
     }
@@ -1209,9 +1312,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   }
 
   bool modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0) {
-    bool success     = true;
-    bool changesMade = false;
-    bool ssl         = sockets[mux]->is_secure;
+    bool success = true;
 
     if (mux != 0) {
       DBG("XBee only supports 1 IP channel in transparent mode!");
@@ -1224,7 +1325,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
 
     if (ip != savedIP) {  // Can skip almost everything if there's no
                           // change in the IP address
-      savedIP = ip;       // Set the newly requested IP address
+      DBG("IP address has changed; reconnecting");
+      savedIP = ip;  // Set the newly requested IP address
       String host;
       host.reserve(16);
       host += ip[0];
@@ -1234,62 +1336,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       host += ip[2];
       host += ".";
       host += ip[3];
-
-      if (ssl) {
-        // If we have a secure socket, use a static cast to get the
-        // authentication mode and certificate names. This isn't really "safe"
-        // but since we've already checked that the socket is a secure one,
-        // we're pretty sure of the type and it should work.
-        GsmClientSecureXBee* thisClient =
-            static_cast<GsmClientSecureXBee*>(sockets[mux]);
-        SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
-        SSLVersion  sslVersion     = thisClient->sslVersion;
-        const char* CAcertName     = thisClient->CAcertName;
-        const char* clientCertName = thisClient->clientCertName;
-        const char* clientKeyName  = thisClient->clientKeyName;
-
-        // Put in SSL over TCP communication mode
-        changesMade |= changeSettingIfNeeded(GF("IP"), 0x4);
-
-        // NOTE: We will always configure TLS profile 0 ($0)
-
-        // set the ssl version
-        // The XBee only supports TLS 1.2 (0x3) and 1.3 (0x4, set as default)
-        changesMade |= changeSettingIfNeeded(
-            GF("TL"), sslVersion == SSLVersion::TLS1_2 ? 0x3 : 0x4);
-
-        // apply the correct certificates to the connection
-        // NOTE: We supply the number of certs we expect to use!
-        if (sslAuthMode == SSLAuthMode::NO_VALIDATION) {
-          changesMade |= changeSettingIfNeeded(GF("$0"), GF(";;"));
-        } else if (sslAuthMode == SSLAuthMode::CA_VALIDATION &&
-                   CAcertName != nullptr) {
-          String newTLSProfile = String(CAcertName) + ";;";
-          changesMade |= changeSettingIfNeeded(GF("$0"), newTLSProfile);
-        } else if (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION &&
-                   CAcertName != nullptr && clientCertName != nullptr &&
-                   clientKeyName != nullptr) {
-          String newTLSProfile = String(CAcertName) + ";" + clientCertName +
-              ";" + clientKeyName;
-          changesMade |= changeSettingIfNeeded(GF("$0"), newTLSProfile);
-        } else {
-          success = false;
-        }
-      } else {
-        // Put in unsecured TCP mode
-        changesMade |= changeSettingIfNeeded(GF("IP"), 0x1);
-      }
-      bool changesMadeSSL = changesMade;
-
-      changesMade |= changeSettingIfNeeded(
-          GF("DL"), String(host));  // Set the "Destination Address Low"
-      changesMade |= changeSettingIfNeeded(
-          GF("DE"), String(port, HEX));  // Set the destination port
-
-      // WiFi Bee is different
-      if (beeType == XBEE_S6B_WIFI) { changesMade = changesMadeSSL; }
-
-      if (changesMade) { success &= writeChanges(); }
+      success &= configureConnection(host.c_str(), port);
+      DBG("Attempting to ping the host");
+      sendAT(GF("PG"), host);
+      readResponseString(2500L);
     }
 
     // confirm the XBee type if needed so we know if we can know if connected
@@ -1297,6 +1347,11 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     // we'll accept either unknown or connected
     if (beeType != XBEE_S6B_WIFI) {
       uint16_t ci = getConnectionIndicator();
+      // if (ci == 0xFF || ci == 0x28) {
+      //   DBG("Checking rejection status");
+      //   sendAT(GF("RJ"));
+      //   readResponseString(10000L);
+      // }
       success &= (ci == 0x00 || ci == 0xFF || ci == 0x28);
     }
 
@@ -1383,6 +1438,30 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
         int16_t ci = getConnectionIndicator();
         // Get the operating destination address
         IPAddress od = getOperatingIP();
+
+        // Ask for information about any open sockets
+        sendAT(GF("SI"));
+        String open_socks = stream.readStringUntil('\r');
+        open_socks.replace(AT_NL, "");
+        open_socks.trim();
+        if (open_socks != "") {
+          // In transparent mode, only socket 0 should be possible
+          sendAT(GF("SI0"));
+          // read socket it
+          String sock_id = stream.readStringUntil('\r');
+          // read socket state
+          String sock_state = stream.readStringUntil('\r');
+          // read socket protocol (TCP/UDP)
+          String sock_protocol = stream.readStringUntil('\r');
+          // read local port number
+          String local_port = stream.readStringUntil('\r');
+          // read remote port number
+          String remote_port = stream.readStringUntil('\r');
+          // read remote ip address
+          String remoted_address = stream.readStringUntil('\r');  // read result
+          streamSkipUntil('\r');  // final carriage return
+        }
+
         XBEE_COMMAND_END_DECORATOR
 
         switch (ci) {
@@ -1401,53 +1480,34 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
           // 0xFF = No known status - always returned prior to sending data
           case 0x28:
           case 0xFF: {
+            DBG("Got 0x28 or 0xFF, we don't know if we're connected");
             // If we previously had an operating destination and we no longer
             // do, the socket must have closed
             if (od == IPAddress(0, 0, 0, 0) &&
                 savedOperatingIP != IPAddress(0, 0, 0, 0)) {
               savedOperatingIP           = od;
               sockets[0]->sock_connected = false;
+              DBG("Got no operating IP, we're not connected");
               return false;
             } else if (od != IPAddress(0, 0, 0, 0) && od != savedIP) {
               // else if the operating destination exists, but is wrong
               // we need to close and re-open
+              DBG("We're connected to the wrong endpoint", od, "not", savedIP);
               sockets[0]->stop();
               return false;
             } else if (od != IPAddress(0, 0, 0, 0) && od == savedIP) {
               // else if the operating destination exists and matches, we're
               // good to go
+              DBG("Got new IP of", od, "we should be good");
               savedOperatingIP = od;
               return true;
             } else {
               // If we never had an operating destination, then sock may be open
               // but data never sent - this is the dreaded "we don't know"
+              DBG("We have no idea if we're connected");
               savedOperatingIP = od;
               return true;
             }
-
-            // // Ask for information about any open sockets
-            // sendAT(GF("SI"));
-            // String open_socks = stream.readStringUntil('\r');
-            // open_socks.replace(AT_NL, "");
-            // open_socks.trim();
-            // if (open_socks != "") {
-            //   // In transparent mode, only socket 0 should be possible
-            //   sendAT(GF("SI0"));
-            //   // read socket it
-            //   String sock_id = stream.readStringUntil('\r');
-            //   // read socket state
-            //   String sock_state = stream.readStringUntil('\r');
-            //   // read socket protocol (TCP/UDP)
-            //   String sock_protocol = stream.readStringUntil('\r');
-            //   // read local port number
-            //   String local_port = stream.readStringUntil('\r');
-            //   // read remote port number
-            //   String remote_port = stream.readStringUntil('\r');
-            //   // read remote ip address
-            //   String remoted_address =
-            //       stream.readStringUntil('\r');  // read result
-            //   streamSkipUntil('\r');      // final carriage return
-            // }
           }
 
           // 0x21 = User closed
@@ -1669,14 +1729,20 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
  protected:
   GsmClientXBee* sockets[TINY_GSM_MUX_COUNT];
   int16_t        guardTime;
-  XBeeType       beeType;
-  int8_t         resetPin;
-  IPAddress      savedIP;
-  String         savedHost;
-  IPAddress      savedHostIP;
-  IPAddress      savedOperatingIP;
-  bool           inCommandMode;
-  uint32_t       lastCommandModeMillis;
+  /// The type of XBee we're working with
+  XBeeType beeType;
+  int8_t   resetPin;
+  /// The IP address we last requested
+  IPAddress savedIP;
+  /// The text name of the host we last requested a connection to
+  String savedHost;
+  /// The IP address of the saved host the last time we did an IP lookup
+  IPAddress savedHostIP;
+  // The last IP address we actually were connected to
+  IPAddress savedOperatingIP;
+  bool      inCommandMode;
+  uint32_t  lastCommandModeMillis;
+  uint32_t  lastHostLookupMillis;
 };
 
 #endif  // SRC_TINYGSMCLIENTXBEE_H_

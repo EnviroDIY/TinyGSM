@@ -115,12 +115,13 @@ const T& TinyGsmMax(const T& a, const T& b) {
 
 /*
  * Automatically find baud rate
+ * NOTE: This DOES NOT work with the XBee module
  */
 template <class T>
 uint32_t TinyGsmAutoBaud(T& SerialAT, uint32_t minimum = 9600,
                          uint32_t maximum = 921600) {
-  static uint32_t rates[] = {115200, 57600, 38400, 19200, 9600, 921600, 460800,
-                             230400, 74400, 74880, 2400,  4800, 14400,  28800};
+  static uint32_t rates[] = {115200, 57600, 9600,  921600, 38400, 19200, 460800,
+                             230400, 74400, 74880, 2400,   4800,  14400, 28800};
 
   for (uint8_t i = 0; i < sizeof(rates) / sizeof(rates[0]); i++) {
     uint32_t rate = rates[i];
