@@ -12,10 +12,12 @@
 // #define TINY_GSM_DEBUG Serial
 // #define TINY_GSM_USE_HEX
 
-#define TINY_GSM_MUX_COUNT 12
-#define TINY_GSM_SECURE_MUX_COUNT 12
+#define SIM7080_SSL_CTXINDEX 0
 // Also supports 6 SSL contexts (0-5)
 // The SSL context is collection of SSL settings, not the connection identifier.
+
+#define TINY_GSM_MUX_COUNT 12
+#define TINY_GSM_SECURE_MUX_COUNT 12
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 
@@ -667,7 +669,6 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     //              6: QAPI_NET_SSL_PROTOCOL_TLS_1_3 (only supported with 2117
     //              firmware baseline)
     // NOTE:  despite docs using caps, "sslversion" must be in lower case
-    DBG("Working with SSL version: ", static_cast<uint8_t>(sslVersion));
     int8_t s70x_ssl_version = 3;
     // convert the ssl version into the format for this command
     switch (sslVersion) {
@@ -774,7 +775,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // AT+CSSLCFG="IGNORERTCTIME",<ctxindex>,<ignorertctime>
     // <ctxindex> SSL context identifier
     // <ignorertctime> 0 to ignore, 1 to use
-    sendAT(GF("+CSSLCFG=\"ignorertctime\","), context_id, GF(",0"));
+    sendAT(GF("+CSSLCFG=\"ignorertctime\","), context_id, GF(",1"));
     success &= waitResponse() == 1;
 
     // Query all the parameters that have been set for this SSL context
@@ -804,7 +805,6 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     const char* clientCertName = nullptr;
     const char* pskTableName   = nullptr;
     const char* clientKeyName  = nullptr;
-    DBG("Placeholder ssl version", static_cast<uint8_t>(sslVersion));
     // If we have a secure socket, use a static cast to get the authentication
     // mode and certificate names. This isn't ideal; hopefully the compiler will
     // save us from ourselves. We cannot use a dynamic cast because Arduino
@@ -818,12 +818,9 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       clientCertName = thisClient->clientCertName;
       clientKeyName  = thisClient->clientKeyName;
       pskTableName   = thisClient->pskTableName;
-
-      DBG("discovered ssl version", static_cast<uint8_t>(sslVersion));
     }
 
     if (ssl) {
-      DBG("Configure with ssl version", static_cast<uint8_t>(sslVersion));
       configureSSLContext(SIM7080_SSL_CTXINDEX, host, sslAuthMode, sslVersion);
     }
 
