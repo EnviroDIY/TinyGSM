@@ -190,8 +190,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
           sslCtxConfigured = false;
         } else {
           sslCtxConfigured = at->configureSSLContext(
-              sslCtxIndex, host, sslAuthMode, sslVersion, CAcertName,
-              clientCertName, clientKeyName);
+              sslCtxIndex, sslAuthMode, sslVersion, CAcertName, clientCertName,
+              clientKeyName);
         }
       }
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -759,9 +759,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    * Client related functions
    */
  public:
-  bool configureSSLContext(uint8_t context_id, const char* sni,
-                           SSLAuthMode sslAuthMode, SSLVersion sslVersion,
-                           const char* CAcertName, const char* clientCertName,
+  bool configureSSLContext(uint8_t context_id, SSLAuthMode sslAuthMode,
+                           SSLVersion sslVersion, const char* CAcertName,
+                           const char* clientCertName,
                            const char* clientKeyName) {
     bool success = true;
 
@@ -837,7 +837,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     // set the configured SSL context for the session
     // AT+CCHSSLCFG=<session_id>,<ssl_ctx_index>
     sendAT(GF("+CCHSSLCFG="), mux, ',', context_id);
-    if (waitResponse(5000L) != 1) { return false; }
+    return waitResponse(5000L) == 1;
   }
 
  protected:
