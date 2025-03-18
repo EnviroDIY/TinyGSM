@@ -11,13 +11,13 @@
 
 // #define TINY_GSM_DEBUG Serial
 // #define TINY_GSM_USE_HEX
+#define TINY_GSM_MUX_COUNT 12
+#define TINY_GSM_SECURE_MUX_COUNT 12
 
-#define SIM7080_SSL_CTXINDEX 0
+// #define TINY_GSM_DEFAULT_SSL_CTX 0
 // Also supports 6 SSL contexts (0-5)
 // The SSL context is collection of SSL settings, not the connection identifier.
 
-#define TINY_GSM_MUX_COUNT 12
-#define TINY_GSM_SECURE_MUX_COUNT 12
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 
@@ -135,6 +135,18 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // Because we have the same potetial range of mux numbers for secure and
     // insecure connections, we don't need to re-check for mux number
     // availability.
+
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
+      stop();
+      TINY_GSM_YIELD();
+      rx.clear();
+      if (!sslCtxConfigured) {
+        sslCtxConfigured = at->configureSSLContext(sslCtxIndex, host,
+                                                   sslAuthMode, sslVersion);
+      }
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
+      return sock_connected;
+    }
   };
 
   /*
@@ -701,7 +713,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
         // try lowering the SSL version to TLS 1.2 - not all firmwares
         // support 1.3
         sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, GF(",3"));
-
+        sslVersion = SSLVersion::TLS1_2;
         success &= waitResponse(5000L) == 1;
       }
     }
@@ -792,38 +804,76 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     return success;
   }
 
+  bool applySSLCertificates(uint8_t mux, SSLAuthMode sslAuthMode,
+                            const char* CAcertName, const char* clientCertName,
+                            const char* clientKeyName) {
+    bool success = true;
+
+    // Re-convert the certificates, just in case
+    convertCACertificate(CAcertName);
+    convertClientCertificates(clientCertName, clientKeyName);
+
+    // apply the correct certificates to the connection
+    if (CAcertName != nullptr &&
+        (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
+         sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
+      // AT+CASSLCFG=<cid>,"CACERT",<caname>
+      // <cid> Application connection ID (set with AT+CACID above)
+      // <certname> certificate name
+      sendAT(GF("+CASSLCFG="), mux, ",\"cacert\",\"", CAcertName, '"');
+      success &= waitResponse() == 1;
+    }
+    if (clientCertName != nullptr &&
+        (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
+      // AT+CASSLCFG=<cid>,"CERT",<certname>
+      // <cid> Application connection ID (set with AT+CACID above)
+      // <certname> Alphanumeric ASCII text string up to 64 characters.
+      // Client certificate name that has been configured by AT+CSSLCFG.
+      // NOTE: The AT+CSSLCFG convert function for the client cert combines
+      // the certificate and the key in a single certificate name
+      sendAT(GF("+CASSLCFG="), mux, GF(",\"cert\",\""), clientCertName, '"');
+      success &= waitResponse() == 1;
+    }
+
+    return success;
+  }
+
+  bool applySSLPSK(uint8_t mux, const char* pskTableName) {
+    bool success = true;
+
+    // Re-convert the psk, just in case
+    convertPSKTable(pskTableName);
+
+    // SRGD WARNING: UNTESTED!!
+    if (pskTableName != nullptr) {
+      // AT+CASSLCFG=<cid>,"PSKTABLE",<pskTableName>
+      // <cid> Application connection ID (set with AT+CACID above)
+      // <pskTableName> Alphanumeric ASCII text string up to 64 characters.
+      // PSK table name that has been configured by AT+CSSLCFG. File content
+      // format is <identity>:<hex string>.
+      sendAT(GF("+CASSLCFG=\"psktable\","), mux, GF(",\""), pskTableName,
+             GF("\""));
+      success &= waitResponse() == 1;
+    }
+
+    return success;
+  }
+
+  bool linkSSLContext(uint8_t mux, uint8_t context_id) {
+    // set the connection identifier that the above SSL context settings apply
+    // to (ie, tie connection mux to SSL context)
+    // AT+CASSLCFG=<cid>,"CRINDEX",<crindex>
+    // <cid> Application connection ID (set with AT+CACID above)
+    // <crindex> SSL context identifier (<ctxindex>)
+    sendAT(GF("+CASSLCFG="), mux, ',', GF("\"crindex\","), context_id);
+    return waitResponse() == 1;
+  }
+
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     int timeout_s = 75) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
-
-    // Blank holders before casting
-    SSLAuthMode sslAuthMode    = SSLAuthMode::NO_VALIDATION;
-    SSLVersion  sslVersion     = SSLVersion::TLS1_2;
-    const char* CAcertName     = nullptr;
-    const char* clientCertName = nullptr;
-    const char* pskTableName   = nullptr;
-    const char* clientKeyName  = nullptr;
-    // If we have a secure socket, use a static cast to get the authentication
-    // mode and certificate names. This isn't ideal; hopefully the compiler will
-    // save us from ourselves. We cannot use a dynamic cast because Arduino
-    // compiles with -fno-rtti.
-    if (ssl) {
-      GsmClientSecureSim7080* thisClient =
-          static_cast<GsmClientSecureSim7080*>(sockets[mux]);
-      sslAuthMode    = thisClient->sslAuthMode;
-      sslVersion     = thisClient->sslVersion;
-      CAcertName     = thisClient->CAcertName;
-      clientCertName = thisClient->clientCertName;
-      clientKeyName  = thisClient->clientKeyName;
-      pskTableName   = thisClient->pskTableName;
-    }
-
-    if (ssl) {
-      configureSSLContext(SIM7080_SSL_CTXINDEX, host, sslAuthMode, sslVersion);
-    }
-
 
     // set the connection (mux) identifier to use
     sendAT(GF("+CACID="), mux);
@@ -837,53 +887,37 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     sendAT(GF("+CASSLCFG="), mux, ',', GF("\"ssl\","), ssl);
     waitResponse();
 
+    // Blank holders before casting
+    uint8_t     sslCtxIndex    = TINY_GSM_DEFAULT_SSL_CTX;
+    SSLAuthMode sslAuthMode    = SSLAuthMode::NO_VALIDATION;
+    const char* CAcertName     = nullptr;
+    const char* clientCertName = nullptr;
+    const char* pskTableName   = nullptr;
+    const char* clientKeyName  = nullptr;
+    // If we have a secure socket, use a static cast to get the authentication
+    // mode and certificate names. This isn't ideal; hopefully the compiler will
+    // save us from ourselves. We cannot use a dynamic cast because Arduino
+    // compiles with -fno-rtti.
     if (ssl) {
-      // set the connection identifier that the above SSL context settings apply
-      // to (ie, tie connection mux to SSL context)
-      // AT+CASSLCFG=<cid>,"CRINDEX",<crindex>
-      // <cid> Application connection ID (set with AT+CACID above)
-      // <crindex> SSL context identifier (<ctxindex>)
-      sendAT(GF("+CASSLCFG="), mux, ',', GF("\"crindex\","),
-             SIM7080_SSL_CTXINDEX);
-      waitResponse();
+      GsmClientSecureSim7080* thisClient =
+          static_cast<GsmClientSecureSim7080*>(sockets[mux]);
+      sslCtxIndex    = thisClient->sslCtxIndex;
+      sslAuthMode    = thisClient->sslAuthMode;
+      CAcertName     = thisClient->CAcertName;
+      clientCertName = thisClient->clientCertName;
+      clientKeyName  = thisClient->clientKeyName;
+      pskTableName   = thisClient->pskTableName;
+    }
 
-      // Try re-converting the certs
-      convertCACertificate(CAcertName);
-      convertClientCertificates(clientCertName, clientKeyName);
-
-      // apply the correct certificates to the connection
-      if (CAcertName != nullptr &&
-          (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
-           sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
-        // AT+CASSLCFG=<cid>,"CACERT",<caname>
-        // <cid> Application connection ID (set with AT+CACID above)
-        // <certname> certificate name
-        sendAT(GF("+CASSLCFG="), mux, ",\"cacert\",\"", CAcertName, '"');
-        if (waitResponse(5000L) != 1) return false;
-      }
-      if (clientCertName != nullptr &&
-          (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
-        // AT+CASSLCFG=<cid>,"CERT",<certname>
-        // <cid> Application connection ID (set with AT+CACID above)
-        // <certname> Alphanumeric ASCII text string up to 64 characters.
-        // Client certificate name that has been configured by AT+CSSLCFG.
-        // NOTE: The AT+CSSLCFG convert function for the client cert combines
-        // the certificate and the key in a single certificate name
-        sendAT(GF("+CASSLCFG="), mux, GF(",\"cert\",\""), clientCertName, '"');
-        if (waitResponse(5000L) != 1) return false;
-      }
-      // SRGD WARNING: UNTESTED!!
-      if (pskTableName != nullptr &&
-          (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS)) {
-        // AT+CASSLCFG=<cid>,"PSKTABLE",<pskTableName>
-        // <cid> Application connection ID (set with AT+CACID above)
-        // <pskTableName> Alphanumeric ASCII text string up to 64 characters.
-        // PSK table name that has been configured by AT+CSSLCFG. File content
-        // format is <identity>:<hex string>.
-        sendAT(GF("+CASSLCFG=\"psktable\","), mux, GF(",\""), pskTableName,
-               GF("\""));
-        if (waitResponse(5000L) != 1) return false;
-      }
+    // NOTE: We cannot link the SSL context or set the certificates until AFTER
+    // setting the connection id (ie, AT+CACID=mux)
+    linkSSLContext(mux,
+                   sslCtxIndex);  // Must be before applying certs
+    if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+      applySSLPSK(mux, pskTableName);
+    } else {
+      applySSLCertificates(mux, sslAuthMode, CAcertName, clientCertName,
+                           clientKeyName);
     }
 
     // actually open the connection

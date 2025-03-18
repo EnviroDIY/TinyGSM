@@ -21,7 +21,7 @@
 // application on the module.
 // TODO(?) Could someone who has this module test this?
 
-#define A7672_SSL_CTXINDEX 0
+// #define TINY_GSM_DEFAULT_SSL_CTX 0
 // also supports 10 SSL contexts,
 // The SSL context is collection of SSL settings, not the connection identifier.
 // This library always uses SSL context 0.
@@ -172,7 +172,24 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    public:
     TINY_GSM_SECURE_CLIENT_CTORS(A7672X)
 
-   public:
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
+      stop();
+      TINY_GSM_YIELD();
+      rx.clear();
+      if (!sslCtxConfigured) {
+        if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+          DBG("### The A7672x does not support SSL using pre-shared keys.");
+          sslCtxConfigured = false;
+        } else {
+          sslCtxConfigured = at->configureSSLContext(
+              sslCtxIndex, host, sslAuthMode, sslVersion, CAcertName,
+              clientCertName, clientKeyName);
+        }
+      }
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
+      return sock_connected;
+    }
+
     virtual void stop(uint32_t maxWaitMs) override {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CCHCLOSE="), mux);  //, GF(",1"));  // Quick close
@@ -526,11 +543,6 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
                            const char* clientKeyName) {
     bool success = true;
 
-    if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
-      DBG("### The A7672x does not support SSL using pre-shared keys.");
-      return false;
-    }
-
     // NOTE: The SSL context (<ssl_ctx_index>) is not the same as the
     // connection identifier.  The SSL context is the grouping of SSL
     // settings, the connection identifier is the mux/socket number. For this,
@@ -600,6 +612,14 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return success;
   }
 
+  bool linkSSLContext(uint8_t mux, uint8_t context_id) {
+    // set the connection identifier that the above SSL context settings
+    // apply to (ie, tie connection mux to SSL context)
+    // AT+CCHSSLCFG=<session_id>,<ssl_ctx_index>
+    sendAT(GF("+CCHSSLCFG="), mux, ',', context_id);
+    if (waitResponse(2000L) != 1) { return false; }
+  }
+
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     int timeout_s = 75) {
@@ -622,6 +642,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       //   1 Module caches the received data and notifies MCU with+CCHEVENT:
       // <session_id>,RECV EVENT. MCU can use AT+CCHRECV to receive the cached
       //   data (only in manual receiving mode).
+      // TODO: Shouldn't this be done only once during the init or during the
+      // GPRS connection process
       sendAT(GF("+CCHSET=1,1"));
       if (waitResponse(2000L) != 1) { return false; }
 
@@ -631,27 +653,15 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       // the type and it should work.
       GsmClientSecureA7672X* thisClient =
           static_cast<GsmClientSecureA7672X*>(sockets[mux]);
-      SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
-      SSLVersion  sslVersion     = thisClient->sslVersion;
-      const char* CAcertName     = thisClient->CAcertName;
-      const char* clientCertName = thisClient->clientCertName;
-      const char* clientKeyName  = thisClient->clientKeyName;
-      // const char* pskIdent       = thisClient->pskIdent;
-      // const char* psKey          = thisClient->psKey;
+      uint8_t sslCtxIndex = thisClient->sslCtxIndex;
 
-
-      configureSSLContext(A7672_SSL_CTXINDEX, host, sslAuthMode, sslVersion,
-                          CAcertName, clientCertName, clientKeyName);
-
+      // TODO: Should CCHSTART be called once during the GPRS connection process
+      // instead of repeatly here?
       // Start SSL service
       sendAT(GF("+CCHSTART"));
       if (waitResponse(2000L) != 1) { return false; }
 
-      // set the connection identifier that the above SSL context settings
-      // apply to (ie, tie connection mux to SSL context)
-      // AT+CCHSSLCFG=<session_id>,<ssl_ctx_index>
-      sendAT(GF("+CCHSSLCFG="), mux, ',', A7672_SSL_CTXINDEX);
-      if (waitResponse(2000L) != 1) { return false; }
+      linkSSLContext(mux, sslCtxIndex);
 
       // Connect to server
       // AT+CCHOPEN=<session_id>,<host>,<port>[,<client_type>,[<bind_port>]]
@@ -663,6 +673,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       rsp &= waitResponse(timeout_ms, GF(AT_NL "+CCHOPEN:")) != 1;
       // TODO: verify this
     } else {
+      // TODO: Should NETOPEN be called once during the GPRS connection process
+      // instead of repeatly here?
       sendAT(GF("+NETOPEN"));
       if (waitResponse(2000L) != 1) { return false; }
 

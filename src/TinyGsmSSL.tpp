@@ -15,6 +15,10 @@
 #define TINY_GSM_MODEM_CAN_SPECIFY_CERTS
 #define TINY_GSM_MODEM_CAN_LOAD_CERTS
 
+#ifndef TINY_GSM_DEFAULT_SSL_CTX
+#define TINY_GSM_DEFAULT_SSL_CTX 0
+#endif
+
 
 template <class modemType, uint8_t muxCount>
 class TinyGsmSSL {
@@ -156,25 +160,36 @@ class TinyGsmSSL {
 class GsmSecureClient {
  public:
   GsmSecureClient() {
-    this->sslAuthMode    = SSLAuthMode::NO_VALIDATION;
-    this->sslVersion     = SSLVersion::TLS1_2;
-    this->CAcertName     = nullptr;
-    this->clientCertName = nullptr;
-    this->clientKeyName  = nullptr;
-    this->pskIdent       = nullptr;
-    this->psKey          = nullptr;
+    sslCtxIndex      = TINY_GSM_DEFAULT_SSL_CTX;
+    sslCtxConfigured = false;
+    sslAuthMode      = SSLAuthMode::NO_VALIDATION;
+    sslVersion       = SSLVersion::TLS1_2;
+    CAcertName       = nullptr;
+    clientCertName   = nullptr;
+    clientKeyName    = nullptr;
+    pskIdent         = nullptr;
+    psKey            = nullptr;
+    pskTableName     = nullptr;
+  }
+
+  virtual void setSSLContextIndex(uint8_t sslCtxIndex) {
+    this->sslCtxIndex = sslCtxIndex;
+    sslCtxConfigured  = false;
   }
 
   virtual void setSSLAuthMode(SSLAuthMode mode) {
     this->sslAuthMode = mode;
+    sslCtxConfigured  = false;
   }
 
   virtual void setSSLVersion(SSLVersion version) {
     this->sslVersion = version;
+    sslCtxConfigured = false;
   }
 
   virtual void setCACertName(const char* CAcertName) {
     this->CAcertName = CAcertName;
+    sslCtxConfigured = false;
   }
   virtual void setCACertName(String CAcertName) {
     setCACertName(CAcertName.c_str());
@@ -182,6 +197,7 @@ class GsmSecureClient {
 
   virtual void setClientCertName(const char* clientCertName) {
     this->clientCertName = clientCertName;
+    sslCtxConfigured     = false;
   }
   virtual void setClientCertName(String clientCertName) {
     setClientCertName(clientCertName.c_str());
@@ -189,6 +205,7 @@ class GsmSecureClient {
 
   virtual void setPrivateKeyName(const char* clientKeyName) {
     this->clientKeyName = clientKeyName;
+    sslCtxConfigured    = false;
   }
   virtual void setPrivateKeyName(String clientKeyName) {
     setPrivateKeyName(clientKeyName.c_str());
@@ -196,13 +213,15 @@ class GsmSecureClient {
 
   virtual void setPSKTableName(const char* pskTableName) {
     this->pskTableName = pskTableName;
+    sslCtxConfigured   = false;
   }
   virtual void setPSKTableName(String pskTableName) {
     setPSKTableName(pskTableName.c_str());
   }
   virtual void setPreSharedKey(const char* pskIdent, const char* psKey) {
-    this->pskIdent = pskIdent;
-    this->psKey    = psKey;
+    this->pskIdent   = pskIdent;
+    this->psKey      = psKey;
+    sslCtxConfigured = false;
   }
   virtual void setPreSharedKey(String pskIdent, String psKey) {
     setPreSharedKey(pskIdent.c_str(), psKey.c_str());
@@ -212,6 +231,10 @@ class GsmSecureClient {
   virtual ~GsmSecureClient() {}
 
  protected:
+  /// The SSL context index to use for this connection
+  uint8_t sslCtxIndex;
+  /// Flag to denote whether the SSL context has been configured
+  bool sslCtxConfigured;
   /// The SSL authorization mode to use for this connection
   SSLAuthMode sslAuthMode;
   /// The SSL version to use for this connection
