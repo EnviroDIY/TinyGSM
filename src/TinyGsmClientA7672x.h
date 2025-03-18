@@ -189,6 +189,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     virtual void stop(uint32_t maxWaitMs) override {
       dumpModemBuffer(maxWaitMs);
