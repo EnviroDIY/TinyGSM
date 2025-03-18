@@ -20,7 +20,7 @@
 // application on the module.
 // TODO(?) Could someone who has this module test this?
 
-#define SIM7600_SSL_CTXINDEX 0
+// #define TINY_GSM_DEFAULT_SSL_CTX 0
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #ifdef AT_NL
@@ -179,6 +179,24 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
    public:
     TINY_GSM_SECURE_CLIENT_CTORS(Sim7600)
+
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
+      stop();
+      TINY_GSM_YIELD();
+      rx.clear();
+      if (!sslCtxConfigured) {
+        if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+          DBG("### The SIM7600 does not support SSL using pre-shared keys.");
+          sslCtxConfigured = false;
+        } else {
+          sslCtxConfigured = at->configureSSLContext(
+              sslCtxIndex, host, sslAuthMode, sslVersion, CAcertName,
+              clientCertName, clientKeyName);
+        }
+      }
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
+      return sock_connected;
+    }
 
     virtual void stop(uint32_t maxWaitMs) override {
       dumpModemBuffer(maxWaitMs);
@@ -814,6 +832,13 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     return success;
   }
 
+  bool linkSSLContext(uint8_t mux, uint8_t context_id) {
+    // set the configured SSL context for the session
+    // AT+CCHSSLCFG=<session_id>,<ssl_ctx_index>
+    sendAT(GF("+CCHSSLCFG="), mux, ',', context_id);
+    if (waitResponse(5000L) != 1) { return false; }
+  }
+
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     int timeout_s = 15) {
@@ -828,22 +853,10 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       // the type and it should work.
       GsmClientSecureSim7600* thisClient =
           static_cast<GsmClientSecureSim7600*>(sockets[mux]);
-      SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
-      SSLVersion  sslVersion     = thisClient->sslVersion;
-      const char* CAcertName     = thisClient->CAcertName;
-      const char* clientCertName = thisClient->clientCertName;
-      const char* clientKeyName  = thisClient->clientKeyName;
-      // const char* pskIdent       = thisClient->pskIdent;
-      // const char* psKey          = thisClient->psKey;
+      uint8_t sslCtxIndex = thisClient->sslCtxIndex;
 
 
-      configureSSLContext(SIM7600_SSL_CTXINDEX, host, sslAuthMode, sslVersion,
-                          CAcertName, clientCertName, clientKeyName);
-
-      // set the configured SSL context for the session
-      // AT+CCHSSLCFG=<session_id>,<ssl_ctx_index>
-      sendAT(GF("+CCHSSLCFG="), ',', SIM7600_SSL_CTXINDEX);
-      if (waitResponse(5000L) != 1) { return false; }
+      linkSSLContext(mux, sslCtxIndex);
 
       // Establish a connection in multi-socket mode
       // AT+CCHOPEN=<session_id>,"<host>",<port>[,<client_type>,[<bind_port>]]
