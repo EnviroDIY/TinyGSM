@@ -148,6 +148,7 @@ class TinyGsmSim7000SSL
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
   /*
@@ -912,7 +913,7 @@ class TinyGsmSim7000SSL
     // DBG("### READ:", len_confirmed, "from", mux);
     // make sure the sock available number is accurate again
     // the module is **EXTREMELY** testy about being asked to read more from
-    // the buffer than exits; it will freeze until a hard reset or power cycle!
+    // the buffer than exists; it will freeze until a hard reset or power cycle!
     sockets[mux]->sock_available = modemGetAvailable(mux);
     return len_confirmed;
   }
