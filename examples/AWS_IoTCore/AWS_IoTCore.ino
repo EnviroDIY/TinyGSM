@@ -73,8 +73,6 @@ const char gprsPass[] = "";
 // Your WiFi connection credentials, if applicable
 // const char wifiSSID[] = "YourSSID";
 // const char wifiPass[] = "YourWiFiPass";
-const char wifiSSID[] = "4DsAndCounting";
-const char wifiPass[] = "W4171n843";
 
 // MQTT details
 // get the broker host/endpoint from AWS IoT Core / Connect / Domain
@@ -279,17 +277,6 @@ void setup() {
     SerialMon.println(" ...failed to initialize modem!");
   }
   SerialMon.println(" ...success");
-
-  // Max out the baud rate, if desired
-  // NOTE: Do this **AFTER** the modem has been restarted - many modules revert
-  // to default baud rates when reset or powered off.
-  // 921600, 460800, 230400, 115200
-  // modem.setBaud(921600);
-  // SerialAT.end();
-  // delay(100);
-  // SerialAT.begin(921600);
-  // delay(100);
-  modem.init();  // May need to re-init to turn off echo, etc
 
   String modemInfo = modem.getModemInfo();
   SerialMon.print("Modem Info: ");
