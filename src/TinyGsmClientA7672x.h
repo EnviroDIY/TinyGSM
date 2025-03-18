@@ -618,7 +618,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     // apply to (ie, tie connection mux to SSL context)
     // AT+CCHSSLCFG=<session_id>,<ssl_ctx_index>
     sendAT(GF("+CCHSSLCFG="), mux, ',', context_id);
-    if (waitResponse(2000L) != 1) { return false; }
+    return waitResponse(2000L) == 1;
   }
 
  protected:

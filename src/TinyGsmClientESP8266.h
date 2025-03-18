@@ -144,6 +144,9 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
       at->parseCertificateName(CAcertName, cert_namespace, certNumber);
       ca_number = certNumber;
     }
+    virtual void setCACertName(String CAcertName) {
+      setCACertName(CAcertName.c_str());
+    }
 
     void setClientCertName(const char* clientCertName) override {
       this->clientCertName = clientCertName;
@@ -153,6 +156,9 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
       at->parseCertificateName(clientCertName, cert_namespace, certNumber);
       pki_number = certNumber;
     }
+    virtual void setClientCertName(String clientCertName) {
+      setClientCertName(clientCertName.c_str());
+    }
 
     void setPrivateKeyName(const char* clientKeyName) override {
       this->clientKeyName = clientKeyName;
@@ -161,6 +167,9 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
       uint8_t certNumber     = 0;
       at->parseCertificateName(clientKeyName, cert_namespace, certNumber);
       pki_number = certNumber;
+    }
+    virtual void setPrivateKeyName(String clientKeyName) {
+      setPrivateKeyName(clientKeyName.c_str());
     }
 
     void setCACertificateNumber(uint8_t certNumber) {
