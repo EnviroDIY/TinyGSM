@@ -372,19 +372,29 @@ class TinyGsmESP8266NonOS
       DBG("### Closed: ", mux);
       return true;
     } else if (data.endsWith(GF("busy p..."))) {
-      streamSkipUntil('\n');  // Refresh time and time zone by network
+      streamSkipUntil('\n');
       data = "";
-      DBG("### Busy, please wait");
-      return false;
+      // DBG("### Busy, please wait");
+      return true;
+    } else if (data.endsWith(GF(AT_NL "ready" AT_NL))) {
+      streamSkipUntil('\n');
+      data = "";
+      // DBG("### Module ready!");
+      return true;
     } else if (data.endsWith(GF("WIFI GOT IP"))) {
-      streamSkipUntil('\n');  // Refresh time and time zone by network
+      streamSkipUntil('\n');
       data = "";
-      DBG("### Wifi got IP");
+      // DBG("### Wifi got IP");
       return true;
     } else if (data.endsWith(GF("WIFI CONNECTED"))) {
-      streamSkipUntil('\n');  // Refresh time and time zone by network
+      streamSkipUntil('\n');
       data = "";
-      DBG("### Wifi connected");
+      // DBG("### Wifi connected");
+      return true;
+    } else if (data.endsWith(GF("WIFI DISCONNECT"))) {
+      streamSkipUntil('\n');
+      data = "";
+      // DBG("### Wifi disconnected");
       return true;
     }
     return false;
