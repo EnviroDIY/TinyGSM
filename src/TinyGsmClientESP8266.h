@@ -678,6 +678,21 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
       data = "";
       DBG("### Network time updated.");
       return true;
+    } else if (data.endsWith(GF("busy p..."))) {
+      streamSkipUntil('\n');  // Refresh time and time zone by network
+      data = "";
+      DBG("### Busy, please wait");
+      return false;
+    } else if (data.endsWith(GF("WIFI GOT IP"))) {
+      streamSkipUntil('\n');  // Refresh time and time zone by network
+      data = "";
+      DBG("### Wifi got IP");
+      return true;
+    } else if (data.endsWith(GF("WIFI CONNECTED"))) {
+      streamSkipUntil('\n');  // Refresh time and time zone by network
+      data = "";
+      DBG("### Wifi connected");
+      return true;
     }
     return false;
   }
