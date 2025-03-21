@@ -301,6 +301,10 @@ class TinyGsmTCP {
 
     String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
+    uint8_t getMux() {
+      return mux;
+    }
+
    protected:
     // Read and dump anything remaining in the modem's internal buffer.
     // Using this in the client stop() function.
