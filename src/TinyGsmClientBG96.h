@@ -17,7 +17,7 @@
 // supports 12 sockets (0-11); any of them can be SSL
 
 #if !defined(TINY_GSM_CONNECT_TIMEOUT)
-#define TINY_GSM_RX_BUFFER 150
+#define TINY_GSM_CONNECT_TIMEOUT 150
 #endif
 
 // Also supports 6 SSL contexts (0-5)
