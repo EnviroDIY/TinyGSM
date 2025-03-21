@@ -99,6 +99,9 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
                                  // for some firmware variants if needed
       if (thisModem().waitResponse() != 1) { return false; }
     }
+    thisModem().sendAT(
+        GF("+CIPDINFO=0"));  // do not show the remote host and port in “+IPD”
+                             // and “+CIPRECVDATA” messages.
     DBG(GF("### Modem:"), thisModem().getModemName());
     return true;
   }
