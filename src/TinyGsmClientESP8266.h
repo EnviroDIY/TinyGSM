@@ -13,6 +13,7 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_NO_MODEM_BUFFER
+#define TINY_GSM_MUX_STATIC
 
 #include "TinyGsmClientEspressif.h"
 #include "TinyGsmTCP.tpp"
@@ -70,6 +71,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     bool init(TinyGsmESP8266* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_connected = false;
+      is_mid_send    = false;
 
       // The ESP8266 (as supported) generally lets you choose the mux number,
       // but we want to try to find an empty place in the socket array for it.
@@ -95,6 +97,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
 
    public:
     virtual int connect(const char* host, uint16_t port, int timeout_s) {
+      is_mid_send = false;
       if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] != nullptr) { stop(); }
       TINY_GSM_YIELD();
       rx.clear();
@@ -104,6 +107,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     virtual void stop(uint32_t maxWaitMs) {
+      is_mid_send = false;
       TINY_GSM_YIELD();
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
@@ -513,8 +517,8 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
    * Client related functions
    */
  protected:
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    int timeout_s = 75) {
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
+                        int timeout_s) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
 
@@ -606,7 +610,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     return (1 == rsp);
   }
 
-  bool modemGetConnected(uint8_t mux) {
+  bool modemGetConnectedImpl(uint8_t mux) {
     sendAT(GF("+CIPSTATE?"));
     bool verified_connections[TINY_GSM_MUX_COUNT] = {0, 0, 0, 0, 0};
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {

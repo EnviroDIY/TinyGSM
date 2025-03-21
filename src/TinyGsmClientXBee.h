@@ -17,6 +17,7 @@
 // The much more complicated API mode is needed for multiplexing
 #define TINY_GSM_MUX_COUNT 1
 #define TINY_GSM_NO_MODEM_BUFFER
+#define TINY_GSM_MUX_STATIC
 // XBee's have a default guard time of 1 second (1000ms, 10 extra for safety
 // here)
 #define TINY_GSM_XBEE_GUARD_TIME 1010
@@ -117,6 +118,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       this->at       = modem;
       this->mux      = 0;
       sock_connected = false;
+      is_mid_send    = false;
 
       at->sockets[0] = this;
 
@@ -158,6 +160,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       // empty the saved currently-in-use destination address
       at->modemStop(maxWaitMs);
       at->streamClear();  // Empty anything in the buffer
+      is_mid_send    = false;
       sock_connected = false;
 
       // Note:  because settings are saved in flash, the XBEE will attempt to
@@ -1255,7 +1258,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   }
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0,
-                    int timeout_s = 75) {
+                    int timeout_s = TINY_GSM_CONNECT_TIMEOUT) {
     bool retVal  = false;
     bool success = true;
 
@@ -1388,13 +1391,17 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     return true;
   }
 
-  int16_t modemSend(const void* buff, size_t len, uint8_t mux = 0) {
+  bool modemBeginSendImpl(size_t len, uint8_t mux = 0) {
     if (mux != 0) {
       DBG("XBee only supports 1 IP channel in transparent mode!");
+      return false;
     }
-    stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-    stream.flush();
-
+    return true;
+  }
+  // Between the modemBeginSend and modemEndSend, modemSend calls:
+  // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+  // stream.flush();
+  int16_t modemEndSendImpl(uint16_t len, uint8_t mux) {
     if (beeType != XBEE_S6B_WIFI) {
       // After a send, verify the outgoing ip if it isn't set
       if (savedOperatingIP == IPAddress(0, 0, 0, 0)) {
@@ -1502,8 +1509,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
               savedOperatingIP = od;
               return true;
             } else {
-              // If we never had an operating destination, then sock may be open
-              // but data never sent - this is the dreaded "we don't know"
+              // If we never had an operating destination, then sock may be
+              // open but data never sent - this is the dreaded "we don't
+              // know"
               DBG("We have no idea if we're connected");
               savedOperatingIP = od;
               return true;

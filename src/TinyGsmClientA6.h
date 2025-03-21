@@ -14,6 +14,7 @@
 
 #define TINY_GSM_MUX_COUNT 8
 #define TINY_GSM_NO_MODEM_BUFFER
+#define TINY_GSM_MUX_DYNAMIC
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -88,6 +89,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
       this->at       = modem;
       this->mux      = -1;
       sock_connected = false;
+      is_mid_send    = false;
 
       return true;
     }
@@ -108,6 +110,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     virtual void stop(uint32_t maxWaitMs) {
+      is_mid_send = false;
       TINY_GSM_YIELD();
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
@@ -475,8 +478,8 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
    * Client related functions
    */
  protected:
-  bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
-                    int timeout_s = 75) {
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* mux,
+                        int timeout_s) {
     uint32_t startMillis = millis();
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
 
@@ -493,16 +496,19 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     return (1 == rsp);
   }
 
-  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+  bool modemBeginSendImpl(uint16_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
-    if (waitResponse(2000L, GF(AT_NL ">")) != 1) { return 0; }
-    stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-    stream.flush();
+    return waitResponse(2000L, GF(AT_NL ">")) == 1;
+  }
+  // Between the begin and end, modem send calls:
+  // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+  // stream.flush();
+  int16_t modemEndSendImpl(uint16_t len, uint8_t) {
     if (waitResponse(10000L, GFP(GSM_OK), GF(AT_NL "FAIL")) != 1) { return 0; }
     return len;
   }
 
-  bool modemGetConnected(uint8_t) {
+  bool modemGetConnectedImpl(uint8_t) {
     sendAT(GF("+CIPSTATUS"));  // TODO(?) mux?
     int8_t res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),
                               GF(",\"CLOSING\""), GF(",\"INITIAL\""));

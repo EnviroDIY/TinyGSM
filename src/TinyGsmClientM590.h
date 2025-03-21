@@ -14,6 +14,7 @@
 
 #define TINY_GSM_MUX_COUNT 2
 #define TINY_GSM_NO_MODEM_BUFFER
+#define TINY_GSM_MUX_STATIC
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -77,6 +78,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
     bool init(TinyGsmM590* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_connected = false;
+      is_mid_send    = false;
 
       // The M590 generally lets you choose the mux number, but we want to try
       // to find an empty place in the socket array for it.
@@ -111,6 +113,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     virtual void stop(uint32_t maxWaitMs) {
+      is_mid_send = false;
       TINY_GSM_YIELD();
       at->sendAT(GF("+TCPCLOSE="), mux);
       sock_connected = false;
@@ -424,8 +427,8 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
    * Client related functions
    */
  protected:
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool,
-                    int timeout_s = 75) {
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
+                        int timeout_s) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     for (int i = 0; i < 3; i++) {  // TODO(?): no need for loop?
       String ip = dnsIpQuery(host);
@@ -444,10 +447,20 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
     return false;
   }
 
-  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+  // re-implement so we don't have an extra flush
+  int16_t modemSendImpl(const void* buff, size_t len, uint8_t mux) {
+    if (!modemBeginSend(len, mux)) { return 0; }
+    int16_t attempted = stream.write(reinterpret_cast<const uint8_t*>(buff),
+                                     len);
+    int16_t confirmed = modemEndSend(len, mux);
+    // NOTE: In many caases, confirmed is just a passthrough of len
+    return min(attempted, confirmed);
+  }
+  bool modemBeginSendImpl(size_t len, uint8_t mux) {
     sendAT(GF("+TCPSEND="), mux, ',', (uint16_t)len);
-    if (waitResponse(GF(">")) != 1) { return 0; }
-    stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+    return waitResponse(GF(">")) == 1;
+  }
+  int16_t modemEndSendImpl(uint16_t len, uint8_t) {
     stream.write(static_cast<char>(0x0D));
     stream.flush();
     if (waitResponse(30000L, GF(AT_NL "+TCPSEND:")) != 1) { return 0; }
@@ -455,7 +468,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
     return len;
   }
 
-  bool modemGetConnected(uint8_t mux) {
+  bool modemGetConnectedImpl(uint8_t mux) {
     sendAT(GF("+CIPSTATUS="), mux);
     int8_t res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),
                               GF(",\"CLOSING\""), GF(",\"INITIAL\""));

@@ -286,6 +286,54 @@ void loop() {
     DBG("#####  RECEIVED:", strlen(logo), "CHARACTERS");
     client.stop();
   }
+
+  // make a buffer to contain the whole request
+  char request[512] = {
+      '\0',
+  };
+  // concatenate the request
+  strcat(request, "GET ");
+  strcat(request, resource);
+  strcat(request, " HTTP/1.0\r\n");
+  strcat(request, "Host: ");
+  strcat(request, server);
+  strcat(request, "\r\n");
+  strcat(request, "Connection: close\r\n\r\n");
+
+  DBG("Connecting to", server);
+  if (!client.connect(server, port)) {
+    DBG("... failed");
+  } else {
+    // Write the request out to the server so it goes all at once
+    client.beginWrite(strlen(request));
+    client.write((uint8_t*)request, strlen(request));
+    client.endWrite(strlen(request));
+
+    // Wait for data to arrive
+    uint32_t start = millis();
+    while (client.connected() && !client.available() &&
+           millis() - start < 30000L) {
+      delay(100);
+    };
+
+    // Read data
+    start          = millis();
+    char logo[640] = {
+        '\0',
+    };
+    int read_chars = 0;
+    while (client.connected() && millis() - start < 10000L) {
+      while (client.available()) {
+        logo[read_chars]     = client.read();
+        logo[read_chars + 1] = '\0';
+        read_chars++;
+        start = millis();
+      }
+    }
+    SerialMon.println(logo);
+    DBG("#####  RECEIVED:", strlen(logo), "CHARACTERS");
+    client.stop();
+  }
 #endif
 
 #if TINY_GSM_TEST_SSL && \

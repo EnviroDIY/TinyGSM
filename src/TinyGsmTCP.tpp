@@ -19,6 +19,10 @@
 #define TINY_GSM_RX_BUFFER 64
 #endif
 
+#if !defined(TINY_GSM_CONNECT_TIMEOUT)
+#define TINY_GSM_CONNECT_TIMEOUT 75
+#endif
+
 // Because of the ordering of resolution of overrides in templates, these need
 // to be written out every time.  This macro is to shorten that.
 #define TINY_GSM_CLIENT_CONNECT_OVERRIDES                             \
@@ -26,10 +30,10 @@
     return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s); \
   }                                                                   \
   int connect(const char* host, uint16_t port) override {             \
-    return connect(host, port, 75);                                   \
+    return connect(host, port, TINY_GSM_CONNECT_TIMEOUT);             \
   }                                                                   \
   int connect(IPAddress ip, uint16_t port) override {                 \
-    return connect(ip, port, 75);                                     \
+    return connect(ip, port, TINY_GSM_CONNECT_TIMEOUT);               \
   }
 
 // // For modules that do not store incoming data in any sort of buffer
@@ -40,6 +44,11 @@
 // // Data is stored in a buffer and we can both read and check the size
 // // of the buffer
 // #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+
+// // For modules that can and will change the mux number on connection
+// #define TINY_GSM_MUX_DYNAMIC
+// // For modules that always use the mux you assign them
+// #define TINY_GSM_MUX_STATIC
 
 template <class modemType, uint8_t muxCount>
 class TinyGsmTCP {
@@ -67,6 +76,44 @@ class TinyGsmTCP {
   }
 
  protected:
+#if defined(TINY_GSM_MUX_STATIC)
+  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
+                    int timeout_s = TINY_GSM_CONNECT_TIMEOUT) {
+    return thisModem().modemConnectImpl(host, port, mux, timeout_s);
+  }
+#elif defined(TINY_GSM_MUX_DYNAMIC)
+  bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
+                    int timeout_s = TINY_GSM_CONNECT_TIMEOUT) {
+    return thisModem().modemConnectImpl(host, port, mux, timeout_s);
+  }
+#else
+#error Modem client has been incorrectly created
+#endif
+
+  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+    return thisModem().modemSendImpl(buff, len, mux);
+  }
+  bool modemBeginSend(size_t len, uint8_t mux) {
+    return thisModem().modemBeginSendImpl(len, mux);
+  }
+  bool modemEndSend(size_t len, uint8_t mux) {
+    return thisModem().modemEndSendImpl(len, mux);
+  }
+#if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE || \
+    defined TINY_GSM_BUFFER_READ_NO_CHECK
+  size_t modemRead(size_t size, uint8_t mux) {
+    return thisModem().modemReadImpl(size, mux);
+  }
+#endif
+#if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+  size_t modemGetAvailable(uint8_t mux) {
+    return thisModem().modemGetAvailableImpl(mux);
+  }
+  bool modemGetConnected(uint8_t mux) {
+    return thisModem().modemGetConnectedImpl() mux;
+  }
+#endif
+
   // destructor (protected!)
   ~TinyGsmTCP() {}
 
@@ -100,10 +147,10 @@ class TinyGsmTCP {
     //   timeout_s);
     // }
     // int connect(const char* host, uint16_t port) override {
-    //   return connect(host, port, 75);
+    //   return connect(host, port, TINY_GSM_CONNECT_TIMEOUT);
     // }
     // int connect(IPAddress ip,uint16_t port) override {
-    //   return connect(ip, port, 75);
+    //   return connect(ip, port, TINY_GSM_CONNECT_TIMEOUT);
     // }
 
     static inline String TinyGsmStringFromIp(IPAddress ip) {
@@ -126,8 +173,22 @@ class TinyGsmTCP {
 
     // Writes data out on the client using the modem send functionality
     size_t write(const uint8_t* buf, size_t size) override {
+      if (is_mid_send) {
+        // if we're in the middle of a write, pass directly to the stream
+        return at->stream.write(buf, size, mux);
+      }
       TINY_GSM_YIELD();
       at->maintain();
+#if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+      // If the modem is one where we can read and check the size of the buffer,
+      // then the 'available()' function will call a check of the current size
+      // of the buffer and state of the connection. [available calls maintain,
+      // maintain calls modemGetAvailable, modemGetAvailable calls
+      // modemGetConnected]  This cascade means that the sock_connected value
+      // should be correct and we can trust it if it says we're not connected to
+      // send.
+      if (!sock_connected) { return 0; }
+#endif
       return at->modemSend(buf, size, mux);
     }
 
@@ -141,6 +202,8 @@ class TinyGsmTCP {
     }
 
     int available() override {
+      is_mid_send = false;  // Any calls to the AT when mid-send will cause the
+                            // send to fail
       TINY_GSM_YIELD();
 #if defined TINY_GSM_NO_MODEM_BUFFER
       // Returns the number of characters available in the TinyGSM fifo
@@ -175,6 +238,8 @@ class TinyGsmTCP {
 
     int read(uint8_t* buf, size_t size) override {
       TINY_GSM_YIELD();
+      is_mid_send = false;  // Any calls to the AT when mid-send will cause the
+                            // send to fail
       size_t cnt = 0;
 
 #if defined TINY_GSM_NO_MODEM_BUFFER
@@ -268,6 +333,7 @@ class TinyGsmTCP {
     }
 
     uint8_t connected() override {
+      if (is_mid_send) { return true; }  // Don't interrupt a send
       if (available()) { return true; }
 #if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
       // If the modem is one where we can read and check the size of the buffer,
@@ -305,6 +371,38 @@ class TinyGsmTCP {
       return mux;
     }
 
+    /**
+     * @brief Begin writing to the modem client
+     *
+     * Use this to have the modem initiate a send data prompt which you can then
+     * fill using stream.write() commands. This is useful for sending large
+     * amounts of data in small chunks. It is analogous to the beginPublish()
+     * and endPublish() methods in PubSubClient.
+     *
+     * @param size The size of data to send. The maximum length varies by module
+     * @return True if the module is ready to receive data to forward to the TCP
+     * connection.
+     */
+    bool beginWrite(uint16_t size) {
+      is_mid_send = true;
+      return at->modemBeginSend(size, mux);
+    }
+    /**
+     * @brief Conclude a write to the module
+     *
+     * @param expected_size The size of data that should have been sent. If a
+     * non-zero value is given, the function will check that the module has sent
+     * the expected amount of data. Does not work on all modules.
+     * @return True if the module has successfully sent the data to the TCP
+     * connection.
+     */
+    bool endWrite(uint16_t expected_size = 0) {
+      uint16_t sent_size = at->modemEndSend(expected_size, mux);
+      is_mid_send        = false;
+      if (expected_size) { return sent_size == expected_size; }
+      return true;
+    }
+
    protected:
     // Read and dump anything remaining in the modem's internal buffer.
     // Using this in the client stop() function.
@@ -340,6 +438,7 @@ class TinyGsmTCP {
     bool       sock_connected;
     bool       got_data;
     bool       is_secure;
+    bool       is_mid_send = false;
     RxFifo     rx;
   };
 
@@ -394,6 +493,40 @@ class TinyGsmTCP {
       return false;
     }
   }
+
+
+#if defined(TINY_GSM_MUX_STATIC)
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* mux,
+                        int timeout_s) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+#elif defined(TINY_GSM_MUX_DYNAMIC)
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* mux,
+                        int timeout_s) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+#else
+#error Modem client has been incorrectly created
+#endif
+
+  int16_t modemSendImpl(const void* buff, size_t len, uint8_t mux) {
+    if (!thisModem().modemBeginSend(len, mux)) { return 0; }
+    int16_t attempted =
+        thisModem().stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+    stream.flush();
+    // NOTE: In many cases, confirmed is just a passthrough of len
+    int16_t confirmed = modemEndSend(len, mux);
+    return min(attempted, confirmed);
+  }
+  bool    modemBeginSendImpl(size_t  len,
+                             uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  int16_t modemEndSendImpl(size_t  len,
+                           uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+#if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE || \
+    defined TINY_GSM_BUFFER_READ_NO_CHECK
+  size_t modemReadImpl(size_t size, uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+#endif
+#if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+  size_t modemGetAvailableImpl(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool   modemGetConnectedImpl(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+#endif
 };
 
 #endif  // SRC_TINYGSMTCP_H_

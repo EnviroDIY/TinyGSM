@@ -13,6 +13,7 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_NO_MODEM_BUFFER
+#define TINY_GSM_MUX_STATIC
 
 #include "TinyGsmClientEspressif.h"
 #include "TinyGsmTCP.tpp"
@@ -72,6 +73,7 @@ class TinyGsmESP8266NonOS
     bool init(TinyGsmESP8266NonOS* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_connected = false;
+      is_mid_send    = false;
 
       // The ESP8266 (as supported) generally lets you choose the mux number,
       // but we want to try to find an empty place in the socket array for it.
@@ -106,6 +108,7 @@ class TinyGsmESP8266NonOS
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     virtual void stop(uint32_t maxWaitMs) {
+      is_mid_send = false;
       TINY_GSM_YIELD();
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
@@ -271,8 +274,8 @@ class TinyGsmESP8266NonOS
    * Client related functions
    */
  protected:
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    int timeout_s = 75) {
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
+                        int timeout_s) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
     if (ssl) {
@@ -293,7 +296,7 @@ class TinyGsmESP8266NonOS
     return (1 == rsp);
   }
 
-  bool modemGetConnected(uint8_t mux) {
+  bool modemGetConnectedImpl(uint8_t mux) {
     sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) { return false; }
     // after "STATUS:" it should return the status number (0,1,2,3,4,5),

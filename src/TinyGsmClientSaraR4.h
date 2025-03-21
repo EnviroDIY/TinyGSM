@@ -20,7 +20,12 @@
 // WARNING: You cannot control the socket mux number on this module! The module
 // opens the connection and returns the connection number it opened.
 
+#if !defined(TINY_GSM_CONNECT_TIMEOUT)
+#define TINY_GSM_RX_BUFFER 120
+#endif
+
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#define TINY_GSM_MUX_DYNAMIC
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -105,6 +110,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
+      is_mid_send    = false;
 
       // The SARA R4 does NOT allow you to choose the mux number; this is an
       // initial place holder for before connection. We need to assign a mux
@@ -142,7 +148,8 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
 
    public:
     virtual int connect(const char* host, uint16_t port, int timeout_s) {
-      // stop();  // DON'T stop!
+      is_mid_send = false;
+      // stop();  // DON'T stop! We don't know our actual mux yet!
       TINY_GSM_YIELD();
       rx.clear();
 
@@ -182,6 +189,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     }
 
     void stop(uint32_t maxWaitMs) {
+      is_mid_send          = false;
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
       // We want to use an async socket close because the synchronous close of
@@ -712,8 +720,8 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
    * Client related functions
    */
  protected:
-  bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
-                    int timeout_s = 120) {
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* mux,
+                        int timeout_s) {
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
     bool     ssl         = sockets[*mux]->is_secure;
     uint32_t startMillis = millis();
@@ -773,21 +781,27 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     }
   }
 
-  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+  bool modemBeginSendImpl(size_t len, uint8_t mux) {
     sendAT(GF("+USOWR="), mux, ',', (uint16_t)len);
     if (waitResponse(GF("@")) != 1) { return 0; }
     // 50ms delay, see AT manual section 25.10.4
     delay(50);
-    stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-    stream.flush();
+    return true;
+  }
+  // Between the modemBeginSend and modemEndSend, modemSend calls:
+  // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+  // stream.flush();
+  int16_t modemEndSendImpl(uint16_t len, uint8_t mux) {
     if (waitResponse(GF(AT_NL "+USOWR:")) != 1) { return 0; }
-    streamSkipUntil(',');  // Skip mux
-    int16_t sent = streamGetIntBefore('\n');
-    waitResponse();  // sends back OK after the confirmation of number sent
-    return sent;
+    uint8_t ret_mux = streamGetIntBefore(',');   // check mux
+    int16_t sent    = streamGetIntBefore('\n');  // check send length
+    bool    success = waitResponse() ==
+        1;  // sends back OK after the confirmation of number sent
+    if (mux == ret_mux && success) return sent;
+    return 0;
   }
 
-  size_t modemRead(size_t size, uint8_t mux) {
+  size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF(AT_NL "+USORD:")) != 1) { return 0; }
@@ -805,7 +819,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     return len;
   }
 
-  size_t modemGetAvailable(uint8_t mux) {
+  size_t modemGetAvailableImpl(uint8_t mux) {
     if (!sockets[mux]) return 0;
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USORD="), mux, ",0");
@@ -824,7 +838,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     return result;
   }
 
-  bool modemGetConnected(uint8_t mux) {
+  bool modemGetConnectedImpl(uint8_t mux) {
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USOCTL="), mux, ",10");
     uint8_t res = waitResponse(GF(AT_NL "+USOCTL:"));
