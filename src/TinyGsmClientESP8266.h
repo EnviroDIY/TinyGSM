@@ -356,13 +356,6 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   bool waitForTimeSync(int timeout_s = 120) {
     // if we're not connected, we'll never get the time
     if (!isNetworkConnected()) { return false; }
-    // if SNTP sync isn't enabled, we won't have the time
-    // NOTE: We don't actually enable the time here, because doing so would
-    // change any user settings for the timezone and time servers.
-    sendAT(GF("+CIPSNTPCFG?"));
-    int8_t is_enabled = streamGetIntBefore(',');
-    waitResponse();  // returns OK
-    if (!is_enabled) { return false; }
     // if we're sure we should be able to get the time, wait for it
     uint32_t start_millis = millis();
     while (millis() - start_millis < static_cast<uint32_t>(timeout_s) * 1000) {
@@ -370,7 +363,14 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
       // If we get a time between January 1, 2020 and January 1, 2035, we're
       // (hopefully) good
       if (modem_time > 1577836800 && modem_time < 2051222400) { return true; }
-      delay(500);
+      // if SNTP sync isn't enabled, we won't have the time
+      // NOTE: We don't actually enable the time here, because doing so would
+      // change any user settings for the timezone and time servers.
+      sendAT(GF("+CIPSNTPCFG?"));
+      int8_t is_enabled = streamGetIntBefore(',');
+      waitResponse();  // returns OK
+      if (!is_enabled) { return false; }
+      delay(250);
     }
     return false;
   }
