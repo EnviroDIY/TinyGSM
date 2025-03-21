@@ -130,6 +130,13 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
     virtual void stop(uint32_t maxWaitMs) {
       TINY_GSM_YIELD();
+      // Update available data first, because if the socket was closed
+      // externally, the module may have thrown away the data
+      at->modemGetAvailable(mux);
+      // Now we throw away any remaining data in the modem buffer
+      // We explicitly toss it here because the socket will appear open in
+      // response to connected() even after it closes until all data is read to
+      // give the user a chance to recover the data if they want it.
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
