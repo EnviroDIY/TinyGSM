@@ -12,7 +12,7 @@
 
 // #define TINY_GSM_DEBUG Serial
 
-#define TINY_GSM_NO_MODEM_BUFFER
+#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 
 #include "TinyGsmClientEspressif.h"
 #include "TinyGsmTCP.tpp"
@@ -241,7 +241,57 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
    * Basic functions
    */
  protected:
-  // Follows functions inherited from Espressif
+ protected:
+  bool initImpl(const char* pin = nullptr) {
+    DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientEspressif"));
+
+    if (!testAT()) { return false; }
+    if (pin && strlen(pin) > 0) {
+      DBG("Espressif modules do not use an unlock pin!");
+    }
+    sendAT(GF("E0"));  // Echo Off
+    if (waitResponse() != 1) { return false; }
+
+#ifdef TINY_GSM_DEBUG
+    sendAT(GF("+SYSLOG=1"));  // turn on verbose error codes
+#else
+    sendAT(GF("+SYSLOG=0"));  // turn off error codes
+#endif
+    waitResponse();
+
+    sendAT(GF("+CIPMUX=1"));  // Enable Multiple Connections
+    if (waitResponse() != 1) { return false; }
+    sendAT(GF("+CWMODE=1"));  // Put into "station" mode
+    if (waitResponse() != 1) {
+      sendAT(GF("+CWMODE_CUR=1"));  // Attempt "current" station mode command
+                                    // for some firmware variants if needed
+      if (waitResponse() != 1) { return false; }
+    }
+    sendAT(GF("+CIPDINFO=0"));  // do not show the remote host and port in
+                                // “+IPD” and “+CIPRECVDATA” messages.
+
+    // Set the data receive mode to have the module buffer data for all
+    // connections AT+CIPRECVTYPE=<link ID>,<mode>
+    // <link ID>: ID of the connection (0 ~ max). For a single connection, <link
+    //   ID> is 0. For multiple connections, if the value is max, it means all
+    //   connections. Max is 5 by default.
+    // <mode>: the receive mode of socket data. Default: 0.
+    //  0: active mode. ESP-AT will send all the received socket data instantly
+    //    to the host MCU with the header “+IPD”. (The socket receive window is
+    //    5760 bytes by default. The maximum valid bytes sent to MCU is 2920
+    //    bytes each time.)
+    //  1: passive mode. ESP-AT will keep the received socket data in an
+    //    internal buffer (socket receive window, 5760 bytes by default), and
+    //    wait for the host MCU to read. If the buffer is full, the socket
+    //    transmission will be blocked for TCP/SSL connections, or data will be
+    //    lost for UDP connections.
+    sendAT(GF("+CIPRECVTYPE=5,2"));
+    waitResponse();
+
+    DBG(GF("### Modem:"), getModemName());
+    return true;
+  }
 
   /*
    * Power functions
@@ -839,8 +889,41 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     return (1 == rsp);
   }
 
+
+  size_t modemRead(size_t size, uint8_t mux) {
+    if (!sockets[mux]) return 0;
+    size_t len = 0;
+    // AT+CIPRECVDATA=<link_id>,<len>
+    sendAT(GF("+CIPRECVDATA="), mux, ',', (uint16_t)size);
+    // +CIPRECVDATA:<actual_len>,<"remote IP">,<remote port>,<data>
+    if (waitResponse(GF("+CIPRECVDATA:")) != 1) { return 0; }
+    len                  = streamGetIntBefore(',');
+    bool chars_remaining = true;
+    while (len-- && chars_remaining) {
+      chars_remaining = moveCharFromStreamToFifo(mux);
+    }
+    waitResponse();  // final ok
+    // Check how much is left in the buffer after reading.
+    sockets[mux]->sock_available = modemGetAvailable(mux);
+    // DBG("### READ:", len, "from", mux);
+    return len;
+  }
+
+  size_t modemGetAvailable(uint8_t mux) {
+    size_t result = 0;
+    sendAT(GF("+CIPRECVLEN?"));
+    if (waitResponse(GF("+CIPRECVLEN:")) != 1) { return result; }
+    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+      long mux_avail = stream.parseInt();
+      if (sockets[muxNo]) { sockets[muxNo]->sock_available = mux_avail; }
+    }
+    waitResponse();  // ends with OK
+    result = sockets[mux]->sock_available;
+    if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
+    return result;
+  }
+
   bool modemGetConnected(uint8_t mux) {
-    if (!(mux < TINY_GSM_MUX_COUNT)) { return false; }
     sendAT(GF("+CIPSTATE?"));
     bool verified_connections[TINY_GSM_MUX_COUNT] = {0, 0, 0, 0, 0};
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
@@ -871,29 +954,15 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF("+IPD,"))) {
-      int8_t  mux       = streamGetIntBefore(',');
-      int16_t len       = streamGetIntBefore(':');
-      size_t  len_orig  = len;
-      size_t  prev_size = sockets[mux]->rx.size();
+    if (data.endsWith(GF(AT_NL "+IPD,"))) {
+      int8_t   mux = streamGetIntBefore(',');
+      uint16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-        if (len > sockets[mux]->rx.free()) {
-          DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
-          // reset the len to read to the amount free
-          len = sockets[mux]->rx.free();
-        }
-        bool chars_remaining = true;
-        while (len-- && chars_remaining) {
-          chars_remaining = moveCharFromStreamToFifo(mux);
-        }
-        // TODO(SRGDamia1): deal with buffer overflow
-        if (len_orig != sockets[mux]->rx.size() - prev_size) {
-          DBG("### Different number of characters received than expected: ",
-              sockets[mux]->rx.size() - prev_size, " vs ", len_orig);
-        }
+        sockets[mux]->got_data       = true;
+        sockets[mux]->sock_available = len;
       }
       data = "";
-      DBG("### Got Data: ", len_orig, "on", mux);
+      DBG("### Got Data:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("CLOSED"))) {
       int8_t muxStart = TinyGsmMax(0,
