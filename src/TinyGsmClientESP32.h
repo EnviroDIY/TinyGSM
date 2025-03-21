@@ -130,17 +130,27 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
     virtual void stop(uint32_t maxWaitMs) {
       TINY_GSM_YIELD();
-      // Update available data first, because if the socket was closed
-      // externally, the module may have thrown away the data
-      at->modemGetAvailable(mux);
-      // Now we throw away any remaining data in the modem buffer
-      // We explicitly toss it here because the socket will appear open in
-      // response to connected() even after it closes until all data is read to
-      // give the user a chance to recover the data if they want it.
-      dumpModemBuffer(maxWaitMs);
-      at->sendAT(GF("+CIPCLOSE="), mux);
+      if (sock_connected || sock_available) {
+        // Update available data first, because if the socket was closed
+        // externally, the module may have thrown away the data
+        at->modemGetAvailable(mux);
+        // Now we throw away any remaining data in the modem buffer
+        // We explicitly toss it here because the socket will appear open in
+        // response to connected() even after it closes until all data is read
+        // to give the user a chance to recover the data if they want it.
+        dumpModemBuffer(maxWaitMs);
+      }
+      // NOTE: It should be safe to only send the close here if sock_connected
+      // reads true because the above will have updated sock_connected
+      // (dumpModemBuffer calls modemRead until sock_available=0, modemRead
+      // calls modemGetAvailable on every read to update sock_available, once
+      // sock_available=0 modemGetAvailable calls modemGetConnected, and
+      // modemGetConnected updates sock_connected for all sockets.)
+      if (sock_connected) {
+        at->sendAT(GF("+CIPCLOSE="), mux);
+        at->waitResponse(maxWaitMs);
+      }
       sock_connected = false;
-      at->waitResponse(maxWaitMs);
       rx.clear();
     }
     void stop() override {
@@ -906,13 +916,14 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // AT+CIPRECVDATA=<link_id>,<len>
     sendAT(GF("+CIPRECVDATA="), mux, ',', (uint16_t)size);
     // +CIPRECVDATA:<actual_len>,<"remote IP">,<remote port>,<data>
-    if (waitResponse(GF("+CIPRECVDATA:")) != 1) { return 0; }
-    len                  = streamGetIntBefore(',');
-    bool chars_remaining = true;
-    while (len-- && chars_remaining) {
-      chars_remaining = moveCharFromStreamToFifo(mux);
+    if (waitResponse(GF("+CIPRECVDATA:")) == 1) {
+      len                  = streamGetIntBefore(',');
+      bool chars_remaining = true;
+      while (len-- && chars_remaining) {
+        chars_remaining = moveCharFromStreamToFifo(mux);
+      }
+      waitResponse();  // final ok
     }
-    waitResponse();  // final ok
     // Check how much is left in the buffer after reading.
     sockets[mux]->sock_available = modemGetAvailable(mux);
     // DBG("### READ:", len, "from", mux);
@@ -968,7 +979,10 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       int8_t   mux = streamGetIntBefore(',');
       uint16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-        sockets[mux]->got_data       = true;
+        sockets[mux]->got_data = true;
+        // TODO: I'm not sure if each +IPD URC reports the amount newly received
+        // or the total now in the buffer. It appears to be the latter.
+        // sockets[mux]->sock_available = sockets[mux]->sock_available + len;
         sockets[mux]->sock_available = len;
       }
       data = "";

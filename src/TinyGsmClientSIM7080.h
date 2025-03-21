@@ -983,44 +983,39 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
 
   size_t modemRead(size_t size, uint8_t mux) {
     if (!sockets[mux]) { return 0; }
+    int16_t len_confirmed = 0;
 
     sendAT(GF("+CARECV="), mux, ',', (uint16_t)size);
+    if (waitResponse(GF("+CARECV:")) == 1) {
+      // uint8_t ret_mux = stream.parseInt();
+      // streamSkipUntil(',');
+      // const int16_t len_confirmed = streamGetIntBefore('\n');
+      // DBG("### READING:", len_confirmed, "from", ret_mux);
 
-    if (waitResponse(GF("+CARECV:")) != 1) { return 0; }
+      // if (ret_mux != mux) {
+      //   DBG("### Data from wrong mux! Got", ret_mux, "expected", mux);
+      //   waitResponse();
+      //   sockets[mux]->sock_available = modemGetAvailable(mux);
+      //   return 0;
+      // }
 
-    // uint8_t ret_mux = stream.parseInt();
-    // streamSkipUntil(',');
-    // const int16_t len_confirmed = streamGetIntBefore('\n');
-    // DBG("### READING:", len_confirmed, "from", ret_mux);
+      // NOTE:  manual says the mux number is returned before the number of
+      // characters available, but in tests only the number is returned
 
-    // if (ret_mux != mux) {
-    //   DBG("### Data from wrong mux! Got", ret_mux, "expected", mux);
-    //   waitResponse();
-    //   sockets[mux]->sock_available = modemGetAvailable(mux);
-    //   return 0;
-    // }
+      len_confirmed = stream.parseInt();
+      streamSkipUntil(',');  // skip the comma}
 
-    // NOTE:  manual says the mux number is returned before the number of
-    // characters available, but in tests only the number is returned
-
-    int16_t len_confirmed = stream.parseInt();
-    streamSkipUntil(',');  // skip the comma
-    if (len_confirmed <= 0) {
-      waitResponse();
-      sockets[mux]->sock_available = modemGetAvailable(mux);
-      return 0;
-    }
-
-    for (int i = 0; i < len_confirmed; i++) {
-      uint32_t startMillis = millis();
-      while (!stream.available() &&
-             (millis() - startMillis < sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
+      for (int i = 0; i < len_confirmed; i++) {
+        uint32_t startMillis = millis();
+        while (!stream.available() &&
+               (millis() - startMillis < sockets[mux]->_timeout)) {
+          TINY_GSM_YIELD();
+        }
+        char c = stream.read();
+        sockets[mux]->rx.put(c);
       }
-      char c = stream.read();
-      sockets[mux]->rx.put(c);
+      waitResponse();  // final ok
     }
-    waitResponse();
     // make sure the sock available number is accurate again
     sockets[mux]->sock_available = modemGetAvailable(mux);
     return len_confirmed;
@@ -1029,14 +1024,15 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   size_t modemGetAvailable(uint8_t mux) {
     // If the socket doesn't exist, just return
     if (!sockets[mux]) { return 0; }
-    // NOTE: This gets how many characters are available on all connections that
-    // have data.  It does not return all the connections, just those with data.
+    // NOTE: This gets how many characters are available on all connections
+    // that have data.  It does not return all the connections, just those
+    // with data.
     sendAT(GF("+CARECV?"));
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
       int res = waitResponse(3000, GF("+CARECV:"), GFP(GSM_OK), GFP(GSM_ERROR));
-      // if we get the +CARECV: response, read the mux number and the number of
-      // characters available
+      // if we get the +CARECV: response, read the mux number and the number
+      // of characters available
       if (res == 1) {
         int               ret_mux = streamGetIntBefore(',');
         size_t            result  = streamGetIntBefore('\n');
