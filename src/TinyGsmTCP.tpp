@@ -359,7 +359,7 @@ class TinyGsmTCP {
     // sockets asking if any data is available
     for (int mux = 0; mux < muxCount; mux++) {
       GsmClient* sock = thisModem().sockets[mux];
-      if (sock && sock->got_data) {
+      if (sock && sock->got_data && sock->sock_available == 0) {
         sock->got_data       = false;
         sock->sock_available = thisModem().modemGetAvailable(mux);
       }
