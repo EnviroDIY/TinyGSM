@@ -422,7 +422,6 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   void parseCertificateName(const char* cert_name, char* parsed_namespace,
                             uint8_t& parsed_number) {
     // pull the namespace out of the name
-    Serial.write(cert_name, strlen(cert_name) - 2);
     memcpy(parsed_namespace, cert_name, strlen(cert_name) - 2);
     parsed_namespace[strlen(cert_name) - 2] = '\0';
     // pull the number out of the name
