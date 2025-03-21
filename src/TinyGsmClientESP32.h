@@ -130,6 +130,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
     virtual void stop(uint32_t maxWaitMs) {
       TINY_GSM_YIELD();
+      dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
       at->waitResponse(maxWaitMs);
