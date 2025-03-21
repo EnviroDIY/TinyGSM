@@ -245,13 +245,14 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientEspressif"));
+    bool success = true;
 
     if (!testAT()) { return false; }
     if (pin && strlen(pin) > 0) {
       DBG("Espressif modules do not use an unlock pin!");
     }
     sendAT(GF("E0"));  // Echo Off
-    if (waitResponse() != 1) { return false; }
+    success &= waitResponse() == 1;
 
 #ifdef TINY_GSM_DEBUG
     sendAT(GF("+SYSLOG=1"));  // turn on verbose error codes
@@ -261,15 +262,16 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     waitResponse();
 
     sendAT(GF("+CIPMUX=1"));  // Enable Multiple Connections
-    if (waitResponse() != 1) { return false; }
+    success &= waitResponse() == 1;
     sendAT(GF("+CWMODE=1"));  // Put into "station" mode
     if (waitResponse() != 1) {
       sendAT(GF("+CWMODE_CUR=1"));  // Attempt "current" station mode command
                                     // for some firmware variants if needed
-      if (waitResponse() != 1) { return false; }
+      success &= waitResponse() == 1;
     }
     sendAT(GF("+CIPDINFO=0"));  // do not show the remote host and port in
                                 // “+IPD” and “+CIPRECVDATA” messages.
+    success &= waitResponse() == 1;
 
     // Set the data receive mode to have the module buffer data for all
     // connections AT+CIPRECVTYPE=<link ID>,<mode>
@@ -287,10 +289,10 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     //    transmission will be blocked for TCP/SSL connections, or data will be
     //    lost for UDP connections.
     sendAT(GF("+CIPRECVTYPE=5,2"));
-    waitResponse();
+    success &= waitResponse() == 1;
 
     DBG(GF("### Modem:"), getModemName());
-    return true;
+    return success;
   }
 
   /*
@@ -982,19 +984,29 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       DBG("### Network time updated.");
       return true;
     } else if (data.endsWith(GF("busy p..."))) {
-      streamSkipUntil('\n');  // Refresh time and time zone by network
+      streamSkipUntil('\n');
       data = "";
-      DBG("### Busy, please wait");
-      return false;
+      // DBG("### Busy, please wait");
+      return true;
+    } else if (data.endsWith(GF(AT_NL "ready" AT_NL))) {
+      streamSkipUntil('\n');
+      data = "";
+      // DBG("### Module ready!");
+      return true;
     } else if (data.endsWith(GF("WIFI GOT IP"))) {
-      streamSkipUntil('\n');  // Refresh time and time zone by network
+      streamSkipUntil('\n');
       data = "";
-      DBG("### Wifi got IP");
+      // DBG("### Wifi got IP");
       return true;
     } else if (data.endsWith(GF("WIFI CONNECTED"))) {
-      streamSkipUntil('\n');  // Refresh time and time zone by network
+      streamSkipUntil('\n');
       data = "";
-      DBG("### Wifi connected");
+      // DBG("### Wifi connected");
+      return true;
+    } else if (data.endsWith(GF("WIFI DISCONNECT"))) {
+      streamSkipUntil('\n');
+      data = "";
+      // DBG("### Wifi disconnected");
       return true;
     }
     return false;

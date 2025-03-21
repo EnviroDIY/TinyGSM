@@ -76,12 +76,14 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientEspressif"));
 
+    bool success = true;
+
     if (!thisModem().testAT()) { return false; }
     if (pin && strlen(pin) > 0) {
       DBG("Espressif modules do not use an unlock pin!");
     }
     thisModem().sendAT(GF("E0"));  // Echo Off
-    if (thisModem().waitResponse() != 1) { return false; }
+    success &= thisModem().waitResponse() == 1;
 
 #ifdef TINY_GSM_DEBUG
     thisModem().sendAT(GF("+SYSLOG=1"));  // turn on verbose error codes
@@ -91,19 +93,20 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     thisModem().waitResponse();
 
     thisModem().sendAT(GF("+CIPMUX=1"));  // Enable Multiple Connections
-    if (thisModem().waitResponse() != 1) { return false; }
+    success &= thisModem().waitResponse() == 1;
     thisModem().sendAT(GF("+CWMODE=1"));  // Put into "station" mode
     if (thisModem().waitResponse() != 1) {
       thisModem().sendAT(
           GF("+CWMODE_CUR=1"));  // Attempt "current" station mode command
                                  // for some firmware variants if needed
-      if (thisModem().waitResponse() != 1) { return false; }
+      success &= thisModem().waitResponse() == 1;
     }
     thisModem().sendAT(
         GF("+CIPDINFO=0"));  // do not show the remote host and port in “+IPD”
                              // and “+CIPRECVDATA” messages.
+    success &= thisModem().waitResponse() == 1;
     DBG(GF("### Modem:"), thisModem().getModemName());
-    return true;
+    return success;
   }
 
   bool setBaudImpl(uint32_t baud) {
