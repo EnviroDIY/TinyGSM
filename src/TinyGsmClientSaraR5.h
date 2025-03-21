@@ -21,7 +21,7 @@
 // opens the connection and returns the connection number it opened.
 
 #if !defined(TINY_GSM_CONNECT_TIMEOUT)
-#define TINY_GSM_RX_BUFFER 120
+#define TINY_GSM_CONNECT_TIMEOUT 120
 #endif
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
