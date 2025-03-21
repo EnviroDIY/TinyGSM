@@ -13,6 +13,7 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#define TINY_GSM_MUX_DYNAMIC
 
 #include "TinyGsmClientEspressif.h"
 #include "TinyGsmTCP.tpp"
@@ -70,6 +71,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     bool init(TinyGsmESP32* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_connected = false;
+      is_mid_send    = false;
 
       // NOTE: Although the ESP32 would be happy to give us a mux number, we
       // need to assign a mux number here first so that we can assign the
@@ -101,6 +103,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
    public:
     virtual int connect(const char* host, uint16_t port, int timeout_s) {
+      is_mid_send = false;
       if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] != nullptr) { stop(); }
       TINY_GSM_YIELD();
       rx.clear();
@@ -129,6 +132,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     virtual void stop(uint32_t maxWaitMs) {
+      is_mid_send = false;
       TINY_GSM_YIELD();
       if (sock_connected || sock_available) {
         // Update available data first, because if the socket was closed
@@ -811,8 +815,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
    * Client related functions
    */
  protected:
-  bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
-                    int timeout_s = 75) {
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* mux,
+                        int timeout_s) {
     uint32_t timeout_ms    = ((uint32_t)timeout_s) * 1000;
     uint8_t  requested_mux = *mux;
     bool     ssl           = sockets[requested_mux]->is_secure;
@@ -909,7 +913,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   }
 
 
-  size_t modemRead(size_t size, uint8_t mux) {
+  size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
     size_t len = 0;
     // AT+CIPRECVDATA=<link_id>,<len>
@@ -929,7 +933,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     return len;
   }
 
-  size_t modemGetAvailable(uint8_t mux) {
+  size_t modemGetAvailableImpl(uint8_t mux) {
     size_t result = 0;
     sendAT(GF("+CIPRECVLEN?"));
     if (waitResponse(GF("+CIPRECVLEN:")) != 1) { return result; }
@@ -943,7 +947,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     return result;
   }
 
-  bool modemGetConnected(uint8_t mux) {
+  bool modemGetConnectedImpl(uint8_t mux) {
     sendAT(GF("+CIPSTATE?"));
     bool verified_connections[TINY_GSM_MUX_COUNT] = {0, 0, 0, 0, 0};
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {

@@ -14,6 +14,7 @@
 
 #define TINY_GSM_MUX_COUNT 8
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#define TINY_GSM_MUX_STATIC
 
 #include "TinyGsmClientSIM70xx.h"
 #include "TinyGsmTCP.tpp"
@@ -65,6 +66,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
+      is_mid_send    = false;
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
@@ -96,6 +98,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     virtual void stop(uint32_t maxWaitMs) {
+      is_mid_send = false;
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
@@ -343,8 +346,8 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
    * Client related functions
    */
  protected:
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    int timeout_s = 75) {
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
+                        int timeout_s) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
 
     // when not using SSL, the TCP application toolkit is more stable
@@ -356,21 +359,24 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
                          GF("ERROR" AT_NL), GF("CLOSE OK" AT_NL)));
   }
 
-  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+  bool modemBeginSendImpl(size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
-    if (waitResponse(GF(">")) != 1) { return 0; }
-
-    stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-    stream.flush();
-
+    return waitResponse(GF(">")) == 1;
+  }
+  // Between the modemBeginSend and modemEndSend, modemSend calls:
+  // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+  // stream.flush();
+  int16_t modemEndSendImpl(uint16_t len, uint8_t mux) {
     if (waitResponse(GF(AT_NL "DATA ACCEPT:"), GF("SEND FAIL")) != 1) {
       return 0;
     }
-    streamSkipUntil(',');  // Skip mux
-    return streamGetIntBefore('\n');
+    uint8_t ret_mux = streamGetIntBefore(',');   // check mux
+    int16_t sent    = streamGetIntBefore('\n');  // check send length
+    if (mux == ret_mux) return sent;
+    return 0;
   }
 
-  size_t modemRead(size_t size, uint8_t mux) {
+  size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
 
 #ifdef TINY_GSM_USE_HEX
@@ -419,7 +425,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
     return len_requested;
   }
 
-  size_t modemGetAvailable(uint8_t mux) {
+  size_t modemGetAvailableImpl(uint8_t mux) {
     if (!sockets[mux]) return 0;
 
     sendAT(GF("+CIPRXGET=4,"), mux);
@@ -435,7 +441,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
     return result;
   }
 
-  bool modemGetConnected(uint8_t mux) {
+  bool modemGetConnectedImpl(uint8_t mux) {
     sendAT(GF("+CIPSTATUS="), mux);
     waitResponse(GF("+CIPSTATUS"));
     int8_t res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),

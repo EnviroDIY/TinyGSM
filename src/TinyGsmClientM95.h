@@ -15,6 +15,7 @@
 
 #define TINY_GSM_MUX_COUNT 6
 #define TINY_GSM_BUFFER_READ_NO_CHECK
+#define TINY_GSM_MUX_STATIC
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -88,6 +89,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
       this->at       = modem;
       sock_available = 0;
       sock_connected = false;
+      is_mid_send    = false;
 
       // The M95 generally lets you choose the mux number, but we want to try
       // to find an empty place in the socket array for it.
@@ -122,6 +124,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     virtual void stop(uint32_t maxWaitMs) {
+      is_mid_send          = false;
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+QICLOSE="), mux);
@@ -460,8 +463,8 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
    * Client related functions
    */
  protected:
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    int timeout_s = 75) {
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
+                        int timeout_s) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     sendAT(GF("+QIOPEN="), mux, GF(",\""), GF("TCP"), GF("\",\""), host,
            GF("\","), port);
@@ -471,13 +474,17 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
     return (1 == rsp);
   }
 
-  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+  bool modemBeginSendImpl(size_t len, uint8_t mux) {
     sendAT(GF("+QISEND="), mux, ',', (uint16_t)len);
-    if (waitResponse(GF(">")) != 1) { return 0; }
-    stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-    stream.flush();
+    return waitResponse(GF(">")) == 1;
+  }
+  // Between the modemBeginSend and modemEndSend, modemSend calls:
+  // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+  // stream.flush();
+  int16_t modemEndSendImpl(uint16_t len, uint8_t) {
     if (waitResponse(GF(AT_NL "SEND OK")) != 1) { return 0; }
-
+    return len;
+    // TODO(?): get len/ack properly
     // bool allAcknowledged = false;
     // // bool failed = false;
     // while ( !allAcknowledged ) {
@@ -486,7 +493,8 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
     //     return -1;
     //   } else {
     //     streamSkipUntil(',');  // Skip total length sent on connection
-    //     streamSkipUntil(',');  // Skip length already acknowledged by remote
+    //     streamSkipUntil(',');  // Skip length already acknowledged by
+    //     remote
     //     // Make sure the total length un-acknowledged is 0
     //     if ( streamGetIntBefore('\n') == 0 ) {
     //       allAcknowledged = true;
@@ -494,11 +502,9 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
     //   }
     // }
     // waitResponse(5000L);
-
-    return len;  // TODO(?): get len/ack properly
   }
 
-  size_t modemRead(size_t size, uint8_t mux) {
+  size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
     // TODO(?):  Does this work????
     // AT+QIRD=<id>,<sc>,<sid>,<len>
@@ -539,11 +545,12 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
   }
 
   // Not possible to check the number of characters remaining in buffer
-  size_t modemGetAvailable(uint8_t) {
-    return 0;
-  }
+  // This doesn't even need to be implemented
+  // size_t modemGetAvailableImpl(uint8_t) {
+  //   return 0;
+  // }
 
-  bool modemGetConnected(uint8_t mux) {
+  bool modemGetConnectedImpl(uint8_t mux) {
     sendAT(GF("+QISTATE=1,"), mux);
     // +QISTATE: 0,"TCP","151.139.237.11",80,5087,4,1,0,0,"uart1"
 

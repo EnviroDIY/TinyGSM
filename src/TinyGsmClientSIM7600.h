@@ -23,6 +23,7 @@
 // #define TINY_GSM_DEFAULT_SSL_CTX 0
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#define TINY_GSM_MUX_STATIC
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -117,6 +118,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
+      is_mid_send    = false;
 
       // The SIM7600 series generally lets you choose the mux number, but we
       // want to try to find an empty place in the socket array for it.
@@ -153,6 +155,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     virtual void stop(uint32_t maxWaitMs) {
+      is_mid_send = false;
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
@@ -200,6 +203,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     virtual void stop(uint32_t maxWaitMs) override {
+      is_mid_send = false;
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CCHCLOSE="), mux);
       sock_connected = false;
@@ -841,8 +845,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   }
 
  protected:
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    int timeout_s = 15) {
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
+                        int timeout_s) {
     int8_t   rsp;
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
@@ -896,7 +900,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   // NOTE: The implementations of modemSend(...), modemRead(...), and
   // modemGetAvailable(...) are almost completely different for SSL and
   // unsecured sockets.
-  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+  bool modemBeginSendImpl(size_t len, uint8_t mux) {
     if (!sockets[mux]) return 0;
     bool ssl = sockets[mux]->is_secure;
     if (ssl) {
@@ -904,12 +908,14 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     } else {
       sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     }
-    if (waitResponse(GF(">")) != 1) { return 0; }
-    stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-    stream.flush();
-
+    return waitResponse(GF(">")) == 1;
+  }
+  // Between the modemBeginSend and modemEndSend, modemSend calls:
+  // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+  // stream.flush();
+  int16_t modemEndSendImpl(uint16_t len, uint8_t mux) {
     if (waitResponse() != 1) { return 0; }
-
+    bool ssl = sockets[mux]->is_secure;
     if (ssl) {
       // Because we set CCHSET to return the send result, we should get a
       // +CCHSEND: <session_id>,<err>
@@ -917,22 +923,23 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
                        GF("CLOSE OK" AT_NL)) != 1) {
         return 0;
       }
-      streamSkipUntil(',');  // skip the outgoing mux
-      // TODO: validate mux
-      streamSkipUntil('\n');  // skip the error code
-      return len;
+      uint8_t ret_mux = streamGetIntBefore(',');        // check mux
+      bool    result  = streamGetIntBefore('\n') == 0;  // check error code
+      if (ret_mux == mux && result) { return len; }
+      return 0;
     } else {
       // after OK, returns +CIPSEND: <link_num>,<reqSendLength>,<cnfSendLength>
       if (waitResponse(GF(AT_NL "+CIPSEND:")) != 1) { return 0; }
-      streamSkipUntil(',');  // Skip mux
-      // TODO(?):  verify the returned mux
+      uint8_t ret_mux = streamGetIntBefore(',');  // check mux
       streamSkipUntil(',');  // Skip requested bytes to send
       // TODO(?):  make sure requested and confirmed bytes match
-      return streamGetIntBefore('\n');
+      int16_t sent = streamGetIntBefore('\n');  // check send length
+      if (mux == ret_mux) { return sent; }
+      return 0;
     }
   }
 
-  size_t modemRead(size_t size, uint8_t mux) {
+  size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
     bool    ssl           = sockets[mux]->is_secure;
     int16_t len_returned  = 0;
@@ -1011,7 +1018,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     return len_returned;
   }
 
-  size_t modemGetAvailable(uint8_t mux) {
+  size_t modemGetAvailableImpl(uint8_t mux) {
     if (!sockets[mux]) return 0;
     bool   ssl    = sockets[mux]->is_secure;
     size_t result = 0;
@@ -1055,7 +1062,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     return result;
   }
 
-  bool modemGetConnected(uint8_t mux) {
+  bool modemGetConnectedImpl(uint8_t mux) {
     // TODO(SRGD): I think this only returns the TCP socket connection status,
     // not the SSL connection status
     // Read the status of all sockets at once

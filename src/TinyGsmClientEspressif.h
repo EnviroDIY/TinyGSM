@@ -331,11 +331,14 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
    * Client related functions
    */
  protected:
-  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    thisModem().sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
-    if (thisModem().waitResponse(GF(">")) != 1) { return 0; }
-    stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-    stream.flush();
+  bool modemBeginSendImpl(uint16_t len, uint8_t mux) {
+    thisModem().sendAT(GF("+CIPSEND="), mux, ',', len);
+    return thisModem().waitResponse(GF(">")) == 1;
+  }
+  // Between the modemBeginSend and modemEndSend, modemSend calls:
+  // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+  // stream.flush();
+  int16_t modemEndSendImpl(uint16_t len, uint8_t) {
     if (thisModem().waitResponse(10000L, GF(AT_NL "SEND OK" AT_NL)) != 1) {
       return 0;
     }

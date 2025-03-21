@@ -13,7 +13,13 @@
 // #define TINY_GSM_USE_HEX
 
 #define TINY_GSM_MUX_COUNT 10
+
+#if !defined(TINY_GSM_CONNECT_TIMEOUT)
+#define TINY_GSM_RX_BUFFER 15
+#endif
+
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#define TINY_GSM_MUX_STATIC
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -103,6 +109,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
+      is_mid_send    = false;
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
@@ -134,6 +141,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     virtual void stop(uint32_t maxWaitMs) {
+      is_mid_send = false;
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
@@ -627,8 +635,8 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
    * Client related functions
    */
  protected:
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    int timeout_s = 15) {
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
+                        int timeout_s) {
     // Make sure we'll be getting data manually on this connection
     sendAT(GF("+CIPRXGET=1"));
     if (waitResponse() != 1) { return false; }
@@ -642,19 +650,24 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     return true;
   }
 
-  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+  bool modemBeginSendImpl(size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
-    if (waitResponse(GF(">")) != 1) { return 0; }
-    stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-    stream.flush();
+    return waitResponse(GF(">")) == 1;
+  }
+  // Between the modemBeginSend and modemEndSend, modemSend calls:
+  // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+  // stream.flush();
+  int16_t modemEndSendImpl(uint16_t len, uint8_t mux) {
     if (waitResponse(GF(AT_NL "+CIPSEND:")) != 1) { return 0; }
-    streamSkipUntil(',');  // Skip mux
-    streamSkipUntil(',');  // Skip requested bytes to send
+    uint8_t ret_mux = streamGetIntBefore(',');  // check mux
+    streamSkipUntil(',');                       // Skip requested bytes to send
     // TODO(?):  make sure requested and confirmed bytes match
-    return streamGetIntBefore('\n');
+    int16_t sent = streamGetIntBefore('\n');  // check send length
+    if (mux == ret_mux) return sent;
+    return 0;
   }
 
-  size_t modemRead(size_t size, uint8_t mux) {
+  size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
 #ifdef TINY_GSM_USE_HEX
     sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
@@ -698,7 +711,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     return len_requested;
   }
 
-  size_t modemGetAvailable(uint8_t mux) {
+  size_t modemGetAvailableImpl(uint8_t mux) {
     if (!sockets[mux]) return 0;
     sendAT(GF("+CIPRXGET=4,"), mux);
     size_t result = 0;
@@ -713,7 +726,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     return result;
   }
 
-  bool modemGetConnected(uint8_t mux) {
+  bool modemGetConnectedImpl(uint8_t mux) {
     // Read the status of all sockets at once
     sendAT(GF("+CIPCLOSE?"));
     if (waitResponse(GF("+CIPCLOSE:")) != 1) { return false; }

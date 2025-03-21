@@ -19,6 +19,7 @@
 // identifier.
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#define TINY_GSM_MUX_STATIC
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -110,6 +111,7 @@ class TinyGsmSequansMonarch
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
+      is_mid_send    = false;
 
       // adjust for zero indexed socket array vs Sequans' 1 indexed mux numbers
       // using modulus will force 6 back to 0
@@ -125,6 +127,7 @@ class TinyGsmSequansMonarch
 
    public:
     virtual int connect(const char* host, uint16_t port, int timeout_s) {
+      is_mid_send = false;
       if (sock_connected) stop();
       TINY_GSM_YIELD();
       rx.clear();
@@ -134,6 +137,7 @@ class TinyGsmSequansMonarch
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     virtual void stop(uint32_t maxWaitMs) {
+      is_mid_send = false;
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+SQNSH="), mux);
       sock_connected = false;
@@ -280,7 +284,7 @@ class TinyGsmSequansMonarch
         sock->got_data       = false;
         sock->sock_available = modemGetAvailable(mux);
         // modemGetConnected() always checks the state of ALL socks
-        modemGetConnected();
+        modemGetConnected(1);
       }
     }
     while (stream.available()) { waitResponse(15, nullptr, nullptr); }
@@ -498,8 +502,8 @@ class TinyGsmSequansMonarch
    * Client related functions
    */
  protected:
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    int timeout_s = 75) {
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
+                        int timeout_s) {
     int8_t   rsp;
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
     bool     ssl         = sockets[mux]->is_secure;
@@ -570,7 +574,7 @@ class TinyGsmSequansMonarch
     return connected;
   }
 
-  int modemSend(const void* buff, size_t len, uint8_t mux) {
+  int16_t modemSendImpl(const void* buff, size_t len, uint8_t mux) {
     if (sockets[mux % TINY_GSM_MUX_COUNT]->sock_connected == false) {
       DBG("### Sock closed, cannot send data!");
       return 0;
@@ -616,7 +620,21 @@ class TinyGsmSequansMonarch
     // return 0;
   }
 
-  size_t modemRead(size_t size, uint8_t mux) {
+#if 0
+  bool modemBeginSendImpl(size_t len, uint8_t mux) {
+    sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
+    return waitResponse(10000L, GF(AT_NL "> ")) == 1;
+  }
+  int16_t modemEndSendImpl(uint16_t len, uint8_t) {
+    if (waitResponse() != 1) {
+      DBG("### no OK after send");
+      return 0;
+    }
+    return len;
+  }
+#endif
+
+  size_t modemReadImpl(size_t size, uint8_t mux) {
     sendAT(GF("+SQNSRECV="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+SQNSRECV: ")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
@@ -637,7 +655,7 @@ class TinyGsmSequansMonarch
     return len;
   }
 
-  size_t modemGetAvailable(uint8_t mux) {
+  size_t modemGetAvailableImpl(uint8_t mux) {
     sendAT(GF("+SQNSI="), mux);
     size_t result = 0;
     if (waitResponse(GF("+SQNSI:")) == 1) {
@@ -651,7 +669,7 @@ class TinyGsmSequansMonarch
     return result;
   }
 
-  bool modemGetConnected(uint8_t mux = 1) {
+  bool modemGetConnectedImpl(uint8_t mux = 1) {
     // This single command always returns the connection status of all
     // six possible sockets.
     sendAT(GF("+SQNSS"));
