@@ -67,7 +67,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 // NOTE:  DO NOT AUTOBAUD in production code.  Once you've established
 // communication, set a fixed baud rate using modem.setBaud(#).
 #define GSM_AUTOBAUD_MIN 9600
-#define GSM_AUTOBAUD_MAX 115200
+#define GSM_AUTOBAUD_MAX 921600
 
 // Add a reception delay, if needed.
 // This may be needed for a fast processor at a slow baud rate.
