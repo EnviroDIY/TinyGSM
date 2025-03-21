@@ -182,7 +182,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     if (thisModem().waitResponse(10000L, GF(AT_NL "ready" AT_NL)) != 1) {
       return false;
     }
-    delay(500);
+    delay(850);
     return thisModem().init(pin);
   }
 

@@ -288,7 +288,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     //    wait for the host MCU to read. If the buffer is full, the socket
     //    transmission will be blocked for TCP/SSL connections, or data will be
     //    lost for UDP connections.
-    sendAT(GF("+CIPRECVTYPE=5,2"));
+    sendAT(GF("+CIPRECVTYPE=5,1"));
     success &= waitResponse() == 1;
 
     DBG(GF("### Modem:"), getModemName());
