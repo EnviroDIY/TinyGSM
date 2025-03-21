@@ -895,6 +895,11 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
         return false;
       }
     } else if (data.endsWith(GF("RECV EVENT" AT_NL))) {
+      // WHAT??? No, no, no, you can't issue a sendAT/waitResponse here!! The
+      // handle URC's function is the module-unique part of the general purpose
+      // waitResponse function.
+      // TODO: This is a problem, we can't issue a sendAT/waitResponse here.
+      // Totally sloppy QC on my part to let this through.
       sendAT(GF("+CCHRECV?"));
       String res = "";
       waitResponse(2000L, res);
