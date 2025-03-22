@@ -615,41 +615,20 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
 #endif
     streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(',');  // Skip mux
-    int16_t len_requested = streamGetIntBefore(',');
-    //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    int16_t len_confirmed = streamGetIntBefore('\n');
+    // TODO: validate mux
+    int16_t len_reported = streamGetIntBefore(',');
+    //  ^^ Requested number of data bytes (1-1460 bytes) to be read
+    int16_t len_remaining = streamGetIntBefore('\n');
     // ^^ Confirmed number of data bytes to be read, which may be less than
     // requested. 0 indicates that no data can be read.
     // SRGD NOTE:  Contrary to above (which is copied from AT command manual)
-    // this is actually be the number of bytes that will be remaining in the
-    // buffer after the read.
-    for (int i = 0; i < len_requested; i++) {
-      uint32_t startMillis = millis();
-#ifdef TINY_GSM_USE_HEX
-      while (stream.available() < 2 &&
-             (millis() - startMillis < sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-      char buf[4] = {
-          0,
-      };
-      buf[0] = stream.read();
-      buf[1] = stream.read();
-      char c = strtol(buf, nullptr, 16);
-#else
-      while (!stream.available() &&
-             (millis() - startMillis < sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-      char c = stream.read();
-#endif
-      sockets[mux]->rx.put(c);
-    }
-    // DBG("### READ:", len_requested, "from", mux);
+    // the first number is the number of bytes returned and the second is the
+    // number of bytes that will be remaining in the buffer after the read.
+    size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
     // sockets[mux]->sock_available = modemGetAvailable(mux);
-    sockets[mux]->sock_available = len_confirmed;
+    sockets[mux]->sock_available = len_remaining;
     waitResponse();
-    return len_requested;
+    return len_read;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
@@ -659,6 +638,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
       streamSkipUntil(',');  // Skip mode 4
       streamSkipUntil(',');  // Skip mux
+      // TODO: validate mux
       result = streamGetIntBefore('\n');
       waitResponse();
     }

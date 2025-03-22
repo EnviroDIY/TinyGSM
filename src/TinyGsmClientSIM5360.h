@@ -674,42 +674,20 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     if (!sockets[mux]) return 0;
 #ifdef TINY_GSM_USE_HEX
     sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
-    if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
 #else
     sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
-    if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
 #endif
+    if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(',');  // Skip mux/cid (connecion id)
+    // TODO: validate mux
     int16_t len_requested = streamGetIntBefore(',');
-    //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    int16_t len_confirmed = streamGetIntBefore('\n');
+    //  ^^ Requested number of data bytes (1-1460 bytes) to be read
+    int16_t len_reported = streamGetIntBefore('\n');
     // ^^ The data length which not read in the buffer
-    for (int i = 0; i < len_requested; i++) {
-      uint32_t startMillis = millis();
-#ifdef TINY_GSM_USE_HEX
-      while (stream.available() < 2 &&
-             (millis() - startMillis < sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-      char buf[4] = {
-          0,
-      };
-      buf[0] = stream.read();
-      buf[1] = stream.read();
-      char c = strtol(buf, nullptr, 16);
-#else
-      while (!stream.available() &&
-             (millis() - startMillis < sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-      char c = stream.read();
-#endif
-      sockets[mux]->rx.put(c);
-    }
-    // DBG("### READ:", len_requested, "from", mux);
+    size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
     // sockets[mux]->sock_available = modemGetAvailable(mux);
-    sockets[mux]->sock_available = len_confirmed;
+    sockets[mux]->sock_available = len_reported;
     waitResponse();
     return len_requested;
   }
@@ -721,6 +699,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
       streamSkipUntil(',');  // Skip mode 4
       streamSkipUntil(',');  // Skip mux
+      // TODO: validate mux
       result = streamGetIntBefore('\n');
       waitResponse();
     }

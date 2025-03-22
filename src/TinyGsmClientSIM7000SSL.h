@@ -10,7 +10,6 @@
 #define SRC_TINYGSMCLIENTSIM7000SSL_H_
 
 // #define TINY_GSM_DEBUG Serial
-// #define TINY_GSM_USE_HEX
 
 #define TINY_GSM_MUX_COUNT 2
 #define TINY_GSM_SECURE_MUX_COUNT 2
@@ -220,7 +219,7 @@ class TinyGsmSim7000SSL
       }
     }
     // modemGetAvailable checks all socks, so we only want to do it once
-    // modemGetAvailable calls modemGetConnected(), which also checks allf
+    // modemGetAvailable calls modemGetConnected(), which also checks all socks
     if (check_socks) { modemGetAvailable(0); }
     while (stream.available()) { waitResponse(15, nullptr, nullptr); }
   }
@@ -851,7 +850,7 @@ class TinyGsmSim7000SSL
     //          26: Certificate’s common name does not match and time expired
     //          27: Connect failed
     streamSkipUntil(',');  // Skip mux
-    // TODO(SRGD): validate mux
+    // TODO: validate mux
 
     // make sure the connection really opened
     int8_t res = streamGetIntBefore('\n');
@@ -883,13 +882,12 @@ class TinyGsmSim7000SSL
     if (!sockets[mux]) { return 0; }
 
     sendAT(GF("+CARECV="), mux, ',', (uint16_t)size);
-
     if (waitResponse(GF("+CARECV:")) != 1) { return 0; }
 
     // uint8_t ret_mux = stream.parseInt();
     // streamSkipUntil(',');
-    // const int16_t len_confirmed = streamGetIntBefore('\n');
-    // DBG("### READING:", len_confirmed, "from", ret_mux);
+    // const int16_t len_reported = streamGetIntBefore('\n');
+    // DBG("### READING:", len_reported, "from", ret_mux);
 
     // if (ret_mux != mux) {
     //   DBG("### Data from wrong mux! Got", ret_mux, "expected", mux);
@@ -901,30 +899,14 @@ class TinyGsmSim7000SSL
     // NOTE:  manual says the mux number is returned before the number of
     // characters available, but in tests only the number is returned
 
-    int16_t len_confirmed = stream.parseInt();
-    streamSkipUntil(',');  // skip the comma
-    if (len_confirmed <= 0) {
-      waitResponse();
-      sockets[mux]->sock_available = modemGetAvailable(mux);
-      return 0;
-    }
-
-    for (int i = 0; i < len_confirmed; i++) {
-      uint32_t startMillis = millis();
-      while (!stream.available() &&
-             (millis() - startMillis < sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-      char c = stream.read();
-      sockets[mux]->rx.put(c);
-    }
-    waitResponse();
-    // DBG("### READ:", len_confirmed, "from", mux);
+    int16_t len_reported = streamGetIntBefore(',');
+    size_t  len_read     = moveCharsFromStreamToFifo(mux, len_reported);
+    waitResponse();  // final ok
     // make sure the sock available number is accurate again
     // the module is **EXTREMELY** testy about being asked to read more from
     // the buffer than exists; it will freeze until a hard reset or power cycle!
     sockets[mux]->sock_available = modemGetAvailable(mux);
-    return len_confirmed;
+    return len_read;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {

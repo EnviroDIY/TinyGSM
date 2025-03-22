@@ -946,68 +946,42 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
     bool    ssl           = sockets[mux]->is_secure;
-    int16_t len_returned  = 0;
+    int16_t len_reported  = 0;
     int16_t len_remaining = 0;
-#ifdef TINY_GSM_USE_HEX
     if (ssl) {
-      // it does not appear to be possible to send/recieve hex data on SSL
-      // sockets
-      return 0;
-    }
-    // <mode> - 3 – read data in HEX form, the max read length is 750
-    int8_t rx_mode = 3;
-#else
-    // <mode> - 2 – read data in ASCII, the max read length is 1500
-    int8_t rx_mode = 2;
+#if defined(TINY_GSM_USE_HEX) && defined(TINY_GSM_DEBUG)
+      DBG("### ERROR: SSL sockets do not support reading in HEX mode, reading "
+          "in ASCII mode");
 #endif
-    if (ssl) {
       // AT+CCHRECV=<session_id>[,<max_recv_len>]
       sendAT(GF("+CCHRECV="), mux, ',', (uint16_t)size);
       // response is +CCHRECV: DATA, <session_id>,<len>\n<data>
       if (waitResponse(GF("+CCHRECV:")) != 1) { return 0; }
       streamSkipUntil(',');  // Skip the word "DATA"
       streamSkipUntil(',');  // Skip mux/cid (connecion id)
-      // TODO: validate mux
-      len_returned = streamGetIntBefore('\n');
+      // TODO: validate mux/cid (connecion id)
+      len_reported = streamGetIntBefore('\n');
     } else {
-      sendAT(GF("+CIPRXGET="), rx_mode, ',', mux, ',', (uint16_t)size);
+#ifdef TINY_GSM_USE_HEX
+      sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
+#else
+      sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
+#endif
       if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
-      //+CIPRXGET: <mode>,<link_num>,<read_len>,<rest_len><data_in_hex>
-      //<read_len> Integer type, the length of data that has been read.
+      //+CIPRXGET: <mode>,<link_num>,<len_read>,<rest_len><data_in_hex>
+      //<len_read> Integer type, the length of data that has been read.
       //<rest_len> Integer type, the length of data which has not been read in
       // the buffer.
       streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
       streamSkipUntil(',');  // Skip mux/cid (connecion id)
-      // TODO: verify the mux/cid number
-      len_returned = streamGetIntBefore(',');
+      // TODO: validate mux/cid (connecion id)
+      len_reported = streamGetIntBefore(',');
       // ^^ Integer type, the length of data that has been read.
       len_remaining = streamGetIntBefore('\n');
       // ^^ Integer type, the length of data which has not been read in the
       // buffer.
     }
-    for (int i = 0; i < len_returned; i++) {
-      uint32_t startMillis = millis();
-#ifdef TINY_GSM_USE_HEX
-      while (stream.available() < 2 &&
-             (millis() - startMillis < sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-      char buf[4] = {
-          0,
-      };
-      buf[0] = stream.read();
-      buf[1] = stream.read();
-      char c = strtol(buf, NULL, 16);
-#else
-      while (!stream.available() &&
-             (millis() - startMillis < sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-      char c = stream.read();
-#endif
-      sockets[mux]->rx.put(c);
-    }
-    // DBG("### READ:", len_returned, " bytes from connection ", mux);
+    size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
     if (ssl) {
       // Returns +CCHRECV: {mux},0 after the data
       String await_response = "+CCHRECV: " + String(mux) + ",0";
@@ -1019,7 +993,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       sockets[mux]->sock_available = len_remaining;
       waitResponse();
     }
-    return len_returned;
+    return len_read;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
@@ -1056,7 +1030,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       if (waitResponse(GF("+CIPRXGET:")) == 1) {
         streamSkipUntil(',');  // Skip returned mode (4)
         streamSkipUntil(',');  // Skip mux
-        // TODO(?): verify the mux number
+        // TODO: validate mux
         result = streamGetIntBefore('\n');
       }
     }

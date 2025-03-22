@@ -949,22 +949,18 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
-    size_t len = 0;
+
     // AT+CIPRECVDATA=<link_id>,<len>
     sendAT(GF("+CIPRECVDATA="), mux, ',', (uint16_t)size);
     // +CIPRECVDATA:<actual_len>,<"remote IP">,<remote port>,<data>
-    if (waitResponse(GF("+CIPRECVDATA:")) == 1) {
-      len                  = streamGetIntBefore(',');
-      bool chars_remaining = true;
-      while (len-- && chars_remaining) {
-        chars_remaining = moveCharFromStreamToFifo(mux);
-      }
-      waitResponse();  // final ok
-    }
+    if (waitResponse(GF("+CIPRECVDATA:")) != 1) { return 0; }
+    size_t len_reported = streamGetIntBefore(',');
+    size_t len_read     = moveCharsFromStreamToFifo(mux, len_reported);
+    waitResponse();  // final ok
+
     // Check how much is left in the buffer after reading.
     sockets[mux]->sock_available = modemGetAvailable(mux);
-    // DBG("### READ:", len, "from", mux);
-    return len;
+    return len_read;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
