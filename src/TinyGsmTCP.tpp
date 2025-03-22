@@ -640,8 +640,8 @@ class TinyGsmTCP {
 #endif
 #if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
   size_t modemGetAvailableImpl(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool   modemGetConnectedImpl(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 #endif
+  bool modemGetConnectedImpl(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
 #endif  // SRC_TINYGSMTCP_H_
