@@ -263,7 +263,6 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
    * Basic functions
    */
  protected:
- protected:
   bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientEspressif"));
@@ -315,6 +314,27 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
     DBG(GF("### Modem:"), getModemName());
     return success;
+  }
+
+  void maintainImpl() {
+    // Keep listening for modem URC's and proactively iterate through
+    // sockets asking if any data is available
+    bool check_socks = false;
+    for (int mux = 0; mux < TINY_GSM_MUX_COUNT; mux++) {
+      GsmClientESP32* sock = sockets[mux];
+      if (sock && sock->got_data) {
+        sock->got_data = false;
+        if (sock->sock_available == 0) {
+          // NOTE: Only check the socket if says it got new data by the amount
+          // available is 0. This avoids extra un-needed checks.
+          check_socks = true;
+        }
+      }
+    }
+    // modemGetAvailable checks all socks, so we only want to do it once
+    // modemGetAvailable calls modemGetConnected(), which also checks all socks
+    if (check_socks) { modemGetAvailable(0); }
+    while (stream.available()) { waitResponse(15, nullptr, nullptr); }
   }
 
   /*
