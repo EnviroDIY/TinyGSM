@@ -117,10 +117,10 @@ class TinyGsmTCP {
   size_t modemGetAvailable(uint8_t mux) {
     return thisModem().modemGetAvailableImpl(mux);
   }
+#endif
   bool modemGetConnected(uint8_t mux) {
     return thisModem().modemGetConnectedImpl(mux);
   }
-#endif
 
   // destructor (protected!)
   ~TinyGsmTCP() {}
