@@ -82,6 +82,7 @@ jobs:
             TINY_GSM_MODEM_BG96,
             TINY_GSM_MODEM_A7672X,
             TINY_GSM_MODEM_ESP8266,
+            TINY_GSM_MODEM_ESP32,
             TINY_GSM_MODEM_M95,
             TINY_GSM_MODEM_M590,
             TINY_GSM_MODEM_MC60,
@@ -146,5 +147,9 @@ jobs:
           echo "${{ env.LIBRARY_INSTALL_GIT }}"
           pio pkg install -g --library ${{ env.LIBRARY_INSTALL_GIT }}
           sed -i 's/\/\/ #define TINY_GSM_MODEM_SIM800/#define TINY_GSM_MODEM_SIM800/g' ${{ matrix.example }}/*
-          platformio ci --project-option='build_flags=-D ${{ env.TINYGSM_MODEM_TO_USE }}' --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev
+          if [ "${{ matrix.example }}" == "tools/test_build" ]; then
+            platformio ci --project-option='build_flags=-D ${{ env.TINYGSM_MODEM_TO_USE }}' --project-option='framework=arduino' --board=mayfly --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev
+          else
+            platformio ci --project-option='build_flags=-D ${{ env.TINYGSM_MODEM_TO_USE }}' --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev
+          fi
           pio lib --global uninstall TinyGSM
