@@ -816,8 +816,10 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     bool success = true;
 
     // Re-convert the certificates, just in case
-    convertCACertificate(CAcertName);
-    convertClientCertificates(clientCertName, clientKeyName);
+    if (CAcertName != nullptr) { convertCACertificate(CAcertName); }
+    if (clientCertName != nullptr && clientKeyName != nullptr) {
+      convertClientCertificates(clientCertName, clientKeyName);
+    }
 
     // apply the correct certificates to the connection
     if (CAcertName != nullptr &&
