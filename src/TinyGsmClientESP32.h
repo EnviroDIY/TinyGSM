@@ -940,7 +940,10 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t) {
-    if (waitResponse(10000L, GF(AT_NL "SEND OK" AT_NL)) != 1) { return 0; }
+    if (waitResponse(10000L, GF(AT_NL "SEND OK" AT_NL),
+                     GF(AT_NL "SEND FAIL" AT_NL), GSM_ERROR) != 1) {
+      return 0;
+    }
     return len;
   }
 
@@ -1034,6 +1037,14 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       data = "";
       DBG("### Closed: ", mux);
       return true;
+    } else if (data.endsWith(GF("ERR CODE:"))) {
+#if defined(TINY_GSM_DEBUG) && !defined(DUMP_AT_COMMANDS)
+      DBG("### ERR CODE: ", stream.readStringUntil('\n'));
+#else
+      streamSkipUntil('\n');  // Read out the ERR CODE
+#endif
+      data = "";
+      return true;
     } else if (data.endsWith(GF("+TIME_UPDATED"))) {
       streamSkipUntil('\n');  // Refresh time and time zone by network
       data = "";
@@ -1050,6 +1061,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       // DBG("### Module ready!");
       return true;
     } else if (data.endsWith(GF("WIFI GOT IP"))) {
+      // WIFI GOT IP; WIFI GOT IPv6 LL; WIFI GOT IPv6 GL
       streamSkipUntil('\n');
       data = "";
       // DBG("### Wifi got IP");
