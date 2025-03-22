@@ -556,6 +556,9 @@ class TinyGsmTCP {
         len--;
         len_read++;
 #endif
+        // NOTE: We can't directly memcpy into the rx fifo!
+        // The fifo is a template class that can hold any data type and the
+        // actual memory space of the buffer is protected.
         thisModem().sockets[mux]->rx.put(c);
       } else {
         DBG("### ERROR: Timed out waiting for character from stream!");
