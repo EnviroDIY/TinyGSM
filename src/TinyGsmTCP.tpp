@@ -19,6 +19,10 @@
 #define TINY_GSM_RX_BUFFER 64
 #endif
 
+#if !defined(TINY_GSM_UNREAD_CHECK_MS)
+#define TINY_GSM_UNREAD_CHECK_MS 500
+#endif
+
 #if !defined(TINY_GSM_CONNECT_TIMEOUT)
 #define TINY_GSM_CONNECT_TIMEOUT 75
 #endif
@@ -225,7 +229,7 @@ class TinyGsmTCP {
       // fifo and the modem chips internal fifo, doing an extra check-in
       // with the modem to see if anything has arrived without a URC.
       if (!rx.size()) {
-        if (millis() - prev_check > 500) {
+        if (millis() - prev_check > TINY_GSM_UNREAD_CHECK_MS) {
           // setting got_data to true will tell maintain to run
           // modemGetAvailable(mux)
           got_data   = true;
@@ -251,13 +255,15 @@ class TinyGsmTCP {
       // from the modem for new data if there's nothing in the fifo.
       uint32_t _startMillis = millis();
       while (cnt < size && millis() - _startMillis < _timeout) {
+        // Read out of the TinyGSM fifo
         size_t chunk = TinyGsmMin(size - cnt, rx.size());
         if (chunk > 0) {
           rx.get(buf, chunk);
           buf += chunk;
           cnt += chunk;
           continue;
-        } /* TODO: Read directly into user buffer? */
+        }
+        // continue to parse URCs from the modem stream until the timeout
         if (!rx.size() && sock_connected) { at->maintain(); }
       }
       return cnt;
@@ -265,16 +271,18 @@ class TinyGsmTCP {
 #elif defined TINY_GSM_BUFFER_READ_NO_CHECK
       // Reads characters out of the TinyGSM fifo, and from the modem chip's
       // internal fifo if available.
-      at->maintain();
       while (cnt < size) {
+        // Read out of the TinyGSM fifo
         size_t chunk = TinyGsmMin(size - cnt, rx.size());
         if (chunk > 0) {
           rx.get(buf, chunk);
           buf += chunk;
           cnt += chunk;
           continue;
-        } /* TODO: Read directly into user buffer? */
-        at->maintain();
+        }
+        at->maintain();  // clear the modem stream/parse URCs
+        // Refill the TinyGSM fifo from the modem's internal buffer
+        // TODO: Read directly from modem into user buffer, skipping FIFO
         if (sock_available > 0) {
           int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
                                 mux);
@@ -289,8 +297,8 @@ class TinyGsmTCP {
       // Reads characters out of the TinyGSM fifo, and from the modem chips
       // internal fifo if available, also double checking with the modem if
       // data has arrived without issuing a URC.
-      at->maintain();
       while (cnt < size) {
+        // Read out of the TinyGSM fifo
         size_t chunk = TinyGsmMin(size - cnt, rx.size());
         if (chunk > 0) {
           rx.get(buf, chunk);
@@ -299,14 +307,16 @@ class TinyGsmTCP {
           continue;
         }
         // Workaround: Some modules "forget" to notify about data arrival
-        if (millis() - prev_check > 500) {
+        if (millis() - prev_check > TINY_GSM_UNREAD_CHECK_MS) {
           // setting got_data to true will tell maintain to run
           // modemGetAvailable()
           got_data   = true;
           prev_check = millis();
         }
-        // TODO(vshymanskyy): Read directly into user buffer?
-        at->maintain();
+        at->maintain();  // clear the modem stream, parse URCs, run
+                         // modemGetAvailable()
+        // Refill the TinyGSM fifo from the modem's internal buffer
+        // TODO: Read directly from modem into user buffer, skipping FIFO
         if (sock_available > 0) {
           int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
                                 mux);
