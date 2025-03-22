@@ -892,14 +892,6 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     //           1: Support SSL
     sendAT(GF("+CASSLCFG="), mux, ',', GF("\"ssl\","), ssl);
     waitResponse();
-
-    // Blank holders before casting
-    uint8_t     sslCtxIndex    = TINY_GSM_DEFAULT_SSL_CTX;
-    SSLAuthMode sslAuthMode    = SSLAuthMode::NO_VALIDATION;
-    const char* CAcertName     = nullptr;
-    const char* clientCertName = nullptr;
-    const char* pskTableName   = nullptr;
-    const char* clientKeyName  = nullptr;
     // If we have a secure socket, use a static cast to get the authentication
     // mode and certificate names. This isn't ideal; hopefully the compiler will
     // save us from ourselves. We cannot use a dynamic cast because Arduino
@@ -907,23 +899,23 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     if (ssl) {
       GsmClientSecureSim7080* thisClient =
           static_cast<GsmClientSecureSim7080*>(sockets[mux]);
-      sslCtxIndex    = thisClient->sslCtxIndex;
-      sslAuthMode    = thisClient->sslAuthMode;
-      CAcertName     = thisClient->CAcertName;
-      clientCertName = thisClient->clientCertName;
-      clientKeyName  = thisClient->clientKeyName;
-      pskTableName   = thisClient->pskTableName;
-    }
+      uint8_t     sslCtxIndex    = thisClient->sslCtxIndex;
+      SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
+      const char* CAcertName     = thisClient->CAcertName;
+      const char* clientCertName = thisClient->clientCertName;
+      const char* clientKeyName  = thisClient->clientKeyName;
+      const char* pskTableName   = thisClient->pskTableName;
 
-    // NOTE: We cannot link the SSL context or set the certificates until AFTER
-    // setting the connection id (ie, AT+CACID=mux)
-    linkSSLContext(mux,
-                   sslCtxIndex);  // Must be before applying certs
-    if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
-      applySSLPSK(mux, pskTableName);
-    } else {
-      applySSLCertificates(mux, sslAuthMode, CAcertName, clientCertName,
-                           clientKeyName);
+      // NOTE: We cannot link the SSL context or set the certificates until
+      // AFTER setting the connection id (ie, AT+CACID=mux)
+      linkSSLContext(mux,
+                     sslCtxIndex);  // Must be before applying certs
+      if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+        applySSLPSK(mux, pskTableName);
+      } else {
+        applySSLCertificates(mux, sslAuthMode, CAcertName, clientCertName,
+                             clientKeyName);
+      }
     }
 
     // actually open the connection
@@ -1013,15 +1005,14 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   size_t modemGetAvailableImpl(uint8_t mux) {
     // If the socket doesn't exist, just return
     if (!sockets[mux]) { return 0; }
-    // NOTE: This gets how many characters are available on all connections
-    // that have data.  It does not return all the connections, just those
-    // with data.
+    // NOTE: This gets how many characters are available on all connections that
+    // have data.  It does not return all the connections, just those with data.
     sendAT(GF("+CARECV?"));
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
       int res = waitResponse(3000, GF("+CARECV:"), GFP(GSM_OK), GFP(GSM_ERROR));
-      // if we get the +CARECV: response, read the mux number and the number
-      // of characters available
+      // if we get the +CARECV: response, read the mux number and the number of
+      // characters available
       if (res == 1) {
         int               ret_mux = streamGetIntBefore(',');
         size_t            result  = streamGetIntBefore('\n');
