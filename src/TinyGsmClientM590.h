@@ -452,7 +452,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
   }
 
   // re-implement so we don't have an extra flush
-  int16_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
+  size_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
     // Pointer to where in the buffer we're up to
     // A const cast is need to cast-away the constant-ness of the buffer (ie,
     // modify it).
@@ -465,7 +465,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
       bool   send_success  = false;
       while (send_attempts < 3 && !send_success) {
         // Number of bytes to send from buffer in this command
-        uint8_t sendLength = TINY_GSM_SEND_MAX_SIZE;
+        size_t sendLength = TINY_GSM_SEND_MAX_SIZE;
         // Ensure the program doesn't read past the allocated memory
         if (txPtr + TINY_GSM_SEND_MAX_SIZE > const_cast<uint8_t*>(buff) + len) {
           sendLength = const_cast<uint8_t*>(buff) + len - txPtr;
@@ -483,10 +483,10 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
         // End this send command and check its responses
         // NOTE: In many cases, confirmed is just a passthrough of len
         int16_t confirmed = modemEndSend(len, mux);
-        bytesSent += min(sendLength,
-                         confirmed);          // bump up number of bytes sent
-        txPtr += min(sendLength, confirmed);  // bump up the pointer
-        send_success &= min(sendLength, confirmed) > 0;
+        bytesSent += min(attempted,
+                         confirmed);         // bump up number of bytes sent
+        txPtr += min(attempted, confirmed);  // bump up the pointer
+        send_success &= min(attempted, confirmed) > 0;
         send_attempts++;
       }
       // if we failed after 3 attempts at the same chunk, bail from the whole
@@ -500,7 +500,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
     sendAT(GF("+TCPSEND="), mux, ',', (uint16_t)len);
     return waitResponse(GF(">")) == 1;
   }
-  int16_t modemEndSendImpl(uint16_t len, uint8_t) {
+  size_t modemEndSendImpl(size_t len, uint8_t) {
     stream.write(static_cast<char>(0x0D));
     stream.flush();
     if (waitResponse(30000L, GF(AT_NL "+TCPSEND:")) != 1) { return 0; }

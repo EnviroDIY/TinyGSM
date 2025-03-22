@@ -578,7 +578,7 @@ class TinyGsmSequansMonarch
     return connected;
   }
 
-  int16_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
+  size_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
     if (sockets[mux % TINY_GSM_MUX_COUNT]->sock_connected == false) {
       DBG("### Sock closed, cannot send data!");
       return 0;
@@ -595,7 +595,7 @@ class TinyGsmSequansMonarch
       bool   send_success  = false;
       while (send_attempts < 3 && !send_success) {
         // Number of bytes to send from buffer in this command
-        uint8_t sendLength = TINY_GSM_SEND_MAX_SIZE;
+        size_t sendLength = TINY_GSM_SEND_MAX_SIZE;
         // Ensure the program doesn't read past the allocated memory
         if (txPtr + TINY_GSM_SEND_MAX_SIZE > const_cast<uint8_t*>(buff) + len) {
           sendLength = const_cast<uint8_t*>(buff) + len - txPtr;
@@ -654,7 +654,7 @@ class TinyGsmSequansMonarch
     sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
     return waitResponse(10000L, GF(AT_NL "> ")) == 1;
   }
-  int16_t modemEndSendImpl(uint16_t len, uint8_t) {
+  size_t modemEndSendImpl(size_t len, uint8_t) {
     if (waitResponse() != 1) {
       DBG("### no OK after send");
       return 0;

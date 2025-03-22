@@ -485,7 +485,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  int16_t modemEndSendImpl(uint16_t len, uint8_t) {
+  size_t modemEndSendImpl(size_t len, uint8_t) {
     if (waitResponse(GF(AT_NL "SEND OK")) != 1) { return 0; }
     return len;
     // TODO(?): get len/ack properly

@@ -771,7 +771,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  int16_t modemEndSendImpl(uint16_t len, uint8_t mux) {
+  size_t modemEndSendImpl(size_t len, uint8_t mux) {
     if (waitResponse(GF(AT_NL "+USOWR:")) != 1) { return 0; }
     uint8_t ret_mux = streamGetIntBefore(',');   // check mux
     int16_t sent    = streamGetIntBefore('\n');  // check send length

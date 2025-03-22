@@ -1070,7 +1070,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  int16_t modemEndSendImpl(uint16_t len, uint8_t) {
+  size_t modemEndSendImpl(size_t len, uint8_t) {
     if (waitResponse(GF(AT_NL "SEND OK")) != 1) { return 0; }
     // TODO(?): Wait for ACK? (AT+QISEND=id,0 or AT+QSSLSEND=id,0)
     return len;

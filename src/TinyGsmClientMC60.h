@@ -466,7 +466,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  int16_t modemEndSendImpl(uint16_t len, uint8_t mux) {
+  size_t modemEndSendImpl(size_t len, uint8_t mux) {
     if (waitResponse(GF(AT_NL "SEND OK")) != 1) { return 0; }
 
     bool allAcknowledged = false;

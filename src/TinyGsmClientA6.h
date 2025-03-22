@@ -498,14 +498,14 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     return (1 == rsp);
   }
 
-  bool modemBeginSendImpl(uint16_t len, uint8_t mux) {
+  bool modemBeginSendImpl(size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     return waitResponse(2000L, GF(AT_NL ">")) == 1;
   }
   // Between the begin and end, modem send calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  int16_t modemEndSendImpl(uint16_t len, uint8_t) {
+  size_t modemEndSendImpl(size_t len, uint8_t) {
     if (waitResponse(10000L, GFP(GSM_OK), GF(AT_NL "FAIL")) != 1) { return 0; }
     return len;
   }

@@ -976,7 +976,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  int16_t modemEndSendImpl(uint16_t len, uint8_t mux) {
+  size_t modemEndSendImpl(size_t len, uint8_t) {
     // Nothing but an OK after posting data
     if (waitResponse() != 1) { return 0; }
     return len;
