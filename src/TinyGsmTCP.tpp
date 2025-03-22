@@ -496,8 +496,8 @@ class TinyGsmTCP {
 #endif
   }
 
-  // Yields up to a time-out period and then reads a character from the stream
-  // into the mux FIFO
+  // Yields up to a time-out period and then reads a single character from the
+  // stream into the mux FIFO
   inline bool moveCharFromStreamToFifo(uint8_t mux) {
     if (!thisModem().sockets[mux]) { return false; }
     uint32_t startMillis = millis();
@@ -512,6 +512,60 @@ class TinyGsmTCP {
     } else {
       return false;
     }
+  }
+
+  // Yields up to a time-out period and then reads a block of characters from
+  // the stream into the mux FIFO
+  // If TINY_GSM_USE_HEX is defined, this will convert two received hex
+  // characters into one char.
+  size_t moveCharsFromStreamToFifo(uint8_t mux, size_t expected_len) {
+    if (!thisModem().sockets[mux]) { return false; }
+    uint32_t startMillis   = millis();
+    size_t   len           = expected_len;
+    size_t   read_len      = 0;
+    uint8_t  char_failures = 0;
+    // allow up to 3 timeouts on individual characters before we quit the whole
+    // read operation
+    while (len && char_failures < 3) {
+#ifdef TINY_GSM_USE_HEX
+      // wait for at least 2 characters to be available on the stream
+      while (thisModem().stream.available() < 2 &&
+             (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
+        TINY_GSM_YIELD();
+      }
+      if (thisModem().stream.available() >= 2) {
+        char buf[3] = {
+            0,
+        };
+        buf[0] = thisModem().stream.read();
+        buf[1] = thisModem().stream.read();
+        char c = strtol(buf, nullptr, 16);
+        len -= 2;
+        read_len += 2;
+#else
+      // wait for at least 1 character to be available on the stream
+      while (!thisModem().stream.available() &&
+             (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
+        TINY_GSM_YIELD();
+      }
+      // if something is available, read it
+      if (thisModem().stream.available()) {
+        char c = thisModem().stream.read();
+        len--;
+        read_len++;
+#endif
+        thisModem().sockets[mux]->rx.put(c);
+      } else {
+        DBG("### ERROR: Timed out waiting for character from stream!");
+        char_failures++;
+      }
+    }
+    if (read_len) { DBG("### READ:", read_len, "from", mux); }
+    if (expected_len != read_len) {
+      DBG("\n### Different number of characters received than expected: ",
+          read_len, "read vs ", expected_len, "expected");
+    }
+    return read_len;
   }
 
 
