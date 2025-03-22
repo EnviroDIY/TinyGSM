@@ -18,6 +18,11 @@
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #define TINY_GSM_MUX_STATIC
+
+#define TINY_GSM_SEND_MAX_SIZE 1500
+// To get the true max size, send the command AT+CIPSEND?
+// I'm choosing to fake it here with 1500
+
 #ifdef AT_NL
 #undef AT_NL
 #endif

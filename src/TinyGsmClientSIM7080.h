@@ -18,6 +18,8 @@
 // Also supports 6 SSL contexts (0-5)
 // The SSL context is collection of SSL settings, not the connection identifier.
 
+#define TINY_GSM_SEND_MAX_SIZE 1460
+// Up to 1460 bytes can be sent at a time with CASEND
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #define TINY_GSM_MUX_STATIC

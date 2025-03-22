@@ -18,6 +18,10 @@
 // The security profiles is collection of SSL settings, not the connection
 // identifier.
 
+#define TINY_GSM_SEND_MAX_SIZE 750
+// SQNSSENDEXT accepts up to 1500 bytes of input, but this is configured to send
+// HEX, so only 1/2 of that is available.
+
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #define TINY_GSM_MUX_STATIC
 #ifdef AT_NL

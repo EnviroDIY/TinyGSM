@@ -20,6 +20,10 @@
 // WARNING: You cannot control the socket mux number on this module! The module
 // opens the connection and returns the connection number it opened.
 
+#define TINY_GSM_SEND_MAX_SIZE 1024
+// USOWR accepts up to 1024 bytes in "normal" and "binary extended" modes and up
+// to 512 bytes in "HEX" mode.
+
 #if !defined(TINY_GSM_CONNECT_TIMEOUT)
 #define TINY_GSM_CONNECT_TIMEOUT 120
 #endif

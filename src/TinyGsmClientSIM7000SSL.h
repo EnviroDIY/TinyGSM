@@ -18,6 +18,9 @@
 // Also supports 6 SSL contexts (0-5)
 // The SSL context is collection of SSL settings, not the connection identifier.
 
+#define TINY_GSM_SEND_MAX_SIZE 1460
+// The SIM7000 manual doesn't specify the max size for CASEND, but the SIM7080
+// takes up to 1460, so we'll use that.
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #define TINY_GSM_MUX_STATIC
