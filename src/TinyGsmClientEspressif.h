@@ -115,6 +115,13 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     return success;
   }
 
+ public:
+  bool setDefaultBaud(uint32_t baud) {
+    thisModem().sendAT(GF("+UART_DEF="), baud, ",8,1,0,0");
+    return thisModem().waitResponse() == 1;
+  }
+
+ protected:
   bool setBaudImpl(uint32_t baud) {
     thisModem().sendAT(GF("+UART_CUR="), baud, ",8,1,0,0");
     if (thisModem().waitResponse() != 1) {
