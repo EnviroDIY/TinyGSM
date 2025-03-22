@@ -757,7 +757,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
     bool    ssl           = sockets[mux]->is_secure;
-    int16_t len_returned  = 0;
+    int16_t len_reported  = 0;
     int16_t len_remaining = 0;
 #ifdef TINY_GSM_USE_HEX
     if (ssl) {
@@ -778,52 +778,30 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       if (waitResponse(GF("+CCHRECV:")) != 1) { return 0; }
       streamSkipUntil(',');  // Skip the word "DATA"
       streamSkipUntil(',');  // Skip mux/cid (connecion id)
-      // TODO: validate mux
-      len_returned = streamGetIntBefore('\n');
+      // TODO: validate mux/cid (connecion id)
+      len_reported = streamGetIntBefore('\n');
     } else {
       sendAT(GF("+CIPRXGET="), rx_mode, ',', mux, ',', (uint16_t)size);
       if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
       streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
       streamSkipUntil(',');  // Skip mux/cid (connecion id)
-      // TODO: verify the mux/cid number
-      len_returned = streamGetIntBefore(',');
+      // TODO: validate mux/cid (connecion id)
+      len_reported = streamGetIntBefore(',');
       // ^^ Integer type, the length of data that has been read.
       len_remaining = streamGetIntBefore('\n');
       // ^^ Integer type, the length of data which has not been read in the
       // buffer.
     }
-    for (int i = 0; i < len_returned; i++) {
-      uint32_t startMillis = millis();
-#ifdef TINY_GSM_USE_HEX
-      while (stream.available() < 2 &&
-             (millis() - startMillis < sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-      char buf[4] = {
-          0,
-      };
-      buf[0] = stream.read();
-      buf[1] = stream.read();
-      char c = strtol(buf, NULL, 16);
-#else
-      while (!stream.available() &&
-             (millis() - startMillis < sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-      char c = stream.read();
-#endif
-      sockets[mux]->rx.put(c);
-    }
-    // DBG("### READ:", len_returned, " bytes from connection ", mux);
+    size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
     if (ssl) {
       // we need to check how much is left after the read
       sockets[mux]->sock_available = modemGetAvailable(mux);
     } else {
       // the read call already told us how much is left
       sockets[mux]->sock_available = len_remaining;
+      waitResponse();
     }
-    waitResponse();
-    return len_returned;
+    return len_read;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
@@ -860,7 +838,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       if (waitResponse(GF("+CIPRXGET:")) == 1) {
         streamSkipUntil(',');  // Skip returned mode (4)
         streamSkipUntil(',');  // Skip mux
-        // TODO(?): verify the mux number
+        // TODO: Validate mux
         result = streamGetIntBefore('\n');
       }
     }

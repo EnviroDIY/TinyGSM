@@ -522,12 +522,13 @@ class TinyGsmTCP {
     if (!thisModem().sockets[mux]) { return false; }
     uint32_t startMillis   = millis();
     size_t   len           = expected_len;
-    size_t   read_len      = 0;
+    size_t   len_read      = 0;
     uint8_t  char_failures = 0;
     // allow up to 3 timeouts on individual characters before we quit the whole
     // read operation
     while (len && char_failures < 3) {
 #ifdef TINY_GSM_USE_HEX
+      // DBG("### Reading input in HEX mode");
       // wait for at least 2 characters to be available on the stream
       while (thisModem().stream.available() < 2 &&
              (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
@@ -541,8 +542,9 @@ class TinyGsmTCP {
         buf[1] = thisModem().stream.read();
         char c = strtol(buf, nullptr, 16);
         len -= 2;
-        read_len += 2;
+        len_read += 2;
 #else
+      // DBG("### Reading input in ASCII mode");
       // wait for at least 1 character to be available on the stream
       while (!thisModem().stream.available() &&
              (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
@@ -552,7 +554,7 @@ class TinyGsmTCP {
       if (thisModem().stream.available()) {
         char c = thisModem().stream.read();
         len--;
-        read_len++;
+        len_read++;
 #endif
         thisModem().sockets[mux]->rx.put(c);
       } else {
@@ -560,12 +562,12 @@ class TinyGsmTCP {
         char_failures++;
       }
     }
-    if (read_len) { DBG("### READ:", read_len, "from", mux); }
-    if (expected_len != read_len) {
+    if (len_read) { DBG("### READ:", len_read, "from", mux); }
+    if (expected_len != len_read) {
       DBG("\n### Different number of characters received than expected: ",
-          read_len, "read vs ", expected_len, "expected");
+          len_read, "read vs ", expected_len, "expected");
     }
-    return read_len;
+    return len_read;
   }
 
 

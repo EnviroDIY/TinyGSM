@@ -9,8 +9,6 @@
 #ifndef SRC_TINYGSMCLIENTSIM70XX_H_
 #define SRC_TINYGSMCLIENTSIM70XX_H_
 
-// #define TINY_GSM_DEBUG Serial
-// #define TINY_GSM_USE_HEX
 #ifdef AT_NL
 #undef AT_NL
 #endif
