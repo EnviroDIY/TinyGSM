@@ -23,6 +23,10 @@
 #define TINY_GSM_CONNECT_TIMEOUT 75
 #endif
 
+#if !defined(TINY_GSM_SEND_MAX_SIZE)
+#define TINY_GSM_SEND_MAX_SIZE 1500
+#endif
+
 // Because of the ordering of resolution of overrides in templates, these need
 // to be written out every time.  This macro is to shorten that.
 #define TINY_GSM_CLIENT_CONNECT_OVERRIDES                             \
@@ -90,7 +94,7 @@ class TinyGsmTCP {
 #error Modem client has been incorrectly created
 #endif
 
-  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+  int16_t modemSend(const uint8_t* buff, size_t len, uint8_t mux) {
     return thisModem().modemSendImpl(buff, len, mux);
   }
   bool modemBeginSend(size_t len, uint8_t mux) {
@@ -384,6 +388,12 @@ class TinyGsmTCP {
      * connection.
      */
     bool beginWrite(uint16_t size) {
+      if (size > TINY_GSM_SEND_MAX_SIZE) {
+        DBG(GF("### ERROR: You are attempting send"), size,
+            GF("bytes, which is more than the"), TINY_GSM_SEND_MAX_SIZE,
+            GF("that can be sent at once by this modem!"))
+        return false;
+      }
       is_mid_send = true;
       return at->modemBeginSend(size, mux);
     }
@@ -505,15 +515,51 @@ class TinyGsmTCP {
 #error Modem client has been incorrectly created
 #endif
 
-  int16_t modemSendImpl(const void* buff, size_t len, uint8_t mux) {
-    if (!thisModem().modemBeginSend(len, mux)) { return 0; }
-    int16_t attempted =
-        thisModem().stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-    stream.flush();
-    // NOTE: In many cases, confirmed is just a passthrough of len
-    int16_t confirmed = modemEndSend(len, mux);
-    return min(attempted, confirmed);
+  int16_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
+    // Pointer to where in the buffer we're up to
+    // A const cast is need to cast-away the constant-ness of the buffer (ie,
+    // modify it).
+    uint8_t* txPtr     = const_cast<uint8_t*>(buff);
+    size_t   bytesSent = 0;
+
+    do {
+      // make no more than 3 attempts at the single send command
+      int8_t send_attempts = 0;
+      bool   send_success  = false;
+      while (send_attempts < 3 && !send_success) {
+        // Number of bytes to send from buffer in this command
+        uint8_t sendLength = TINY_GSM_SEND_MAX_SIZE;
+        // Ensure the program doesn't read past the allocated memory
+        if (txPtr + TINY_GSM_SEND_MAX_SIZE > const_cast<uint8_t*>(buff) + len) {
+          sendLength = const_cast<uint8_t*>(buff) + len - txPtr;
+        }
+        // start up a send command
+        send_success = thisModem().modemBeginSend(sendLength, mux);
+        if (!send_success) {
+          send_attempts++;
+          continue;
+        }
+        // write out the number of bytes for this chunk
+        int16_t attempted = thisModem().stream.write(
+            reinterpret_cast<const uint8_t*>(txPtr), sendLength);
+        // let the transfer finish
+        thisModem().stream.flush();
+        // End this send command and check its responses
+        // NOTE: In many cases, confirmed is just a passthrough of len
+        int16_t confirmed = thisModem().modemEndSend(len, mux);
+        bytesSent += min(sendLength,
+                         confirmed);          // bump up number of bytes sent
+        txPtr += min(sendLength, confirmed);  // bump up the pointer
+        send_success &= min(sendLength, confirmed) > 0;
+        send_attempts++;
+      }
+      // if we failed after 3 attempts at the same chunk, bail from the whole
+      // thing
+      if (!send_success) { break; }
+    } while (bytesSent < len && sockets[mux]->sock_connected);
+    return bytesSent;
   }
+
   bool    modemBeginSendImpl(size_t  len,
                              uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   int16_t modemEndSendImpl(size_t  len,

@@ -452,14 +452,50 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
   }
 
   // re-implement so we don't have an extra flush
-  int16_t modemSendImpl(const void* buff, size_t len, uint8_t mux) {
-    if (!modemBeginSend(len, mux)) { return 0; }
-    int16_t attempted = stream.write(reinterpret_cast<const uint8_t*>(buff),
-                                     len);
-    int16_t confirmed = modemEndSend(len, mux);
-    // NOTE: In many caases, confirmed is just a passthrough of len
-    return min(attempted, confirmed);
+  int16_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
+    // Pointer to where in the buffer we're up to
+    // A const cast is need to cast-away the constant-ness of the buffer (ie,
+    // modify it).
+    uint8_t* txPtr     = const_cast<uint8_t*>(buff);
+    size_t   bytesSent = 0;
+
+    do {
+      // make no more than 3 attempts at the single send command
+      int8_t send_attempts = 0;
+      bool   send_success  = false;
+      while (send_attempts < 3 && !send_success) {
+        // Number of bytes to send from buffer in this command
+        uint8_t sendLength = TINY_GSM_SEND_MAX_SIZE;
+        // Ensure the program doesn't read past the allocated memory
+        if (txPtr + TINY_GSM_SEND_MAX_SIZE > const_cast<uint8_t*>(buff) + len) {
+          sendLength = const_cast<uint8_t*>(buff) + len - txPtr;
+        }
+        // start up a send command
+        send_success = modemBeginSend(sendLength, mux);
+        if (!send_success) {
+          send_attempts++;
+          continue;
+        }
+        // write out the number of bytes for this chunk
+        int16_t attempted =
+            stream.write(reinterpret_cast<const uint8_t*>(txPtr), sendLength);
+        // NOTE: Don't flush here! Differ that to the modemEndSend() function
+        // End this send command and check its responses
+        // NOTE: In many cases, confirmed is just a passthrough of len
+        int16_t confirmed = modemEndSend(len, mux);
+        bytesSent += min(sendLength,
+                         confirmed);          // bump up number of bytes sent
+        txPtr += min(sendLength, confirmed);  // bump up the pointer
+        send_success &= min(sendLength, confirmed) > 0;
+        send_attempts++;
+      }
+      // if we failed after 3 attempts at the same chunk, bail from the whole
+      // thing
+      if (!send_success) { break; }
+    } while (bytesSent < len && sockets[mux]->sock_connected);
+    return bytesSent;
   }
+
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
     sendAT(GF("+TCPSEND="), mux, ',', (uint16_t)len);
     return waitResponse(GF(">")) == 1;

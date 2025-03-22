@@ -578,28 +578,54 @@ class TinyGsmSequansMonarch
     return connected;
   }
 
-  int16_t modemSendImpl(const void* buff, size_t len, uint8_t mux) {
+  int16_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
     if (sockets[mux % TINY_GSM_MUX_COUNT]->sock_connected == false) {
       DBG("### Sock closed, cannot send data!");
       return 0;
     }
+    // Pointer to where in the buffer we're up to
+    // A const cast is need to cast-away the constant-ness of the buffer (ie,
+    // modify it).
+    uint8_t* txPtr     = const_cast<uint8_t*>(buff);
+    size_t   bytesSent = 0;
 
-    sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
-    waitResponse(10000L, GF(AT_NL "> "));
-    // Translate bytes into char to be able to send them as an hex string
-    char char_command[3];
-    for (size_t i = 0; i < len; i++) {
-      memset(&char_command, 0, sizeof(char_command));
-      sprintf(&char_command[0], "%02X",
-              reinterpret_cast<const uint8_t*>(buff)[i]);
-      stream.write(char_command, sizeof(char_command));
-    }
-    stream.flush();
-    if (waitResponse() != 1) {
-      DBG("### no OK after send");
-      return 0;
-    }
-    return len;
+    do {
+      // make no more than 3 attempts at the single send command
+      int8_t send_attempts = 0;
+      bool   send_success  = false;
+      while (send_attempts < 3 && !send_success) {
+        // Number of bytes to send from buffer in this command
+        uint8_t sendLength = TINY_GSM_SEND_MAX_SIZE;
+        // Ensure the program doesn't read past the allocated memory
+        if (txPtr + TINY_GSM_SEND_MAX_SIZE > const_cast<uint8_t*>(buff) + len) {
+          sendLength = const_cast<uint8_t*>(buff) + len - txPtr;
+        }
+
+        sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
+        send_success &= waitResponse(10000L, GF(AT_NL "> ")) == 1;
+        if (!send_success) {
+          send_attempts++;
+          continue;
+        }
+        // Translate bytes into char to be able to send them as an hex string
+        char char_command[3];
+        for (size_t i = 0; i < len; i++) {
+          memset(&char_command, 0, sizeof(char_command));
+          sprintf(&char_command[0], "%02X",
+                  reinterpret_cast<const uint8_t*>(buff)[i]);
+          stream.write(char_command, sizeof(char_command));
+        }
+        stream.flush();
+        send_success &= waitResponse() != 1;
+        bytesSent += sendLength;  // bump up number of bytes sent
+        txPtr += sendLength;      // bump up the pointer
+        send_attempts++;
+      }
+      // if we failed after 3 attempts at the same chunk, bail from the whole
+      // thing
+      if (!send_success) { break; }
+    } while (bytesSent < len && sockets[mux]->sock_connected);
+    return bytesSent;
 
     // uint8_t nAttempts = 5;
     // bool gotPrompt = false;
@@ -623,7 +649,6 @@ class TinyGsmSequansMonarch
     // }
     // return 0;
   }
-
 #if 0
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
     sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
