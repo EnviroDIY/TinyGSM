@@ -21,6 +21,10 @@
 // application on the module.
 // TODO(?) Could someone who has this module test this?
 
+#define TINY_GSM_SEND_MAX_SIZE 1500
+// CCHSEND can handle up to 2048 bytes of input, but CIPSEND will only accept
+// 1500, so we'll take the smaller number
+
 // #define TINY_GSM_DEFAULT_SSL_CTX 0
 // also supports 10 SSL contexts,
 // The SSL context is collection of SSL settings, not the connection identifier.

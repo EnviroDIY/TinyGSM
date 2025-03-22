@@ -16,6 +16,9 @@
 #define TINY_GSM_SECURE_MUX_COUNT 12
 // supports 12 sockets (0-11); any of them can be SSL
 
+#define TINY_GSM_SEND_MAX_SIZE 1460
+// QISEND and QSSLSEND both accept up to 1460 bytes of input
+
 #if !defined(TINY_GSM_CONNECT_TIMEOUT)
 #define TINY_GSM_CONNECT_TIMEOUT 150
 #endif

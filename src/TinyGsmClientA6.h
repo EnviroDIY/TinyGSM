@@ -13,6 +13,8 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_MUX_COUNT 8
+#define TINY_GSM_SEND_MAX_SIZE 1024
+// CIPSEND accepts up to 1024 bytes of input
 #define TINY_GSM_NO_MODEM_BUFFER
 #define TINY_GSM_MUX_DYNAMIC
 #ifdef AT_NL

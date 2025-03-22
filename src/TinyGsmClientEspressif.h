@@ -20,6 +20,10 @@
 // These modules don't have "SSL Contexts" per-say, but they only support 2
 // certificate sets.
 
+// The ESP8266 devices can receive 2048 bytes and send 1460 bytes at most each
+// time; the other ESP devices can receive 8192 bytes and send 2920 bytes at
+// most each time.
+
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -35,8 +39,10 @@
 #endif
 #if defined(TINY_GSM_MODEM_ESP8266) || defined(TINY_GSM_MODEM_ESP8266_NONOS)
 #define MODEM_MODEL "ESP8266"
+#define TINY_GSM_SEND_MAX_SIZE 2048
 #elif defined(TINY_GSM_MODEM_ESP32)
 #define MODEM_MODEL "ESP32"
+#define TINY_GSM_SEND_MAX_SIZE 8192
 #else
 #define MODEM_MODEL "Espressif AT"
 #endif

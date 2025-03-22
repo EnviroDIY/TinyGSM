@@ -16,6 +16,10 @@
 #define TINY_GSM_MUX_COUNT 6
 #define TINY_GSM_BUFFER_READ_NO_CHECK
 #define TINY_GSM_MUX_STATIC
+
+#define TINY_GSM_SEND_MAX_SIZE 1460
+// QISEND and QSSLSEND both accept up to 1460 bytes of input
+
 #ifdef AT_NL
 #undef AT_NL
 #endif
