@@ -451,10 +451,13 @@ class TinyGsmSim7000SSL
     gprsDisconnect();
 
     // Define the PDP context
+    // AT+CGDCONT=<cid>[,<PDP_type>[,<APN>[,<PDP_addr>[,<d_comp>[,<h_comp>][,<ipv4_ctrl>[,<emergency_flag>]]]]]]
+    // NOTE: The minimum cid (PDP context identifier) is 1 (range 1-15)
     sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');
     waitResponse();
 
     // Attach to GPRS
+    // AT+CGATT=<state>
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1) { return false; }
 
@@ -465,13 +468,13 @@ class TinyGsmSim7000SSL
     // Bearer settings for applications based on IP
     // Set the user name and password
     // AT+CNCFG=<ip_type>[,<APN>[,<usename>,<password>[,<authentication>]]]
-    //<ip_type> 0: Dual PDN Stack
-    //          1: Internet Protocol Version 4
-    //          2: Internet Protocol Version 6
-    //<authentication> 0: NONE
-    //                 1: PAP
-    //                 2: CHAP
-    //                 3: PAP or CHAP
+    // <ip_type> 0: Dual PDN Stack
+    //           1: Internet Protocol Version 4
+    //           2: Internet Protocol Version 6
+    // <authentication> 0: NONE
+    //                  1: PAP
+    //                  2: CHAP
+    //                  3: PAP or CHAP
     if (pwd && strlen(pwd) > 0 && user && strlen(user) > 0) {
       sendAT(GF("+CNCFG=1,\""), apn, "\",\"", "\",\"", user, pwd, "\",3");
       waitResponse();
@@ -791,14 +794,6 @@ class TinyGsmSim7000SSL
     //           1: Support SSL
     sendAT(GF("+CASSLCFG="), mux, ',', GF("\"ssl\","), ssl);
     waitResponse();
-
-    // Blank holders before casting
-    uint8_t     sslCtxIndex    = TINY_GSM_DEFAULT_SSL_CTX;
-    SSLAuthMode sslAuthMode    = SSLAuthMode::NO_VALIDATION;
-    const char* CAcertName     = nullptr;
-    const char* clientCertName = nullptr;
-    const char* pskTableName   = nullptr;
-    const char* clientKeyName  = nullptr;
     // If we have a secure socket, use a static cast to get the authentication
     // mode and certificate names. This isn't ideal; hopefully the compiler will
     // save us from ourselves. We cannot use a dynamic cast because Arduino
@@ -806,23 +801,23 @@ class TinyGsmSim7000SSL
     if (ssl) {
       GsmClientSecureSim7000SSL* thisClient =
           static_cast<GsmClientSecureSim7000SSL*>(sockets[mux]);
-      sslCtxIndex    = thisClient->sslCtxIndex;
-      sslAuthMode    = thisClient->sslAuthMode;
-      CAcertName     = thisClient->CAcertName;
-      clientCertName = thisClient->clientCertName;
-      clientKeyName  = thisClient->clientKeyName;
-      pskTableName   = thisClient->pskTableName;
-    }
+      uint8_t     sslCtxIndex    = thisClient->sslCtxIndex;
+      SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
+      const char* CAcertName     = thisClient->CAcertName;
+      const char* clientCertName = thisClient->clientCertName;
+      const char* clientKeyName  = thisClient->clientKeyName;
+      const char* pskTableName   = thisClient->pskTableName;
 
-    // NOTE: We cannot link the SSL context or set the certificates until AFTER
-    // setting the connection id (ie, AT+CACID=mux)
-    linkSSLContext(mux,
-                   sslCtxIndex);  // Must be before applying certs
-    if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
-      applySSLPSK(mux, pskTableName);
-    } else {
-      applySSLCertificates(mux, sslAuthMode, CAcertName, clientCertName,
-                           clientKeyName);
+      // NOTE: We cannot link the SSL context or set the certificates until
+      // AFTER setting the connection id (ie, AT+CACID=mux)
+      linkSSLContext(mux,
+                     sslCtxIndex);  // Must be before applying certs
+      if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+        applySSLPSK(mux, pskTableName);
+      } else {
+        applySSLCertificates(mux, sslAuthMode, CAcertName, clientCertName,
+                             clientKeyName);
+      }
     }
 
     // actually open the connection
@@ -884,10 +879,8 @@ class TinyGsmSim7000SSL
     sendAT(GF("+CARECV="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+CARECV:")) != 1) { return 0; }
 
-    // uint8_t ret_mux = stream.parseInt();
-    // streamSkipUntil(',');
+    // uint8_t ret_mux = streamGetIntBefore(',');
     // const int16_t len_reported = streamGetIntBefore('\n');
-    // DBG("### READING:", len_reported, "from", ret_mux);
 
     // if (ret_mux != mux) {
     //   DBG("### Data from wrong mux! Got", ret_mux, "expected", mux);
@@ -902,6 +895,7 @@ class TinyGsmSim7000SSL
     int16_t len_reported = streamGetIntBefore(',');
     size_t  len_read     = moveCharsFromStreamToFifo(mux, len_reported);
     waitResponse();  // final ok
+
     // make sure the sock available number is accurate again
     // the module is **EXTREMELY** testy about being asked to read more from
     // the buffer than exists; it will freeze until a hard reset or power cycle!
@@ -1067,6 +1061,7 @@ class TinyGsmSim7000SSL
       data = "";
       DBG("### Unexpected module reset!");
       init();
+      data = "";
       return true;
     }
     return false;
