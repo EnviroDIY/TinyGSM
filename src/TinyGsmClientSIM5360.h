@@ -660,7 +660,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  int16_t modemEndSendImpl(uint16_t len, uint8_t mux) {
+  size_t modemEndSendImpl(size_t len, uint8_t mux) {
     if (waitResponse(GF(AT_NL "+CIPSEND:")) != 1) { return 0; }
     uint8_t ret_mux = streamGetIntBefore(',');  // check mux
     streamSkipUntil(',');                       // Skip requested bytes to send

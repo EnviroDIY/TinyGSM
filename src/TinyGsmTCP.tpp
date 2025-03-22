@@ -94,13 +94,13 @@ class TinyGsmTCP {
 #error Modem client has been incorrectly created
 #endif
 
-  int16_t modemSend(const uint8_t* buff, size_t len, uint8_t mux) {
+  size_t modemSend(const uint8_t* buff, size_t len, uint8_t mux) {
     return thisModem().modemSendImpl(buff, len, mux);
   }
   bool modemBeginSend(size_t len, uint8_t mux) {
     return thisModem().modemBeginSendImpl(len, mux);
   }
-  bool modemEndSend(size_t len, uint8_t mux) {
+  size_t modemEndSend(size_t len, uint8_t mux) {
     return thisModem().modemEndSendImpl(len, mux);
   }
 #if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE || \
@@ -114,7 +114,7 @@ class TinyGsmTCP {
     return thisModem().modemGetAvailableImpl(mux);
   }
   bool modemGetConnected(uint8_t mux) {
-    return thisModem().modemGetConnectedImpl() mux;
+    return thisModem().modemGetConnectedImpl(mux);
   }
 #endif
 
@@ -179,7 +179,7 @@ class TinyGsmTCP {
     size_t write(const uint8_t* buf, size_t size) override {
       if (is_mid_send) {
         // if we're in the middle of a write, pass directly to the stream
-        return at->stream.write(buf, size, mux);
+        return at->stream.write(buf, size);
       }
       TINY_GSM_YIELD();
       at->maintain();
@@ -391,7 +391,7 @@ class TinyGsmTCP {
       if (size > TINY_GSM_SEND_MAX_SIZE) {
         DBG(GF("### ERROR: You are attempting send"), size,
             GF("bytes, which is more than the"), TINY_GSM_SEND_MAX_SIZE,
-            GF("that can be sent at once by this modem!"))
+            GF("that can be sent at once by this modem!"));
         return false;
       }
       is_mid_send = true;
@@ -515,7 +515,7 @@ class TinyGsmTCP {
 #error Modem client has been incorrectly created
 #endif
 
-  int16_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
+  size_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
     // Pointer to where in the buffer we're up to
     // A const cast is need to cast-away the constant-ness of the buffer (ie,
     // modify it).
@@ -528,7 +528,7 @@ class TinyGsmTCP {
       bool   send_success  = false;
       while (send_attempts < 3 && !send_success) {
         // Number of bytes to send from buffer in this command
-        uint8_t sendLength = TINY_GSM_SEND_MAX_SIZE;
+        size_t sendLength = TINY_GSM_SEND_MAX_SIZE;
         // Ensure the program doesn't read past the allocated memory
         if (txPtr + TINY_GSM_SEND_MAX_SIZE > const_cast<uint8_t*>(buff) + len) {
           sendLength = const_cast<uint8_t*>(buff) + len - txPtr;
@@ -547,23 +547,23 @@ class TinyGsmTCP {
         // End this send command and check its responses
         // NOTE: In many cases, confirmed is just a passthrough of len
         int16_t confirmed = thisModem().modemEndSend(len, mux);
-        bytesSent += min(sendLength,
-                         confirmed);          // bump up number of bytes sent
-        txPtr += min(sendLength, confirmed);  // bump up the pointer
-        send_success &= min(sendLength, confirmed) > 0;
+        bytesSent += min(attempted,
+                         confirmed);         // bump up number of bytes sent
+        txPtr += min(attempted, confirmed);  // bump up the pointer
+        send_success &= min(attempted, confirmed) > 0;
         send_attempts++;
       }
       // if we failed after 3 attempts at the same chunk, bail from the whole
       // thing
       if (!send_success) { break; }
-    } while (bytesSent < len && sockets[mux]->sock_connected);
+    } while (bytesSent < len && thisModem().sockets[mux]->sock_connected);
     return bytesSent;
   }
 
-  bool    modemBeginSendImpl(size_t  len,
-                             uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  int16_t modemEndSendImpl(size_t  len,
-                           uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool   modemBeginSendImpl(size_t  len,
+                            uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  size_t modemEndSendImpl(size_t  len,
+                          uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 #if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE || \
     defined TINY_GSM_BUFFER_READ_NO_CHECK

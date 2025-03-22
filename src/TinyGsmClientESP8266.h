@@ -610,6 +610,18 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
     return (1 == rsp);
   }
 
+  bool modemBeginSendImpl(size_t len, uint8_t mux) {
+    sendAT(GF("+CIPSEND="), mux, ',', len);
+    return waitResponse(GF(">")) == 1;
+  }
+  // Between the modemBeginSend and modemEndSend, modemSend calls:
+  // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+  // stream.flush();
+  size_t modemEndSendImpl(size_t len, uint8_t) {
+    if (waitResponse(10000L, GF(AT_NL "SEND OK" AT_NL)) != 1) { return 0; }
+    return len;
+  }
+
   bool modemGetConnectedImpl(uint8_t mux) {
     sendAT(GF("+CIPSTATE?"));
     bool verified_connections[TINY_GSM_MUX_COUNT] = {0, 0, 0, 0, 0};
