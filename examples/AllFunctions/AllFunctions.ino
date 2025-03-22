@@ -140,7 +140,7 @@ void setup() {
   // !!!!!!!!!!!
 
   DBG("Wait...");
-  delay(6000L);
+  delay(500L);
 
   // Set GSM module baud rate
   TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
@@ -270,20 +270,15 @@ void loop() {
 
     // Read data
     start          = millis();
-    char logo[640] = {
-        '\0',
-    };
     int read_chars = 0;
     while (client.connected() && millis() - start < 10000L) {
       while (client.available()) {
-        logo[read_chars]     = client.read();
-        logo[read_chars + 1] = '\0';
+        SerialMon.write(client.read());
         read_chars++;
         start = millis();
       }
     }
-    SerialMon.println(logo);
-    DBG("#####  RECEIVED:", strlen(logo), "CHARACTERS");
+    DBG("#####  RECEIVED:", read_chars, "CHARACTERS");
     client.stop();
   }
 
@@ -318,20 +313,15 @@ void loop() {
 
     // Read data
     start          = millis();
-    char logo[640] = {
-        '\0',
-    };
     int read_chars = 0;
     while (client.connected() && millis() - start < 10000L) {
       while (client.available()) {
-        logo[read_chars]     = client.read();
-        logo[read_chars + 1] = '\0';
+        SerialMon.write(client.read());
         read_chars++;
         start = millis();
       }
     }
-    SerialMon.println(logo);
-    DBG("#####  RECEIVED:", strlen(logo), "CHARACTERS");
+    DBG("#####  RECEIVED:", read_chars, "CHARACTERS");
     client.stop();
   }
 #endif
@@ -399,20 +389,15 @@ void loop() {
 
     // Read data
     startS          = millis();
-    char logoS[640] = {
-        '\0',
-    };
     int read_charsS = 0;
     while (secureClient.connected() && millis() - startS < 10000L) {
       while (secureClient.available()) {
-        logoS[read_charsS]     = secureClient.read();
-        logoS[read_charsS + 1] = '\0';
+        SerialMon.write(secureClient.read());
         read_charsS++;
         startS = millis();
       }
     }
-    SerialMon.println(logoS);
-    DBG("#####  RECEIVED:", strlen(logoS), "CHARACTERS");
+    DBG("#####  RECEIVED:", read_charsS, "CHARACTERS");
     secureClient.stop();
   }
 #endif
