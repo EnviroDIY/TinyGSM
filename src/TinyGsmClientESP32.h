@@ -925,9 +925,10 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       // AT+CIPDOMAIN=<"domain name">[,<ip network>][,<timeout>]
       sendAT(GF("+CIPDOMAIN=\""), host, GF("\""));
       // +CIPDOMAIN:<"IP address"> then OK
-      if (waitResponse(GF("+CIPDOMAIN:")) != 1) { return false; }
-      String ip = stream.readStringUntil('\n');
-      waitResponse();
+      if (waitResponse(GF("+CIPDOMAIN:\"")) != 1) { return false; }
+      String ip = stream.readStringUntil('"');
+      streamSkipUntil('\n');  // skip the rest of the line
+      waitResponse();         // ends with OK
       if (ip.length() > 0) {
         host = ip.c_str();
       } else {
@@ -963,10 +964,15 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t) {
+    uint16_t received = 0;
+    if (waitResponse(10000L, GF("Recv ")) == 1) {
+      received = streamGetIntBefore(' ');  // check received length
+    }
     if (waitResponse(10000L, GF(AT_NL "SEND OK" AT_NL),
                      GF(AT_NL "SEND FAIL" AT_NL), GFP(GSM_ERROR)) != 1) {
       return 0;
     }
+    if (received != len) { DBG("### Sent:", received, "of", len); }
     return len;
   }
 
