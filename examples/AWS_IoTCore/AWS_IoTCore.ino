@@ -47,7 +47,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
-// #define TINY_GSM_DEBUG SerialMon
+#define TINY_GSM_DEBUG SerialMon
 
 // Range to attempt to autobaud
 // NOTE:  DO NOT AUTOBAUD in production code.  Once you've established
@@ -264,13 +264,12 @@ void setup() {
   DBG("Wait...");
   delay(500L);
 
-  // Set GSM module baud rate
+// Set GSM module baud rate
 #ifndef TINY_GSM_MODEM_XBEE
   TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
 #else
-  SerialAT.begin(115200);
+  SerialAT.begin(9600);
 #endif
-  // SerialAT.begin(921600);
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
