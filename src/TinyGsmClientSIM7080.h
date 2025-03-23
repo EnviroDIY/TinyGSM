@@ -547,6 +547,13 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       ntries++;
     }
 
+    // Set the PDP context for DNS lookup
+    sendAT(GF("+CDNSPDPID=0"));
+    if (waitResponse() != 1) { return false; }
+    // Configure Domain Name Server (DNS)
+    sendAT(GF("+CDNSCFG=\"8.8.8.8\",\"8.8.4.4\""));
+    if (waitResponse() != 1) { return false; }
+
     return res;
   }
 
