@@ -1391,7 +1391,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     return true;
   }
 
-  bool modemBeginSendImpl(size_t len, uint8_t mux = 0) {
+  bool modemBeginSendImpl(size_t, uint8_t mux = 0) {
     if (mux != 0) {
       DBG("XBee only supports 1 IP channel in transparent mode!");
       return false;

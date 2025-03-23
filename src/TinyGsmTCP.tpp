@@ -372,7 +372,9 @@ class TinyGsmTCP {
 
     // destructor - need to remove self from the socket pointer array
     virtual ~GsmClient() {
-      at->sockets[mux] = nullptr;
+      if (mux < muxCount) {
+        if (at->sockets[mux] == this) { at->sockets[mux] = nullptr; }
+      }
     }
 
     /*

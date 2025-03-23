@@ -375,8 +375,9 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
     if (waitResponse(GF(AT_NL "DATA ACCEPT:"), GF("SEND FAIL")) != 1) {
       return 0;
     }
-    uint8_t ret_mux = streamGetIntBefore(',');   // check mux
-    int16_t sent    = streamGetIntBefore('\n');  // check send length
+    uint8_t  ret_mux = streamGetIntBefore(',');   // check mux
+    uint16_t sent    = streamGetIntBefore('\n');  // check send length
+    if (sent != len) { DBG("### Sent:", sent, "of", len, "on", mux); }
     if (mux == ret_mux) return sent;
     return 0;
   }
@@ -403,7 +404,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
     // buffer after the read.
     size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
     // sockets[mux]->sock_available = modemGetAvailable(mux);
-    sockets[mux]->sock_available = len_reported;
+    sockets[mux]->sock_available = len_remaining;
     waitResponse();
     return len_read;
   }

@@ -546,7 +546,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    * Client related functions
    */
  public:
-  bool configureSSLContext(uint8_t context_id, const char* sni,
+  bool configureSSLContext(uint8_t     context_id, const char*,
                            SSLAuthMode sslAuthMode, SSLVersion sslVersion,
                            const char* CAcertName, const char* clientCertName,
                            const char* clientKeyName) {

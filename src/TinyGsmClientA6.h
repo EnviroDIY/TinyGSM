@@ -534,7 +534,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
           // reset the len to read to the amount free
           len = sockets[mux]->rx.free();
         }
-        size_t len_read = moveCharsFromStreamToFifo(mux, len);
+        moveCharsFromStreamToFifo(mux, len);
       }
       data = "";
       DBG("### Got Data: ", len_reported, "on", mux);
