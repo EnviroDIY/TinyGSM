@@ -206,7 +206,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    virtual void stop(uint32_t maxWaitMs) override {
+    void stop(uint32_t maxWaitMs) override {
       is_mid_send = false;
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CCHCLOSE="), mux);

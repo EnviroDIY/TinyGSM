@@ -524,26 +524,20 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
  public:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+CIPRCV:"))) {
-      int8_t  mux      = streamGetIntBefore(',');
-      int16_t len      = streamGetIntBefore(',');
-      int16_t len_orig = len;
+      int8_t  mux          = streamGetIntBefore(',');
+      int16_t len_reported = streamGetIntBefore(',');
+      int16_t len          = len_reported;
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
-          DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
+          DBG("### Buffer overflow: ", len_reported, "->",
+              sockets[mux]->rx.free());
           // reset the len to read to the amount free
           len = sockets[mux]->rx.free();
         }
-        bool chars_remaining = true;
-        while (len-- && chars_remaining) {
-          chars_remaining = moveCharFromStreamToFifo(mux);
-        }
-        if (len_orig != sockets[mux]->available()) {
-          DBG("### Different number of characters received than expected: ",
-              sockets[mux]->available(), " vs ", len_orig);
-        }
+        size_t len_read = moveCharsFromStreamToFifo(mux, len);
       }
       data = "";
-      DBG("### Got Data: ", len_orig, "on", mux);
+      DBG("### Got Data: ", len_reported, "on", mux);
       return true;
     } else if (data.endsWith(GF("+TCPCLOSED:"))) {
       int8_t mux = streamGetIntBefore('\n');

@@ -531,26 +531,19 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
  public:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+TCPRECV:"))) {
-      int8_t  mux      = streamGetIntBefore(',');
-      int16_t len      = streamGetIntBefore(',');
-      int16_t len_orig = len;
+      int8_t  mux          = streamGetIntBefore(',');
+      int16_t len_reported = streamGetIntBefore(',');
+      int16_t len          = len_reported;
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           // reset the len to read to the amount free
           len = sockets[mux]->rx.free();
         }
-        bool chars_remaining = true;
-        while (len-- && chars_remaining) {
-          chars_remaining = moveCharFromStreamToFifo(mux);
-        }
-        if (len_orig != sockets[mux]->available()) {
-          DBG("### Different number of characters received than expected: ",
-              sockets[mux]->available(), " vs ", len_orig);
-        }
+        moveCharsFromStreamToFifo(mux, len);
+        // TODO(SRGDamia1): deal with buffer overflow
       }
       data = "";
-      DBG("### Got Data: ", len_orig, "on", mux);
       return true;
     } else if (data.endsWith(GF("+TCPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');

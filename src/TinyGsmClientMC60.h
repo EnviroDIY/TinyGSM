@@ -507,22 +507,18 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
       streamSkipUntil(',');  // skip port
       streamSkipUntil(',');  // skip connection type (TCP/UDP)
       // read the real length of the retrieved data
-      uint16_t len = streamGetIntBefore('\n');
+      uint16_t len_reported = streamGetIntBefore('\n');
       // It's possible that the real length available is less than expected
       // This is quite likely if the buffer is broken into packets - which may
       // be different sizes.
       // If so, make sure we make sure we re-set the amount of data available.
-      if (len < size) { sockets[mux]->sock_available = len; }
-      bool chars_remaining = true;
-      while (len-- && chars_remaining) {
-        chars_remaining = moveCharFromStreamToFifo(mux);
-        sockets[mux]->sock_available--;
-        // ^^ One less character available after moving from modem's FIFO to our
-        // FIFO
-      }
+      if (len_reported < size) { sockets[mux]->sock_available = len_reported; }
+      size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
+      sockets[mux]->sock_available -= len_read;
+      // ^^ Decrease the characters available after moving from modem's FIFO to
+      // our FIFO
       waitResponse();  // ends with an OK
-      // DBG("### READ:", len, "from", mux);
-      return len;
+      return len_read;
     } else {
       sockets[mux]->sock_available = 0;
       return 0;
@@ -591,8 +587,9 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
       return true;
     } else if (data.endsWith(GF("+QNITZ:"))) {
       streamSkipUntil('\n');  // URC for time sync
-      DBG("### Network time updated.");
       data = "";
+      DBG("### Network time updated.");
+      return true;
     }
     return false;
   }

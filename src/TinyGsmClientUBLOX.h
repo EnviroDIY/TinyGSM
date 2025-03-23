@@ -786,17 +786,13 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF(AT_NL "+USORD:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
-    int16_t len = streamGetIntBefore(',');
+    int16_t len_reported = streamGetIntBefore(',');
     streamSkipUntil('\"');
-    bool chars_remaining = true;
-    while (len-- && chars_remaining) {
-      chars_remaining = moveCharFromStreamToFifo(mux);
-    }
+    size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
     streamSkipUntil('\"');
     waitResponse();
-    // DBG("### READ:", len, "from", mux);
     sockets[mux]->sock_available = modemGetAvailable(mux);
-    return len;
+    return len_read;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
