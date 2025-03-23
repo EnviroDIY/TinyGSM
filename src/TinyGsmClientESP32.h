@@ -917,6 +917,24 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       waitResponse();
     }
 
+    // If you need to use a domain name and the length of the domain name
+    // exceeds 64 bytes, use the AT+CIPDOMAIN command to obtain the IP address
+    // corresponding to the domain name, and then use the IP address to
+    // establish a connection.
+    if (strlen(host) > 64) {
+      // AT+CIPDOMAIN=<"domain name">[,<ip network>][,<timeout>]
+      sendAT(GF("+CIPDOMAIN=\""), host, GF("\""));
+      // +CIPDOMAIN:<"IP address"> then OK
+      if (waitResponse(GF("+CIPDOMAIN:")) != 1) { return false; }
+      String ip = stream.readStringUntil('\n');
+      waitResponse();
+      if (ip.length() > 0) {
+        host = ip.c_str();
+      } else {
+        return false;
+      }
+    }
+
     // Make the connection
     sendAT(GF("+CIPSTART="), requested_mux, ',',
            ssl ? GF("\"SSL") : GF("\"TCP"), GF("\",\""), host, GF("\","), port
