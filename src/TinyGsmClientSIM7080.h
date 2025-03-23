@@ -921,6 +921,30 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       }
     }
 
+    // If the domain name is >64 characters, look up the IP.
+    if (strlen(host) > 64) {
+      // AT+CIPDOMAIN=<"domain name">[,<ip network>][,<timeout>]
+      sendAT(GF("+CDNSGIP=\""), host, GF("\""));
+      // +CIPDOMAIN:<"IP address"> then OK
+      if (waitResponse(GF("+CDNSGIP:")) != 1) { return false; }
+      bool success = streamGetIntBefore(',');
+      if (success) {
+        streamSkipUntil('"');  // skip starting quote
+        streamSkipUntil('"');  // skip the returned domain name
+        // TODO: verify the returned domain name matches the one we sent
+        streamSkipUntil('"');                     // skip starting quote
+        String ip = stream.readStringUntil('"');  // read the IPv4 address
+        streamSkipUntil('\n');  // skip the IPv6 address, if its there
+        if (ip.length() > 0) {
+          host = ip.c_str();
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+
     // actually open the connection
     // AT+CAOPEN=<cid>,<pdp_index>,<conn_type>,<server>,<port>[,<recv_mode>]
     // <cid> TCP/UDP identifier
