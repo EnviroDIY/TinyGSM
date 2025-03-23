@@ -968,7 +968,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     if (waitResponse(10000L, GF("Recv ")) == 1) {
       received = streamGetIntBefore(' ');  // check received length
     }
-    if (waitResponse(10000L, GF(AT_NL "SEND OK" AT_NL),
+    if (waitResponse(30000L, GF(AT_NL "SEND OK" AT_NL),
                      GF(AT_NL "SEND FAIL" AT_NL), GFP(GSM_ERROR)) != 1) {
       return 0;
     }
