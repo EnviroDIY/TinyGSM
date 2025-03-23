@@ -12,8 +12,8 @@
 
 // Select your certificate:
 #include "DSTRootCAX3.h"
-//#include "DSTRootCAX3.der.h"
-//#include "COMODORSACertificationAuthority.h"
+// #include "DSTRootCAX3.der.h"
+// #include "COMODORSACertificationAuthority.h"
 
 // Select the file you want to write into
 // (the file is stored on the modem)

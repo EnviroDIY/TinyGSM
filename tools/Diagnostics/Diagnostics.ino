@@ -22,6 +22,7 @@
 // #define TINY_GSM_MODEM_A7672X
 // #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_SARAR4
+// #define TINY_GSM_MODEM_SARAR5
 // #define TINY_GSM_MODEM_M95
 // #define TINY_GSM_MODEM_BG95
 // #define TINY_GSM_MODEM_BG96
@@ -40,11 +41,11 @@
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
-#ifndef __AVR_ATmega328P__
+#if !defined(__AVR_ATmega328P__) && !defined(SerialAT)
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-#else
+#elif !defined(SerialAT)
 #include <SoftwareSerial.h>
 SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
@@ -58,7 +59,9 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
 
 // See all AT commands, if wanted
-// #define DUMP_AT_COMMANDS
+// WARNING: At high baud rates, incoming data may be lost when dumping AT
+// commands
+#define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
@@ -69,12 +72,15 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 921600
 
-// Add a reception delay - may be needed for a fast processor at a slow baud
-// rate #define TINY_GSM_YIELD() { delay(2); }
+// Add a reception delay, if needed.
+// This may be needed for a fast processor at a slow baud rate.
+// #define TINY_GSM_YIELD() { delay(2); }
 
 // Uncomment this if you want to use SSL
 // #define USE_SSL
 
+// Define how you're planning to connect to the internet.
+// This is only needed for this example, not in other code.
 #define TINY_GSM_USE_GPRS true
 #define TINY_GSM_USE_WIFI false
 
@@ -89,10 +95,6 @@ const char gprsPass[] = "";
 // Your WiFi connection credentials, if applicable
 const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
-
-// Server details
-const char server[]   = "vsh.pp.ua";
-const char resource[] = "/TinyGSM/logo.txt";
 
 #include <TinyGsmClient.h>
 
@@ -115,7 +117,7 @@ const char resource[] = "/TinyGSM/logo.txt";
 StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm        modem(debugger);
 #else
-TinyGsm        modem(SerialAT);
+TinyGsm modem(SerialAT);
 #endif
 
 #if defined(TINY_GSM_MODEM_HAS_SSL)
@@ -124,10 +126,16 @@ TinyGsm        modem(SerialAT);
 
 #ifdef USE_SSL
 TinyGsmClientSecure client(modem);
-const int           port = 443;
+// Server details to test TCP over SSL
+const char server[]   = "vsh.pp.ua";
+const char resource[] = "/TinyGSM/logo.txt";
+const int  port       = 443;
 #else
-TinyGsmClient  client(modem);
-const int      port = 80;
+TinyGsmClient client(modem);
+// Server details to test TCP without SSL
+const char server[]   = "time.sodaq.net";
+const char resource[] = "/";
+const int  port       = 80;
 #endif
 
 void setup() {

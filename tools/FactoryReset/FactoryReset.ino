@@ -14,9 +14,15 @@
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_SIM900
+// #define TINY_GSM_MODEM_SIM7000
+// #define TINY_GSM_MODEM_SIM7000SSL
+// #define TINY_GSM_MODEM_SIM7080
 // #define TINY_GSM_MODEM_SIM5360
+// #define TINY_GSM_MODEM_SIM7600
+// #define TINY_GSM_MODEM_A7672X
 // #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_SARAR4
+// #define TINY_GSM_MODEM_SARAR5
 // #define TINY_GSM_MODEM_M95
 // #define TINY_GSM_MODEM_BG95
 // #define TINY_GSM_MODEM_BG96
@@ -37,11 +43,11 @@
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
-#ifndef __AVR_ATmega328P__
+#if !defined(__AVR_ATmega328P__) && !defined(SerialAT)
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-#else
+#elif !defined(SerialAT)
 #include <SoftwareSerial.h>
 SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif

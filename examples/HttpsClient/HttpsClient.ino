@@ -27,10 +27,14 @@
 // #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_SIM7000SSL
 // #define TINY_GSM_MODEM_SIM7080
+// #define TINY_GSM_MODEM_SIM7600
+// #define TINY_GSM_MODEM_A7672X
 // #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_SARAR4
-// #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_SARAR5
+// #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_ESP32
+// #define TINY_GSM_MODEM_ESP8266
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
@@ -39,11 +43,11 @@
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
-#ifndef __AVR_ATmega328P__
+#if !defined(__AVR_ATmega328P__) && !defined(SerialAT)
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-#else
+#elif !defined(SerialAT)
 #include <SoftwareSerial.h>
 SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
@@ -57,7 +61,9 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
 
 // See all AT commands, if wanted
-// #define DUMP_AT_COMMANDS
+// WARNING: At high baud rates, incoming data may be lost when dumping AT
+// commands
+#define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
@@ -80,9 +86,6 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 
 // set GSM PIN, if any
 #define GSM_PIN ""
-
-// flag to force SSL client authentication, if needed
-// #define TINY_GSM_SSL_CLIENT_AUTHENTICATION
 
 // Your GPRS credentials, if any
 const char apn[]      = "YourAPN";
@@ -120,7 +123,7 @@ const int  port       = 443;
 StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm        modem(debugger);
 #else
-TinyGsm        modem(SerialAT);
+TinyGsm modem(SerialAT);
 #endif
 
 TinyGsmClientSecure client(modem);
@@ -136,11 +139,12 @@ void setup() {
   // !!!!!!!!!!!
 
   SerialMon.println("Wait...");
+  delay(500L);
 
   // Set GSM module baud rate
   TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
   // SerialAT.begin(9600);
-  delay(6000);
+  delay(500L);
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
