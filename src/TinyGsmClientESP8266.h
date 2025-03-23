@@ -595,8 +595,33 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
       waitResponse();
     }
 
+    // If you need to use a domain name and the length of the domain name
+    // exceeds 64 bytes, use the AT+CIPDOMAIN command to obtain the IP address
+    // corresponding to the domain name, and then use the IP address to
+    // establish a connection.
+    if (strlen(host) > 64) {
+      // AT+CIPDOMAIN=<"domain name">[,<ip network>][,<timeout>]
+      sendAT(GF("+CIPDOMAIN=\""), host, GF("\""));
+      // +CIPDOMAIN:<"IP address"> then OK
+      if (waitResponse(GF("+CIPDOMAIN:\"")) != 1) { return false; }
+      String ip = stream.readStringUntil('"');
+      streamSkipUntil('\n');  // skip the rest of the line
+      waitResponse();         // ends with OK
+      if (ip.length() > 0) {
+        host = ip.c_str();
+      } else {
+        return false;
+      }
+    }
+
+    // Make the connection
     sendAT(GF("+CIPSTART="), mux, ',', ssl ? GF("\"SSL") : GF("\"TCP"),
-           GF("\",\""), host, GF("\","), port);
+           GF("\",\""), host, GF("\","), port
+#if defined(TINY_GSM_TCP_KEEP_ALIVE)
+           ,
+           ',', TINY_GSM_TCP_KEEP_ALIVE
+#endif
+    );
 
     String data;
     int8_t rsp = waitResponse(timeout_ms, data, GFP(GSM_OK), GFP(GSM_ERROR),
@@ -620,10 +645,15 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t) {
+    uint16_t received = 0;
+    if (waitResponse(10000L, GF("Recv ")) == 1) {
+      received = streamGetIntBefore(' ');  // check received length
+    }
     if (waitResponse(10000L, GF(AT_NL "SEND OK" AT_NL),
                      GF(AT_NL "SEND FAIL" AT_NL), GFP(GSM_ERROR)) != 1) {
       return 0;
     }
+    if (received != len) { DBG("### Sent:", received, "of", len); }
     return len;
   }
 
