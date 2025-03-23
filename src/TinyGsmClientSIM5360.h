@@ -664,8 +664,8 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     if (waitResponse(GF(AT_NL "+CIPSEND:")) != 1) { return 0; }
     uint8_t ret_mux = streamGetIntBefore(',');  // check mux
     streamSkipUntil(',');                       // Skip requested bytes to send
-    // TODO(?):  make sure requested and confirmed bytes match
-    int16_t sent = streamGetIntBefore('\n');  // check send length
+    uint16_t sent = streamGetIntBefore('\n');   // check send length
+    if (sent != len) { DBG("### Sent:", sent, "of", len, "on", mux); }
     if (mux == ret_mux) return sent;
     return 0;
   }
@@ -681,15 +681,15 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(',');  // Skip mux/cid (connecion id)
     // TODO: validate mux
-    int16_t len_requested = streamGetIntBefore(',');
+    int16_t len_reported = streamGetIntBefore(',');
     //  ^^ Requested number of data bytes (1-1460 bytes) to be read
-    int16_t len_reported = streamGetIntBefore('\n');
+    int16_t len_remaining = streamGetIntBefore('\n');
     // ^^ The data length which not read in the buffer
     size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
     // sockets[mux]->sock_available = modemGetAvailable(mux);
-    sockets[mux]->sock_available = len_reported;
+    sockets[mux]->sock_available = len_remaining;
     waitResponse();
-    return len_requested;
+    return len_read;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {

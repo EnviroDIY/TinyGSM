@@ -797,10 +797,11 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
     if (waitResponse(GF(AT_NL "+USOWR:")) != 1) { return 0; }
-    uint8_t ret_mux = streamGetIntBefore(',');   // check mux
-    int16_t sent    = streamGetIntBefore('\n');  // check send length
-    bool    success = waitResponse() ==
+    uint8_t  ret_mux = streamGetIntBefore(',');   // check mux
+    uint16_t sent    = streamGetIntBefore('\n');  // check send length
+    bool     success = waitResponse() ==
         1;  // sends back OK after the confirmation of number sent
+    if (sent != len) { DBG("### Sent:", sent, "of", len, "on", mux); }
     if (mux == ret_mux && success) return sent;
     return 0;
   }

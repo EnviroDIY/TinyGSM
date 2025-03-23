@@ -868,9 +868,10 @@ class TinyGsmSim7000SSL
     // after posting data, module responds with:
     //+CASEND: <cid>,<result>,<sendlen>
     if (waitResponse(GF(AT_NL "+CASEND:")) != 1) { return 0; }
-    uint8_t ret_mux = streamGetIntBefore(',');       // check mux
-    bool    result  = streamGetIntBefore(',') == 0;  // check result
-    int16_t sent    = streamGetIntBefore('\n');      // check send length
+    uint8_t  ret_mux = streamGetIntBefore(',');       // check mux
+    bool     result  = streamGetIntBefore(',') == 0;  // check result
+    uint16_t sent    = streamGetIntBefore('\n');      // check send length
+    if (sent != len) { DBG("### Sent:", sent, "of", len, "on", mux); }
     if (mux == ret_mux && result) { return sent; }
     return 0;
   }
