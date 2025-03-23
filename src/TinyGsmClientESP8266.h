@@ -257,6 +257,9 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   // certificate name and the SSL connection type so those can be called at
   // connection time, but this library does **NOT** currently support uploading,
   // deleting, or converting certificates on the modem.
+  // On the ESP8266 the only way to update your certificates is to use a
+  // combination of python scripts, AT commands, and flash tools or to fully
+  // build your own version of the AT firmware.
 
 #undef TINY_GSM_MODEM_CAN_LOAD_CERTS
 
@@ -264,7 +267,6 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   void parseCertificateName(const char* cert_name, char* parsed_namespace,
                             uint8_t& parsed_number) {
     // pull the namespace out of the name
-    Serial.write(cert_name, strlen(cert_name) - 2);
     memcpy(parsed_namespace, cert_name, strlen(cert_name) - 2);
     parsed_namespace[strlen(cert_name) - 2] = '\0';
     // pull the number out of the name
@@ -618,7 +620,10 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t) {
-    if (waitResponse(10000L, GF(AT_NL "SEND OK" AT_NL)) != 1) { return 0; }
+    if (waitResponse(10000L, GF(AT_NL "SEND OK" AT_NL),
+                     GF(AT_NL "SEND FAIL" AT_NL), GFP(GSM_ERROR)) != 1) {
+      return 0;
+    }
     return len;
   }
 
@@ -653,7 +658,7 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF("+IPD,"))) {
+    if (data.endsWith(GF(AT_NL "+IPD,"))) {
       int8_t  mux       = streamGetIntBefore(',');
       int16_t len       = streamGetIntBefore(':');
       size_t  len_orig  = len;

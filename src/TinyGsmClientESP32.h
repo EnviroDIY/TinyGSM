@@ -367,13 +367,18 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // NOTE: You must be running AT firmware >= 3.4.0.0 for these functions to
+  // NOTE: You must be running AT firmware >= 3.2.0.0 for these functions to
   // work. If you are running a lower level firmware, you must update. You
   // almost certainly will need to flash your board with the new firmware using
   // esptools/ESP flash download tools instead of using the AT+CIUPDATE function
   // because the structure of the NVM space changed and the newer structure is
   // needed for the SYSMFG command used here. The CIUPDATE function does not
   // update the NVM.
+
+  // NOTE: In firmware release notes, it says that more than 5 sets of CA
+  // certificates are supported, but all other command examples and descriptions
+  // of the flash memory storage for the certificates mention only 2 possible
+  // sets (0 and 1).
 
  public:
   // This adds the server's CA certificate that the client connects to, used
@@ -856,6 +861,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
     if (ssl) {
       if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) { return false; }
+      // TODO: Implement PSK and PSK Identity
+
 
       // SSL certificate checking will not work without a valid timestamp!
       if (sockets[requested_mux] != nullptr &&
@@ -911,8 +918,6 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     }
 
     // Make the connection
-    // If we know the mux number we want to use, use CIPSTART, if we want the
-    // module to assign a mux number for us, use CIPSTARTEX
     sendAT(GF("+CIPSTART="), requested_mux, ',',
            ssl ? GF("\"SSL") : GF("\"TCP"), GF("\",\""), host, GF("\","), port
 #if defined(TINY_GSM_TCP_KEEP_ALIVE)
