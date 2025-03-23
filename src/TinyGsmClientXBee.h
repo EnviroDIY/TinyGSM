@@ -1401,7 +1401,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  size_t modemEndSendImpl(size_t len, uint8_t mux) {
+  size_t modemEndSendImpl(size_t len, uint8_t) {
     if (beeType != XBEE_S6B_WIFI) {
       // After a send, verify the outgoing ip if it isn't set
       if (savedOperatingIP == IPAddress(0, 0, 0, 0)) {
