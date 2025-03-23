@@ -931,9 +931,9 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // If the domain name is >64 characters, look up the IP.
     if (strlen(host) > 64) {
       // AT+CIPDOMAIN=<"domain name">[,<ip network>][,<timeout>]
-      sendAT(GF("+CDNSGIP=\""), host, GF("\""));
+      sendAT(GF("+CDNSGIP=\""), host, GF("\",3,60000"));
       // +CIPDOMAIN:<"IP address"> then OK
-      if (waitResponse(GF("+CDNSGIP:")) != 1) { return false; }
+      if (waitResponse(60000L, GF("+CDNSGIP:")) != 1) { return false; }
       bool success = streamGetIntBefore(',');
       if (success) {
         streamSkipUntil('"');  // skip starting quote
