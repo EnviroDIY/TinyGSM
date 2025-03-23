@@ -802,6 +802,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // <ctxindex> SSL context identifier
     // NOTE:  despite docs using "CTXINDEX" in all caps, the module only
     // accepts the command "CTXINDEX" and it must be in lower case
+    // +CSSLCFG:<ctxindex>,<sslversion>,<ciphersuite>,<ignorertctime>,<protocol>,<sni>
     sendAT(GF("+CSSLCFG=\"ctxindex\","), context_id);
     if (waitResponse(5000L, GF("+CSSLCFG:")) != 1) return false;
     streamSkipUntil('\n');  // read out the certificate information

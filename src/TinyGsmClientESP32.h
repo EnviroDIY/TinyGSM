@@ -941,7 +941,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t) {
     if (waitResponse(10000L, GF(AT_NL "SEND OK" AT_NL),
-                     GF(AT_NL "SEND FAIL" AT_NL), GSM_ERROR) != 1) {
+                     GF(AT_NL "SEND FAIL" AT_NL), GFP(GSM_ERROR)) != 1) {
       return 0;
     }
     return len;
