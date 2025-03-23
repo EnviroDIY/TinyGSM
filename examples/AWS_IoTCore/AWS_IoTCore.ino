@@ -33,7 +33,7 @@
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
 #ifndef __AVR_ATmega328P__
-#define SerialAT SerialBee
+#define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
 #else
@@ -217,49 +217,7 @@ void setup() {
 
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
-  // pins
-  int8_t _modemPowerPin   = 18;  // Mayfly 1.1
-  int8_t _modemSleepRqPin = 23;  // Mayfly 1.1
-  int8_t _modemStatusPin  = 19;  // Mayfly 1.1
-  // set pin modes
-  pinMode(_modemPowerPin, OUTPUT);
-  pinMode(_modemSleepRqPin, OUTPUT);
-  pinMode(_modemStatusPin, INPUT);
-  // wake settings
-  uint32_t _wakeDelay_ms = 1000L;  // SIM7080G
-  uint32_t _wakePulse_ms = 1100L;  // SIM7080G
-#ifdef TINY_GSM_MODEM_SIM7080
-  bool _wakeLevel = HIGH;  // SIM7080G is low, but EnviroDIY LTE Bee inverts it
-#else
-  bool _wakeLevel = LOW;
-#endif
-
-  // start with the modem powered off
-  DBG(F("Starting with modem powered down. Wait..."));
-#ifdef TINY_GSM_MODEM_SIM7080
-  digitalWrite(_modemSleepRqPin, !_wakeLevel);
-#endif
-  digitalWrite(_modemPowerPin, LOW);
-  delay(5000L);
-
-  // power the modem
-  DBG(F("Powering modem with pin"), _modemPowerPin, F("and waiting"),
-      _wakeDelay_ms, F("ms for power up."));
-#ifdef TINY_GSM_MODEM_XBEE
-  digitalWrite(_modemSleepRqPin, _wakeLevel);
-#endif
-  digitalWrite(_modemPowerPin, HIGH);
-
-#ifdef TINY_GSM_MODEM_SIM7080
-  delay(_wakeDelay_ms);  // SIM7080G wake delay
-  // wake the modem
-  DBG(F("Sending a"), _wakePulse_ms, F("ms"), _wakeLevel ? F("HIGH") : F("LOW"),
-      F("wake-up pulse on pin"), _modemSleepRqPin);
-  digitalWrite(_modemSleepRqPin, _wakeLevel);
-  delay(_wakePulse_ms);  // >1s
-  digitalWrite(_modemSleepRqPin, !_wakeLevel);
   // !!!!!!!!!!!
-#endif
 
   DBG("Wait...");
   delay(500L);
