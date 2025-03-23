@@ -54,8 +54,9 @@
 // #define TINY_GSM_MODEM_M590
 // #define TINY_GSM_MODEM_MC60
 // #define TINY_GSM_MODEM_MC60E
-// #define TINY_GSM_MODEM_ESP8266
 // #define TINY_GSM_MODEM_ESP32
+// #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_ESP8266_NONOS
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
@@ -66,11 +67,11 @@
 #define SerialMon Serial
 
 // Hardware Serial on Mega, Leonardo, Micro
-#ifndef __AVR_ATmega328P__
+#if !defined(__AVR_ATmega328P__) && !defined(SerialAT)
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-#else
+#elif !defined(SerialAT)
 #include <SoftwareSerial.h>
 SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif

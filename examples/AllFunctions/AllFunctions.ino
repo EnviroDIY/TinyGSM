@@ -42,17 +42,19 @@
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
-#ifndef __AVR_ATmega328P__
+#if !defined(__AVR_ATmega328P__) && !defined(SerialAT)
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-#else
+#elif !defined(SerialAT)
 #include <SoftwareSerial.h>
 SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
 
 // See all AT commands, if wanted
-// #define DUMP_AT_COMMANDS
+// WARNING: At high baud rates, incoming data may be lost when dumping AT
+// commands
+#define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
@@ -62,6 +64,9 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 // communication, set a fixed baud rate using modem.setBaud(#).
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 921600
+#ifndef TARGET_BAUD
+#define TARGET_BAUD 115200
+#endif
 
 // Add a reception delay, if needed.
 // This may be needed for a fast processor at a slow baud rate.
@@ -103,9 +108,14 @@ const char gprsPass[] = "";
 const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
-// Server details to test TCP/SSL
-const char server[]   = "vsh.pp.ua";
-const char resource[] = "/TinyGSM/logo.txt";
+// Server details to test TCP without SSL
+const char server[]   = "time.sodaq.net";
+const char resource[] = "/";
+const int  port       = 80;
+// Server details to test TCP over SSL
+const char server_ssl[]   = "vsh.pp.ua";
+const char resource_ssl[] = "/TinyGSM/logo.txt";
+const int  port_ssl       = 443;
 
 #include <TinyGsmClient.h>
 
@@ -143,8 +153,17 @@ void setup() {
   delay(500L);
 
   // Set GSM module baud rate
-  TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
-  // SerialAT.begin(9600);
+  uint32_t found_baud = TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN,
+                                        GSM_AUTOBAUD_MAX);
+  if (found_baud != 0) {
+#if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_ESP8266)
+    modem.setDefaultBaud(TARGET_BAUD);
+#else
+    modem.setBaud(TARGET_BAUD);
+#endif
+    SerialAT.end();
+    SerialAT.begin(TARGET_BAUD);
+  }
 }
 
 void loop() {
@@ -251,13 +270,12 @@ void loop() {
 
 #if TINY_GSM_TEST_TCP && defined TINY_GSM_MODEM_HAS_TCP
   TinyGsmClient client(modem, 0);
-  const int     port = 80;
   DBG("Connecting to", server);
   if (!client.connect(server, port)) {
     DBG("... failed");
   } else {
     // Make a HTTP GET request:
-    client.print(String("GET ") + resource + " HTTP/1.0\r\n");
+    client.print(String("GET ") + resource + " HTTP/1.1\r\n");
     client.print(String("Host: ") + server + "\r\n");
     client.print("Connection: close\r\n\r\n");
 
@@ -269,16 +287,23 @@ void loop() {
     };
 
     // Read data
-    start          = millis();
+    start               = millis();
+    char time_page[250] = {
+        '\0',
+    };
     int read_chars = 0;
     while (client.connected() && millis() - start < 10000L) {
       while (client.available()) {
-        SerialMon.write(client.read());
+        time_page[read_chars]     = client.read();
+        time_page[read_chars + 1] = '\0';
         read_chars++;
         start = millis();
       }
     }
-    DBG("#####  RECEIVED:", read_chars, "CHARACTERS");
+    SerialMon.println("\n----------------------------------");
+    SerialMon.println(time_page);
+    SerialMon.println("----------------------------------\n");
+    DBG("#####  RECEIVED:", strlen(time_page), "CHARACTERS");
     client.stop();
   }
 
@@ -289,7 +314,7 @@ void loop() {
   // concatenate the request
   strcat(request, "GET ");
   strcat(request, resource);
-  strcat(request, " HTTP/1.0\r\n");
+  strcat(request, " HTTP/1.1\r\n");
   strcat(request, "Host: ");
   strcat(request, server);
   strcat(request, "\r\n");
@@ -312,16 +337,24 @@ void loop() {
     };
 
     // Read data
-    start          = millis();
+    start               = millis();
+    char time_page[250] = {
+        '\0',
+    };
     int read_chars = 0;
     while (client.connected() && millis() - start < 10000L) {
-      while (client.available()) {
-        SerialMon.write(client.read());
-        read_chars++;
-        start = millis();
+      size_t avail = client.available();
+      if (avail) {
+        read_chars += client.read(
+            reinterpret_cast<uint8_t*>(time_page) + read_chars, avail);
+        time_page[read_chars + 1] = '\0';
+        start                     = millis();
       }
     }
-    DBG("#####  RECEIVED:", read_chars, "CHARACTERS");
+    SerialMon.println("\n----------------------------------");
+    SerialMon.println(time_page);
+    SerialMon.println("----------------------------------\n");
+    DBG("#####  RECEIVED:", strlen(time_page), "CHARACTERS");
     client.stop();
   }
 #endif
@@ -340,10 +373,14 @@ void loop() {
 
 #if defined(TEST_BUILD_ADD_CERTS) && defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
   // WARNING:  Never run this section with an actual board attached!!
-  // If you run this, you will overwrite already installed certificates with
-  // junk and probably cause SSL to stop working on your module.
-  const char* fake_certificate = "-----BEGIN FAKE CERTIFICATE-----";
-  const char* fake_cert_name   = "myFakeCert.crt";
+  // If you run this, you could overwrite already installed certificates with
+  // junk and cause SSL to stop working on your module.
+  static const char fake_certificate[] TINY_GSM_PROGMEM = R"EOF(
+  -----BEGIN CERTIFICATE-----
+  XXX
+  -----END CERTIFICATE-----
+  )EOF";
+  const char*       fake_cert_name                      = "myFakeCert.crt";
 
   modem.addCACert(fake_cert_name, fake_certificate, strlen(fake_certificate));
   modem.convertCACertificate(fake_cert_name);
@@ -370,14 +407,13 @@ void loop() {
 #endif
 #endif
 
-  const int securePort = 443;
-  DBG("Connecting securely to", server);
-  if (!secureClient.connect(server, securePort)) {
+  DBG("Connecting securely to", server_ssl);
+  if (!secureClient.connect(server_ssl, port_ssl)) {
     DBG("... failed");
   } else {
     // Make a HTTP GET request:
-    secureClient.print(String("GET ") + resource + " HTTP/1.0\r\n");
-    secureClient.print(String("Host: ") + server + "\r\n");
+    secureClient.print(String("GET ") + resource_ssl + " HTTP/1.1\r\n");
+    secureClient.print(String("Host: ") + server_ssl + "\r\n");
     secureClient.print("Connection: close\r\n\r\n");
 
     // Wait for data to arrive
@@ -388,16 +424,24 @@ void loop() {
     };
 
     // Read data
-    startS          = millis();
+    startS         = millis();
+    char logo[640] = {
+        '\0',
+    };
     int read_charsS = 0;
     while (secureClient.connected() && millis() - startS < 10000L) {
       while (secureClient.available()) {
-        SerialMon.write(secureClient.read());
+        logo[read_charsS]     = secureClient.read();
+        logo[read_charsS + 1] = '\0';
         read_charsS++;
+        // DBG("Put character", read_charsS, "into logo");
         startS = millis();
       }
     }
-    DBG("#####  RECEIVED:", read_charsS, "CHARACTERS");
+    SerialMon.println("\n----------------------------------");
+    SerialMon.println(logo);
+    SerialMon.println("----------------------------------\n");
+    DBG("#####  RECEIVED:", strlen(logo), "CHARACTERS");
     secureClient.stop();
   }
 #endif

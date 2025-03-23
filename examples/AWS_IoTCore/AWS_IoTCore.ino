@@ -42,7 +42,9 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
 
 // See all AT commands, if wanted
-// #define DUMP_AT_COMMANDS
+// WARNING: At high baud rates, incoming data may be lost when dumping AT
+// commands
+#define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
 // #define TINY_GSM_DEBUG SerialMon

@@ -43,24 +43,28 @@ const char apn[]  = "YourAPN";
 const char user[] = "";
 const char pass[] = "";
 
-// Server details
-const char server[] = "vsh.pp.ua";
-const char resource[] = "/TinyGSM/logo.txt";
-
 #ifdef DUMP_AT_COMMANDS
-  #include <StreamDebugger.h>
-  StreamDebugger debugger(SerialAT, SerialMon);
-  TinyGsm modem(debugger);
+#include <StreamDebugger.h>
+StreamDebugger debugger(SerialAT, SerialMon);
+TinyGsm        modem(debugger);
 #else
-  TinyGsm modem(SerialAT);
+TinyGsm modem(SerialAT);
 #endif
 
 #ifdef USE_SSL
-  TinyGsmClientSecure client(modem);
-  HttpClient http(client, server, 443);
+// Server details to test TCP over SSL
+const char          server[]   = "vsh.pp.ua";
+const char          resource[] = "/TinyGSM/logo.txt";
+const int           port       = 443;
+TinyGsmClientSecure client(modem);
+HttpClient          http(client, server_ssl, port_ssl);
 #else
-  TinyGsmClient client(modem);
-  HttpClient http(client, server, 80);
+// Server details to test TCP without SSL
+const char    server[]   = "time.sodaq.net";
+const char    resource[] = "/";
+const int     port       = 80;
+TinyGsmClient client(modem);
+HttpClient    http(client, server, port);
 #endif
 
 void setup() {
@@ -88,7 +92,7 @@ void setup() {
   SerialMon.println(modemInfo);
 
   // Unlock your SIM card with a PIN
-  //modem.simUnlock("1234");
+  // modem.simUnlock("1234");
 }
 
 void loop() {
@@ -125,9 +129,9 @@ void loop() {
   }
 
   while (http.headerAvailable()) {
-    String headerName = http.readHeaderName();
+    String headerName  = http.readHeaderName();
     String headerValue = http.readHeaderValue();
-    //SerialMon.println(headerName + " : " + headerValue);
+    // SerialMon.println(headerName + " : " + headerValue);
   }
 
   int length = http.contentLength();
@@ -155,7 +159,5 @@ void loop() {
   SerialMon.println(F("GPRS disconnected"));
 
   // Do nothing forevermore
-  while (true) {
-    delay(1000);
-  }
+  while (true) { delay(1000); }
 }

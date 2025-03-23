@@ -36,24 +36,27 @@ const char apn[]  = "YourAPN";
 const char user[] = "";
 const char pass[] = "";
 
-// Server details
-const char server[] = "vsh.pp.ua";
-const char resource[] = "/TinyGSM/logo.txt";
 
 #ifdef DUMP_AT_COMMANDS
-  #include <StreamDebugger.h>
-  StreamDebugger debugger(SerialAT, SerialMon);
-  TinyGsm mdm(debugger);
+#include <StreamDebugger.h>
+StreamDebugger debugger(SerialAT, SerialMon);
+TinyGsm        mdm(debugger);
 #else
-  TinyGsm mdm(SerialAT);
+TinyGsm mdm(SerialAT);
 #endif
 
 #ifdef USE_SSL
-  TinyGsmClientSecure client(mdm);
-  const int  port = 443;
+TinyGsmClientSecure client(mdm);
+// Server details to test TCP over SSL
+const char server_ssl[]   = "vsh.pp.ua";
+const char resource_ssl[] = "/TinyGSM/logo.txt";
+const int  port_ssl       = 443;
 #else
-  TinyGsmClient client(mdm);
-  const int  port = 80;
+TinyGsmClient client(mdm);
+// Server details to test TCP without SSL
+const char server[]   = "time.sodaq.net";
+const char resource[] = "/";
+const int  port       = 80;
 #endif
 
 void setup() {
@@ -75,7 +78,7 @@ void setup() {
   SerialMon.println(modemInfo);
 
   // Unlock your SIM card with a PIN
-  //mdm.simUnlock("1234");
+  // mdm.simUnlock("1234");
 }
 
 void loop() {
@@ -130,7 +133,5 @@ void loop() {
   SerialMon.println(F("GPRS disconnected"));
 
   // Do nothing forevermore
-  while (true) {
-    delay(1000);
-  }
+  while (true) { delay(1000); }
 }

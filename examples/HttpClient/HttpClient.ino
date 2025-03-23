@@ -40,8 +40,9 @@
 // #define TINY_GSM_MODEM_M590
 // #define TINY_GSM_MODEM_MC60
 // #define TINY_GSM_MODEM_MC60E
-// #define TINY_GSM_MODEM_ESP8266
 // #define TINY_GSM_MODEM_ESP32
+// #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_ESP8266_NONOS
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
@@ -50,11 +51,11 @@
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
-#ifndef __AVR_ATmega328P__
+#if !defined(__AVR_ATmega328P__) && !defined(SerialAT)
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-#else
+#elif !defined(SerialAT)
 #include <SoftwareSerial.h>
 SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
@@ -64,11 +65,13 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 // need enough space in the buffer for the entire response
 // else data will be lost (and the http library will fail).
 #if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 650
+#define TINY_GSM_RX_BUFFER 256
 #endif
 
 // See all AT commands, if wanted
-// #define DUMP_AT_COMMANDS
+// WARNING: At high baud rates, incoming data may be lost when dumping AT
+// commands
+#define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
@@ -101,9 +104,9 @@ const char gprsPass[] = "";
 const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
-// Server details
-const char server[]   = "vsh.pp.ua";
-const char resource[] = "/TinyGSM/logo.txt";
+// Server details to test TCP without SSL
+const char server[]   = "time.sodaq.net";
+const char resource[] = "/";
 const int  port       = 80;
 
 #include <TinyGsmClient.h>

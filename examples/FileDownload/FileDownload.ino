@@ -11,32 +11,40 @@
  * the TinyGSM internals and some modem specifics,
  * so this is for more experienced developers.
  *
+ *
+ * This example downloads a file from a server and checks its CRC32 checksum.
+ * It is a good example of how to download a file in chunks and check its
+ * integrity.
+ *
+ * NOTE: The file being downloaded is from a site which requires SSL/TLS so this
+ *example will only work on those boards that support it.
  **************************************************************/
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM868
-// #define TINY_GSM_MODEM_SIM900
-// #define TINY_GSM_MODEM_SIM7000
+// #define TINY_GSM_MODEM_SIM900 // Doesn't support SSL
+// #define TINY_GSM_MODEM_SIM7000 // Doesn't support SSL
 // #define TINY_GSM_MODEM_SIM7000SSL
 // #define TINY_GSM_MODEM_SIM7080
-// #define TINY_GSM_MODEM_SIM5360
+// #define TINY_GSM_MODEM_SIM5360 // Doesn't support SSL
 // #define TINY_GSM_MODEM_SIM7600
 // #define TINY_GSM_MODEM_A7672X
 // #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_SARAR4
 // #define TINY_GSM_MODEM_SARAR5
-// #define TINY_GSM_MODEM_M95
-// #define TINY_GSM_MODEM_BG95
+// #define TINY_GSM_MODEM_M95 // Doesn't support SSL
+// #define TINY_GSM_MODEM_BG95 // Doesn't support SSL
 // #define TINY_GSM_MODEM_BG96
-// #define TINY_GSM_MODEM_A6
-// #define TINY_GSM_MODEM_A7
-// #define TINY_GSM_MODEM_M590
-// #define TINY_GSM_MODEM_MC60
-// #define TINY_GSM_MODEM_MC60E
-// #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_A6 // Doesn't support SSL
+// #define TINY_GSM_MODEM_A7 // Doesn't support SSL
+// #define TINY_GSM_MODEM_M590 // Doesn't support SSL
+// #define TINY_GSM_MODEM_MC60 // Doesn't support SSL
+// #define TINY_GSM_MODEM_MC60E // Doesn't support SSL
 // #define TINY_GSM_MODEM_ESP32
+// #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_ESP8266_NONOS
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
@@ -45,11 +53,11 @@
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
-#ifndef __AVR_ATmega328P__
+#if !defined(__AVR_ATmega328P__) && !defined(SerialAT)
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-#else
+#elif !defined(SerialAT)
 #include <SoftwareSerial.h>
 SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
@@ -63,11 +71,18 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
 
 // See all AT commands, if wanted
-// #define DUMP_AT_COMMANDS
+// WARNING: At high baud rates, incoming data may be lost when dumping AT
+// commands
+#define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
-// #define LOGGING  // <- Logging is for the HTTP library
+
+// Range to attempt to autobaud
+// NOTE:  DO NOT AUTOBAUD in production code.  Once you've established
+// communication, set a fixed baud rate using modem.setBaud(#).
+#define GSM_AUTOBAUD_MIN 9600
+#define GSM_AUTOBAUD_MAX 921600
 
 // Add a reception delay, if needed.
 // This may be needed for a fast processor at a slow baud rate.
@@ -91,8 +106,11 @@ const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
 // Server details
-const char server[] = "vsh.pp.ua";
-const int  port     = 80;
+const char server[]      = "vsh.pp.ua";
+const int  port          = 443;
+const char resource[]    = "/TinyGSM/test_1k.bin";
+uint32_t   knownCRC32    = 0x6f50d767;
+uint32_t   knownFileSize = 1024;  // In case server does not send it
 
 #include <TinyGsmClient.h>
 #include <CRC32.h>
@@ -111,19 +129,15 @@ const int  port     = 80;
 #define TINY_GSM_USE_WIFI false
 #endif
 
-const char resource[]    = "/TinyGSM/test_1k.bin";
-uint32_t   knownCRC32    = 0x6f50d767;
-uint32_t   knownFileSize = 1024;  // In case server does not send it
-
 #ifdef DUMP_AT_COMMANDS
 #include <StreamDebugger.h>
 StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm        modem(debugger);
 #else
-TinyGsm        modem(SerialAT);
+TinyGsm modem(SerialAT);
 #endif
 
-TinyGsmClient client(modem);
+TinyGsmClientSecure client(modem);
 
 void setup() {
   // Set console baud rate
@@ -135,10 +149,11 @@ void setup() {
   // !!!!!!!!!!!
 
   SerialMon.println("Wait...");
+  delay(500L);
 
   // Set GSM module baud rate
-  SerialAT.begin(115200);
-  delay(6000);
+  TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
+  delay(500L);
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()

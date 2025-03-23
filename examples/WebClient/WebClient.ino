@@ -40,11 +40,11 @@
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
-#ifndef __AVR_ATmega328P__
+#if !defined(__AVR_ATmega328P__) && !defined(SerialAT)
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-#else
+#elif !defined(SerialAT)
 #include <SoftwareSerial.h>
 SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
@@ -58,7 +58,9 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
 
 // See all AT commands, if wanted
-// #define DUMP_AT_COMMANDS
+// WARNING: At high baud rates, incoming data may be lost when dumping AT
+// commands
+#define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
@@ -93,10 +95,6 @@ const char gprsPass[] = "";
 const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
-// Server details
-const char server[]   = "vsh.pp.ua";
-const char resource[] = "/TinyGSM/logo.txt";
-
 #include <TinyGsmClient.h>
 
 // Just in case someone defined the wrong thing..
@@ -118,7 +116,7 @@ const char resource[] = "/TinyGSM/logo.txt";
 StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm        modem(debugger);
 #else
-TinyGsm        modem(SerialAT);
+TinyGsm modem(SerialAT);
 #endif
 
 #if defined(TINY_GSM_MODEM_HAS_SSL)
@@ -127,10 +125,16 @@ TinyGsm        modem(SerialAT);
 
 #ifdef USE_SSL
 TinyGsmClientSecure client(modem);
-const int           port = 443;
+// Server details to test TCP over SSL
+const char server[]   = "vsh.pp.ua";
+const char resource[] = "/TinyGSM/logo.txt";
+const int  port       = 443;
 #else
-TinyGsmClient  client(modem);
-const int      port = 80;
+TinyGsmClient client(modem);
+// Server details to test TCP without SSL
+const char server[]   = "time.sodaq.net";
+const char resource[] = "/";
+const int  port       = 80;
 #endif
 
 void setup() {
