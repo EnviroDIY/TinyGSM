@@ -524,45 +524,46 @@ class TinyGsmTCP {
     size_t   len           = expected_len;
     size_t   len_read      = 0;
     uint8_t  char_failures = 0;
+#ifdef TINY_GSM_USE_HEX
+// DBG("### Reading input in HEX mode");
+#define READ_CHAR_LEN 2
+#else
+// DBG("### Reading input in ASCII mode");
+#define READ_CHAR_LEN 1
+#endif
     // allow up to 3 timeouts on individual characters before we quit the whole
     // read operation
     while (len && char_failures < 3) {
+      // if something is available, read it
+      if (thisModem().stream.available() >= READ_CHAR_LEN) {
 #ifdef TINY_GSM_USE_HEX
-      // DBG("### Reading input in HEX mode");
-      // wait for at least 2 characters to be available on the stream
-      while (thisModem().stream.available() < 2 &&
-             (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-      if (thisModem().stream.available() >= 2) {
+        // read 2 bytes and convert from hex to char
         char buf[3] = {
             0,
         };
         buf[0] = thisModem().stream.read();
         buf[1] = thisModem().stream.read();
         char c = strtol(buf, nullptr, 16);
-        len -= 2;
-        len_read += 2;
 #else
-      // DBG("### Reading input in ASCII mode");
-      // wait for at least 1 character to be available on the stream
-      while (!thisModem().stream.available() &&
-             (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-      // if something is available, read it
-      if (thisModem().stream.available()) {
+        // just read the character
         char c = thisModem().stream.read();
-        len--;
-        len_read++;
 #endif
         // NOTE: We can't directly memcpy into the rx fifo!
         // The fifo is a template class that can hold any data type and the
         // actual memory space of the buffer is protected.
         thisModem().sockets[mux]->rx.put(c);
+        len -= READ_CHAR_LEN;
+        len_read += READ_CHAR_LEN;
       } else {
-        DBG("### ERROR: Timed out waiting for character from stream!");
-        char_failures++;
+        // wait for a new character to be available on the stream
+        while (thisModem().stream.available() < READ_CHAR_LEN &&
+               (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
+          TINY_GSM_YIELD();
+        }
+        if (thisModem().stream.available() < READ_CHAR_LEN) {
+          DBG("### ERROR: Timed out waiting for character from stream!");
+          char_failures++;
+        }
       }
     }
     if (len_read) { DBG("### READ:", len_read, "from", mux); }
@@ -572,6 +573,7 @@ class TinyGsmTCP {
     }
     return len_read;
   }
+#undef READ_CHAR_LEN
 
 
 #if defined(TINY_GSM_MUX_STATIC)
