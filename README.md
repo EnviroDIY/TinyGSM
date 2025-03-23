@@ -79,35 +79,55 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 ## Supported modems
 
 - SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
+  - Previously tested by original author and current maintainer; updates not all tested because 2G is no longer available in the USA.
 - SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
+  - Previously tested by current maintainer; updates not all tested because 2G is no longer available in the USA.
 - SIMCom WCDMA/HSPA/HSPA+ Modules (SIM5360, SIM5320, SIM5300E, SIM5300E/A)
+  - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
 - SIMCom LTE Modules (SIM7100E, SIM7500E, SIM7500A, SIM7600C, SIM7600E)
+  - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
 - SIMCom SIM7000E/A/G CAT-M1/NB-IoT Module
+  - Previously tested by current maintainer; updates not all tested because I fried mine.
 - SIMCom SIM7070/SIM7080/SIM7090 CAT-M1/NB-IoT Module
+  - Tested by the current maintainer; currently her primary cellular module
 - SIMCom A7672X CAT-M1 Module
+  - Accepted as pull request, though I have concerns about the implementation. Not personally tested by the maintainer.
 - AI-Thinker A6, A6C, A7, A20
+  - Previously tested by original author
 - ESP8266/ESP32 (AT commands interface, similar to GSM modems)
+  - Tested by the current maintainer; ESP32 is currently her primary wifi module
 - Digi XBee WiFi and Cellular (using XBee command mode)
+  - Tested by the current maintainer
 - Neoway M590
+  - Previously tested by original author
 - u-blox 2G, 3G, 4G, and LTE Cat1 Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
+  - Tested by the current maintainer (SARA-U201 only)
 - u-blox LTE-M/NB-IoT Modems (SARA-R4xx, SARA-N4xx, SARA-R5xx, _but NOT SARA-N2xx_)
+  - Tested by the current maintainer (SARA-R410M only)
 - Sequans Monarch LTE Cat M1/NB1 (VZM20Q)
+  - Previously tested by current maintainer; updates not all tested because I fried mine.
 - Quectel BG96
+  - Tested by the current maintainer
 - Quectel BG95
+  - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
 - Quectel M95
+  - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
 - Quectel MC60 _**(alpha)**_
+  - Accepted as pull request, though I have concerns about the implementation. Not personally tested by the maintainer.
 
 ### Supported boards/modules
 
-- EnviroDIY LTE Bee, WiFi Bee
+- EnviroDIY LTE Bee (SIM7080G)
+- EnviroDIY WiFi Bee (ESP32)
 - Arduino MKR GSM 1400
-- Sodaq GPRSbee, uBee
+- Sodaq GPRSbee (SIM800, SIM900)
+- Sodaq uBee (SARA U201, SARA R410M)
 - Microduino GSM
-- Adafruit FONA Mini Cellular GSM Breakout, 800/808 Shield, FONA 3G
-- Industruino GSM
-- Dragino NB-IoT Bee
+- Adafruit FONA Mini Cellular GSM Breakout, 800/808 Shield, FONA 3G (SIM800)
+- Industruino GSM (SIM800)
+- Dragino NB-IoT Bee (BG96)
 - Digi XBee S6B, XBee LTE Cat 1, XBee3 LTE Cat 1, XBee3 CatM
-- Nimbelink Skywire/Airgain NL-SW-LTE-QBG96, NL-SW-LTE-QBG95
+- Nimbelink Skywire/Airgain NL-SW-LTE-QBG96, NL-SW-LTE-QBG95 (BG95, BG96)
 - RAK WisLTE _**(alpha)**_
 - ... other modules, based on supported modems. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
 
@@ -149,13 +169,13 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
   - SIM800, SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672X, u-Blox, XBee _cellular_, ESP8266, ESP32, Sequans Monarch and Quectel BG95 and BG96
   - Note:  **only some device models or firmware revisions have this feature** (SIM8xx R14.18, A7, etc.)
 - Selecting certificates for the connection based on files uploaded to the module:
-  - SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672X, ESP8266, ESP32, Sequans Monarch and Quectel BG96
+  - SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672X, ESP8266, ESP32, Sequans Monarch
 - Uploading new certificates to the module;
-  - SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672X, ESP32
+  - SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672X, ESP32, Quectel BG96
 - No SSL functionality is yet in the library for:
   - SIM 5360/5320/7100
 - SSL is not possible on:
-  - SIM900, A6/A7, Neoway M590, XBee _WiFi_
+  - SIM900, A6/A7, Neoway M590, XBee _WiFi_ (S6B)
 - Like TCP, most modules support simultaneous connections
 - TCP and SSL connections can usually be mixed up to the total number of possible connections
 
@@ -165,7 +185,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
   - Supported on:
     - All SIMCom modems, Quectel modems, most u-blox
   - Not possible on:
-    - XBee, u-blox SARA R4/N4, ESP8266 (obviously)
+    - XBee, u-blox SARA R4/N4, ESP8266, ESP32
 
 ### SMS
 
@@ -249,6 +269,7 @@ The general flow of your code should be:
     - ```TinyGsmClientSecure clientX(modem, 0);```, ```TinyGsmClientSecure clientY(modem, 1);```, etc
   - Secure and insecure clients can usually be mixed when using multiple connections.
   - The total number of connections possible varies by module
+    - You can verify the number of connections possible against the defines `TINY_GSM_MUX_COUNT` and `TINY_GSM_SECURE_MUX_COUNT`
 - Begin your serial communication and set all your pins as required to power your module and bring it to full functionality.
   - The examples attempt to guess the module's baud rate.  In working code, you should use a set baud.
 - Wait for the module to be ready (could be as much as 6s, depending on the module)
@@ -262,6 +283,7 @@ The general flow of your code should be:
   - Network registration should be automatic on cellular modules
 - Wait for network registration to be successful
   - ```modem.waitForNetwork(600000L)```
+  - New sim/tower combinations may take a _long_ time to connect.
 - If using cellular, establish the GPRS or EPS data connection _after_ your are successfully registered on the network
   - ```modem.gprsConnect(apn, gprsUser, gprsPass)``` (or simply ```modem.gprsConnect(apn)```)
   - The same command is used for both GPRS or EPS connection
@@ -291,6 +313,7 @@ The module shutdown and restart may also be quite slow.
 
 This libary _does not_ support any sort of "hardware" or pin level controls for the modules.
 If you need to turn your module on or reset it using some sort of High/Low/High pin sequence, you must write those functions yourself.
+If you're interested in pin controls for your module, there's documentation of the wake/sleep protocols for most of the modules supported by this library in the modems compnents of the [ModularSensors library](https://github.com/EnviroDIY/ModularSensors/).
 
 ## API Reference
 
@@ -318,6 +341,12 @@ TinyGSM also implements its own auto bauding function (`TinyGsmAutoBaud(SerialAT
 While very useful when initially connecting to a module and doing tests, these should **NOT** be used in any sort of production code.
 Once you've established communication with the module, set the baud rate using the `setBaud(#)` function and stick with that rate.
 
+Some caveats with baud rates:
+
+- If you are using a slow baud rate to communicate with your module, you may need to define `-D TINY_GSM_YIELD_MS=1` to prevent command responses from being spliced apart.
+- If you are using a slow baud rate to communicate with your module, you may end up with data loss when buffers fill faster than they can be emptied.
+- If you are using a very fast baud rate to communicate with your module, you may need to turn off AT debugging (using StreamDebugger or `DUMP_AT_COMMANDS`) to prevent data loss
+
 ### Broken initial configuration
 
 Sometimes (especially if you played with AT commands), your module configuration may become invalid.
@@ -332,7 +361,7 @@ To return module to **Factory Defaults**, use this sketch:
   File -> Examples -> TinyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/FactoryReset/FactoryReset.ino)
 
 In some cases, you may need to set an initial APN to connect to the cellular network.
-Try using the ```gprsConnect(APN)``` function to set an initial APN if you are unable to register on the network.
+Try using the `gprsConnect(APN)` function to set an initial APN if you are unable to register on the network.
 You may need set the APN again after registering.
 (In most cases, you should set the APN after registration.)
 
