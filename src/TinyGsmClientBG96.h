@@ -384,6 +384,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    * Secure socket layer (SSL) certificate management functions
    */
  protected:
+  // NOTE: Some of the documentation suggests this set of commands for
+  // uploading certs, but the BG96 I have doesn't accept them.
 #if 0
   // AT+QSECWRITE=<filename>,<filesize> [,<timeout>]
   // <filename> - The name of the certificate/key/password file. The file name
@@ -1078,44 +1080,38 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
-    size_t len = 0;
-    bool   ssl = sockets[mux]->is_secure;
+    size_t len_reported = 0;
+    size_t len_read     = 0;
+    bool   ssl          = sockets[mux]->is_secure;
     if (ssl) {
       sendAT(GF("+QSSLRECV="), mux, ',', (uint16_t)size);
       if (waitResponse(GF("+QSSLRECV:")) != 1) {
         DBG("### READ: For unknown reason close");
         return 0;
       }
-      len = streamGetIntBefore('\n');
+      len_reported = streamGetIntBefore('\n');
       // We have no way of knowing in advance how much data will be in the
       // buffer so when data is received we always assume the buffer is
       // completely full. Chances are, this is not true and there's really not
       // that much there. In that case, make sure we make sure we re-set the
       // amount of data available.
-      if (len < size) { sockets[mux]->sock_available = len; }
-      bool chars_remaining = true;
-      while (len-- && chars_remaining) {
-        chars_remaining = moveCharFromStreamToFifo(mux);
-        sockets[mux]->sock_available--;
-        // ^^ One less character available after moving from modem's FIFO to our
-        // FIFO
-      }
+      if (len_reported < size) { sockets[mux]->sock_available = len_reported; }
+      len_read = moveCharsFromStreamToFifo(mux, len_reported);
+      sockets[mux]->sock_available -= len_read;
+      // ^^ Decrease the characters available after moving from modem's FIFO to
+      // our FIFO
       waitResponse();  // ends with an OK
     } else {
       sendAT(GF("+QIRD="), mux, ',', (uint16_t)size);
       if (waitResponse(GF("+QIRD:")) != 1) { return 0; }
-      len                  = streamGetIntBefore('\n');
-      bool chars_remaining = true;
-      while (len-- && chars_remaining) {
-        chars_remaining = moveCharFromStreamToFifo(mux);
-      }
+      len_reported = streamGetIntBefore('\n');
+      len_read     = moveCharsFromStreamToFifo(mux, len_reported);
       waitResponse();
       // For unsecured sockets, we can check how much is left in the buffer
       // after reading.
       sockets[mux]->sock_available = modemGetAvailable(mux);
     }
-    // DBG("### READ:", len, "from", mux);
-    return len;
+    return len_read;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {

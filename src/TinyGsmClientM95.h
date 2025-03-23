@@ -497,8 +497,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
     //     return -1;
     //   } else {
     //     streamSkipUntil(',');  // Skip total length sent on connection
-    //     streamSkipUntil(',');  // Skip length already acknowledged by
-    //     remote
+    //     streamSkipUntil(',');  // Skip length already acknowledged by remote
     //     // Make sure the total length un-acknowledged is 0
     //     if ( streamGetIntBefore('\n') == 0 ) {
     //       allAcknowledged = true;
@@ -510,7 +509,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
-    // TODO(?):  Does this work????
+    // TODO(?):  Does this even work????
     // AT+QIRD=<id>,<sc>,<sid>,<len>
     // id = GPRS context number = 0, set in GPRS connect
     // sc = role in connection = 1, client of connection
@@ -525,23 +524,19 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
       streamSkipUntil(',');  // skip port
       streamSkipUntil(',');  // skip connection type (TCP/UDP)
       // read the real length of the retrieved data
-      uint16_t len = streamGetIntBefore('\n');
+      uint16_t len_reported = streamGetIntBefore('\n');
       // We have no way of knowing in advance how much data will be in the
       // buffer so when data is received we always assume the buffer is
       // completely full. Chances are, this is not true and there's really not
       // that much there. In that case, make sure we make sure we re-set the
       // amount of data available.
-      if (len < size) { sockets[mux]->sock_available = len; }
-      bool chars_remaining = true;
-      while (len-- && chars_remaining) {
-        chars_remaining = moveCharFromStreamToFifo(mux);
-        sockets[mux]->sock_available--;
-        // ^^ One less character available after moving from modem's FIFO to our
-        // FIFO
-      }
+      if (len_reported < size) { sockets[mux]->sock_available = len_reported; }
+      size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
+      sockets[mux]->sock_available -= len_read;
+      // ^^ Decrease the characters available after moving from modem's FIFO to
+      // our FIFO
       waitResponse();  // ends with an OK
-      // DBG("### READ:", len, "from", mux);
-      return len;
+      return len_read;
     } else {
       sockets[mux]->sock_available = 0;
       return 0;

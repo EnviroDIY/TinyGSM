@@ -659,28 +659,19 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
  public:
   bool handleURCs(String& data) {
     if (data.endsWith(GF(AT_NL "+IPD,"))) {
-      int8_t  mux       = streamGetIntBefore(',');
-      int16_t len       = streamGetIntBefore(':');
-      size_t  len_orig  = len;
-      size_t  prev_size = sockets[mux]->rx.size();
+      int8_t  mux          = streamGetIntBefore(',');
+      int16_t len_reported = streamGetIntBefore(':');
+      int16_t len          = len_reported;
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           // reset the len to read to the amount free
           len = sockets[mux]->rx.free();
         }
-        bool chars_remaining = true;
-        while (len-- && chars_remaining) {
-          chars_remaining = moveCharFromStreamToFifo(mux);
-        }
+        moveCharsFromStreamToFifo(mux, len);
         // TODO(SRGDamia1): deal with buffer overflow
-        if (len_orig != sockets[mux]->rx.size() - prev_size) {
-          DBG("### Different number of characters received than expected: ",
-              sockets[mux]->rx.size() - prev_size, " vs ", len_orig);
-        }
       }
       data = "";
-      DBG("### Got Data: ", len_orig, "on", mux);
       return true;
     } else if (data.endsWith(GF("CLOSED"))) {
       int8_t muxStart = TinyGsmMax(0,

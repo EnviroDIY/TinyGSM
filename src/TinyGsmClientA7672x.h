@@ -198,7 +198,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    virtual void stop(uint32_t maxWaitMs) override {
+    void stop(uint32_t maxWaitMs) override {
       is_mid_send = false;
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CCHCLOSE="), mux);  //, GF(",1"));  // Quick close
@@ -759,18 +759,6 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     bool    ssl           = sockets[mux]->is_secure;
     int16_t len_reported  = 0;
     int16_t len_remaining = 0;
-#ifdef TINY_GSM_USE_HEX
-    if (ssl) {
-      // it does not appear to be possible to send/recieve hex data on SSL
-      // sockets
-      return 0;
-    }
-    // <mode> - 3 – read data in HEX form, the max read length is 750
-    int8_t rx_mode = 3;
-#else
-    // <mode> - 2 – read data in ASCII, the max read length is 1500
-    int8_t rx_mode = 2;
-#endif
     if (ssl) {
       // AT+CCHRECV=<session_id>[,<max_recv_len>]
       sendAT(GF("+CCHRECV="), mux, ',', (uint16_t)size);
@@ -781,7 +769,13 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       // TODO: validate mux/cid (connecion id)
       len_reported = streamGetIntBefore('\n');
     } else {
-      sendAT(GF("+CIPRXGET="), rx_mode, ',', mux, ',', (uint16_t)size);
+#ifdef TINY_GSM_USE_HEX
+      // <mode> - 3 – read data in HEX form, the max read length is 750
+      sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
+#else
+      // <mode> - 2 – read data in ASCII, the max read length is 1500
+      sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
+#endif
       if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
       streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
       streamSkipUntil(',');  // Skip mux/cid (connecion id)

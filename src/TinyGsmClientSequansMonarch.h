@@ -680,7 +680,7 @@ class TinyGsmSequansMonarch
     sendAT(GF("+SQNSI="), mux);
     size_t result = 0;
     if (waitResponse(GF("+SQNSI:")) == 1) {
-      streamSkipUntil(',');              // Skip mux
+      streamSkipUntil(',');  // Skip mux
       // TODO: validate mux
       streamSkipUntil(',');              // Skip total sent
       streamSkipUntil(',');              // Skip total received
