@@ -23,6 +23,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   - the ESP32 (requiring AT firmware >= 3.2),
   - the ESP8266 using the final release of its AT firmware ([v2.2.1_esp8266](https://github.com/espressif/esp-at/releases/tag/v2.2.1.0_esp8266)),
   - and the ESP8266 using the original "non-OS" firmware that first version of this library was written for.
+- Created missing interface for CRTP for the client related modem functions
 - Made adjustments and corrections to the A7672x based on similar functionality of the SIM7600.
 - Fixed various compiler warnings, where possible
 - Increased max baud rate for autobauding.
@@ -35,10 +36,38 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Added support for selecting specific certificates for specific connections on select modules
   - This includes both CA and client certs
 - Added SSL support for the SIM7600 by @floBik
+- Added functions `beginWrite` and `endWrite` to directly write into the modem's send buffer to help ensure than an entire request is sent in one chunk.
+  - WARNING: These functions will **NOT** warn you or prevent you from writing more to the modem's send buffer than it is possible for the modem to receive
+    - Prior to this version of the library, there wasn't any support for limiting requests to the modem's built-in limits on any functions. There now is.
+  - These functions are directly analogous to the `beginPublish` and `endPublish` functions within [PubSubClient](https://github.com/knolleary/pubsubclient) and should be usable in combination with them.
+
+```cpp
+gsmClient.beginWrite(topic_len + msg_len + MQTT_MAX_HEADER_SIZE);
+// NOTE: total length _**MUST**_ be less than the specific module's maximum send size
+// You can call TINY_GSM_SEND_MAX_SIZE to verify you haven't exceeded the maximum
+mqttClient.beginPublish(topic, msg_len, false);
+gsmClient.write((uint8_t*)message, strlen(message));
+// or mqttClient.write(...) or stream.write(...)
+// print/println functions should also work here
+mqttClient.endPublish();
+gsmClient.endWrite(strlen(request));
+```
+
 - Added an example connecting to AWS IoT Core with mutual authentication.
 - Added an example using multiple connections at once
 - Added an "is_secure" property to all clients to help differentiate them
+- Added a function (`setDefaultBaud(uint32_t baud)`) to set defuault baud rate on Espressif modules
+- Added defines for the frequency of checking for lost incoming message notifications (`TINY_GSM_UNREAD_CHECK_MS`)
+  - This can be used as an external build flag.
+- Added defines for the maximum size each modem accepts in a single send command (`TINY_GSM_SEND_MAX_SIZE`)
+  - *This is only to be used internally*
+  - Implemented support for break all send calls into chunks less than the specified `TINY_GSM_SEND_MAX_SIZE` for each module.
 - Added defines for the number of secure sockets (`TINY_GSM_SECURE_MUX_COUNT`)
+  - *This is only for reference to be used internally*
+- Added defines `TINY_GSM_MUX_DYNAMIC` and `TINY_GSM_MUX_STATIC` to be used *internally* to help build module support
+  - Implemented use of these for all modules.
+- Implemented a function (`moveCharsFromStreamToFifo`) for transferring a stream of characters from the modem stream into the fifo.
+  - Implemented use of this function for all modules.
 
 ### Removed
 
@@ -46,6 +75,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Only include the SSL template on the modules that support the SSL enhancements and certificate management instead of a bare flag for security.
 
 ### Fixed
+
+- Don't force maintain to call modemGetAvailable if the sock_available is already non-zero
+- Don't repeatedly call for sock_connected and sock_available for each socket on espressif modules when the response always includes all sockets.
+- Fixes to stop logic on Espressif and SIM7080
+- Modified HTTP examples to attempt to connect to a site that doesn't require SSL.
+  - @vshymanskyy's host of his primary example which displays the TinyGSM logo now requires SSL.
 
 ***
 
