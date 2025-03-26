@@ -447,7 +447,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
     // "AT+QIDNSIP=0" is for dotted decimal IP address.
     IPAddress addr;
     sendAT(GF("+QIDNSIP="),
-           (TinyGsmIpFromString(host) == IPAddress(0, 0, 0, 0) ? 0 : 1));
+           (TinyGsmIpFromString(host) == IPAddress(0, 0, 0, 0) ? 1 : 0));
     if (waitResponse() != 1) { return false; }
 
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
