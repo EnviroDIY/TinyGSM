@@ -28,7 +28,17 @@
 #endif
 
 #if !defined(TINY_GSM_SEND_MAX_SIZE)
+// This **should** be defined for each modem, but if it's not, we'll assume it's
+// the TCP MTU.
 #define TINY_GSM_SEND_MAX_SIZE 1500
+#endif
+
+#if !defined(TINY_GSM_MIN_SEND_BUFFER)
+// This is the minimum amount of free send buffer space the modem must report
+// before attempting a send. If the minimum send buffer size is not defined,
+// we'll assume it's 1 byte. Some modules (SIM7080G) will freeze or crash if you
+// pummel it with data when the send buffer isn't empty.
+#define TINY_GSM_MIN_SEND_BUFFER 1
 #endif
 
 // Because of the ordering of resolution of overrides in templates, these need
@@ -98,14 +108,42 @@ class TinyGsmTCP {
 #error Modem client has been incorrectly created
 #endif
 
+  /**
+   * @brief Sends a buffer of data to the modem
+   *
+   * By default this breaks the data into chunks of size TINY_GSM_SEND_MAX_SIZE.
+   * Then for each chunk it calls modemWaitForSend (which calls
+   * modemGetSendLength), then modemBeginSend, then writes the buffer content,
+   * then calls modemEndSend.
+   *
+   * @param buff The buffer of data to send
+   * @param len The length of the buffer
+   * @param mux The socket number
+   * @return The number of bytes sent
+   */
   size_t modemSend(const uint8_t* buff, size_t len, uint8_t mux) {
     return thisModem().modemSendImpl(buff, len, mux);
   }
+  // Initiates the AT commands for a send, up to the point of getting an input
+  // prompt
   bool modemBeginSend(size_t len, uint8_t mux) {
     return thisModem().modemBeginSendImpl(len, mux);
   }
+  // Finishes off the modem send, checking for a response from the modem
+  // This is for everything after the input prompt
   size_t modemEndSend(size_t len, uint8_t mux) {
     return thisModem().modemEndSendImpl(len, mux);
+  }
+  // check for the amount of space left in the send buffer
+  size_t modemGetSendLength(uint8_t mux) {
+    return thisModem().modemGetSendLengthImpl(mux);
+  }
+  // wait until the modem has more than the minimum required send buffer space
+  // available
+  // returns the number of bytes available in the send buffer at the end of the
+  // wait
+  size_t modemWaitForSend(uint8_t mux, uint32_t timeout_ms = 15000L) {
+    return thisModem().modemWaitForSendImpl(mux, timeout_ms);
   }
 #if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE || \
     defined TINY_GSM_BUFFER_READ_NO_CHECK
@@ -600,16 +638,21 @@ class TinyGsmTCP {
       int8_t send_attempts = 0;
       bool   send_success  = false;
       while (send_attempts < 3 && !send_success) {
-        // Number of bytes to send from buffer in this command
-        size_t sendLength = TINY_GSM_SEND_MAX_SIZE;
+        size_t sendLength = thisModem().modemWaitForSend(mux);
+        if (sendLength == 0) {
+          send_attempts++;
+          DBG(GF("### No available send buffer on attempt"), send_attempts);
+          continue;
+        }
         // Ensure the program doesn't read past the allocated memory
-        if (txPtr + TINY_GSM_SEND_MAX_SIZE > const_cast<uint8_t*>(buff) + len) {
+        if (txPtr + sendLength > const_cast<uint8_t*>(buff) + len) {
           sendLength = const_cast<uint8_t*>(buff) + len - txPtr;
         }
         // start up a send command
         send_success = thisModem().modemBeginSend(sendLength, mux);
         if (!send_success) {
           send_attempts++;
+          DBG(GF("### Failed to start send command on attempt"), send_attempts);
           continue;
         }
         // write out the number of bytes for this chunk
@@ -620,6 +663,13 @@ class TinyGsmTCP {
         // End this send command and check its responses
         // NOTE: In many cases, confirmed is just a passthrough of len
         int16_t confirmed = thisModem().modemEndSend(len, mux);
+#if defined(TINY_GSM_DEBUG)
+        if (confirmed < attempted) {
+          DBG(GF("### Fewer bytes were confirmed ("), confirmed,
+              F(") than attempted ("), attempted, F(") on send attempt"),
+              send_attempts);
+        }
+#endif
         bytesSent += min(attempted,
                          confirmed);         // bump up number of bytes sent
         txPtr += min(attempted, confirmed);  // bump up the pointer
@@ -637,6 +687,49 @@ class TinyGsmTCP {
                             uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   size_t modemEndSendImpl(size_t  len,
                           uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  size_t modemGetSendLengthImpl(uint8_t) {
+    // by default, assume the whole space is available
+    return TINY_GSM_SEND_MAX_SIZE;
+  }
+
+  size_t modemWaitForSendImpl(uint8_t mux, uint32_t timeout_ms = 15000L) {
+    for (uint32_t start = millis(); millis() - start < timeout_ms;) {
+      if (thisModem().modemGetSendLength(mux) > 0) { return true; }
+      delay(250);
+    }
+    return false;
+
+    size_t sendLength = modemGetSendLength(mux);
+#if defined(TINY_GSM_DEBUG)
+    if (sendLength != TINY_GSM_SEND_MAX_SIZE) {
+      DBG(GF("### Full send buffer not available! Expected it to have"),
+          TINY_GSM_SEND_MAX_SIZE, GF("bytes, but it has"), sendLength);
+    }
+    if (sendLength < TINY_GSM_MIN_SEND_BUFFER) {
+      DBG(GF(
+          "### Waiting up to 15s for sufficient available send buffer space"));
+    }
+#endif
+    uint32_t start = millis();
+    while (sendLength < TINY_GSM_MIN_SEND_BUFFER && millis() - start < 15000L &&
+           thisModem().sockets[mux]->sock_connected) {
+      delay(250);
+      sendLength = modemGetSendLength(mux);
+#if defined(TINY_GSM_DEBUG)
+      if (sendLength >= TINY_GSM_MIN_SEND_BUFFER) {
+        DBG(GF("### Send buffer has"), sendLength, GF("available after"),
+            millis() - start, GF("ms"));
+      }
+#endif
+    }
+#if defined(TINY_GSM_DEBUG)
+    if (sendLength == 0) {
+      DBG(GF("### No available send buffer on attempt"), send_attempts);
+    }
+#endif
+    return sendLength;
+  }
 
 #if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE || \
     defined TINY_GSM_BUFFER_READ_NO_CHECK

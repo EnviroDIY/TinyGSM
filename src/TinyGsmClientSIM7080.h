@@ -18,8 +18,15 @@
 // Also supports 6 SSL contexts (0-5)
 // The SSL context is collection of SSL settings, not the connection identifier.
 
-#define TINY_GSM_SEND_MAX_SIZE 1460
+#define TINY_GSM_SEND_MAX_SIZE 1360
 // Up to 1460 bytes can be sent at a time with CASEND
+// NOTE: The manual says 1460, but my module never reports more than 1360
+// available, even without SSL.
+#define TINY_GSM_MIN_SEND_BUFFER 1360
+// In my testing, if the check for available space in the send buffer reports
+// anything less than full space available, the modem is on the edge of
+// crashing and you need to back off until it's fully cleared. Refilling a
+// partially emptied buffer doesn't go well.
 
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #define TINY_GSM_MUX_STATIC
@@ -750,9 +757,9 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
 
     if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
       const char* ciphersuites[8] = {
-            "0xC0A9", "0xC0A8", "0xC0A5", "0xC0A4", "0xC095", "0xC094",
-            "0x00B1", "0x00B0", /*"0x00AF", "0x00AE", "0x00A9", "0x00A8",
-            "0x008D", "0x008C", "0x008B", "0x008A", "0x002C"*/};
+             "0xC0A9", "0xC0A8", "0xC0A5", "0xC0A4", "0xC095", "0xC094",
+             "0x00B1", "0x00B0", /*"0x00AF", "0x00AE", "0x00A9", "0x00A8",
+             "0x008D", "0x008C", "0x008B", "0x008A", "0x002C"*/};
       for (uint8_t i = 0; i < 8; i++) {
         sendAT(GF("+CSSLCFG=\"ciphersuite\","), context_id, ',', i, ',',
                ciphersuites[i]);
@@ -982,6 +989,18 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // Nothing but an OK after posting data
     if (waitResponse() != 1) { return 0; }
     return len;
+  }
+  size_t modemGetSendLengthImpl(uint8_t mux) {
+    // Sending only the mux number will return the number of bytes left in the
+    // send buffer (that we can soon fill up with our next send attempt)
+    sendAT(GF("+CASEND="), mux);
+    if (waitResponse(GF("+CASEND:")) != 1) {
+      return TINY_GSM_SEND_MAX_SIZE;  // return 0?
+    }
+    size_t leftsize = streamGetIntBefore('\n');
+    waitResponse();  // final ok
+    if (leftsize > TINY_GSM_SEND_MAX_SIZE) { return TINY_GSM_SEND_MAX_SIZE; }
+    return leftsize;
   }
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
