@@ -694,13 +694,7 @@ class TinyGsmTCP {
   }
 
   size_t modemWaitForSendImpl(uint8_t mux, uint32_t timeout_ms = 15000L) {
-    for (uint32_t start = millis(); millis() - start < timeout_ms;) {
-      if (thisModem().modemGetSendLength(mux) > 0) { return true; }
-      delay(250);
-    }
-    return false;
-
-    size_t sendLength = modemGetSendLength(mux);
+    size_t sendLength = thisModem().modemGetSendLength(mux);
 #if defined(TINY_GSM_DEBUG)
     if (sendLength != TINY_GSM_SEND_MAX_SIZE) {
       DBG(GF("### Full send buffer not available! Expected it to have"),
@@ -712,10 +706,11 @@ class TinyGsmTCP {
     }
 #endif
     uint32_t start = millis();
-    while (sendLength < TINY_GSM_MIN_SEND_BUFFER && millis() - start < 15000L &&
+    while (sendLength < TINY_GSM_MIN_SEND_BUFFER &&
+           millis() - start < timeout_ms &&
            thisModem().sockets[mux]->sock_connected) {
       delay(250);
-      sendLength = modemGetSendLength(mux);
+      sendLength = thisModem().modemGetSendLength(mux);
 #if defined(TINY_GSM_DEBUG)
       if (sendLength >= TINY_GSM_MIN_SEND_BUFFER) {
         DBG(GF("### Send buffer has"), sendLength, GF("available after"),
@@ -724,9 +719,7 @@ class TinyGsmTCP {
 #endif
     }
 #if defined(TINY_GSM_DEBUG)
-    if (sendLength == 0) {
-      DBG(GF("### No available send buffer on attempt"), send_attempts);
-    }
+    if (sendLength == 0) { DBG(GF("### No available send buffer!")); }
 #endif
     return sendLength;
   }
