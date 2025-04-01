@@ -164,12 +164,6 @@ class GsmSecureClient {
     sslCtxConfigured = false;
     sslAuthMode      = SSLAuthMode::NO_VALIDATION;
     sslVersion       = SSLVersion::TLS1_2;
-    CAcertName       = nullptr;
-    clientCertName   = nullptr;
-    clientKeyName    = nullptr;
-    pskIdent         = nullptr;
-    psKey            = nullptr;
-    pskTableName     = nullptr;
   }
 
   virtual void setSSLContextIndex(uint8_t sslCtxIndex) {
@@ -187,44 +181,44 @@ class GsmSecureClient {
     sslCtxConfigured = false;
   }
 
-  virtual void setCACertName(const char* CAcertName) {
-    this->CAcertName = CAcertName;
+  virtual void setCACertName(String CAcertName) {
+    this->CAcertName = std::move(CAcertName);    
     sslCtxConfigured = false;
   }
-  virtual void setCACertName(String CAcertName) {
-    setCACertName(CAcertName.c_str());
+  virtual void setCACertName(const char* CAcertName) {
+    setCACertName(String{CAcertName});
   }
 
-  virtual void setClientCertName(const char* clientCertName) {
-    this->clientCertName = clientCertName;
+  virtual void setClientCertName(String clientCertName) {
+    this->clientCertName = std::move(clientCertName);
     sslCtxConfigured     = false;
   }
-  virtual void setClientCertName(String clientCertName) {
-    setClientCertName(clientCertName.c_str());
+  virtual void setClientCertName(const char* clientCertName) {
+    setClientCertName(String{clientCertName});
   }
 
-  virtual void setPrivateKeyName(const char* clientKeyName) {
+  virtual void setPrivateKeyName(String clientKeyName) {
     this->clientKeyName = clientKeyName;
     sslCtxConfigured    = false;
   }
-  virtual void setPrivateKeyName(String clientKeyName) {
-    setPrivateKeyName(clientKeyName.c_str());
+  virtual void setPrivateKeyName(const char*  clientKeyName) {
+    setPrivateKeyName(String{clientKeyName});
   }
 
-  virtual void setPSKTableName(const char* pskTableName) {
+  virtual void setPSKTableName(String pskTableName) {
     this->pskTableName = pskTableName;
     sslCtxConfigured   = false;
   }
-  virtual void setPSKTableName(String pskTableName) {
-    setPSKTableName(pskTableName.c_str());
+  virtual void setPSKTableName(const char*  pskTableName) {
+    setPSKTableName(String{pskTableName});
   }
-  virtual void setPreSharedKey(const char* pskIdent, const char* psKey) {
+  virtual void setPreSharedKey(String pskIdent, String psKey) {
     this->pskIdent   = pskIdent;
     this->psKey      = psKey;
     sslCtxConfigured = false;
   }
-  virtual void setPreSharedKey(String pskIdent, String psKey) {
-    setPreSharedKey(pskIdent.c_str(), psKey.c_str());
+  virtual void setPreSharedKey(const char*  pskIdent, const char*  psKey) {
+    setPreSharedKey(String{pskIdent}, String{psKey});
   }
 
   // destructor
@@ -241,17 +235,17 @@ class GsmSecureClient {
   SSLVersion sslVersion;
   /// The FILE NAME of the certificate authority certificate loaded onto the
   /// module
-  const char* CAcertName;
+  String CAcertName;
   /// The FILE NAME of the client certificate loaded onto the module
-  const char* clientCertName;
+  String clientCertName;
   /// The FILE NAME of the client private key loaded onto the module
-  const char* clientKeyName;
+  String clientKeyName;
   /// The FILE NAME of an identity for PSK cipher suites
-  const char* pskTableName;
+  String pskTableName;
   /// The identity VALUE for PSK cipher suites
-  const char* pskIdent;
+  String pskIdent;
   /// The VALUE of the key in hex for PSK cipher suites
-  const char* psKey;
+  String psKey;
 };
 
 

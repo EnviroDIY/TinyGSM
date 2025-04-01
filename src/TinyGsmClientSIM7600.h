@@ -768,9 +768,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    */
  public:
   bool configureSSLContext(uint8_t context_id, SSLAuthMode sslAuthMode,
-                           SSLVersion sslVersion, const char* CAcertName,
-                           const char* clientCertName,
-                           const char* clientKeyName) {
+                           SSLVersion sslVersion, const String& CAcertName,
+                           const String& clientCertName,
+                           const String& clientKeyName) {
     bool success = true;
 
     // List the certs available
@@ -803,7 +803,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     success &= waitResponse(5000L) == 1;
 
     // apply the correct certificates to the connection
-    if (CAcertName != nullptr &&
+    if (CAcertName.length() &&
         (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
          sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       /* Configure the server root CA of the specified SSL context
@@ -811,14 +811,14 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       sendAT(GF("+CSSLCFG=\"cacert\","), context_id, GF(","), CAcertName);
       success &= waitResponse(5000L) == 1;
     }
-    if (clientCertName != nullptr &&
+    if (clientCertName.length()  &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
          sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
       sendAT(GF("+CSSLCFG=\"clientcert\","), context_id, GF(","),
              clientCertName);
       success &= waitResponse(5000L) == 1;
     }
-    if (clientKeyName != nullptr &&
+    if (clientKeyName.length() &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
          sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
       sendAT(GF("+CSSLCFG=\"clientkey\","), context_id, GF(","), clientKeyName);
