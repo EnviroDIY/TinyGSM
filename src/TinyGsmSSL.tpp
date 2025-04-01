@@ -222,7 +222,7 @@ class GsmSecureClient {
   }
 
   // destructor
-  virtual ~GsmSecureClient() {}
+  virtual ~GsmSecureClient() = default;
 
  protected:
   /// The SSL context index to use for this connection
