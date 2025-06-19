@@ -12,10 +12,29 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#ifdef TINY_GSM_MUX_COUNT
+#undef TINY_GSM_MUX_COUNT
+#endif
 #define TINY_GSM_MUX_COUNT 2
+#ifdef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#undef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#endif
+#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
+#undef TINY_GSM_BUFFER_READ_NO_CHECK
+#endif
+#ifndef TINY_GSM_NO_MODEM_BUFFER
 #define TINY_GSM_NO_MODEM_BUFFER
+#endif
+#ifdef TINY_GSM_MUX_DYNAMIC
+#undef TINY_GSM_MUX_DYNAMIC
+#endif
+#ifndef TINY_GSM_MUX_STATIC
 #define TINY_GSM_MUX_STATIC
+#endif
 
+#ifdef TINY_GSM_SEND_MAX_SIZE
+#undef TINY_GSM_SEND_MAX_SIZE
+#endif
 #define TINY_GSM_SEND_MAX_SIZE 2000
 // The M590 can send up to 2000 bytes at a time with TCPSEND
 

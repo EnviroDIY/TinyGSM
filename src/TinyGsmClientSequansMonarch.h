@@ -11,19 +11,41 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#ifdef TINY_GSM_MUX_COUNT
+#undef TINY_GSM_MUX_COUNT
+#endif
 #define TINY_GSM_MUX_COUNT 6
+#ifdef TINY_GSM_SECURE_MUX_COUNT
+#undef TINY_GSM_SECURE_MUX_COUNT
+#endif
 #define TINY_GSM_SECURE_MUX_COUNT 6
 // NOTE: Unlike most modules, the sockets are numbered starting at 1, not 0.
 // Also supports 6 "security profiles" (1-6)
 // The security profiles is collection of SSL settings, not the connection
 // identifier.
 
+#ifdef TINY_GSM_SEND_MAX_SIZE
+#undef TINY_GSM_SEND_MAX_SIZE
+#endif
 #define TINY_GSM_SEND_MAX_SIZE 750
 // SQNSSENDEXT accepts up to 1500 bytes of input, but this is configured to send
 // HEX, so only 1/2 of that is available.
 
+#ifdef TINY_GSM_NO_MODEM_BUFFER
+#undef TINY_GSM_NO_MODEM_BUFFER
+#endif
+#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
+#undef TINY_GSM_BUFFER_READ_NO_CHECK
+#endif
+#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#endif
+#ifdef TINY_GSM_MUX_DYNAMIC
+#undef TINY_GSM_MUX_DYNAMIC
+#endif
+#ifndef TINY_GSM_MUX_STATIC
 #define TINY_GSM_MUX_STATIC
+#endif
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -45,7 +67,9 @@
 // NOTE: This module supports SSL, but we do not support any certificate
 // management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
 // so as not to waste space.
+#ifndef TINY_GSM_MODEM_HAS_SSL
 #define TINY_GSM_MODEM_HAS_SSL
+#endif
 
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmCalling.tpp"

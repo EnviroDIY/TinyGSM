@@ -12,7 +12,13 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#ifdef TINY_GSM_MUX_COUNT
+#undef TINY_GSM_MUX_COUNT
+#endif
 #define TINY_GSM_MUX_COUNT 5
+#ifdef TINY_GSM_SECURE_MUX_COUNT
+#undef TINY_GSM_SECURE_MUX_COUNT
+#endif
 #define TINY_GSM_SECURE_MUX_COUNT 5
 // NOTE: There's a total limit of 5 sockets, any of them can be SSL. BUT the
 // manual warns that module may not be able to handle more than 1 SSL socket at
@@ -39,9 +45,15 @@
 #endif
 #if defined(TINY_GSM_MODEM_ESP8266) || defined(TINY_GSM_MODEM_ESP8266_NONOS)
 #define MODEM_MODEL "ESP8266"
+#ifdef TINY_GSM_SEND_MAX_SIZE
+#undef TINY_GSM_SEND_MAX_SIZE
+#endif
 #define TINY_GSM_SEND_MAX_SIZE 2048
 #elif defined(TINY_GSM_MODEM_ESP32)
 #define MODEM_MODEL "ESP32"
+#ifdef TINY_GSM_SEND_MAX_SIZE
+#undef TINY_GSM_SEND_MAX_SIZE
+#endif
 #define TINY_GSM_SEND_MAX_SIZE 8192
 #else
 #define MODEM_MODEL "Espressif AT"

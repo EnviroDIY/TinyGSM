@@ -11,7 +11,9 @@
 
 #include "TinyGsmCommon.h"
 
+#ifndef TINY_GSM_MODEM_HAS_TEMPERATURE
 #define TINY_GSM_MODEM_HAS_TEMPERATURE
+#endif
 
 template <class modemType>
 class TinyGsmTemperature {

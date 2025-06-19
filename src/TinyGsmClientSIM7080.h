@@ -11,25 +11,50 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#ifdef TINY_GSM_MUX_COUNT
+#undef TINY_GSM_MUX_COUNT
+#endif
 #define TINY_GSM_MUX_COUNT 12
+#ifdef TINY_GSM_SECURE_MUX_COUNT
+#undef TINY_GSM_SECURE_MUX_COUNT
+#endif
 #define TINY_GSM_SECURE_MUX_COUNT 12
 
 // #define TINY_GSM_DEFAULT_SSL_CTX 0
 // Also supports 6 SSL contexts (0-5)
 // The SSL context is collection of SSL settings, not the connection identifier.
 
+#ifdef TINY_GSM_SEND_MAX_SIZE
+#undef TINY_GSM_SEND_MAX_SIZE
+#endif
 #define TINY_GSM_SEND_MAX_SIZE 1360
 // Up to 1460 bytes can be sent at a time with CASEND
 // NOTE: The manual says 1460, but my module never reports more than 1360
 // available, even without SSL.
+#ifdef TINY_GSM_MIN_SEND_BUFFER
+#undef TINY_GSM_MIN_SEND_BUFFER
+#endif
 #define TINY_GSM_MIN_SEND_BUFFER 1360
 // In my testing, if the check for available space in the send buffer reports
 // anything less than full space available, the modem is on the edge of
 // crashing and you need to back off until it's fully cleared. Refilling a
 // partially emptied buffer doesn't go well.
 
+#ifdef TINY_GSM_NO_MODEM_BUFFER
+#undef TINY_GSM_NO_MODEM_BUFFER
+#endif
+#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
+#undef TINY_GSM_BUFFER_READ_NO_CHECK
+#endif
+#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#endif
+#ifdef TINY_GSM_MUX_DYNAMIC
+#undef TINY_GSM_MUX_DYNAMIC
+#endif
+#ifndef TINY_GSM_MUX_STATIC
 #define TINY_GSM_MUX_STATIC
+#endif
 
 #include "TinyGsmClientSIM70xx.h"
 #include "TinyGsmTCP.tpp"

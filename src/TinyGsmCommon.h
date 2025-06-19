@@ -43,13 +43,14 @@
   __attribute__((error("Not available on this modem type")))
 #define TINY_GSM_ATTR_NOT_IMPLEMENTED __attribute__((error("Not implemented")))
 
-#if (defined(__AVR__) || defined(ARDUINO_ARCH_AVR)) && \
-    !defined(__AVR_ATmega4809__)
+#if (defined(__AVR__) || defined(ARDUINO_ARCH_AVR)) &&                    \
+    !defined(__AVR_ATmega4809__) && !defined(PROGMEM) && !defined(GFP) && \
+    !defined(GF)
 #define TINY_GSM_PROGMEM PROGMEM
 typedef const __FlashStringHelper* GsmConstStr;
 #define GFP(x) (reinterpret_cast<GsmConstStr>(x))
 #define GF(x) F(x)
-#else
+#elif !defined(TINY_GSM_PROGMEM) && !defined(GFP) && !defined(GF)
 #define TINY_GSM_PROGMEM
 typedef const char* GsmConstStr;
 #define GFP(x) x

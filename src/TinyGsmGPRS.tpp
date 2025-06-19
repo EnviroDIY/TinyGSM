@@ -11,7 +11,9 @@
 
 #include "TinyGsmCommon.h"
 
+#ifndef TINY_GSM_MODEM_HAS_GPRS
 #define TINY_GSM_MODEM_HAS_GPRS
+#endif
 
 enum SimStatus {
   SIM_ERROR            = 0,

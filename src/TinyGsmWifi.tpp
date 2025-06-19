@@ -11,7 +11,9 @@
 
 #include "TinyGsmCommon.h"
 
+#ifndef TINY_GSM_MODEM_HAS_WIFI
 #define TINY_GSM_MODEM_HAS_WIFI
+#endif
 
 template <class modemType>
 class TinyGsmWifi {

@@ -12,8 +12,21 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#ifdef TINY_GSM_NO_MODEM_BUFFER
+#undef TINY_GSM_NO_MODEM_BUFFER
+#endif
+#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
+#undef TINY_GSM_BUFFER_READ_NO_CHECK
+#endif
+#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#endif
+#ifdef TINY_GSM_MUX_STATIC
+#undef TINY_GSM_MUX_STATIC
+#endif
+#ifndef TINY_GSM_MUX_DYNAMIC
 #define TINY_GSM_MUX_DYNAMIC
+#endif
 
 #include "TinyGsmClientEspressif.h"
 #include "TinyGsmTCP.tpp"

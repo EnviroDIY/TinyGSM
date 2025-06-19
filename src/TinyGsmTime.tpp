@@ -11,7 +11,9 @@
 
 #include "TinyGsmCommon.h"
 
+#ifndef TINY_GSM_MODEM_HAS_TIME
 #define TINY_GSM_MODEM_HAS_TIME
+#endif
 
 template <class modemType>
 class TinyGsmTime {

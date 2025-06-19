@@ -11,7 +11,9 @@
 
 #include "TinyGsmCommon.h"
 
+#ifndef TINY_GSM_MODEM_HAS_SMS
 #define TINY_GSM_MODEM_HAS_SMS
+#endif
 
 template <class modemType>
 class TinyGsmSMS {

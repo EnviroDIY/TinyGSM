@@ -13,12 +13,34 @@
 // #define TINY_GSM_DEBUG Serial
 // #define TINY_GSM_USE_HEX
 
+#ifdef TINY_GSM_MUX_COUNT
+#undef TINY_GSM_MUX_COUNT
+#endif
 #define TINY_GSM_MUX_COUNT 5
+#ifdef TINY_GSM_SECURE_MUX_COUNT
+#undef TINY_GSM_SECURE_MUX_COUNT
+#endif
 #define TINY_GSM_SECURE_MUX_COUNT 5
 
+#ifdef TINY_GSM_NO_MODEM_BUFFER
+#undef TINY_GSM_NO_MODEM_BUFFER
+#endif
+#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
+#undef TINY_GSM_BUFFER_READ_NO_CHECK
+#endif
+#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#endif
+#ifdef TINY_GSM_MUX_DYNAMIC
+#undef TINY_GSM_MUX_DYNAMIC
+#endif
+#ifndef TINY_GSM_MUX_STATIC
 #define TINY_GSM_MUX_STATIC
+#endif
 
+#ifdef TINY_GSM_SEND_MAX_SIZE
+#undef TINY_GSM_SEND_MAX_SIZE
+#endif
 #define TINY_GSM_SEND_MAX_SIZE 1500
 // To get the true max size, send the command AT+CIPSEND?
 // I'm choosing to fake it here with 1500
@@ -55,7 +77,9 @@
 // See the example examples/more/SIM800_SslSetCert/SIM800_SslSetCert.ino for an
 // example of how to manage the certificates
 #if !defined(TINY_GSM_MODEM_SIM900)
+#ifndef TINY_GSM_MODEM_HAS_SSL
 #define TINY_GSM_MODEM_HAS_SSL
+#endif
 #endif
 
 #include "TinyGsmGPRS.tpp"

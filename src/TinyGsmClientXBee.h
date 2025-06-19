@@ -15,11 +15,32 @@
 
 // XBee's do not support multiplexing in transparent/command mode
 // The much more complicated API mode is needed for multiplexing
+#ifdef TINY_GSM_MUX_COUNT
+#undef TINY_GSM_MUX_COUNT
+#endif
 #define TINY_GSM_MUX_COUNT 1
+
+#ifdef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#undef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#endif
+#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
+#undef TINY_GSM_BUFFER_READ_NO_CHECK
+#endif
+#ifndef TINY_GSM_NO_MODEM_BUFFER
 #define TINY_GSM_NO_MODEM_BUFFER
+#endif
+#ifdef TINY_GSM_MUX_DYNAMIC
+#undef TINY_GSM_MUX_DYNAMIC
+#endif
+#ifndef TINY_GSM_MUX_STATIC
 #define TINY_GSM_MUX_STATIC
+#endif
+
 // XBee's have a default guard time of 1 second (1000ms, 10 extra for safety
 // here)
+#ifdef TINY_GSM_XBEE_GUARD_TIME
+#undef TINY_GSM_XBEE_GUARD_TIME
+#endif
 #define TINY_GSM_XBEE_GUARD_TIME 1010
 
 #ifdef AT_NL

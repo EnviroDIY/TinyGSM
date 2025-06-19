@@ -11,7 +11,9 @@
 
 #include "TinyGsmCommon.h"
 
+#ifndef TINY_GSM_MODEM_HAS_NTP
 #define TINY_GSM_MODEM_HAS_NTP
+#endif
 
 template <class modemType>
 class TinyGsmNTP {

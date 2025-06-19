@@ -12,7 +12,13 @@
 // #define TINY_GSM_DEBUG Serial
 // #define TINY_GSM_USE_HEX
 
+#ifdef TINY_GSM_MUX_COUNT
+#undef TINY_GSM_MUX_COUNT
+#endif
 #define TINY_GSM_MUX_COUNT 10
+#ifdef TINY_GSM_SECURE_MUX_COUNT
+#undef TINY_GSM_SECURE_MUX_COUNT
+#endif
 #define TINY_GSM_SECURE_MUX_COUNT 2
 // supports 10 TCP sockets or 2 SSL
 // SRGD Note: I think these two numbers are independent of each other and
@@ -21,6 +27,9 @@
 // application on the module.
 // TODO(?) Could someone who has this module test this?
 
+#ifdef TINY_GSM_SEND_MAX_SIZE
+#undef TINY_GSM_SEND_MAX_SIZE
+#endif
 #define TINY_GSM_SEND_MAX_SIZE 1500
 // CCHSEND can handle up to 2048 bytes of input, but CIPSEND will only accept
 // 1500, so we'll take the smaller number
@@ -30,8 +39,21 @@
 // The SSL context is collection of SSL settings, not the connection identifier.
 // This library always uses SSL context 0.
 
+#ifdef TINY_GSM_NO_MODEM_BUFFER
+#undef TINY_GSM_NO_MODEM_BUFFER
+#endif
+#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
+#undef TINY_GSM_BUFFER_READ_NO_CHECK
+#endif
+#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#endif
+#ifdef TINY_GSM_MUX_DYNAMIC
+#undef TINY_GSM_MUX_DYNAMIC
+#endif
+#ifndef TINY_GSM_MUX_STATIC
 #define TINY_GSM_MUX_STATIC
+#endif
 #ifdef AT_NL
 #undef AT_NL
 #endif

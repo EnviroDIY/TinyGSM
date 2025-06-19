@@ -11,7 +11,9 @@
 
 #include "TinyGsmCommon.h"
 
+#ifndef TINY_GSM_MODEM_HAS_CALLING
 #define TINY_GSM_MODEM_HAS_CALLING
+#endif
 
 template <class modemType>
 class TinyGsmCalling {
