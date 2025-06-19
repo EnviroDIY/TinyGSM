@@ -12,24 +12,50 @@
 
 // #define TINY_GSM_DEBUG Serial
 
-#define TINY_GSM_MUX_COUNT 12
-#define TINY_GSM_SECURE_MUX_COUNT 12
-// supports 12 sockets (0-11); any of them can be SSL
-
-#define TINY_GSM_SEND_MAX_SIZE 1460
-// QISEND and QSSLSEND both accept up to 1460 bytes of input
-
-#if !defined(TINY_GSM_CONNECT_TIMEOUT)
-#define TINY_GSM_CONNECT_TIMEOUT 150
+#ifdef TINY_GSM_MUX_COUNT
+#undef TINY_GSM_MUX_COUNT
 #endif
+// supports 12 sockets (0-11); any of them can be SSL
+#define TINY_GSM_MUX_COUNT 12
+
+#ifdef TINY_GSM_SECURE_MUX_COUNT
+#undef TINY_GSM_SECURE_MUX_COUNT
+#endif
+// supports 12 sockets (0-11); any of them can be SSL
+#define TINY_GSM_SECURE_MUX_COUNT 12
+
+#ifdef TINY_GSM_SEND_MAX_SIZE
+#undef TINY_GSM_SEND_MAX_SIZE
+#endif
+// QISEND and QSSLSEND both accept up to 1460 bytes of input
+#define TINY_GSM_SEND_MAX_SIZE 1460
+
+
+#ifdef TINY_GSM_CONNECT_TIMEOUT
+#undef TINY_GSM_CONNECT_TIMEOUT
+#endif
+#define TINY_GSM_CONNECT_TIMEOUT 150
 
 // Also supports 6 SSL contexts (0-5)
 // The SSL context is collection of SSL settings, not the connection identifier.
 // This library always uses SSL context 0.
 // #define TINY_GSM_DEFAULT_SSL_CTX 0
 
+#ifdef TINY_GSM_NO_MODEM_BUFFER
+#undef TINY_GSM_NO_MODEM_BUFFER
+#endif
+#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
+#undef TINY_GSM_BUFFER_READ_NO_CHECK
+#endif
+#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#endif
+#ifdef TINY_GSM_MUX_DYNAMIC
+#undef TINY_GSM_MUX_DYNAMIC
+#endif
+#ifndef TINY_GSM_MUX_STATIC
 #define TINY_GSM_MUX_STATIC
+#endif
 #ifdef AT_NL
 #undef AT_NL
 #endif

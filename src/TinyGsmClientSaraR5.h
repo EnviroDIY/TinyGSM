@@ -12,7 +12,13 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#ifdef TINY_GSM_MUX_COUNT
+#undef TINY_GSM_MUX_COUNT
+#endif
 #define TINY_GSM_MUX_COUNT 7
+#ifdef TINY_GSM_SECURE_MUX_COUNT
+#undef TINY_GSM_SECURE_MUX_COUNT
+#endif
 #define TINY_GSM_SECURE_MUX_COUNT 7
 // I **think** all sockets can be SSL, but the manual is not clear (to me).
 // Also supports 5 SSL contexts (0-4)
@@ -20,16 +26,35 @@
 // WARNING: You cannot control the socket mux number on this module! The module
 // opens the connection and returns the connection number it opened.
 
+#ifdef TINY_GSM_SEND_MAX_SIZE
+#undef TINY_GSM_SEND_MAX_SIZE
+#endif
 #define TINY_GSM_SEND_MAX_SIZE 1024
 // USOWR accepts up to 1024 bytes in "normal" and "binary extended" modes and up
 // to 512 bytes in "HEX" mode.
 
 #if !defined(TINY_GSM_CONNECT_TIMEOUT)
+#ifdef TINY_GSM_CONNECT_TIMEOUT
+#undef TINY_GSM_CONNECT_TIMEOUT
+#endif
 #define TINY_GSM_CONNECT_TIMEOUT 120
 #endif
 
+#ifdef TINY_GSM_NO_MODEM_BUFFER
+#undef TINY_GSM_NO_MODEM_BUFFER
+#endif
+#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
+#undef TINY_GSM_BUFFER_READ_NO_CHECK
+#endif
+#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#endif
+#ifdef TINY_GSM_MUX_STATIC
+#undef TINY_GSM_MUX_STATIC
+#endif
+#ifndef TINY_GSM_MUX_DYNAMIC
 #define TINY_GSM_MUX_DYNAMIC
+#endif
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -51,7 +76,9 @@
 // NOTE: This module supports SSL, but we do not support any certificate
 // management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
 // so as not to waste space.
+#ifndef TINY_GSM_MODEM_HAS_SSL
 #define TINY_GSM_MODEM_HAS_SSL
+#endif
 
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmCalling.tpp"

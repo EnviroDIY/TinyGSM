@@ -11,7 +11,9 @@
 
 #include "TinyGsmCommon.h"
 
+#ifndef TINY_GSM_MODEM_HAS_GSM_LOCATION
 #define TINY_GSM_MODEM_HAS_GSM_LOCATION
+#endif
 
 template <class modemType>
 class TinyGsmGSMLocation {

@@ -11,7 +11,9 @@
 
 #include "TinyGsmCommon.h"
 
+#ifndef TINY_GSM_MODEM_HAS_TCP
 #define TINY_GSM_MODEM_HAS_TCP
+#endif
 
 #include "TinyGsmFifo.h"
 

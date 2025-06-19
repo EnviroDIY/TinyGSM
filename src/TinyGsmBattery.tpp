@@ -11,7 +11,9 @@
 
 #include "TinyGsmCommon.h"
 
+#ifndef TINY_GSM_MODEM_HAS_BATTERY
 #define TINY_GSM_MODEM_HAS_BATTERY
+#endif
 
 template <class modemType>
 class TinyGsmBattery {
