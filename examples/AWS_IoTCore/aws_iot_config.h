@@ -8,9 +8,9 @@
 // Configurations
 // NOTE: You can ignore linter errors about TINY_GSM_PROGMEM
 static const char AWS_IOT_ENDPOINT[] TINY_GSM_PROGMEM =
-    "-ats.iot.XXX.amazonaws.com";
+    "YOUR_ENDPOINT-ats.iot.YOUR_REGION.amazonaws.com";
 // the client ID should be the name of your "thing" in AWS IoT Core
-#define THING_NAME "MyThingName"
+#define THING_NAME "YOUR_THING_NAME"
 
 // https://docs.aws.amazon.com/iot/latest/developerguide/server-authentication.html
 // RSA 2048 bit key: Amazon Root CA 1"
@@ -44,7 +44,7 @@ rqXRfboQnoZsG4q5WTP468SQvvG5
 // NOTE: You can ignore linter errors about TINY_GSM_PROGMEM
 static const char AWS_CLIENT_CERTIFICATE[] TINY_GSM_PROGMEM = R"EOF(
 -----BEGIN CERTIFICATE-----
-XXX
+paste the certificate here
 -----END CERTIFICATE-----
 )EOF";
 
@@ -53,7 +53,7 @@ XXX
 // This is downloaded as device.private.key from AWS IoT Core
 static const char AWS_CLIENT_PRIVATE_KEY[] TINY_GSM_PROGMEM = R"EOF(
 -----BEGIN RSA PRIVATE KEY-----
-XXX
+paste the private key here
 -----END RSA PRIVATE KEY-----
 )EOF";
 

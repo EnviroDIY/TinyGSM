@@ -52,11 +52,10 @@ compile_commands.json
 src/TinyGsmATDefines.h
 variants/*
 boards/*
+tests/*
 clang_format_all.bat
-examples/AWS_IoTCore/aws_iot_config.h
 *.cert
 *.crt
 *.pem
 *.key
 src/CipherSuiteCodes.csv
-examples/AWS_IoTCore/XBee8_upy_mqtt.py
