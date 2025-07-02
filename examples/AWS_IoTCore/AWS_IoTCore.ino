@@ -23,10 +23,6 @@
 
 #define TINY_GSM_TCP_KEEP_ALIVE 180
 
-#include <TinyGsmClient.h>
-#include <PubSubClient.h>
-#include "aws_iot_config.h"
-
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
 
@@ -58,6 +54,10 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 // Add a reception delay, if needed.
 // This may be needed for a fast processor at a slow baud rate.
 // #define TINY_GSM_YIELD() { delay(2); }
+
+#include <TinyGsmClient.h>
+#include <PubSubClient.h>
+#include "aws_iot_config.h"
 
 // Define how you're planning to connect to the internet.
 // This is only needed for this example, not in other code.
@@ -110,9 +110,6 @@ delete_certs = false;
 // The certificates should generally be formatted as ".pem", ".der", or (for
 // some modules) ".p7b" files.
 
-// For most modules the actual filename doesn't matter much but it CANNOT HAVE
-// SPACES.
-
 // For Espressif modules, only two certificate sets are supported and the
 // certificates must be named "client_ca.{0|1}", "client_cert.{0|1}", or
 // "client_key.{0|1}"
@@ -121,12 +118,13 @@ const char* root_ca_name     = "client_ca.1";
 const char* client_cert_name = "client_cert.1";
 const char* client_key_name  = "client_key.1";
 #else
-// const char* root_ca_name = "root_ca_1.crt";
-const char* root_ca_name = "AmazonRootCA1.pem";
-// const char* root_ca_name = "pca3-g5.crt.pem";
-// const char* root_ca_name = "SFSRootCAG2.pem";
-const char* client_cert_name = "client_cert_1.crt";
-const char* client_key_name  = "client_key_1.key";
+// For most modules the actual filename doesn't matter much but it CANNOT
+// HAVE SPACES and should be less than 64 characters.
+// NOTE: The certificate names as they are downloaded from AWS IoT Core
+// are often too long for the modem to handle. Pick something shorter.
+const char* root_ca_name     = "AmazonRootCA1.pem";
+const char* client_cert_name = THING_NAME "-certificate.pem.crt";
+const char* client_key_name  = THING_NAME "-private-key.pem.key";
 #endif
 
 // Just in case someone defined the wrong thing..
@@ -222,7 +220,7 @@ void setup() {
   DBG("Wait...");
   delay(500L);
 
-// Set GSM module baud rate
+  // Set GSM module baud rate
 #ifndef TINY_GSM_MODEM_XBEE
   TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
 #else
@@ -234,12 +232,31 @@ void setup() {
   SerialMon.print("Initializing modem...");
   if (!modem.restart()) {  // modem.init();
     SerialMon.println(" ...failed to initialize modem!");
+    delay(10000);
+    return;
   }
   SerialMon.println(" ...success");
+
+  // Max out the baud rate, if desired
+  // NOTE: Do this **AFTER** the modem has been restarted - many modules
+  // revert to default baud rates when reset or powered off. 921600, 460800,
+  // 230400, 115200
+  modem.setBaud(921600);
+  SerialAT.end();
+  delay(100);
+  SerialAT.begin(921600);
+  delay(100);
+  modem.init();  // May need to re-init to turn off echo, etc
 
   String modemInfo = modem.getModemInfo();
   SerialMon.print("Modem Info: ");
   SerialMon.println(modemInfo);
+  String modemManufacturer = modem.getModemManufacturer();
+  SerialMon.print("Modem Manufacturer: ");
+  SerialMon.println(modemManufacturer);
+  String modemModel = modem.getModemModel();
+  SerialMon.print("Modem Model: ");
+  SerialMon.println(modemModel);
   String modemRevision = modem.getModemRevision();
   SerialMon.print("Modem Revision: ");
   SerialMon.println(modemRevision);
@@ -261,28 +278,23 @@ void setup() {
   // ======================== CERTIFICATE NAMES ========================
   // The certificates are stored in the "certificates.h" file
 
-  // const char* root_ca     = AWS_SERVER_CERTIFICATE;
+  const char* root_ca     = AWS_SERVER_CERTIFICATE;
   const char* client_cert = AWS_CLIENT_CERTIFICATE;
   const char* client_key  = AWS_CLIENT_PRIVATE_KEY;
 
 #ifdef TINY_GSM_MODEM_CAN_LOAD_CERTS
   // ======================== CA CERTIFICATE LOADING ========================
-  bool cert_success = true;
+  bool ca_cert_success = true;
   // add the server's certificate authority certificate to the modem
-  SerialMon.println("Loading Certificate Authority Certificates");
-  cert_success &= modem.loadCertificate(root_ca_name, AWS_ROOT_CA1_CERTIFICATE,
-                                        strlen(AWS_ROOT_CA1_CERTIFICATE));
-#ifndef TINY_GSM_MODEM_ESP32
-  cert_success &= modem.loadCertificate("AmazonRootCA1.pem",
-                                        AWS_ROOT_CA1_CERTIFICATE,
-                                        strlen(AWS_ROOT_CA1_CERTIFICATE));
-  cert_success &= modem.loadCertificate("pca3-g5.crt.pem",
-                                        AWS_VERISIGN_G5_CERTIFICATE,
-                                        strlen(AWS_VERISIGN_G5_CERTIFICATE));
-  cert_success &= modem.loadCertificate("SFSRootCAG2.pem",
-                                        AWS_STARFIELD_G2_CERTIFICATE,
-                                        strlen(AWS_STARFIELD_G2_CERTIFICATE));
-#endif
+  SerialMon.print("Loading Certificate Authority Certificate");
+  ca_cert_success &= modem.loadCertificate(root_ca_name, root_ca,
+                                           strlen(root_ca));
+  if (!ca_cert_success) {
+    SerialMon.println(" ...failed to load CA certificate!");
+    delay(10000);
+    return;
+  }
+  SerialMon.println(" ...success");
   if (print_certs) {
     // print out the certificate to make sure it matches
     SerialMon.println(
@@ -290,37 +302,62 @@ void setup() {
     modem.printCertificate(root_ca_name, SerialMon);
   }
   // convert the certificate to the modem's format
-  SerialMon.println("Converting Certificate Authority Certificate");
-  cert_success &= modem.convertCACertificate(root_ca_name);
-  if (delete_certs) { cert_success &= modem.deleteCertificate(root_ca_name); }
+  SerialMon.print("Converting Certificate Authority Certificate");
+  ca_cert_success &= modem.convertCACertificate(root_ca_name);
+  if (!ca_cert_success) {
+    SerialMon.println(" ...failed to convert CA certificate!");
+    delay(10000);
+    return;
+  }
+  SerialMon.println(" ...success");
+
+  if (delete_certs) {
+    ca_cert_success &= modem.deleteCertificate(root_ca_name);
+  }
   delay(1000);
 
-  // ======================= CLIENT CERTIFICATE LOADING =======================
+  // ===================== CLIENT CERTIFICATE LOADING =====================
+  bool client_cert_success = true;
   // add the client's certificate and private key to the modem
-  cert_success &= modem.loadCertificate(client_cert_name, client_cert,
-                                        strlen(client_cert));
+  SerialMon.print("Loading Client Certificate");
+  client_cert_success &= modem.loadCertificate(client_cert_name, client_cert,
+                                               strlen(client_cert));
   if (print_certs) {
     // print out the certificate to make sure it matches
     modem.printCertificate(client_cert_name, SerialMon);
   }
   delay(1000);
-  cert_success &= modem.loadCertificate(client_key_name, client_key,
-                                        strlen(client_key));
+  SerialMon.print(" and Client Private Key ");
+  client_cert_success &= modem.loadCertificate(client_key_name, client_key,
+                                               strlen(client_key));
   if (print_certs) {
     // print out the certificate to make sure it matches
     modem.printCertificate(client_key_name, SerialMon);
   }
+  if (!client_cert_success) {
+    SerialMon.println(" ...failed to load client certificate or key!");
+    delay(10000);
+    return;
+  }
+  SerialMon.println(" ...success");
   // convert the client certificate pair to the modem's format
-  cert_success &= modem.convertClientCertificates(client_cert_name,
-                                                  client_key_name);
+  client_cert_success &= modem.convertClientCertificates(client_cert_name,
+                                                         client_key_name);
+  if (!client_cert_success) {
+    SerialMon.println(" ...failed to convert client certificate and key!");
+    delay(10000);
+    return;
+  }
+  SerialMon.println(" ...success");
+
   if (delete_certs) {
-    cert_success &= modem.deleteCertificate(client_cert_name);
-    cert_success &= modem.deleteCertificate(client_key_name);
+    client_cert_success &= modem.deleteCertificate(client_cert_name);
+    client_cert_success &= modem.deleteCertificate(client_key_name);
   }
   delay(1000);
 #endif
 
-  // =================== SET CERTIFICATES FOR THE CONNECTION ===================
+  // ================= SET CERTIFICATES FOR THE CONNECTION =================
   // AWS IoT Core requires mutual authentication
   DBG("Requiring mutual authentication on socket");
   secureClient.setSSLAuthMode(SSLAuthMode::MUTUAL_AUTHENTICATION);
@@ -343,6 +380,8 @@ void setup() {
   SerialMon.print("Waiting for network...");
   if (!modem.waitForNetwork(300000L)) {
     SerialMon.println(" ...failed to connect to network!");
+    delay(10000);
+    return;
   }
   SerialMon.println(" ...success");
 
@@ -355,6 +394,8 @@ void setup() {
   SerialMon.println(apn);
   if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
     SerialMon.println(" ...failed to connect to GPRS!");
+    delay(10000);
+    return;
   }
   SerialMon.println(" ...success");
 
@@ -365,7 +406,7 @@ void setup() {
   // enable/force time sync with NTP server
   // This is **REQUIRED** for validated SSL connections
   DBG("Enabling time sync with NTP server");
-  modem.NTPServerSync("pool.ntp.org", -4);
+  modem.NTPServerSync("pool.ntp.org", -5);
 
   String time = modem.getGSMDateTime(TinyGSMDateTimeFormat::DATE_FULL);
   DBG("Current Network Time:", time);
