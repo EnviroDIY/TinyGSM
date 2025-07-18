@@ -967,6 +967,9 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       }
     }
 
+    DBG("host:", host);
+    DBG("port:", port);
+
     // actually open the connection
     // AT+CAOPEN=<cid>,<pdp_index>,<conn_type>,<server>,<port>[,<recv_mode>]
     // <cid> TCP/UDP identifier
