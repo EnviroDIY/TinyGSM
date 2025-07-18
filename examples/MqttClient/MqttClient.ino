@@ -263,6 +263,7 @@ void loop() {
     if (modem.isNetworkConnected()) {
       SerialMon.println("Network re-connected");
     }
+  }
 
 #if TINY_GSM_USE_GPRS
     // and make sure GPRS/EPS is still connected
@@ -278,19 +279,15 @@ void loop() {
       if (modem.isGprsConnected()) { SerialMon.println("GPRS reconnected"); }
     }
 #endif
-  }
 
-  if (!mqtt.connected()) {
-    SerialMon.println("=== MQTT NOT CONNECTED ===");
-    // Reconnect every 10 seconds
-    uint32_t t = millis();
-    if (t - lastReconnectAttempt > 10000L) {
-      lastReconnectAttempt = t;
-      if (mqttConnect()) { lastReconnectAttempt = 0; }
+    if (!mqtt.connected()) {
+      SerialMon.println("=== MQTT NOT CONNECTED ===");
+      // Reconnect every 10 seconds
+      if (millis() - lastReconnectAttempt > 10000L) {
+        lastReconnectAttempt = millis();
+        mqttConnect();
+      }
     }
-    delay(100);
-    return;
-  }
 
-  mqtt.loop();
+    mqtt.loop();
 }
