@@ -304,7 +304,7 @@ class TinyGsmSim7000SSL
       stream.write(cert, len);
       stream.flush();
     }
-    success &= waitResponse(5000L) == 1;
+    success &= waitResponse(15000L) == 1;
 
     // Verify the size of the uploaded file
     // AT+CFSGFIS=<index>,<filename>

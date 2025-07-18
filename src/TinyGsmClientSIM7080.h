@@ -346,7 +346,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       stream.write(cert, len);
       stream.flush();
     }
-    success &= waitResponse(5000L) == 1;
+    success &= waitResponse(15000L) == 1;
 
     // Verify the size of the uploaded file
     // AT+CFSGFIS=<index>,<filename>
