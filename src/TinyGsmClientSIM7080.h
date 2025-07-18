@@ -29,8 +29,9 @@
 #endif
 #define TINY_GSM_SEND_MAX_SIZE 1360
 // Up to 1460 bytes can be sent at a time with CASEND
-// NOTE: The manual says 1460, but my module never reports more than 1360
-// available, even without SSL.
+// NOTE: The manual says 1460, but the actual value seems to be variable.
+// I have modules P/N S2-108HB-Z3037 that never report more than 1360 available
+// and P/N S2-108HB-Z30GJ that top out at 1318.
 #ifdef TINY_GSM_MIN_SEND_BUFFER
 #undef TINY_GSM_MIN_SEND_BUFFER
 #endif
@@ -104,12 +105,13 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     }
 
     bool init(TinyGsmSim7080* modem, uint8_t mux = 0) {
-      this->at       = modem;
-      sock_available = 0;
-      prev_check     = 0;
-      sock_connected = false;
-      got_data       = false;
-      is_mid_send    = false;
+      this->at        = modem;
+      sock_available  = 0;
+      prev_check      = 0;
+      sock_connected  = false;
+      got_data        = false;
+      is_mid_send     = false;
+      realMaxSendSize = TINY_GSM_SEND_MAX_SIZE;
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
@@ -156,6 +158,9 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
      */
 
     String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+   protected:
+    size_t realMaxSendSize;
   };
 
   /*
@@ -1022,6 +1027,15 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     int8_t res = streamGetIntBefore('\n');
     waitResponse();
 
+    // Immediately after connecting, before sending any data, we need to check
+    // actual the send buffer size, so we can wait for it to be available. The
+    // actual size is smaller than the size in the manual and seems to be
+    // variable, so we need to account for that when waiting for the buffer to
+    // be available.
+    sockets[mux]->realMaxSendSize = modemGetSendLength(mux);
+    DBG(GF("### Real max send size for mux"), mux, GF("is"),
+        sockets[mux]->realMaxSendSize);
+
     return 0 == res;
   }
 
@@ -1049,6 +1063,36 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     waitResponse();  // final ok
     if (leftsize > TINY_GSM_SEND_MAX_SIZE) { return TINY_GSM_SEND_MAX_SIZE; }
     return leftsize;
+  }
+
+  size_t modemWaitForSendImpl(uint8_t mux, uint32_t timeout_ms = 15000L) {
+    size_t sendLength = modemGetSendLength(mux);
+#if defined(TINY_GSM_DEBUG)
+    if (sendLength != sockets[mux]->realMaxSendSize) {
+      DBG(GF("### Full send buffer not available! Expected it to have"),
+          sockets[mux]->realMaxSendSize, GF("bytes, but it has"), sendLength);
+    }
+    if (sendLength < sockets[mux]->realMaxSendSize) {
+      DBG(GF(
+          "### Waiting up to 15s for sufficient available send buffer space"));
+    }
+#endif
+    uint32_t start = millis();
+    while (sendLength < sockets[mux]->realMaxSendSize &&
+           millis() - start < timeout_ms && sockets[mux]->sock_connected) {
+      delay(250);
+      sendLength = modemGetSendLength(mux);
+#if defined(TINY_GSM_DEBUG)
+      if (sendLength >= sockets[mux]->realMaxSendSize) {
+        DBG(GF("### Send buffer has"), sendLength, GF("available after"),
+            millis() - start, GF("ms"));
+      }
+#endif
+    }
+#if defined(TINY_GSM_DEBUG)
+    if (sendLength == 0) { DBG(GF("### No available send buffer!")); }
+#endif
+    return sendLength;
   }
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
