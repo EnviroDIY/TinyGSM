@@ -238,6 +238,7 @@ bool setupCertificates() {
   // convert the certificate to the modem's format
   SerialMon.print("Converting Certificate Authority Certificate");
   ca_cert_success &= modem.convertCACertificate(root_ca_name);
+  delay(250);
   if (!ca_cert_success) {
     SerialMon.println(" ...failed to convert CA certificate!");
     return false;
@@ -246,8 +247,8 @@ bool setupCertificates() {
 
   if (delete_certs) {
     ca_cert_success &= modem.deleteCertificate(root_ca_name);
+    delay(1000);
   }
-  delay(1000);
 
   // ===================== CLIENT CERTIFICATE LOADING =====================
   bool client_cert_success = true;
@@ -255,17 +256,20 @@ bool setupCertificates() {
   SerialMon.print("Loading Client Certificate");
   client_cert_success &= modem.loadCertificate(client_cert_name, client_cert,
                                                strlen(client_cert));
+  delay(250);
   if (print_certs) {
     // print out the certificate to make sure it matches
     modem.printCertificate(client_cert_name, SerialMon);
+    delay(1000);
   }
-  delay(1000);
   SerialMon.print(" and Client Private Key ");
   client_cert_success &= modem.loadCertificate(client_key_name, client_key,
                                                strlen(client_key));
+  delay(250);
   if (print_certs) {
     // print out the certificate to make sure it matches
     modem.printCertificate(client_key_name, SerialMon);
+    delay(1000);
   }
   if (!client_cert_success) {
     SerialMon.println(" ...failed to load client certificate or key!");
@@ -275,6 +279,7 @@ bool setupCertificates() {
   // convert the client certificate pair to the modem's format
   client_cert_success &= modem.convertClientCertificates(client_cert_name,
                                                          client_key_name);
+  delay(250);
   if (!client_cert_success) {
     SerialMon.println(" ...failed to convert client certificate and key!");
     return false;
@@ -284,8 +289,8 @@ bool setupCertificates() {
   if (delete_certs) {
     client_cert_success &= modem.deleteCertificate(client_cert_name);
     client_cert_success &= modem.deleteCertificate(client_key_name);
+    delay(1000);
   }
-  delay(1000);
 
   // ================= SET CERTIFICATES FOR THE CONNECTION =================
   // AWS IoT Core requires mutual authentication
@@ -408,8 +413,6 @@ bool setupModem() {
 
 bool setupNetwork() {
   bool success = true;
-  // =================== SETUP NETWORK CONNECTION ===================
-  // Set the modem to use GPRS or WiFi, depending on your connection type
 
 #if TINY_GSM_USE_WIFI
   // Wifi connection parameters must be set before waiting for the network
@@ -419,11 +422,17 @@ bool setupNetwork() {
   SerialMon.println(" ...success");
 #endif
 
-  // =================== WAIT FOR NETWORK REGISTRATION ===================
 #if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_XBEE
   // The XBee must run the gprsConnect function BEFORE waiting for network!
   // All other modules must wait for network first.
   success &= modem.gprsConnect(apn, gprsUser, gprsPass);
+#endif
+
+#ifdef TINY_GSM_MODEM_HAS_NTP
+  // enable/force time sync with NTP server
+  // This is **REQUIRED** for validated SSL connections
+  DBG("Enabling time sync with NTP server");
+  modem.NTPServerSync("pool.ntp.org", -4);
 #endif
 
   return success;
@@ -464,6 +473,13 @@ bool getInternetConnection() {
   SerialMon.print("Signal Quality: ");
   SerialMon.println(modemService);
 
+#ifdef TINY_GSM_MODEM_HAS_NTP
+  // check and print the current network time to ensure that the modem has
+  // synchronized with the NTP server
+  String time = modem.getGSMDateTime(TinyGSMDateTimeFormat::DATE_FULL);
+  DBG("Current Network Time:", time);
+#endif
+
   return true;
 }
 
@@ -476,6 +492,12 @@ void setup() {
   while (!SerialMon && millis() < 10000L) {}
 
   pinMode(LED_PIN, OUTPUT);
+
+  // MQTT Broker setup
+  // NOTE: This is only configuring the server and callback within the
+  // PubSubClient object. It does not take any action.
+  mqtt.setServer(broker, port);
+  mqtt.setCallback(mqttCallback);
 
   DBG("TINY_GSM_USE_WIFI:", TINY_GSM_USE_WIFI);
   DBG("TINY_GSM_USE_GPRS:", TINY_GSM_USE_GPRS);
@@ -512,20 +534,6 @@ void setup() {
   SerialMon.println(" ...success");
 
   getInternetConnection();
-
-#ifdef TINY_GSM_MODEM_HAS_NTP
-  // enable/force time sync with NTP server
-  // This is **REQUIRED** for validated SSL connections
-  DBG("Enabling time sync with NTP server");
-  modem.NTPServerSync("pool.ntp.org", -5);
-
-  String time = modem.getGSMDateTime(TinyGSMDateTimeFormat::DATE_FULL);
-  DBG("Current Network Time:", time);
-#endif
-
-  // MQTT Broker setup
-  mqtt.setServer(broker, port);
-  mqtt.setCallback(mqttCallback);
 
   delay(500);
   DBG("Finished setup");

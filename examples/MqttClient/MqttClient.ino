@@ -180,6 +180,12 @@ void setup() {
 
   pinMode(LED_PIN, OUTPUT);
 
+  // MQTT Broker setup
+  // NOTE: This is only configuring the server and callback within the
+  // PubSubClient object. It does not take any action.
+  mqtt.setServer(broker, 1883);
+  mqtt.setCallback(mqttCallback);
+
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
   // !!!!!!!!!!!
@@ -245,10 +251,6 @@ void setup() {
 
   if (modem.isGprsConnected()) { SerialMon.println("GPRS connected"); }
 #endif
-
-  // MQTT Broker setup
-  mqtt.setServer(broker, 1883);
-  mqtt.setCallback(mqttCallback);
 }
 
 void loop() {
