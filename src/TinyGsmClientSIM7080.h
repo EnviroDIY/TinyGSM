@@ -323,7 +323,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     bool success = true;
     // Initialize AT relate to file system functions
     sendAT(GF("+CFSINIT"));
-    success &= waitResponse() == 1;
+    success &= waitResponse(5000L) == 1;
     if (!success) { return false; }
 
     // Write File to the Flash Buffer Allocated by CFSINIT
@@ -346,14 +346,14 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       stream.write(cert, len);
       stream.flush();
     }
-    success &= waitResponse() == 1;
+    success &= waitResponse(5000L) == 1;
 
     // Verify the size of the uploaded file
     // AT+CFSGFIS=<index>,<filename>
     //<index> 3: "/customer/" (always use customer for certificates)
     //<file name> File name length should less or equal 230 characters
     sendAT(GF("+CFSGFIS=3,\""), certificateName, GF("\""));
-    success &= waitResponse(GF("+CFSGFIS:")) == 1;
+    success &= waitResponse(5000L, GF("+CFSGFIS:")) == 1;
     if (success) {
       uint16_t len_confirmed = stream.parseInt();
       streamSkipUntil('\n');
@@ -363,7 +363,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // Release AT relates to file system functions.
     // NOTE: We need to do this even if we didn't successfully write the file
     sendAT(GF("+CFSTERM"));
-    success &= waitResponse() == 1;
+    success &= waitResponse(5000L) == 1;
 
     return success;
   }
@@ -375,16 +375,16 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
 
     // Initialize AT relate to file system functions
     sendAT(GF("+CFSINIT"));
-    if (waitResponse() != 1) { return false; }
+    if (waitResponse(5000L) != 1) { return false; }
 
     // Delete file
     sendAT(GF("+CFSDFILE=3,\""), certificateName, '"');
-    success &= waitResponse() == 1;
+    success &= waitResponse(5000L) == 1;
 
     // Release AT relates to file system functions.
     // NOTE: We need to do this even if we didn't successfully delete the file
     sendAT(GF("+CFSTERM"));
-    return success & (waitResponse() == 1);
+    return success & (waitResponse(5000L) == 1);
   }
 
   bool printCertificateImpl(const char* filename, Stream& print_stream) {
@@ -393,7 +393,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
 
     // Initialize AT relate to file system functions
     sendAT(GF("+CFSINIT"));
-    if (waitResponse() != 1) { return false; }
+    if (waitResponse(5000L) != 1) { return false; }
 
     // Read the file
     // AT+CFSRFILE=<index>,<filename>,<mode>,<filesize>,<position>
@@ -404,7 +404,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     //    because we want to read the whole file.
     // <position> The starting position that will be read in the file.
     sendAT(GF("+CFSRFILE=3,\""), filename, GF("\",0,10240,0"));
-    success &= waitResponse(GF("+CFSRFILE:")) == 1;
+    success &= waitResponse(5000L, GF("+CFSRFILE:")) == 1;
     if (success) {
       print_len = stream.parseInt();
       streamSkipUntil('\n');
@@ -432,12 +432,12 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     print_stream.flush();
 
     // wait for the ending OK
-    success &= waitResponse() == 1;
+    success &= waitResponse(5000L) == 1;
 
     // Release AT relates to file system functions.
     // NOTE: We need to do this even if we didn't successfully delete the file
     sendAT(GF("+CFSTERM"));
-    return success & (waitResponse() == 1);
+    return success & (waitResponse(5000L) == 1);
   }
 
 
@@ -470,7 +470,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // <cname> name of certificate file
     // NOTE:  despite docs using caps, "convert" must be in lower case
     sendAT(GF("+CSSLCFG=\"convert\",2,\""), ca_cert_name, '"');
-    return waitResponse() == 1;
+    return waitResponse(5000L) == 1;
     // After conversion, the AT manual suggests you delete the files!
   }
 
@@ -486,7 +486,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // NOTE:  despite docs using caps, "convert" must be in lower case
     sendAT(GF("+CSSLCFG=\"convert\",1,\""), client_cert_name, GF("\",\""),
            client_cert_key, '"');
-    return waitResponse() == 1;
+    return waitResponse(5000L) == 1;
     // After conversion, the AT manual suggests you delete the files!
   }
 
@@ -500,7 +500,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // <passkey> not used for PSK tables
     // NOTE:  despite docs using caps, "convert" must be in lower case
     sendAT(GF("+CSSLCFG=\"convert\",3,\""), psk_table_name, '"');
-    return waitResponse() == 1;
+    return waitResponse(5000L) == 1;
     // After conversion, the AT manual suggests you delete the files!
   }
 
