@@ -379,17 +379,17 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   bool loadCertificateImpl(const char* certificateName, const char* cert,
                            const uint16_t len) {
     sendAT(GF("+CCERTDOWN="), certificateName, GF(","), len);
-    if (waitResponse(GF(">")) != 1) { return false; }
+    if (waitResponse(5000L, GF(">")) != 1) { return false; }
     stream.write(cert, len);
     stream.flush();
-    return waitResponse() == 1;
+    return waitResponse(5000L) == 1;
   }
 
   // NOTE: Deleting the certificate only happens by filename, the type of
   // certificate does not matter here
   bool deleteCertificateImpl(const char* certificateName) {  // todo test
     sendAT(GF("+CCERTDELE="), certificateName);
-    return waitResponse() == 1;
+    return waitResponse(5000L) == 1;
   }
 
   // no certificate conversion needed

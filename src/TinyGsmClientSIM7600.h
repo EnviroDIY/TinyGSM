@@ -392,15 +392,15 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   bool loadCertificateImpl(const char* certificateName, const char* cert,
                            const uint16_t len) {
     sendAT(GF("+CCERTDOWN=\""), certificateName, GF("\","), len);
-    if (!waitResponse(GF(">"))) { return false; }
+    if (!waitResponse(5000L, GF(">"))) { return false; }
     stream.write(cert, len);
     stream.flush();
-    return waitResponse() == 1;
+    return waitResponse(5000L) == 1;
   }
 
   bool deleteCertificateImpl(const char* certificateName) {
     sendAT(GF("+CCERTDELE=\""), certificateName, GF("\""));
-    return waitResponse() == 1;
+    return waitResponse(5000L) == 1;
   }
 
   // no certificate conversion needed
