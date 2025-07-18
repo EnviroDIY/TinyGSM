@@ -326,6 +326,10 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     success &= waitResponse(5000L) == 1;
     if (!success) { return false; }
 
+    // NOTE: It just works much better if we wait a little bit before asking to
+    // write the certificate
+    delay(100);
+
     // Write File to the Flash Buffer Allocated by CFSINIT
     // AT+CFSWFILE=<index>,<file name>,<mode>,<file size>,<input time>
     //<index> 3: "/customer/" (always use customer for certificates)
@@ -340,13 +344,21 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // <len_filename> Integer type. Maximum length of parameter <file name>.
     sendAT(GF("+CFSWFILE=3,\""), certificateName, GF("\",0,"), len,
            GF(",10000"));
-    success &= waitResponse(5000L, GF("DOWNLOAD")) == 1;
+    // The module sends back a 'DOWNLOAD' prompt - sometimes preceded by an 'OK'
+    // NOTE: If we don't get the "DOWNLOAD" response or somehow miss hearing it,
+    // we don't write the file. If we don't write something within 10 seconds
+    // (the <input time>), the terminal will timeout and send back an 'OK' at
+    // the 10s mark.
+    success &= waitResponse(10500L, GF("DOWNLOAD"), GFP(GSM_OK),
+                            GFP(GSM_ERROR)) == 1;
 
     if (success) {
       stream.write(cert, len);
       stream.flush();
+      success &= waitResponse(5000L) == 1;
+    } else {
+      DBG(GF("### Failed to get download prompt!"));
     }
-    success &= waitResponse(15000L) == 1;
 
     // Verify the size of the uploaded file
     // AT+CFSGFIS=<index>,<filename>
@@ -359,6 +371,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       streamSkipUntil('\n');
       success &= len_confirmed == len;
     }
+    success &= waitResponse(5000L) == 1;
 
     // Release AT relates to file system functions.
     // NOTE: We need to do this even if we didn't successfully write the file
@@ -949,11 +962,11 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       const char* pskTableName   = thisClient->pskTableName;
 
       DBG("### SSL context index:", sslCtxIndex);
-      DBG("SSL auth mode:", (int)sslAuthMode);
-      DBG("CA cert name:", CAcertName);
-      DBG("Client cert name:", clientCertName);
-      DBG("Client key name:", clientKeyName);
-      DBG("PSK table name:", pskTableName);
+      DBG("### SSL auth mode:", (int)sslAuthMode);
+      DBG("### CA cert name:", CAcertName);
+      DBG("### Client cert name:", clientCertName);
+      DBG("### Client key name:", clientKeyName);
+      DBG("### PSK table name:", pskTableName);
 
       // NOTE: We cannot link the SSL context or set the certificates until
       // AFTER setting the connection id (ie, AT+CACID=mux)
@@ -967,8 +980,8 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       }
     }
 
-    DBG("host:", host);
-    DBG("port:", port);
+    DBG("### host:", host);
+    DBG("### port:", port);
 
     // actually open the connection
     // AT+CAOPEN=<cid>,<pdp_index>,<conn_type>,<server>,<port>[,<recv_mode>]
