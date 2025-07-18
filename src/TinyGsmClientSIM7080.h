@@ -340,7 +340,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // <len_filename> Integer type. Maximum length of parameter <file name>.
     sendAT(GF("+CFSWFILE=3,\""), certificateName, GF("\",0,"), len,
            GF(",10000"));
-    success &= waitResponse(GF("DOWNLOAD")) == 1;
+    success &= waitResponse(5000L, GF("DOWNLOAD")) == 1;
 
     if (success) {
       stream.write(cert, len);
@@ -947,6 +947,13 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       const char* clientCertName = thisClient->clientCertName;
       const char* clientKeyName  = thisClient->clientKeyName;
       const char* pskTableName   = thisClient->pskTableName;
+
+      DBG("### SSL context index:", sslCtxIndex);
+      DBG("SSL auth mode:", (int)sslAuthMode);
+      DBG("CA cert name:", CAcertName);
+      DBG("Client cert name:", clientCertName);
+      DBG("Client key name:", clientKeyName);
+      DBG("PSK table name:", pskTableName);
 
       // NOTE: We cannot link the SSL context or set the certificates until
       // AFTER setting the connection id (ie, AT+CACID=mux)
