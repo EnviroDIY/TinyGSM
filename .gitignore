@@ -53,9 +53,13 @@ src/TinyGsmATDefines.h
 variants/*
 boards/*
 tests/*
+lib/*
 clang_format_all.bat
 *.cert
 *.crt
 *.pem
 *.key
 src/CipherSuiteCodes.csv
+generateKeywords.bat
+installWorkingDependencies.bat
+pio_common_libdeps.ini

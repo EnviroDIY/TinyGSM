@@ -10,6 +10,22 @@
  *
  **************************************************************
  * This example connects to AWS IoT Core using MQTT over SSL.
+ *
+ * This program writes new certificates to the modem, connects to AWS IoT Core,
+ * publishes an initial message, and then subscribes to a topic to toggle an
+ * LED. After the initial connection, the board will check and try to reconnect
+ * every 10 seconds and republish its status every 60 seconds.  If it receives
+ * any messages on the subscribed topic, it will toggle the LED state.  The
+ * content of any received messages is ignored.
+ *
+ * You should run this program once to load your certificates and confirm that
+ * you can connect to AWS IoT Core over MQTT. Once you have confirmed your
+ * certificates are loaded and working, there is no reason to rerun this program
+ * unless you have a new modem, reset your modem, or your certificates change.
+ * Most modules store the certificates in flash, which has a limited number of
+ * read/write cycles. To avoid wearing out the flash unnecessarily, you should
+ * only run this program when necessarily, don't re-write the certificates every
+ * time you want to connect to AWS IoT Core.
  **************************************************************/
 
 // Select your modem:
@@ -85,9 +101,7 @@ uint16_t port = 8883;
 // the client ID should be the name of your "thing" in AWS IoT Core
 const char* clientId = THING_NAME;
 
-static const char topicInit[] TINY_GSM_PROGMEM = THING_NAME "/init";
-static const char msgInit[] TINY_GSM_PROGMEM   = "{\"" THING_NAME
-                                               "\":\"connected\"}";
+static const char topicInit[] TINY_GSM_PROGMEM      = THING_NAME "/init";
 static const char topicLed[] TINY_GSM_PROGMEM       = THING_NAME "/led";
 static const char topicLedStatus[] TINY_GSM_PROGMEM = THING_NAME "/ledStatus";
 
@@ -170,7 +184,7 @@ bool     certificateSuccess   = false;
 
 bool wakeModem() {
   // !!!!!!!!!!!
-  // your function to wake and prepare the modem here
+  // Put your function to wake and prepare the modem here
   // !!!!!!!!!!!
   return true;
 }
@@ -202,9 +216,11 @@ void printModemInfo() {
   String modemRevision = modem.getModemRevision();
   SerialMon.print("Modem Revision: ");
   SerialMon.println(modemRevision);
+#ifndef TINY_GSM_MODEM_ESP32
   String modemSerial = modem.getModemSerialNumber();
   SerialMon.print("Modem Serial: ");
   SerialMon.println(modemSerial);
+#endif
 #if TINY_GSM_USE_GPRS
   String modemIMEI = modem.getIMEI();
   SerialMon.print("Modem IMEI: ");
@@ -212,6 +228,9 @@ void printModemInfo() {
   String modemIMSI = modem.getIMSI();
   SerialMon.print("Modem IMSI: ");
   SerialMon.println(modemIMSI);
+  String modemSimCCID = modem.getSimCCID();
+  SerialMon.print("Modem SIM CCID: ");
+  SerialMon.println(modemSimCCID);
 #endif
 }
 
@@ -234,6 +253,7 @@ bool setupCertificates() {
     SerialMon.println(
         "Printing Certificate Authority Certificate to confirm it matches");
     modem.printCertificate(root_ca_name, SerialMon);
+    delay(1000);
   }
   // convert the certificate to the modem's format
   SerialMon.print("Converting Certificate Authority Certificate");
@@ -312,6 +332,65 @@ bool setupCertificates() {
 #endif
 }
 
+String createStatusMessage() {
+  String msgStatus = "{\"clientId\":\"" THING_NAME "\"";
+  msgStatus += ",\"LED status\":\"" + String(ledStatus) + "\"";
+
+#if TINY_GSM_USE_GPRS
+  String modemIMEI = modem.getIMEI();
+  msgStatus += ",\"modemIMEI\":\"" + modemIMEI + "\"";
+  String modemSimCCID = modem.getSimCCID();
+  msgStatus += ",\"modemSimCCID\":\"" + modemSimCCID + "\"";
+#endif
+
+  uint16_t modemService = modem.getSignalQuality();
+  msgStatus += ",\"modemSignalQuality\":\"" + String(modemService) + "\"";
+
+#ifdef TINY_GSM_MODEM_HAS_NTP
+  String time = modem.getGSMDateTime(TinyGSMDateTimeFormat::DATE_FULL);
+  msgStatus += ",\"modemTime\":\"" + time + "\"";
+#endif
+  msgStatus += "}";
+  return msgStatus;
+}
+
+String createInitMessage() {
+  String msgInit = "{\"clientId\":\"" THING_NAME "\"";
+
+  String modemInfo = modem.getModemInfo();
+  msgInit += ",\"modemInfo\":\"" + modemInfo + "\"";
+  String modemManufacturer = modem.getModemManufacturer();
+  msgInit += ",\"modemManufacturer\":\"" + modemManufacturer + "\"";
+  String modemModel = modem.getModemModel();
+  msgInit += ",\"modemModel\":\"" + modemModel + "\"";
+  String modemRevision = modem.getModemRevision();
+  msgInit += ",\"modemRevision\":\"" + modemRevision + "\"";
+#ifndef TINY_GSM_MODEM_ESP32
+  String modemSerial = modem.getModemSerialNumber();
+  msgInit += ",\"modemSerial\":\"" + modemSerial + "\"";
+#endif
+#if TINY_GSM_USE_GPRS
+  String modemIMEI = modem.getIMEI();
+  msgInit += ",\"modemIMEI\":\"" + modemIMEI + "\"";
+  String modemIMSI = modem.getIMSI();
+  msgInit += ",\"modemIMSI\":\"" + modemIMSI + "\"";
+  String modemSimCCID = modem.getSimCCID();
+  msgInit += ",\"modemSimCCID\":\"" + modemSimCCID + "\"";
+#endif
+
+  uint16_t modemService = modem.getSignalQuality();
+  msgInit += ",\"modemSignalQuality\":\"" + String(modemService) + "\"";
+
+#ifdef TINY_GSM_MODEM_HAS_NTP
+  String time = modem.getGSMDateTime(TinyGSMDateTimeFormat::DATE_FULL);
+  msgInit += ",\"modemTime\":\"" + time + "\"";
+#endif
+
+  msgInit += "}";
+
+  return msgInit;
+}
+
 void mqttCallback(char* topic, byte* payload, unsigned int len) {
   SerialMon.print("Message arrived [");
   SerialMon.print(topic);
@@ -323,11 +402,10 @@ void mqttCallback(char* topic, byte* payload, unsigned int len) {
   if (String(topic) == topicLed) {
     ledStatus = !ledStatus;
     digitalWrite(LED_PIN, ledStatus);
-    if (ledStatus) {
-      mqtt.publish(topicLedStatus, "{\"LED status\":\"1\"}");
-    } else {
-      mqtt.publish(topicLedStatus, "{\"LED status\":\"0\"}");
-    }
+
+    // Create a status message to send to the broker
+    String msgStatus = createStatusMessage();
+    mqtt.publish(topicLedStatus, msgStatus.c_str());
   }
 }
 
@@ -346,9 +424,27 @@ bool mqttConnect() {
   }
   SerialMon.println(" ...success");
 
+  // Create a init message to send to the broker
+  String msgInit = createInitMessage();
+
+  // Make sure the MQTT buffer is large enough to hold the
+  // initial message and the topic name.
+  uint16_t neededBuffer = MQTT_MAX_HEADER_SIZE + 2 +
+      strnlen(topicInit, mqtt.getBufferSize()) + msgInit.length() + 1;
+  if (mqtt.getBufferSize() < neededBuffer) {
+    SerialMon.print("Increasing MQTT buffer size from ");
+    SerialMon.print(mqtt.getBufferSize());
+    SerialMon.print(" to ");
+    SerialMon.println(neededBuffer);
+    mqtt.setBufferSize(neededBuffer);
+  }
+
   SerialMon.print("Publishing a message to ");
   SerialMon.println(topicInit);
-  bool got_pub = mqtt.publish(topicInit, msgInit);
+  SerialMon.print("Message content: ");
+  SerialMon.println(msgInit);
+
+  bool got_pub = mqtt.publish(topicInit, msgInit.c_str());
   SerialMon.println(got_pub ? "published" : "failed to publish");
   SerialMon.print("Subscribing to ");
   SerialMon.println(topicLed);
@@ -362,12 +458,9 @@ bool mqttPublishStatus() {
   SerialMon.print("Publishing a message to ");
   SerialMon.println(topicLedStatus);
 
-  bool got_pub = false;
-  if (ledStatus) {
-    got_pub = mqtt.publish(topicLedStatus, "{\"LED status\":\"1\"}");
-  } else {
-    got_pub = mqtt.publish(topicLedStatus, "{\"LED status\":\"0\"}");
-  }
+  // Create a status message to send to the broker
+  String msgStatus = createStatusMessage();
+  bool   got_pub   = mqtt.publish(topicLedStatus, msgStatus.c_str());
 
   SerialMon.println(got_pub ? "published" : "failed to publish");
   return got_pub;
@@ -388,15 +481,14 @@ bool setupModem() {
   SerialMon.print("Initializing modem...");
   if (!modem.init()) {  // modem.restart();
     SerialMon.println(" ...failed to initialize modem!");
-    delay(30000);
+    delay(15000L);
     return false;
   }
   SerialMon.println(" ...success");
 
   // Max out the baud rate, if desired
   // NOTE: Do this **AFTER** the modem has been restarted - many modules
-  // revert to default baud rates when reset or powered off. 921600, 460800,
-  // 230400, 115200
+  // revert to default baud rates when reset or powered off.
   success &= setModemBaud(115200);
 
   printModemInfo();
@@ -439,13 +531,14 @@ bool setupNetwork() {
 }
 
 bool getInternetConnection() {
-  // Make sure we're registered on the network
+  // Make sure we're connected to or registered on the network
   // For Wi-Fi this is all we need to do
   if (!modem.isNetworkConnected()) {
     SerialMon.println("Network disconnected");
-    if (!modem.waitForNetwork(180000L, true)) {
+    SerialMon.println("Waiting up to 5 minutes for network connection...");
+    if (!modem.waitForNetwork(300000L, true)) {
       SerialMon.println(" ...failed to reconnect to network!");
-      delay(30000);
+      delay(15000L);
       return false;
     }
     if (modem.isNetworkConnected()) { SerialMon.println("Network connected"); }
@@ -461,7 +554,7 @@ bool getInternetConnection() {
     SerialMon.println(apn);
     if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
       SerialMon.println(" ...failed to connect to GPRS!");
-      delay(30000);
+      delay(15000L);
       return false;
     }
     if (modem.isGprsConnected()) { SerialMon.println("GPRS reconnected"); }
@@ -495,7 +588,8 @@ void setup() {
 
   // MQTT Broker setup
   // NOTE: This is only configuring the server and callback within the
-  // PubSubClient object. It does not take any action.
+  // PubSubClient object.
+  // It does not take any action.
   mqtt.setServer(broker, port);
   mqtt.setCallback(mqttCallback);
 
@@ -511,7 +605,7 @@ void setup() {
   setupSuccess = setupModem();
   if (!setupSuccess) {
     SerialMon.println(" ...failed to set up modem!");
-    delay(30000);
+    delay(15000L);
     return;
   }
   SerialMon.println(" ...success");
@@ -520,7 +614,7 @@ void setup() {
   certificateSuccess = setupCertificates();
   if (!certificateSuccess) {
     SerialMon.println(" ...failed to set up certificates!");
-    delay(30000);
+    delay(15000L);
     return;
   }
   SerialMon.println(" ...success");
@@ -528,7 +622,7 @@ void setup() {
   SerialMon.println("Setting up network...");
   if (!setupNetwork()) {
     SerialMon.println(" ...failed to set up network!");
-    delay(30000);
+    delay(15000L);
     return;
   }
   SerialMon.println(" ...success");
@@ -545,7 +639,7 @@ void loop() {
     setupSuccess = setupModem();
     if (!setupSuccess) {
       SerialMon.println(" ...failed to set up modem!");
-      delay(30000);
+      delay(15000L);
       return;
     }
     SerialMon.println(" ...success");
@@ -556,7 +650,7 @@ void loop() {
     certificateSuccess = setupCertificates();
     if (!certificateSuccess) {
       SerialMon.println(" ...failed to set up certificates!");
-      delay(30000);
+      delay(15000L);
       return;
     }
     SerialMon.println(" ...success");
