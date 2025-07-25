@@ -136,7 +136,8 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
  protected:
   bool setBaudImpl(uint32_t baud) {
     thisModem().sendAT(GF("+UART_CUR="), baud, ",8,1,0,0");
-    if (thisModem().waitResponse() != 1) {
+    bool res = thisModem().waitResponse() == 1;
+    if (!res) {
       thisModem().sendAT(GF("+UART="), baud,
                          ",8,1,0,0");  // Really old firmwares might need this
       // if (thisModem().waitResponse() != 1) {
@@ -145,7 +146,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
       return thisModem().waitResponse() == 1;
       // }
     }
-    return false;
+    return res;
   }
 
   String getModemInfoImpl() {
