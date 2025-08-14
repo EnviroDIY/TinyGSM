@@ -116,7 +116,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
       } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
         this->mux = at->findFirstUnassignedMux();
       } else {
-        // If we can't find anything available, overwrite something, useing mod
+        // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
         this->mux = (mux % TINY_GSM_MUX_COUNT);
       }
