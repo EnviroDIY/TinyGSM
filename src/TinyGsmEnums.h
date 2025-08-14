@@ -47,9 +47,9 @@ enum class CertificateType : int8_t {
 //     4: pre-shared key encryption
 enum class SSLAuthMode : int8_t {
   NO_VALIDATION         = 0,
-  CLIENT_VALIDATION     = 1,
-  CA_VALIDATION         = 2,
-  MUTUAL_AUTHENTICATION = 3,
+  CA_VALIDATION         = 1,
+  MUTUAL_AUTHENTICATION = 2,
+  CLIENT_VALIDATION     = 3,
   PRE_SHARED_KEYS       = 4,
 };
 
