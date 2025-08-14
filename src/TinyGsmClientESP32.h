@@ -469,6 +469,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // pull the number out of the name
     char certNumber[2];
     memcpy(certNumber, cert_name + strlen(cert_name) - 1, 1);
+    // Null terminate
+    memset(certNumber + 1, '\0', 1);
     parsed_number = atoi(certNumber);
   }
 
