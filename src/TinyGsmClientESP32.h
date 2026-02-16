@@ -696,7 +696,21 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
 
   bool waitForTimeSync(int timeout_s = 120) {
     // if we're not connected, we'll never get the time
-    if (!isNetworkConnected()) { return false; }
+    if (!isNetworkConnected()) {
+      DBG(GF("### Not connected to network; cannot sync time!"));
+      return false;
+    }
+    // if SNTP sync isn't enabled, we won't have the time
+    // NOTE: We don't actually enable the time here, because doing so would
+    // change any user settings for the timezone and time servers.
+    sendAT(GF("+CIPSNTPCFG?"));
+    waitResponse(2000L, GF("+CIPSNTPCFG:"));
+    int8_t is_enabled = streamGetIntBefore(',');
+    waitResponse(5000L);  // returns OK at the end
+    if (!is_enabled) {
+      DBG(GF("### SNTP sync not enabled; cannot sync time!"));
+      return false;
+    }
     // if we're sure we should be able to get the time, wait for it
     uint32_t start_millis = millis();
     while (millis() - start_millis < static_cast<uint32_t>(timeout_s) * 1000) {
@@ -704,13 +718,6 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
       // If we get a time between January 1, 2020 and January 1, 2035, we're
       // (hopefully) good
       if (modem_time > 1577836800 && modem_time < 2051222400) { return true; }
-      // if SNTP sync isn't enabled, we won't have the time
-      // NOTE: We don't actually enable the time here, because doing so would
-      // change any user settings for the timezone and time servers.
-      sendAT(GF("+CIPSNTPCFG?"));
-      int8_t is_enabled = streamGetIntBefore(',');
-      waitResponse();  // returns OK
-      if (!is_enabled) { return false; }
       delay(250);
     }
     return false;
@@ -758,9 +765,9 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     if (waitResponse(2000L, GF("+CIPSNTPCFG:")) != 1) { return false; }
 
     streamSkipUntil(',');  // skip if sync is enabled
-    itimezone = stream.parseFloat();
+    itimezone = streamGetFloatBefore(',');
     // Final OK
-    waitResponse();
+    waitResponse(5000L);
 
     // Set pointers
     if (iyear < 2000) iyear += 2000;
@@ -809,9 +816,10 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
     // if we read 12 or more bytes, it's an overflow
     if (bytesRead && bytesRead < 12) {
       buf[bytesRead] = '\0';
-      modem_time     = atoi(buf);
+      modem_time     = atol(buf);
     }
     waitResponse();
+    DBG(GF("### Modem Raw Time:"), buf, GF("("), modem_time, GF(")"));
 
     if (modem_time != 0) {
       switch (epoch) {
@@ -820,6 +828,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
         case TinyGSM_EpochStart::GPS: modem_time += 315878400; break;
       }
     }
+    DBG(GF("### Modem Epoch Time:"), modem_time);
 
     return modem_time;
   }
