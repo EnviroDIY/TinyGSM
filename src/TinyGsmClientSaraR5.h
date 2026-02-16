@@ -946,4 +946,6 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
   GsmClientSaraR5* sockets[TINY_GSM_MUX_COUNT];
 };
 
+// cspell:words USOWR CSFB UTRAN
+
 #endif  // SRC_TINYGSMCLIENTSARAR5_H_

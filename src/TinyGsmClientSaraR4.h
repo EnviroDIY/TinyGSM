@@ -939,4 +939,6 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   bool             supportsAsyncSockets;
 };
 
+// cspell:words USOWR
+
 #endif  // SRC_TINYGSMCLIENTSARAR4_H_
