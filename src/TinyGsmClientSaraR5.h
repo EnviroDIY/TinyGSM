@@ -435,7 +435,7 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
   //  - Add `public TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>,` to the
   //    constructor's initializer list
   //  - Add `friend class TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>;` to the
-  //    friend list.
+  //  friend list.
   //  - Make the secure client inherit from the secure client class in the SSL
   //  template.
 

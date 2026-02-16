@@ -1119,4 +1119,6 @@ class TinyGsmSim7000SSL
   GsmClientSim7000SSL* sockets[TINY_GSM_MUX_COUNT];
 };
 
+// cspell:words CASEND
+
 #endif  // SRC_TINYGSMCLIENTSIM7000SSL_H_

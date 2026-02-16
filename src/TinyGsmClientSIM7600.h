@@ -1136,4 +1136,6 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   // and not secure one
 };
 
+// cspell:words CCHSEND
+
 #endif  // SRC_TINYGSMCLIENTSIM7600_H_

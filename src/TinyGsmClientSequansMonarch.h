@@ -786,4 +786,6 @@ class TinyGsmSequansMonarch
   const char* gsmNL = "\n";
 };
 
+// cspell:words SQNSSENDEXT
+
 #endif  // SRC_TINYGSMCLIENTSEQUANSMONARCH_H_

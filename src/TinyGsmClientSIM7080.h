@@ -1287,4 +1287,6 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   GsmClientSim7080* sockets[TINY_GSM_MUX_COUNT];
 };
 
+// cspell:words CASEND gotATOK
+
 #endif  // SRC_TINYGSMCLIENTSIM7080_H_
