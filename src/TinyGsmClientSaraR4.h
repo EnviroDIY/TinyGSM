@@ -271,15 +271,15 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureR4 : public GsmClientSaraR4 {
+  class GsmClientSecureSaraR4 : public GsmClientSaraR4 {
     friend class TinyGsmSaraR4;
 
    public:
-    GsmClientSecureR4() {
+    GsmClientSecureSaraR4() {
       is_secure = true;
     }
 
-    explicit GsmClientSecureR4(TinyGsmSaraR4& modem, uint8_t mux = 0)
+    explicit GsmClientSecureSaraR4(TinyGsmSaraR4& modem, uint8_t mux = 0)
         : GsmClientSaraR4(modem, mux) {
       is_secure = true;
     }
