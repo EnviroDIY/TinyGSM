@@ -30,7 +30,7 @@ class TinyGsmBluetooth {
   /**
    * @brief Enable module Bluetooth
    *
-   * @return *true* Bluetooth was succcessfully enabled
+   * @return *true* Bluetooth was successfully enabled
    * @return *false* Bluetooth failed to enable
    */
   bool enableBluetooth() {
@@ -40,7 +40,7 @@ class TinyGsmBluetooth {
   /**
    * @brief Disable module Bluetooth
    *
-   * @return *true* Bluetooth was succcessfully disabled
+   * @return *true* Bluetooth was successfully disabled
    * @return *false* Bluetooth failed to disable
    */
   bool disableBluetooth() {
@@ -99,6 +99,5 @@ class TinyGsmBluetooth {
   bool setBluetoothVisibilityImpl(bool visible) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool setBluetoothHostNameImpl(const char* name) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
-
 
 #endif  // SRC_TINYGSMBLUETOOTH_H_

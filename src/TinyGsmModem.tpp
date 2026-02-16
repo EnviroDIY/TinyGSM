@@ -111,7 +111,7 @@ class TinyGsmModem {
    *
    * @param timeout_ms The the amount of time to test for; optional with a
    * default value of 10s.
-   * @return *true*  The module responeded to AT commands
+   * @return *true*  The module responded to AT commands
    * @return *false*  The module failed to respond
    */
   bool testAT(uint32_t timeout_ms = 10000L) {
@@ -333,7 +333,7 @@ class TinyGsmModem {
    * @param fun The phone functionality setting. The value and meaning of this
    * varies by module; check your documentation.
    * @param reset True to reset the module before changing the functionality.
-   * @return *true* The phone functionalilty was successfully changed.
+   * @return *true* The phone functionality was successfully changed.
    * @return *false* There was a problem changing the functionality.
    */
   bool setPhoneFunctionality(uint8_t fun, bool reset = false) {

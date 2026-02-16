@@ -1,0 +1,38 @@
+{
+  "language": "en-US",
+  "version": "0.2",
+  "dictionaryDefinitions": [],
+  "dictionaries": [],
+  "words": [
+    "Arduinos",
+    "Aurelien",
+    "Bergner",
+    "BOUIN",
+    "Cervera",
+    "Dajka",
+    "Damiano",
+    "Digi",
+    "Espressif",
+    "Geleskie",
+    "Krumpus",
+    "Neoway",
+    "Pacman",
+    "Pereira",
+    "QISEND",
+    "QSSLSEND",
+    "Quectel",
+    "Replicade",
+    "Rosso",
+    "SIMCOM",
+    "SRGD",
+    "Tamas",
+    "u-blox",
+    "Unruh"
+  ],
+  "ignoreWords": [],
+  "import": [],
+  "ignorePaths": ["platformio.ini", "*doxyfile*", ".vscode"],
+  "enabledFileTypes": {
+    "cpp": true
+  }
+}

@@ -988,4 +988,6 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   // and not secure one
 };
 
+// cspell:words CCHSEND
+
 #endif  // SRC_TINYGSMCLIENTA7672X_H_
