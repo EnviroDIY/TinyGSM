@@ -20,6 +20,7 @@ void loop() {
   modem.begin("1234");
   modem.init();
   modem.init("1234");
+  modem.forceModemBaud(Serial, 115200);
   modem.setBaud(115200);
   modem.testAT();
 

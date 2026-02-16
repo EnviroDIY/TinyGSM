@@ -44,7 +44,7 @@
 static const char GSM_OK[] TINY_GSM_PROGMEM    = AT_OK AT_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = AT_ERROR AT_NL;
 
-#if defined       TINY_GSM_DEBUG
+#if defined TINY_GSM_DEBUG
 static const char GSM_VERBOSE[] TINY_GSM_PROGMEM   = AT_VERBOSE;
 static const char GSM_VERBOSE_2[] TINY_GSM_PROGMEM = AT_VERBOSE_2;
 #endif
@@ -104,6 +104,96 @@ class TinyGsmModem {
    */
   bool setBaud(uint32_t baud) {
     return thisModem().setBaudImpl(baud);
+  }
+
+  /**
+   * @brief Attempt to set the modem baud rate by trying set the command to
+   * change the baud rate to various common baud rates and seeing if the modem
+   * responds to AT commands at that baud rate.
+   *
+   * Unlike TinyGsmAutoBaud, this function will try to set the baud rate on the
+   * modem and will attempt to communicate with the modem at the new baud rate
+   * whether or not it gets a response at the old baud rate.  This is useful in
+   * cases where the modem is set to a baud rate that is just a little too fast
+   * for the processor, where you might get a response but it will be garbled
+   * and not recognized as a response, because in this case you still want to
+   * try to set the baud rate.
+   *
+   * @param targetBaud The final baud rate to try to set the modem to
+   *
+   * @note After setting and applying the new baud rate, you will have to end()
+   * and begin() the serial object.
+   */
+  template <class StreamObject>
+  bool forceModemBaud(StreamObject& SerialAT, uint32_t targetBaud) {
+    static uint32_t rates[] = {115200, 57600,  9600,   921600, 38400,
+                               19200,  460800, 230400, 74400,  74880,
+                               2400,   4800,   14400,  28800};
+
+    // start the modem serial at the current baud rate
+    SerialAT.end();
+    SerialAT.begin(targetBaud);
+    // test for at response from the modem
+    bool at_success = thisModem().testAT();
+    // if we got a response and it's the baud rate we want, we're done
+    if (at_success) {
+      DBG("Modem responded at rate", targetBaud);
+      return true;
+    }
+
+    uint32_t maximum = 921600;
+    if (F_CPU <= 8000000L) {
+      maximum = 57600;
+    } else if (F_CPU <= 16000000L) {
+      maximum = 115200;
+    }
+    if (targetBaud > maximum) {
+      DBG("Target baud rate", targetBaud,
+          "is too high for this processor.  Maximum is", maximum);
+      targetBaud = maximum;
+    }
+
+    // If we didn't get the right response, or if we got a response but it's
+    // not the baud we want, try to set the baud rate.
+    // NOTE: We try to set the baud rate even if we *didn't* get a response
+    // because if the modem is set in a baud that's just a *little* too fast
+    // for the processor, we might get a response but it will be garbled and
+    // not recognized as a response.  In this case, we still want to try to
+    // set the baud rate.
+
+    for (uint8_t i = 0; i < sizeof(rates) / sizeof(rates[0]); i++) {
+      uint32_t rate = rates[i];
+
+      DBG("Trying to set the baud rate from a rate of", rate, "...");
+      SerialAT.end();
+      SerialAT.begin(rate);
+      delay(100);
+
+#if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_ESP8266)
+      thisModem().setDefaultBaud(targetBaud);
+#else
+      thisModem().setBaud(targetBaud);
+#endif
+
+      SerialAT.end();
+      SerialAT.begin(targetBaud);
+      delay(100);
+
+      // test for at response from the modem
+      DBG("Checking for a response at", targetBaud, "...");
+      bool at_success = thisModem().testAT();
+      // if we got a response and it's the baud rate we want, we're done
+      if (at_success) {
+        DBG(GF("Successfully changed the baud rate from"), rate, GF("to"),
+            targetBaud);
+        return true;
+      }
+    }
+    DBG("Failed to successfully find the baud at any common rate or to change "
+        "the baud rate to",
+        targetBaud, "...");
+    SerialAT.begin(targetBaud);
+    return false;
   }
 
   /**

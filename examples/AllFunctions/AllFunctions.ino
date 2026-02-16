@@ -152,17 +152,33 @@ void setup() {
   DBG("Wait...");
   delay(500L);
 
+  uint32_t maximum = 921600;
+  if (F_CPU <= 8000000L) {
+    maximum = 57600;
+  } else if (F_CPU <= 16000000L) {
+    maximum = 115200;
+  }
+  uint32_t targetBaud = TARGET_BAUD;
+  if (targetBaud > maximum) {
+    DBG("Target baud rate", targetBaud,
+        "is too high for this processor.  Maximum is", maximum);
+    targetBaud = maximum;
+  }
+
   // Set GSM module baud rate
   uint32_t found_baud = TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN,
                                         GSM_AUTOBAUD_MAX);
-  if (found_baud != 0) {
+  if (found_baud != 0 && found_baud != targetBaud) {
+    DBG("Changing baud rate from", found_baud, "to", targetBaud);
 #if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_ESP8266)
-    modem.setDefaultBaud(TARGET_BAUD);
+    modem.setDefaultBaud(targetBaud);
 #else
-    modem.setBaud(TARGET_BAUD);
+    modem.setBaud(targetBaud);
 #endif
     SerialAT.end();
-    SerialAT.begin(TARGET_BAUD);
+    SerialAT.begin(targetBaud);
+  } else {
+    modem.forceModemBaud(SerialAT, targetBaud);
   }
 }
 
