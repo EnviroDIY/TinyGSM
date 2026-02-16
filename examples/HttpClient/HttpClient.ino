@@ -85,7 +85,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 
 // Add a reception delay, if needed.
 // This may be needed for a fast processor at a slow baud rate.
-// #define TINY_GSM_YIELD() { delay(2); }
+// #define TINY_GSM_YIELD_MS 2
 
 // Define how you're planning to connect to the internet
 // These defines are only for this example; they are not needed in other code.
