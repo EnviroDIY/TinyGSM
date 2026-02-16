@@ -1774,4 +1774,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   uint32_t  lastHostLookupMillis;
 };
 
+// cspell:words LTEM
+
 #endif  // SRC_TINYGSMCLIENTXBEE_H_

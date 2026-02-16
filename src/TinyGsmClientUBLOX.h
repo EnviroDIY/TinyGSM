@@ -414,7 +414,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   //  - Add `public TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>,` to the
   //    constructor's initializer list
   //  - Add `friend class TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>;` to the
-  //    friend list.
+  //  friend list.
   //  - Make the secure client inherit from the secure client class in the SSL
   //  template.
 
@@ -896,5 +896,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
  protected:
   GsmClientUBLOX* sockets[TINY_GSM_MUX_COUNT];
 };
+// cspell:words USOWR
 
 #endif  // SRC_TINYGSMCLIENTUBLOX_H_
