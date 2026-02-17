@@ -12,6 +12,10 @@
 // #define TINY_GSM_DEBUG Serial
 // #define TINY_GSM_USE_HEX
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
@@ -48,17 +52,19 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
-class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
-                       public TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmSMS<TinyGsmSim7000>,
-                       public TinyGsmTime<TinyGsmSim7000>,
-                       public TinyGsmNTP<TinyGsmSim7000>,
-                       public TinyGsmGSMLocation<TinyGsmSim7000>,
-                       public TinyGsmBattery<TinyGsmSim7000> {
+class TinyGsmSim7000
+    : public TinyGsmSim70xx<TinyGsmSim7000>,
+      public TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmSMS<TinyGsmSim7000>,
+      public TinyGsmTime<TinyGsmSim7000>,
+      public TinyGsmNTP<TinyGsmSim7000>,
+      public TinyGsmGSMLocation<TinyGsmSim7000>,
+      public TinyGsmBattery<TinyGsmSim7000> {
   friend class TinyGsmSim70xx<TinyGsmSim7000>;
   friend class TinyGsmModem<TinyGsmSim7000>;
   friend class TinyGsmGPRS<TinyGsmSim7000>;
-  friend class TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT,
+                          TINY_GSM_RX_BUFFER>;
   friend class TinyGsmSMS<TinyGsmSim7000>;
   friend class TinyGsmGSMLocation<TinyGsmSim7000>;
   friend class TinyGsmGPS<TinyGsmSim7000>;
@@ -70,8 +76,8 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
    * Inner Client
    */
  public:
-  class GsmClientSim7000
-      : public TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT>::GsmClient {
+  class GsmClientSim7000 : public TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT,
+                                             TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSim7000;
 
    public:

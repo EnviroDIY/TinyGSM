@@ -12,6 +12,10 @@
 // #define TINY_GSM_DEBUG Serial
 // #define TINY_GSM_USE_HEX
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
@@ -87,19 +91,21 @@ enum SIM5360RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
-                       public TinyGsmGPRS<TinyGsmSim5360>,
-                       public TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmSMS<TinyGsmSim5360>,
-                       public TinyGsmGSMLocation<TinyGsmSim5360>,
-                       public TinyGsmGPS<TinyGsmSim5360>,
-                       public TinyGsmTime<TinyGsmSim5360>,
-                       public TinyGsmNTP<TinyGsmSim5360>,
-                       public TinyGsmBattery<TinyGsmSim5360>,
-                       public TinyGsmTemperature<TinyGsmSim5360> {
+class TinyGsmSim5360
+    : public TinyGsmModem<TinyGsmSim5360>,
+      public TinyGsmGPRS<TinyGsmSim5360>,
+      public TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmSMS<TinyGsmSim5360>,
+      public TinyGsmGSMLocation<TinyGsmSim5360>,
+      public TinyGsmGPS<TinyGsmSim5360>,
+      public TinyGsmTime<TinyGsmSim5360>,
+      public TinyGsmNTP<TinyGsmSim5360>,
+      public TinyGsmBattery<TinyGsmSim5360>,
+      public TinyGsmTemperature<TinyGsmSim5360> {
   friend class TinyGsmModem<TinyGsmSim5360>;
   friend class TinyGsmGPRS<TinyGsmSim5360>;
-  friend class TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT,
+                          TINY_GSM_RX_BUFFER>;
   friend class TinyGsmSMS<TinyGsmSim5360>;
   friend class TinyGsmGSMLocation<TinyGsmSim5360>;
   friend class TinyGsmGPS<TinyGsmSim5360>;
@@ -112,8 +118,8 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
    * Inner Client
    */
  public:
-  class GsmClientSim5360
-      : public TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT>::GsmClient {
+  class GsmClientSim5360 : public TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT,
+                                             TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSim5360;
 
    public:

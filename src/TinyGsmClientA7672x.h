@@ -12,6 +12,10 @@
 // #define TINY_GSM_DEBUG Serial
 // #define TINY_GSM_USE_HEX
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
@@ -90,20 +94,22 @@ enum A7672xRegStatus {
   REG_OK_ROAMING   = 5,
   REG_UNKNOWN      = 4,
 };
-class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
-                      public TinyGsmGPRS<TinyGsmA7672X>,
-                      public TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT>,
-                      public TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>,
-                      public TinyGsmCalling<TinyGsmA7672X>,
-                      public TinyGsmSMS<TinyGsmA7672X>,
-                      public TinyGsmGSMLocation<TinyGsmA7672X>,
-                      public TinyGsmTime<TinyGsmA7672X>,
-                      public TinyGsmNTP<TinyGsmA7672X>,
-                      public TinyGsmBattery<TinyGsmA7672X>,
-                      public TinyGsmTemperature<TinyGsmA7672X> {
+class TinyGsmA7672X
+    : public TinyGsmModem<TinyGsmA7672X>,
+      public TinyGsmGPRS<TinyGsmA7672X>,
+      public TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>,
+      public TinyGsmCalling<TinyGsmA7672X>,
+      public TinyGsmSMS<TinyGsmA7672X>,
+      public TinyGsmGSMLocation<TinyGsmA7672X>,
+      public TinyGsmTime<TinyGsmA7672X>,
+      public TinyGsmNTP<TinyGsmA7672X>,
+      public TinyGsmBattery<TinyGsmA7672X>,
+      public TinyGsmTemperature<TinyGsmA7672X> {
   friend class TinyGsmModem<TinyGsmA7672X>;
   friend class TinyGsmGPRS<TinyGsmA7672X>;
-  friend class TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT,
+                          TINY_GSM_RX_BUFFER>;
   friend class TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmA7672X>;
   friend class TinyGsmSMS<TinyGsmA7672X>;
@@ -117,8 +123,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    * Inner Client
    */
  public:
-  class GsmClientA7672X
-      : public TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT>::GsmClient {
+  class GsmClientA7672X : public TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT,
+                                            TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmA7672X;
 
    public:

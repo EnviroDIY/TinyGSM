@@ -12,6 +12,10 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 #ifdef TINY_GSM_NO_MODEM_BUFFER
 #undef TINY_GSM_NO_MODEM_BUFFER
 #endif
@@ -50,15 +54,16 @@ enum ESP32RegStatus {
   REG_UNKNOWN       = 5,
 };
 
-class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
-                     public TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT>,
-                     public TinyGsmSSL<TinyGsmESP32, TINY_GSM_MUX_COUNT>,
-                     public TinyGsmTime<TinyGsmESP32>,
-                     public TinyGsmNTP<TinyGsmESP32> {
+class TinyGsmESP32
+    : public TinyGsmEspressif<TinyGsmESP32>,
+      public TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmSSL<TinyGsmESP32, TINY_GSM_MUX_COUNT>,
+      public TinyGsmTime<TinyGsmESP32>,
+      public TinyGsmNTP<TinyGsmESP32> {
   friend class TinyGsmEspressif<TinyGsmESP32>;
   friend class TinyGsmModem<TinyGsmESP32>;
   friend class TinyGsmWifi<TinyGsmESP32>;
-  friend class TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
   friend class TinyGsmSSL<TinyGsmESP32, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmTime<TinyGsmESP32>;
   friend class TinyGsmNTP<TinyGsmESP32>;
@@ -67,8 +72,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32>,
    * Inner Client
    */
  public:
-  class GsmClientESP32
-      : public TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT>::GsmClient {
+  class GsmClientESP32 : public TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT,
+                                           TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmESP32;
 
    public:

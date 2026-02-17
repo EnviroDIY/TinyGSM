@@ -12,6 +12,10 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 #ifdef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #undef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #endif
@@ -60,18 +64,21 @@ enum ESP8266NonOSRegStatus {
 
 class TinyGsmESP8266NonOS
     : public TinyGsmEspressif<TinyGsmESP8266NonOS>,
-      public TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT> {
+      public TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT,
+                        TINY_GSM_RX_BUFFER> {
   friend class TinyGsmEspressif<TinyGsmESP8266NonOS>;
   friend class TinyGsmModem<TinyGsmESP8266NonOS>;
   friend class TinyGsmWifi<TinyGsmESP8266NonOS>;
-  friend class TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT,
+                          TINY_GSM_RX_BUFFER>;
 
   /*
    * Inner Client
    */
  public:
   class GsmClientESP8266NonOS
-      : public TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT>::GsmClient {
+      : public TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT,
+                          TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmESP8266NonOS;
 
    public:

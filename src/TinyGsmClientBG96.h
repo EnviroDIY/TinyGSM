@@ -12,6 +12,10 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
@@ -97,20 +101,21 @@ enum BG96RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
-                    public TinyGsmGPRS<TinyGsmBG96>,
-                    public TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT>,
-                    public TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>,
-                    public TinyGsmCalling<TinyGsmBG96>,
-                    public TinyGsmSMS<TinyGsmBG96>,
-                    public TinyGsmGPS<TinyGsmBG96>,
-                    public TinyGsmTime<TinyGsmBG96>,
-                    public TinyGsmNTP<TinyGsmBG96>,
-                    public TinyGsmBattery<TinyGsmBG96>,
-                    public TinyGsmTemperature<TinyGsmBG96> {
+class TinyGsmBG96
+    : public TinyGsmModem<TinyGsmBG96>,
+      public TinyGsmGPRS<TinyGsmBG96>,
+      public TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>,
+      public TinyGsmCalling<TinyGsmBG96>,
+      public TinyGsmSMS<TinyGsmBG96>,
+      public TinyGsmGPS<TinyGsmBG96>,
+      public TinyGsmTime<TinyGsmBG96>,
+      public TinyGsmNTP<TinyGsmBG96>,
+      public TinyGsmBattery<TinyGsmBG96>,
+      public TinyGsmTemperature<TinyGsmBG96> {
   friend class TinyGsmModem<TinyGsmBG96>;
   friend class TinyGsmGPRS<TinyGsmBG96>;
-  friend class TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
   friend class TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmBG96>;
   friend class TinyGsmSMS<TinyGsmBG96>;
@@ -124,8 +129,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    * Inner Client
    */
  public:
-  class GsmClientBG96
-      : public TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT>::GsmClient {
+  class GsmClientBG96 : public TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT,
+                                          TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmBG96;
 
    public:
