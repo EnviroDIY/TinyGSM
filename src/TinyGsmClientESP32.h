@@ -465,7 +465,7 @@ class TinyGsmESP32
                                          print_stream);
   }
 
- private:
+ protected:
   void parseCertificateName(const char* cert_name, char* parsed_namespace,
                             uint8_t& parsed_number) {
     // pull the namespace out of the name
