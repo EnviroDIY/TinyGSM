@@ -105,7 +105,7 @@ class TinyGsmBG96
     : public TinyGsmModem<TinyGsmBG96>,
       public TinyGsmGPRS<TinyGsmBG96>,
       public TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>,
+      public TinyGsmSSL<TinyGsmBG96>,
       public TinyGsmCalling<TinyGsmBG96>,
       public TinyGsmSMS<TinyGsmBG96>,
       public TinyGsmGPS<TinyGsmBG96>,
@@ -116,7 +116,7 @@ class TinyGsmBG96
   friend class TinyGsmModem<TinyGsmBG96>;
   friend class TinyGsmGPRS<TinyGsmBG96>;
   friend class TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
-  friend class TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmBG96>;
   friend class TinyGsmCalling<TinyGsmBG96>;
   friend class TinyGsmSMS<TinyGsmBG96>;
   friend class TinyGsmGPS<TinyGsmBG96>;

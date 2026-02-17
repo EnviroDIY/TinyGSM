@@ -73,7 +73,7 @@
 class TinyGsmSim7080
     : public TinyGsmSim70xx<TinyGsmSim7080>,
       public TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmSSL<TinyGsmSim7080, TINY_GSM_MUX_COUNT>,
+      public TinyGsmSSL<TinyGsmSim7080>,
       public TinyGsmSMS<TinyGsmSim7080>,
       public TinyGsmGSMLocation<TinyGsmSim7080>,
       public TinyGsmTime<TinyGsmSim7080>,
@@ -84,7 +84,7 @@ class TinyGsmSim7080
   friend class TinyGsmGPRS<TinyGsmSim7080>;
   friend class TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;
-  friend class TinyGsmSSL<TinyGsmSim7080, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmSim7080>;
   friend class TinyGsmSMS<TinyGsmSim7080>;
   friend class TinyGsmGSMLocation<TinyGsmSim7080>;
   friend class TinyGsmGPS<TinyGsmSim7080>;

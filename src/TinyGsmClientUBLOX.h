@@ -416,10 +416,9 @@ class TinyGsmUBLOX
   // addition to adding the functions here):
   //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
   //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  //  - Add `public TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>,` to the
-  //    constructor's initializer list
-  //  - Add `friend class TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>;` to the
-  //  friend list.
+  //  - Add `public TinyGsmSSL<TinyGsmUBLOX>,` to the constructor's initializer
+  //  list
+  //  - Add `friend class TinyGsmSSL<TinyGsmUBLOX>;` to the friend list
   //  - Make the secure client inherit from the secure client class in the SSL
   //  template.
 

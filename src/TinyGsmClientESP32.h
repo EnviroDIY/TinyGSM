@@ -57,14 +57,14 @@ enum ESP32RegStatus {
 class TinyGsmESP32
     : public TinyGsmEspressif<TinyGsmESP32>,
       public TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmSSL<TinyGsmESP32, TINY_GSM_MUX_COUNT>,
+      public TinyGsmSSL<TinyGsmESP32>,
       public TinyGsmTime<TinyGsmESP32>,
       public TinyGsmNTP<TinyGsmESP32> {
   friend class TinyGsmEspressif<TinyGsmESP32>;
   friend class TinyGsmModem<TinyGsmESP32>;
   friend class TinyGsmWifi<TinyGsmESP32>;
   friend class TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
-  friend class TinyGsmSSL<TinyGsmESP32, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmESP32>;
   friend class TinyGsmTime<TinyGsmESP32>;
   friend class TinyGsmNTP<TinyGsmESP32>;
 
