@@ -17,10 +17,6 @@
 
 #include "TinyGsmFifo.h"
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
 #if !defined(TINY_GSM_UNREAD_CHECK_MS)
 #define TINY_GSM_UNREAD_CHECK_MS 500
 #endif
@@ -70,7 +66,7 @@
 // // For modules that always use the mux you assign them
 // #define TINY_GSM_MUX_STATIC
 
-template <class modemType, uint8_t muxCount>
+template <class modemType, uint8_t muxCount, unsigned bufferSize>
 class TinyGsmTCP {
   /* =========================================== */
   /* =========================================== */
@@ -181,8 +177,7 @@ class TinyGsmTCP {
  public:
   class GsmClient : public Client {
     // Make all classes created from the modem template friends
-    friend class TinyGsmTCP<modemType, muxCount>;
-    typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
+    friend class TinyGsmTCP<modemType, muxCount, bufferSize>;
 
    public:
     // bool init(modemType* modem, uint8_t);
@@ -501,7 +496,7 @@ class TinyGsmTCP {
     bool       got_data;
     bool       is_secure;
     bool       is_mid_send = false;
-    RxFifo     rx;
+    TinyGsmFifo<uint8_t, bufferSize> rx;
   };
 
   /* =========================================== */

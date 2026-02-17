@@ -13,6 +13,10 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 // XBee's do not support multiplexing in transparent/command mode
 // The much more complicated API mode is needed for multiplexing
 #ifdef TINY_GSM_MUX_COUNT
@@ -102,17 +106,18 @@ enum XBeeType {
   XBEE3_LTEM3    = 0xB0E,  // Digi XBee3 Cellular LTE-M3
 };
 
-class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
-                    public TinyGsmGPRS<TinyGsmXBee>,
-                    public TinyGsmWifi<TinyGsmXBee>,
-                    public TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT>,
-                    public TinyGsmSMS<TinyGsmXBee>,
-                    public TinyGsmBattery<TinyGsmXBee>,
-                    public TinyGsmTemperature<TinyGsmXBee> {
+class TinyGsmXBee
+    : public TinyGsmModem<TinyGsmXBee>,
+      public TinyGsmGPRS<TinyGsmXBee>,
+      public TinyGsmWifi<TinyGsmXBee>,
+      public TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmSMS<TinyGsmXBee>,
+      public TinyGsmBattery<TinyGsmXBee>,
+      public TinyGsmTemperature<TinyGsmXBee> {
   friend class TinyGsmModem<TinyGsmXBee>;
   friend class TinyGsmGPRS<TinyGsmXBee>;
   friend class TinyGsmWifi<TinyGsmXBee>;
-  friend class TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
   friend class TinyGsmSMS<TinyGsmXBee>;
   friend class TinyGsmBattery<TinyGsmXBee>;
   friend class TinyGsmTemperature<TinyGsmXBee>;
@@ -121,8 +126,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
    * Inner Client
    */
  public:
-  class GsmClientXBee
-      : public TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT>::GsmClient {
+  class GsmClientXBee : public TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT,
+                                          TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmXBee;
 
    public:

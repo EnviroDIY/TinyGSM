@@ -11,6 +11,10 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
@@ -57,7 +61,8 @@
 
 class TinyGsmSim7000SSL
     : public TinyGsmSim70xx<TinyGsmSim7000SSL>,
-      public TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>,
+      public TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT,
+                        TINY_GSM_RX_BUFFER>,
       public TinyGsmSSL<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>,
       public TinyGsmSMS<TinyGsmSim7000SSL>,
       public TinyGsmGSMLocation<TinyGsmSim7000SSL>,
@@ -67,7 +72,8 @@ class TinyGsmSim7000SSL
   friend class TinyGsmSim70xx<TinyGsmSim7000SSL>;
   friend class TinyGsmModem<TinyGsmSim7000SSL>;
   friend class TinyGsmGPRS<TinyGsmSim7000SSL>;
-  friend class TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT,
+                          TINY_GSM_RX_BUFFER>;
   friend class TinyGsmSSL<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmSim7000SSL>;
   friend class TinyGsmGSMLocation<TinyGsmSim7000SSL>;
@@ -81,7 +87,8 @@ class TinyGsmSim7000SSL
    */
  public:
   class GsmClientSim7000SSL
-      : public TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>::GsmClient {
+      : public TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT,
+                          TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSim7000SSL;
 
    public:

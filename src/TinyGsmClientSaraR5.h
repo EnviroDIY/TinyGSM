@@ -12,6 +12,10 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
@@ -113,18 +117,20 @@ enum SaraR5RegStatus {
           // indicates E-UTRAN)
 };
 
-class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
-                      public TinyGsmGPRS<TinyGsmSaraR5>,
-                      public TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>,
-                      public TinyGsmCalling<TinyGsmSaraR5>,
-                      public TinyGsmSMS<TinyGsmSaraR5>,
-                      public TinyGsmGSMLocation<TinyGsmSaraR5>,
-                      public TinyGsmGPS<TinyGsmSaraR5>,
-                      public TinyGsmTime<TinyGsmSaraR5>,
-                      public TinyGsmBattery<TinyGsmSaraR5> {
+class TinyGsmSaraR5
+    : public TinyGsmModem<TinyGsmSaraR5>,
+      public TinyGsmGPRS<TinyGsmSaraR5>,
+      public TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmCalling<TinyGsmSaraR5>,
+      public TinyGsmSMS<TinyGsmSaraR5>,
+      public TinyGsmGSMLocation<TinyGsmSaraR5>,
+      public TinyGsmGPS<TinyGsmSaraR5>,
+      public TinyGsmTime<TinyGsmSaraR5>,
+      public TinyGsmBattery<TinyGsmSaraR5> {
   friend class TinyGsmModem<TinyGsmSaraR5>;
   friend class TinyGsmGPRS<TinyGsmSaraR5>;
-  friend class TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT,
+                          TINY_GSM_RX_BUFFER>;
   friend class TinyGsmCalling<TinyGsmSaraR5>;
   friend class TinyGsmSMS<TinyGsmSaraR5>;
   friend class TinyGsmGSMLocation<TinyGsmSaraR5>;
@@ -136,8 +142,8 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
    * Inner Client
    */
  public:
-  class GsmClientSaraR5
-      : public TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>::GsmClient {
+  class GsmClientSaraR5 : public TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT,
+                                            TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSaraR5;
 
    public:

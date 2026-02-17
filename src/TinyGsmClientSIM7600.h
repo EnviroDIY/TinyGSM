@@ -12,6 +12,10 @@
 // #define TINY_GSM_DEBUG Serial
 // #define TINY_GSM_USE_HEX
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
@@ -95,21 +99,23 @@ enum SIM7600RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
-                       public TinyGsmGPRS<TinyGsmSim7600>,
-                       public TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmSSL<TinyGsmSim7600, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmSMS<TinyGsmSim7600>,
-                       public TinyGsmGSMLocation<TinyGsmSim7600>,
-                       public TinyGsmGPS<TinyGsmSim7600>,
-                       public TinyGsmTime<TinyGsmSim7600>,
-                       public TinyGsmNTP<TinyGsmSim7600>,
-                       public TinyGsmBattery<TinyGsmSim7600>,
-                       public TinyGsmTemperature<TinyGsmSim7600>,
-                       public TinyGsmCalling<TinyGsmSim7600> {
+class TinyGsmSim7600
+    : public TinyGsmModem<TinyGsmSim7600>,
+      public TinyGsmGPRS<TinyGsmSim7600>,
+      public TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmSSL<TinyGsmSim7600, TINY_GSM_MUX_COUNT>,
+      public TinyGsmSMS<TinyGsmSim7600>,
+      public TinyGsmGSMLocation<TinyGsmSim7600>,
+      public TinyGsmGPS<TinyGsmSim7600>,
+      public TinyGsmTime<TinyGsmSim7600>,
+      public TinyGsmNTP<TinyGsmSim7600>,
+      public TinyGsmBattery<TinyGsmSim7600>,
+      public TinyGsmTemperature<TinyGsmSim7600>,
+      public TinyGsmCalling<TinyGsmSim7600> {
   friend class TinyGsmModem<TinyGsmSim7600>;
   friend class TinyGsmGPRS<TinyGsmSim7600>;
-  friend class TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT,
+                          TINY_GSM_RX_BUFFER>;
   friend class TinyGsmSSL<TinyGsmSim7600, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmSim7600>;
   friend class TinyGsmGPS<TinyGsmSim7600>;
@@ -124,8 +130,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    * Inner Client
    */
  public:
-  class GsmClientSim7600
-      : public TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT>::GsmClient {
+  class GsmClientSim7600 : public TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT,
+                                             TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSim7600;
 
    public:

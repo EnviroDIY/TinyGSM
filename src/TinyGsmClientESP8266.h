@@ -12,6 +12,10 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 #ifdef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #undef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 #endif
@@ -50,15 +54,17 @@ enum ESP8266RegStatus {
   REG_UNKNOWN       = 5,
 };
 
-class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
-                       public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmTime<TinyGsmESP8266>,
-                       public TinyGsmNTP<TinyGsmESP8266> {
+class TinyGsmESP8266
+    : public TinyGsmEspressif<TinyGsmESP8266>,
+      public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>,
+      public TinyGsmTime<TinyGsmESP8266>,
+      public TinyGsmNTP<TinyGsmESP8266> {
   friend class TinyGsmEspressif<TinyGsmESP8266>;
   friend class TinyGsmModem<TinyGsmESP8266>;
   friend class TinyGsmWifi<TinyGsmESP8266>;
-  friend class TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT,
+                          TINY_GSM_RX_BUFFER>;
   friend class TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmTime<TinyGsmESP8266>;
   friend class TinyGsmNTP<TinyGsmESP8266>;
@@ -67,8 +73,8 @@ class TinyGsmESP8266 : public TinyGsmEspressif<TinyGsmESP8266>,
    * Inner Client
    */
  public:
-  class GsmClientESP8266
-      : public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>::GsmClient {
+  class GsmClientESP8266 : public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT,
+                                             TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmESP8266;
 
    public:

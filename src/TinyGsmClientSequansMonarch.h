@@ -11,6 +11,10 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
@@ -100,14 +104,16 @@ enum SocketStatus {
 class TinyGsmSequansMonarch
     : public TinyGsmModem<TinyGsmSequansMonarch>,
       public TinyGsmGPRS<TinyGsmSequansMonarch>,
-      public TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>,
+      public TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT,
+                        TINY_GSM_RX_BUFFER>,
       public TinyGsmCalling<TinyGsmSequansMonarch>,
       public TinyGsmSMS<TinyGsmSequansMonarch>,
       public TinyGsmTime<TinyGsmSequansMonarch>,
       public TinyGsmTemperature<TinyGsmSequansMonarch> {
   friend class TinyGsmModem<TinyGsmSequansMonarch>;
   friend class TinyGsmGPRS<TinyGsmSequansMonarch>;
-  friend class TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT,
+                          TINY_GSM_RX_BUFFER>;
   friend class TinyGsmCalling<TinyGsmSequansMonarch>;
   friend class TinyGsmSMS<TinyGsmSequansMonarch>;
   friend class TinyGsmTime<TinyGsmSequansMonarch>;
@@ -118,8 +124,8 @@ class TinyGsmSequansMonarch
    */
  public:
   class GsmClientSequansMonarch
-      : public TinyGsmTCP<TinyGsmSequansMonarch,
-                          TINY_GSM_MUX_COUNT>::GsmClient {
+      : public TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT,
+                          TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSequansMonarch;
 
    public:

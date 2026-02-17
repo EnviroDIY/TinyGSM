@@ -12,6 +12,10 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
@@ -98,18 +102,20 @@ enum SaraR4RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
-                      public TinyGsmGPRS<TinyGsmSaraR4>,
-                      public TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>,
-                      public TinyGsmSMS<TinyGsmSaraR4>,
-                      public TinyGsmGSMLocation<TinyGsmSaraR4>,
-                      public TinyGsmGPS<TinyGsmSaraR4>,
-                      public TinyGsmTime<TinyGsmSaraR4>,
-                      public TinyGsmBattery<TinyGsmSaraR4>,
-                      public TinyGsmTemperature<TinyGsmSaraR4> {
+class TinyGsmSaraR4
+    : public TinyGsmModem<TinyGsmSaraR4>,
+      public TinyGsmGPRS<TinyGsmSaraR4>,
+      public TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmSMS<TinyGsmSaraR4>,
+      public TinyGsmGSMLocation<TinyGsmSaraR4>,
+      public TinyGsmGPS<TinyGsmSaraR4>,
+      public TinyGsmTime<TinyGsmSaraR4>,
+      public TinyGsmBattery<TinyGsmSaraR4>,
+      public TinyGsmTemperature<TinyGsmSaraR4> {
   friend class TinyGsmModem<TinyGsmSaraR4>;
   friend class TinyGsmGPRS<TinyGsmSaraR4>;
-  friend class TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT,
+                          TINY_GSM_RX_BUFFER>;
   friend class TinyGsmSMS<TinyGsmSaraR4>;
   friend class TinyGsmGSMLocation<TinyGsmSaraR4>;
   friend class TinyGsmGPS<TinyGsmSaraR4>;
@@ -121,8 +127,8 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
    * Inner Client
    */
  public:
-  class GsmClientSaraR4
-      : public TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>::GsmClient {
+  class GsmClientSaraR4 : public TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT,
+                                            TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSaraR4;
 
    public:

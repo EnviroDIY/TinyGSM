@@ -10,6 +10,10 @@
 #define SRC_TINYGSMCLIENTSIM800_H_
 // #pragma message("TinyGSM:  TinyGsmClientSIM800")
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 // #define TINY_GSM_DEBUG Serial
 // #define TINY_GSM_USE_HEX
 
@@ -99,18 +103,20 @@ enum SIM800RegStatus {
   REG_OK_ROAMING   = 5,
   REG_UNKNOWN      = 4,
 };
-class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
-                      public TinyGsmGPRS<TinyGsmSim800>,
-                      public TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT>,
-                      public TinyGsmCalling<TinyGsmSim800>,
-                      public TinyGsmSMS<TinyGsmSim800>,
-                      public TinyGsmGSMLocation<TinyGsmSim800>,
-                      public TinyGsmTime<TinyGsmSim800>,
-                      public TinyGsmNTP<TinyGsmSim800>,
-                      public TinyGsmBattery<TinyGsmSim800> {
+class TinyGsmSim800
+    : public TinyGsmModem<TinyGsmSim800>,
+      public TinyGsmGPRS<TinyGsmSim800>,
+      public TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmCalling<TinyGsmSim800>,
+      public TinyGsmSMS<TinyGsmSim800>,
+      public TinyGsmGSMLocation<TinyGsmSim800>,
+      public TinyGsmTime<TinyGsmSim800>,
+      public TinyGsmNTP<TinyGsmSim800>,
+      public TinyGsmBattery<TinyGsmSim800> {
   friend class TinyGsmModem<TinyGsmSim800>;
   friend class TinyGsmGPRS<TinyGsmSim800>;
-  friend class TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT,
+                          TINY_GSM_RX_BUFFER>;
   friend class TinyGsmCalling<TinyGsmSim800>;
   friend class TinyGsmSMS<TinyGsmSim800>;
   friend class TinyGsmGSMLocation<TinyGsmSim800>;
@@ -122,8 +128,8 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    * Inner Client
    */
  public:
-  class GsmClientSim800
-      : public TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT>::GsmClient {
+  class GsmClientSim800 : public TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT,
+                                            TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSim800;
 
    public:

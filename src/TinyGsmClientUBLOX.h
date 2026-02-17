@@ -12,6 +12,10 @@
 
 // #define TINY_GSM_DEBUG Serial
 
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 64
+#endif
+
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
@@ -93,18 +97,19 @@ enum UBLOXRegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
-                     public TinyGsmGPRS<TinyGsmUBLOX>,
-                     public TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>,
-                     public TinyGsmCalling<TinyGsmUBLOX>,
-                     public TinyGsmSMS<TinyGsmUBLOX>,
-                     public TinyGsmGSMLocation<TinyGsmUBLOX>,
-                     public TinyGsmGPS<TinyGsmUBLOX>,
-                     public TinyGsmTime<TinyGsmUBLOX>,
-                     public TinyGsmBattery<TinyGsmUBLOX> {
+class TinyGsmUBLOX
+    : public TinyGsmModem<TinyGsmUBLOX>,
+      public TinyGsmGPRS<TinyGsmUBLOX>,
+      public TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmCalling<TinyGsmUBLOX>,
+      public TinyGsmSMS<TinyGsmUBLOX>,
+      public TinyGsmGSMLocation<TinyGsmUBLOX>,
+      public TinyGsmGPS<TinyGsmUBLOX>,
+      public TinyGsmTime<TinyGsmUBLOX>,
+      public TinyGsmBattery<TinyGsmUBLOX> {
   friend class TinyGsmModem<TinyGsmUBLOX>;
   friend class TinyGsmGPRS<TinyGsmUBLOX>;
-  friend class TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
   friend class TinyGsmCalling<TinyGsmUBLOX>;
   friend class TinyGsmSMS<TinyGsmUBLOX>;
   friend class TinyGsmGSMLocation<TinyGsmUBLOX>;
@@ -116,8 +121,8 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    * Inner Client
    */
  public:
-  class GsmClientUBLOX
-      : public TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>::GsmClient {
+  class GsmClientUBLOX : public TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT,
+                                           TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmUBLOX;
 
    public:
