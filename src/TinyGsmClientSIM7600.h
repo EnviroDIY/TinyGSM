@@ -103,7 +103,7 @@ class TinyGsmSim7600
     : public TinyGsmModem<TinyGsmSim7600>,
       public TinyGsmGPRS<TinyGsmSim7600>,
       public TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmSSL<TinyGsmSim7600, TINY_GSM_MUX_COUNT>,
+      public TinyGsmSSL<TinyGsmSim7600>,
       public TinyGsmSMS<TinyGsmSim7600>,
       public TinyGsmGSMLocation<TinyGsmSim7600>,
       public TinyGsmGPS<TinyGsmSim7600>,
@@ -116,7 +116,7 @@ class TinyGsmSim7600
   friend class TinyGsmGPRS<TinyGsmSim7600>;
   friend class TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;
-  friend class TinyGsmSSL<TinyGsmSim7600, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmSim7600>;
   friend class TinyGsmSMS<TinyGsmSim7600>;
   friend class TinyGsmGPS<TinyGsmSim7600>;
   friend class TinyGsmGSMLocation<TinyGsmSim7600>;

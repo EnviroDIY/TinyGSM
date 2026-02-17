@@ -98,7 +98,7 @@ class TinyGsmA7672X
     : public TinyGsmModem<TinyGsmA7672X>,
       public TinyGsmGPRS<TinyGsmA7672X>,
       public TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>,
+      public TinyGsmSSL<TinyGsmA7672X>,
       public TinyGsmCalling<TinyGsmA7672X>,
       public TinyGsmSMS<TinyGsmA7672X>,
       public TinyGsmGSMLocation<TinyGsmA7672X>,
@@ -110,7 +110,7 @@ class TinyGsmA7672X
   friend class TinyGsmGPRS<TinyGsmA7672X>;
   friend class TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;
-  friend class TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmA7672X>;
   friend class TinyGsmCalling<TinyGsmA7672X>;
   friend class TinyGsmSMS<TinyGsmA7672X>;
   friend class TinyGsmGSMLocation<TinyGsmA7672X>;

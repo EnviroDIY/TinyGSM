@@ -26,7 +26,7 @@
 #endif
 
 
-template <class modemType, uint8_t muxCount>
+template <class modemType>
 class TinyGsmSSL {
   /* =========================================== */
   /* =========================================== */

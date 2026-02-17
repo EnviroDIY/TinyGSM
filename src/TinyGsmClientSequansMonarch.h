@@ -394,7 +394,7 @@ class TinyGsmSequansMonarch
   // addition to adding the functions here):
   //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
   //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  //  - Add `public TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>,` to
+  //  - Add `public TinyGsmSSL<TinyGsmSequansMonarch>,` to
   //    the constructor's initializer list
   //  - Add `friend class TinyGsmSSL<TinyGsmSequansMonarch,
   //    TINY_GSM_MUX_COUNT>;` to the friend list.
