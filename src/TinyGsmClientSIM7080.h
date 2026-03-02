@@ -676,7 +676,12 @@ class TinyGsmSim7080
     char     buf[12];
     size_t   bytesRead = stream.readBytesUntil('\n', buf,
                                                static_cast<size_t>(12));
-
+    // if we read 12 or more bytes, it's an overflow
+    if (bytesRead && bytesRead < 12) {
+      buf[bytesRead] = '\0';
+      modem_time     = atol(buf);
+    }
+    waitResponse();
     DBG(GF("### Modem Raw Time:"), buf, GF("("), modem_time, GF(")"));
 
     if (modem_time != 0) {
