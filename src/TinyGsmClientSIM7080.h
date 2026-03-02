@@ -667,6 +667,10 @@ class TinyGsmSim7080
     uint32_t start = millis();
     while (stream.available() < 9 && millis() - start < 10000L) {}
     int8_t code = streamGetIntBefore(',');
+    if (code != 1) {
+      // if code isn't 1, something went wrong with the sync, return 0
+      return 0;
+    }
 
     uint32_t modem_time = 0;
     char     buf[12];
