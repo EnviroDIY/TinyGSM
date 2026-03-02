@@ -31,6 +31,9 @@ class TinyGsmNTP {
   byte NTPServerSync(String server = "pool.ntp.org", int TimeZone = 0) {
     return thisModem().NTPServerSyncImpl(server, TimeZone);
   }
+  bool waitForTimeSync(int timeout_s = 120) {
+    return thisModem().waitForTimeSyncImpl(timeout_s);
+  }
   String ShowNTPError(byte error) {
     return thisModem().ShowNTPErrorImpl(error);
   }
@@ -97,6 +100,30 @@ class TinyGsmNTP {
       return -1;
     }
     return -1;
+  }
+
+  bool waitForTimeSyncImpl(int timeout_s = 120) {
+    // if we're not connected, we'll never get the time
+    if (!thisModem().isNetworkConnected()) { return false; }
+    // if we're sure we should be able to get the time, wait for it
+    uint32_t start_millis = millis();
+    while (millis() - start_millis < static_cast<uint32_t>(timeout_s) * 1000) {
+      // Request network synchronization
+      thisModem().sendAT(GF("+CNTP"));
+      if (thisModem().waitResponse(10000L, GF("+CNTP:"))) {
+        String result = thisModem().stream.readStringUntil('\n');
+        // Check for ',' in case the module appends the time next to the return
+        // code. Eg: +CNTP: <code>[,<time>]
+        int index = result.indexOf(',');
+        if (index > 0) { result.remove(index); }
+        result.trim();
+        if (TinyGsmIsValidNumber(result) && result.toInt() == 1) {
+          return true;
+        }
+      }
+      delay(250);
+    }
+    return false;
   }
 
   String ShowNTPErrorImpl(byte error) {

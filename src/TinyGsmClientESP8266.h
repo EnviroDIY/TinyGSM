@@ -380,7 +380,7 @@ class TinyGsmESP8266
     waitResponse();
   }
 
-  bool waitForTimeSync(int timeout_s = 120) {
+  bool waitForTimeSyncImpl(int timeout_s = 120) {
     // if we're not connected, we'll never get the time
     if (!isNetworkConnected()) { return false; }
     // if we're sure we should be able to get the time, wait for it

@@ -887,6 +887,21 @@ class TinyGsmBG96
     return -1;
   }
 
+  bool waitForTimeSyncImpl(int timeout_s = 120) {
+    // if we're not connected, we'll never get the time
+    if (!isNetworkConnected()) { return false; }
+    // if we're sure we should be able to get the time, wait for it
+    uint32_t start_millis = millis();
+    while (millis() - start_millis < static_cast<uint32_t>(timeout_s) * 1000) {
+      // Request network synchronization
+      sendAT(GF("+QNTP?"));
+      // +QNTP: <server>,<port>]\r\nOK\r\n
+      if (waitResponse(10000L) == 1) { return true; }
+      delay(250);
+    }
+    return false;
+  }
+
   String ShowNTPErrorImpl(byte error) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*

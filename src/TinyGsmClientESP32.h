@@ -699,7 +699,7 @@ class TinyGsmESP32
     waitResponse();
   }
 
-  bool waitForTimeSync(int timeout_s = 120) {
+  bool waitForTimeSyncImpl(int timeout_s = 120) {
     // if we're not connected, we'll never get the time
     if (!isNetworkConnected()) {
       DBG(GF("### Not connected to network; cannot sync time!"));

@@ -659,7 +659,33 @@ class TinyGsmSim7080
   /*
    * Time functions
    */
-  // Follows all clock functions as inherited from TinyGsmTime.tpp
+  uint32_t
+  getNetworkEpochImpl(TinyGSM_EpochStart epoch = TinyGSM_EpochStart::UNIX) {
+    // Request network synchronization
+    sendAT(GF("+CNTP"));
+    if (waitResponse(2000L, GF("+CNTP:")) != 1) { return 0; }
+    uint32_t start = millis();
+    while (stream.available() < 9 && millis() - start < 10000L) {}
+    int8_t code = streamGetIntBefore(',');
+
+    uint32_t modem_time = 0;
+    char     buf[12];
+    size_t   bytesRead = stream.readBytesUntil('\n', buf,
+                                               static_cast<size_t>(12));
+
+    DBG(GF("### Modem Raw Time:"), buf, GF("("), modem_time, GF(")"));
+
+    if (modem_time != 0) {
+      switch (epoch) {
+        case TinyGSM_EpochStart::UNIX: modem_time += 0; break;
+        case TinyGSM_EpochStart::Y2K: modem_time += 946684800; break;
+        case TinyGSM_EpochStart::GPS: modem_time += 315878400; break;
+      }
+    }
+    DBG(GF("### Modem Epoch Time:"), modem_time);
+
+    return modem_time;
+  }
 
   /*
    * NTP server functions
