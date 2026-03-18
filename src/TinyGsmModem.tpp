@@ -134,7 +134,7 @@ class TinyGsmModem {
     SerialAT.end();
     SerialAT.begin(targetBaud);
     // test for at response from the modem
-    bool at_success = thisModem().testAT();
+    bool at_success = thisModem().testAT(1500L);
     // if we got a response and it's the baud rate we want, we're done
     if (at_success) {
       DBG("Modem responded at rate", targetBaud);
@@ -163,30 +163,31 @@ class TinyGsmModem {
 
     for (uint8_t i = 0; i < sizeof(rates) / sizeof(rates[0]); i++) {
       uint32_t rate = rates[i];
-
-      DBG("Trying to set the baud rate from a rate of", rate, "...");
-      SerialAT.end();
-      SerialAT.begin(rate);
-      delay(100);
+      for (uint8_t j = 0; j < 3; j++) {
+        DBG("Trying to set the baud rate from a rate of", rate, "...");
+        SerialAT.end();
+        SerialAT.begin(rate);
+        delay(50);
 
 #if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_ESP8266)
-      thisModem().setDefaultBaud(targetBaud);
+        thisModem().setDefaultBaud(targetBaud);
 #else
-      thisModem().setBaud(targetBaud);
+        thisModem().setBaud(targetBaud);
 #endif
 
-      SerialAT.end();
-      SerialAT.begin(targetBaud);
-      delay(100);
+        SerialAT.end();
+        SerialAT.begin(targetBaud);
+        delay(50);
 
-      // test for at response from the modem
-      DBG("Checking for a response at", targetBaud, "...");
-      bool at_success = thisModem().testAT();
-      // if we got a response and it's the baud rate we want, we're done
-      if (at_success) {
-        DBG(GF("Successfully changed the baud rate from"), rate, GF("to"),
-            targetBaud);
-        return true;
+        // test for at response from the modem
+        DBG("Checking for a response at", targetBaud, "...");
+        bool at_success = thisModem().testAT(1500L);
+        // if we got a response and it's the baud rate we want, we're done
+        if (at_success) {
+          DBG(GF("Successfully changed the baud rate from"), rate, GF("to"),
+              targetBaud);
+          return true;
+        }
       }
     }
     DBG("Failed to successfully find the baud at any common rate or to change "
