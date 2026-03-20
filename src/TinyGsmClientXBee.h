@@ -1214,11 +1214,10 @@ class TinyGsmXBee
     }
   }
 
-  bool configureConnection(const char* host, uint16_t port) {
+  bool configureConnection(const char* host, uint16_t port, bool ssl) {
     XBEE_COMMAND_START_DECORATOR(5, false)
     bool success     = true;
     bool changesMade = false;
-    bool ssl         = sockets[0]->is_secure;
 
     if (ssl) {
       // If we have a secure socket, use a static cast to get the
@@ -1285,6 +1284,15 @@ class TinyGsmXBee
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0,
                     int timeout_s = TINY_GSM_CONNECT_TIMEOUT) {
+    // check if the host is an IP address already - if so, we can skip the DNS
+    // lookup and just connect
+    IPAddress hostIP          = IPAddress(0, 0, 0, 0);
+    bool      converted_to_ip = hostIP.fromString(host);
+    if (converted_to_ip && hostIP != IPAddress(0, 0, 0, 0)) {
+      DBG("Host is already an IP address; connecting directly");
+      return modemConnect(hostIP, port, mux);
+    }
+
     bool retVal  = false;
     bool success = true;
 
@@ -1304,7 +1312,8 @@ class TinyGsmXBee
         beeType != XBEE_3G) {
       // the newer cellular modules can look up the address on the fly
       // this is definitely the better option
-      success &= configureConnection(host, port);
+      bool ssl = sockets[mux]->is_secure;
+      success &= configureConnection(host, port, ssl);
       DBG("Attempting to ping the host");
       sendAT(GF("PG"), host);
       readResponseString(2500L);
@@ -1365,7 +1374,8 @@ class TinyGsmXBee
       host += ip[2];
       host += ".";
       host += ip[3];
-      success &= configureConnection(host.c_str(), port);
+      bool ssl = sockets[mux]->is_secure;
+      success &= configureConnection(host.c_str(), port, ssl);
       DBG("Attempting to ping the host");
       sendAT(GF("PG"), host);
       readResponseString(2500L);
