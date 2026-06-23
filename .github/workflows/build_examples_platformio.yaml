@@ -17,7 +17,7 @@ jobs:
       library_install_git: ${{ steps.store_vars.outputs.library_install_git }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set environment variables for pushes to any branch
         if: github.event_name == 'push'
@@ -101,7 +101,7 @@ jobs:
           ]
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set variables
         run: |
@@ -116,7 +116,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       # This should be pulled from cache, if there's not a new version
       - name: Install PlatformIO
