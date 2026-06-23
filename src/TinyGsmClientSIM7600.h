@@ -836,20 +836,22 @@ class TinyGsmSim7600
          sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       /* Configure the server root CA of the specified SSL context
       AT + CSSLCFG = "cacert", <ssl_ctx_index>,<ca_file> */
-      sendAT(GF("+CSSLCFG=\"cacert\","), context_id, GF(","), CAcertName);
+      sendAT(GF("+CSSLCFG=\"cacert\","), context_id, GF(",\""), CAcertName,
+             GF("\""));
       success &= waitResponse(5000L) == 1;
     }
     if (clientCertName != nullptr &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
          sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
-      sendAT(GF("+CSSLCFG=\"clientcert\","), context_id, GF(","),
-             clientCertName);
+      sendAT(GF("+CSSLCFG=\"clientcert\","), context_id, GF(",\""),
+             clientCertName, GF("\""));
       success &= waitResponse(5000L) == 1;
     }
     if (clientKeyName != nullptr &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
          sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
-      sendAT(GF("+CSSLCFG=\"clientkey\","), context_id, GF(","), clientKeyName);
+      sendAT(GF("+CSSLCFG=\"clientkey\","), context_id, GF(",\""),
+             clientKeyName, GF("\""));
       success &= waitResponse(5000L) == 1;
     }
 
@@ -862,8 +864,20 @@ class TinyGsmSim7600
     //            (SSLAuthMode::MUTUAL_AUTHENTICATION)
     //            3: client authentication and no server authentication
     //            (SSLAuthMode::CLIENT_VALIDATION)
+    // Because the auth mode used by the SIM7600 is different than the
+    // SSLAuthMode enum, we need to translate it to the correct value.
+    int8_t authModeValue = 0;
+    switch (sslAuthMode) {
+      case SSLAuthMode::NO_VALIDATION: authModeValue = 0; break;
+      case SSLAuthMode::CA_VALIDATION: authModeValue = 1; break;
+      case SSLAuthMode::MUTUAL_AUTHENTICATION: authModeValue = 2; break;
+      case SSLAuthMode::CLIENT_VALIDATION: authModeValue = 3; break;
+      default:
+        authModeValue = 0;  // Default to no validation if unknown
+        break;
+    }
     sendAT(GF("+CSSLCFG=\"authmode\","), context_id, GF(","),
-           static_cast<int8_t>(sslAuthMode));
+           static_cast<int8_t>(authModeValue));
     success &= waitResponse(5000L) == 1;
 
     return success;
