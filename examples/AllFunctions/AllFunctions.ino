@@ -153,11 +153,13 @@ void setup() {
   delay(500L);
 
   uint32_t maximum = 921600;
+#if defined(F_CPU)
   if (F_CPU <= 8000000L) {
     maximum = 57600;
   } else if (F_CPU <= 16000000L) {
     maximum = 115200;
   }
+#endif
   uint32_t targetBaud = TARGET_BAUD;
   if (targetBaud > maximum) {
     DBG("Target baud rate", targetBaud,

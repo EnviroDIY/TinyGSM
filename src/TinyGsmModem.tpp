@@ -142,11 +142,13 @@ class TinyGsmModem {
     }
 
     uint32_t maximum = 921600;
+#if defined(F_CPU)
     if (F_CPU <= 8000000L) {
       maximum = 57600;
     } else if (F_CPU <= 16000000L) {
       maximum = 115200;
     }
+#endif
     if (targetBaud > maximum) {
       DBG("Target baud rate", targetBaud,
           "is too high for this processor.  Maximum is", maximum);
