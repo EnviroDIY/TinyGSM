@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # %%
 from copy import deepcopy
+from itertools import chain
 import os
 import re
 from typing import List
@@ -43,6 +44,11 @@ examples_dir = "./examples/"
 examples_path = os.path.join(workspace_dir, examples_dir)
 examples_path = os.path.abspath(os.path.realpath(examples_path))
 print(f"Examples Path: {examples_path}")
+
+# The extras directory
+extras_dir = "./extras/"
+extras_path = os.path.join(workspace_dir, extras_dir)
+extras_path = os.path.abspath(os.path.realpath(extras_path))
 
 # The continuous integration directory
 ci_dir = "./continuous_integration/"
@@ -259,17 +265,23 @@ else:
     if use_verbose:
         print("::debug::Building all examples found in the example path.")
     examples_to_build = []
-    for root, subdirs, files in os.walk(examples_path):
+    for root, subdirs, files in chain(os.walk(examples_path), os.walk(extras_path)):
+        print(f"\nSearching for examples in {root}({os.path.split(root)[
+                -1
+            ]})\n\t{subdirs}\n\t\t{files}")
         for filename in files:
             file_path = os.path.join(root, filename)
-            if filename == os.path.split(root)[-1] + ".ino" and root not in [
-                ".history",
-                "logger_test",
-                "archive",
-                "tests",
-                "menu_a_la_carte",
-            ]:
+            if filename == os.path.split(root)[-1] + ".ino" and not any(
+                e in os.path.normpath(root).split(os.sep)
+                for e in [
+                    ".history",
+                    "archive",
+                    "tests",
+                    "more",
+                ]
+            ):
                 examples_to_build.append(os.path.relpath(root, workspace_path))
+                print(f"\t- example: {filename} (full path: {file_path})")
                 if use_verbose:
                     print(f"::debug::\t- example: {filename} (full path: {file_path})")
 
