@@ -31,16 +31,6 @@
       "platforms": "*"
     },
     {
-      "name": "AceCRC",
-      "owner": "bxparks",
-      "library id": "1202",
-      "url": "https://github.com/bxparks/AceCRC.git",
-      "version": "^1.1.1",
-      "authors": ["Brian T. Park"],
-      "frameworks": "*",
-      "platforms": "*"
-    },
-    {
       "name": "StreamDebugger",
       "owner": "vshymanskyy",
       "library id": "1286",
