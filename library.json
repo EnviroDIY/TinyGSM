@@ -7,14 +7,20 @@
     {
       "name": "Volodymyr Shymanskyy",
       "url": "https://github.com/vshymanskyy",
+      "maintainer": false
+    },
+    {
+      "name": "Sara Damiano",
+      "email": "sdamiano@stroudcenter.org",
+      "url": "https://envirodiy.org/",
       "maintainer": true
     }
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/vshymanskyy/TinyGSM.git"
+    "url": "https://github.com/EnviroDIY/TinyGSM.git"
   },
-  "homepage": "https://github.com/vshymanskyy/TinyGSM",
+  "homepage": "https://github.com/EnviroDIY/TinyGSM",
   "export": {
     "include": [
       "LICENSE",
