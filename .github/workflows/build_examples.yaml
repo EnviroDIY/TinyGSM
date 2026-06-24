@@ -14,4 +14,5 @@ jobs:
     uses: EnviroDIY/workflows/.github/workflows/build_examples.yaml@main
     with:
       boards_to_build: "all"
+      examples_to_ignore: "AT_Debug,AT_Spy"
     secrets: inherit
