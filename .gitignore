@@ -60,6 +60,8 @@ clang_format_all.bat
 *.pem
 *.key
 src/CipherSuiteCodes.csv
+continuous_integration_artifacts/*
 generateKeywords.bat
 installWorkingDependencies.bat
 pio_common_libdeps.ini
+continuous_integration/arduino_cli_local.yaml
