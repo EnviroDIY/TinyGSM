@@ -228,10 +228,10 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
 
   // Gets the IMEI of the modem with AT+CGSN
   String getIMEIImpl() {
-    sendAT(GF("+CGSN"));
-    if (waitResponse(GF(AT_NL)) != 1) { return ""; }
+    thisModem().sendAT(GF("+CGSN"));
+    if (thisModem().waitResponse(GF(AT_NL)) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
-    waitResponse();
+    thisModem().waitResponse();
     res.trim();
     return res;
   }
