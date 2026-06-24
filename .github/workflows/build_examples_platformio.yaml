@@ -137,7 +137,13 @@ jobs:
       # Install cores and library dependencies for the Arduino CLI, iff no cache
       - name: Install the Arduino libraries for PlatformIO
         if: steps.cache_pio.outputs.cache-hit != 'true'
-        run: pio lib --global install 89 415 1202 1286
+        run: |
+          pio pkg install --global --library "knolleary/PubSubClient"
+          pio pkg install --global --library "blynkkk/BlynkNcpDriver"
+          pio pkg install --global --library "blynkkk/Blynk"
+          pio pkg install --global --library "bxparks/AceCRC"
+          pio pkg install --global --library "vshymanskyy/StreamDebugger"
+          pio pkg install --global --library "bakercp/CRC32"
 
       - name: Run PlatformIO
         env:
