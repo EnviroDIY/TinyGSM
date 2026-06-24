@@ -49,6 +49,7 @@ print(f"Examples Path: {examples_path}")
 extras_dir = "./extras/"
 extras_path = os.path.join(workspace_dir, extras_dir)
 extras_path = os.path.abspath(os.path.realpath(extras_path))
+print(f"Extras Path: {extras_path}")
 
 # The continuous integration directory
 ci_dir = "./continuous_integration/"
@@ -434,14 +435,14 @@ end_job_commands = "\n\nexit $status"
 for example in examples_to_build:
     start_commands = [
         start_job_commands,
-        f"sed -i 's/#define TINY_GSM_MODEM_/\\/\\/ #define TINY_GSM_MODEM_/g' \"{os.path.join(examples_path,example,os.path.split(example)[-1]+'.ino')}\"",
-        f"sed -i 's/\\/\\/ #pragma/#pragma/g' \"{os.path.join(workspace_path, 'src', 'TinyGsmClient.h')}\"",
+        f"sed -i 's/#define TINY_GSM_MODEM_/\\/\\/ #define TINY_GSM_MODEM_/g' \"{os.path.join(workspace_path,example,os.path.split(example)[-1]+'.ino')}\"",
+        # f"sed -i 's/\\/\\/ #pragma/#pragma/g' \"{os.path.join(workspace_path, 'src', 'TinyGsmClient.h')}\"",
     ]
 
     arduino_ex_commands = deepcopy(start_commands)
     pio_ex_commands = deepcopy(start_commands)
     for modem in modem_list:
-        sed_addition = f"sed -i '1i\\\n#define {modem}\\\n' \"{os.path.join(examples_path,example,os.path.split(example)[-1]+'.ino')}\""
+        sed_addition = f"sed -i '1i\\\n#define {modem}\\\n' \"{os.path.join(workspace_path,example,os.path.split(example)[-1]+'.ino')}\""
 
         # create commands for the Arduino CLI
         # can only specify FQBN, so each board can only be built one way
