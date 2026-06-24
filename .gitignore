@@ -54,6 +54,7 @@ variants/*
 boards/*
 tests/*
 lib/*
+archive/*
 clang_format_all.bat
 *.cert
 *.crt
