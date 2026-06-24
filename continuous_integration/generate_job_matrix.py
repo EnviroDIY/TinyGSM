@@ -312,7 +312,8 @@ if use_verbose:
 # %%
 # helper functions to create commands
 def create_arduino_cli_compile_command(
-    code_subfolder: str, fqbn: str, extra_build_flags: List[str] | None = None
+    code_subfolder: str,
+    fqbn: str,
 ) -> str:
     arduino_command_args = [
         "arduino-cli",
@@ -330,11 +331,6 @@ def create_arduino_cli_compile_command(
         "--fqbn",
         fqbn,
     ]
-    if extra_build_flags is not None:
-        build_flag_string = " ".join(map(lambda x: f'"{x}"', extra_build_flags))
-        arduino_command_args += [
-            '--build-property "build.extra_flags=' + build_flag_string + '"'
-        ]
     arduino_command_args += [
         f'"{os.path.join(workspace_path, code_subfolder)}"',
     ]
@@ -345,7 +341,6 @@ def create_pio_ci_compile_command(
     code_subfolder: str,
     pio_board_or_env: str,
     use_pio_config_file: bool,
-    extra_build_flags: List[str] | None = None,
 ) -> str:
     pio_command_args = [
         "pio",
@@ -365,11 +360,6 @@ def create_pio_ci_compile_command(
             "--board",
             pio_board_or_env,
         ]
-    if extra_build_flags is not None:
-        build_flag_string = " ".join(extra_build_flags)
-        pio_command_args += [
-            '--project-option "build_flags =' + build_flag_string + '"'
-        ]
     pio_command_args += [
         f'"{os.path.join(workspace_path, code_subfolder)}"',
     ]
@@ -380,7 +370,6 @@ def create_multi_env_pio_ci_compile_command(
     code_subfolder: str,
     pio_board_or_env_list: List[str],
     use_pio_config_file: bool,
-    extra_build_flags: List[str] | None = None,
 ) -> str:
     pio_command_args = [
         "pio",
@@ -404,11 +393,6 @@ def create_multi_env_pio_ci_compile_command(
                 "--board",
                 pio_board_or_env,
             ]
-    if extra_build_flags is not None:
-        build_flag_string = " ".join(extra_build_flags)
-        pio_command_args += [
-            '--project-option "build_flags =' + build_flag_string + '"'
-        ]
     pio_command_args += [
         f'"{os.path.join(workspace_path, code_subfolder)}"',
     ]
@@ -450,54 +434,50 @@ end_job_commands = "\n\nexit $status"
 for example in examples_to_build:
     start_commands = [
         start_job_commands,
-        f"sed -i 's/#define TINY_GSM_MODEM_/\\/\\/ #define TINY_GSM_MODEM_/g' {os.path.join(example,'*.ino')}",
-        f"sed -i 's/\\/\\/ #pragma/#pragma/g' {os.path.join(workspace_path, 'src', 'TinyGsmClient.h')}",
+        f"sed -i 's/#define TINY_GSM_MODEM_/\\/\\/ #define TINY_GSM_MODEM_/g' \"{os.path.join(examples_path,example,os.path.split(example)[-1]+'.ino')}\"",
+        f"sed -i 's/\\/\\/ #pragma/#pragma/g' \"{os.path.join(workspace_path, 'src', 'TinyGsmClient.h')}\"",
     ]
 
     arduino_ex_commands = deepcopy(start_commands)
     pio_ex_commands = deepcopy(start_commands)
+    for modem in modem_list:
+        sed_addition = f"sed -i '1i\\\n#define {modem}\\\n' \"{os.path.join(examples_path,example,os.path.split(example)[-1]+'.ino')}\""
 
-    # create commands for the Arduino CLI
-    # can only specify FQBN, so each board can only be built one way
-    for fqbn in fqbns_to_build:
-        for modem in modem_list:
+        # create commands for the Arduino CLI
+        # can only specify FQBN, so each board can only be built one way
+        for fqbn in fqbns_to_build:
             build_command = create_arduino_cli_compile_command(
                 code_subfolder=example,
                 fqbn=fqbn,
-                extra_build_flags=[f"-D{modem}"],
             )
             command_with_log = add_log_to_compile_command(
-                command=build_command,
+                command=sed_addition + "\n" + build_command,
                 group_title=f"{fqbn} - {modem}",
             )
             arduino_ex_commands.extend(command_with_log)
 
-    # create commands for PlatformIO
-    # use the environments list to catch all environments - even those using the same board
-    for env in pio_envs_to_build:
-        for modem in modem_list:
+        # create commands for PlatformIO
+        # use the environments list to catch all environments - even those using the same board
+        for env in pio_envs_to_build:
             build_command = create_pio_ci_compile_command(
                 code_subfolder=example,
                 pio_board_or_env=env,
                 use_pio_config_file=True,
-                extra_build_flags=[f"-D{modem}"],
             )
             command_with_log = add_log_to_compile_command(
-                command=build_command,
+                command=sed_addition + "\n" + build_command,
                 group_title=f"{env} - {modem}",
             )
             pio_ex_commands.extend(command_with_log)
-    # use the bare board list to catch boards requested in the inputs but not in the platformio.ini file
-    for pio_board in pio_bare_boards:
-        for modem in modem_list:
+        # use the bare board list to catch boards requested in the inputs but not in the platformio.ini file
+        for pio_board in pio_bare_boards:
             build_command = create_pio_ci_compile_command(
                 code_subfolder=example,
                 pio_board_or_env=pio_board,
                 use_pio_config_file=False,
-                extra_build_flags=[f"-D{modem}"],
             )
             command_with_log = add_log_to_compile_command(
-                command=build_command,
+                command=sed_addition + "\n" + build_command,
                 group_title=f"{pio_board} - {modem}",
             )
             pio_ex_commands.extend(command_with_log)
