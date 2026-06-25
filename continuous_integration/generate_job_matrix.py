@@ -291,6 +291,21 @@ matrix_exclusions = [
         "modems": deepcopy(modem_list),
     },
     {
+        "example": os.path.join("examples", "BlynkClient"),
+        "boards": boards,
+        # TinyGSM wifi modems not supported by the Blynk library
+        "modems": [
+            modem
+            for modem in modem_list
+            if modem
+            in [
+                "TINY_GSM_MODEM_ESP32",
+                "TINY_GSM_MODEM_ESP8266",
+                "TINY_GSM_MODEM_ESP8266_NONOS",
+            ]
+        ],
+    },
+    {
         "example": os.path.join("examples", "AllFunctions"),
         "boards": [
             "uno",
