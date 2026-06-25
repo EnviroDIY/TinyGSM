@@ -367,16 +367,19 @@ for example in [
 
 # Exclude modems without SSL support from HttpsClient and AWS_IoTCore examples
 unsecured_modems = [
+    "TINY_GSM_MODEM_SIM900",
+    "TINY_GSM_MODEM_SIM7000",
+    "TINY_GSM_MODEM_SIM5320",
+    "TINY_GSM_MODEM_SIM5360",
+    "TINY_GSM_MODEM_SIM5300",
+    "TINY_GSM_MODEM_SIM7100",
+    "TINY_GSM_MODEM_M95",
+    "TINY_GSM_MODEM_BG95",
     "TINY_GSM_MODEM_A6",
     "TINY_GSM_MODEM_A7",
-    "TINY_GSM_MODEM_BG95",
-    "TINY_GSM_MODEM_M95",
     "TINY_GSM_MODEM_M590",
     "TINY_GSM_MODEM_MC60",
     "TINY_GSM_MODEM_MC60E",
-    "TINY_GSM_MODEM_SIM5360",
-    "TINY_GSM_MODEM_SIM7000",
-    "TINY_GSM_MODEM_SIM900",
 ]
 for example in [
     os.path.join("examples", "HttpsClient"),
