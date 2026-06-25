@@ -137,7 +137,12 @@ TinyGsm        modem(debugger);
 TinyGsm modem(SerialAT);
 #endif
 
+#if defined(TINY_GSM_MODEM_HAS_SSL)
 TinyGsmClientSecure client(modem);
+#else
+// WARNING: This will not work with the example URL!
+TinyGsmClient client(modem);
+#endif
 
 void setup() {
   // Set console baud rate
