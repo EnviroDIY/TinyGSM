@@ -284,26 +284,66 @@ cart_join = list(product(*[examples_to_build, boards, modem_list]))
 
 # %%
 # a list of known failures to skip in the job matrix
-known_failures = [
+matrix_exclusions = [
     {
         "example": "examples\\BlynkClient",
         "boards": ["nona4809", "nano_nora"],  # not supported by the Blynk library
         "modems": deepcopy(modem_list),
     },
+    {
+        "example": "examples\\AllFunctions",
+        "boards": [
+            "uno",
+            "leonardo",
+            "yun",
+            "feather328p",
+            "feather32u4",
+        ],  # doesn't fit on 328p
+        "modems": deepcopy(modem_list),
+    },
+    {
+        "example": "examples\\test_build",
+        "boards": [
+            "uno",
+            "leonardo",
+            "yun",
+            "feather328p",
+            "feather32u4",
+        ],  # doesn't fit on 328p
+        "modems": deepcopy(modem_list),
+    },
 ]
-expanded_known_failures = []
-for known_failure in known_failures:
-    b_m_x = list(product(*[known_failure["boards"], known_failure["modems"]]))
-    expanded_known_failures.append(
-        [
-            (known_failure["example"], b_m_x[i][0], b_m_x[i][1])
-            for i in range(len(b_m_x))
-        ]
+favorite_boards = [
+    "mayfly",
+    "envirodiy_stonefly_m4",
+    "zero",
+    "nodemcu",
+    "esp32dev",
+    "uno_r4_wifi",
+]
+for example in [
+    e
+    for e in examples_to_build
+    if e not in ["examples\\AllFunctions", "extras\\tools\\test_build"]
+]:
+    matrix_exclusions.append(
+        {
+            "example": example,
+            "boards": [board for board in boards if board not in favorite_boards],
+            "modems": deepcopy(modem_list),
+        }
     )
+expanded_matrix_exclusions = []
+for known_failure in matrix_exclusions:
+    b_m_x = list(product(*[known_failure["boards"], known_failure["modems"]]))
+    for i in range(len(b_m_x)):
+        expanded_matrix_exclusions.append(
+            (known_failure["example"], b_m_x[i][0], b_m_x[i][1])
+        )
 
 # %%
 # filter out the known failures from the job matrix
-filtered_matrix = [e for e in cart_join if e not in expanded_known_failures]
+filtered_matrix = [e for e in cart_join if e not in expanded_matrix_exclusions]
 
 
 # %%
@@ -490,25 +530,27 @@ end_job_commands: List[str] = ["\n\nexit $status"]
 # %%
 # Create job info for the examples
 # Use one job per board/modem with one command per example
-for modem in modem_list:
-    m_matrix = [item for item in filtered_matrix if item[2] == modem]
-    for board in boards:
-        b_matrix = [item for item in m_matrix if item[1] == board]
-        if len(b_matrix) > 0:
-            arduino_ex_commands = []
-            pio_ex_commands = []
-            for matrix_item in b_matrix:
-                arduino_ex_commands += create_command_list_from_matrix(
-                    matrix_item=matrix_item,
-                    create_command_function=create_arduino_cli_compile_command,
-                    title_by=["example"],
-                )
-                pio_ex_commands += create_command_list_from_matrix(
-                    matrix_item=matrix_item,
-                    create_command_function=create_pio_ci_compile_command,
-                    title_by=["example"],
-                )
-
+print(
+    f"Total tests: {len(filtered_matrix)} (filtered from {len(cart_join)} total combinations)"
+)
+for board in favorite_boards:
+    b_matrix = [item for item in filtered_matrix if item[1] == board]
+    for modem in modem_list:
+        m_matrix = [item for item in b_matrix if item[2] == modem]
+        arduino_ex_commands = []
+        pio_ex_commands = []
+        for matrix_item in m_matrix:
+            arduino_ex_commands += create_command_list_from_matrix(
+                matrix_item=matrix_item,
+                create_command_function=create_arduino_cli_compile_command,
+                title_by=["example"],
+            )
+            pio_ex_commands += create_command_list_from_matrix(
+                matrix_item=matrix_item,
+                create_command_function=create_pio_ci_compile_command,
+                title_by=["example"],
+            )
+        if len(arduino_ex_commands) > 0:
             arduino_job_matrix.append(
                 {
                     "job_name": f"Arduino - {board} - {modem}",
@@ -518,6 +560,7 @@ for modem in modem_list:
                     ),
                 }
             )
+        if len(pio_ex_commands) > 0:
             pio_job_matrix.append(
                 {
                     "job_name": f"PlatformIO - {board} - {modem}",
@@ -527,7 +570,45 @@ for modem in modem_list:
                     ),
                 }
             )
+for board in [board for board in boards if board not in favorite_boards]:
+    b_matrix = [item for item in filtered_matrix if item[1] == board]
+    arduino_ex_commands = []
+    pio_ex_commands = []
+    for modem in modem_list:
+        m_matrix = [item for item in b_matrix if item[2] == modem]
+        for matrix_item in m_matrix:
+            arduino_ex_commands += create_command_list_from_matrix(
+                matrix_item=matrix_item,
+                create_command_function=create_arduino_cli_compile_command,
+                title_by=["example", "modem"],
+            )
+            pio_ex_commands += create_command_list_from_matrix(
+                matrix_item=matrix_item,
+                create_command_function=create_pio_ci_compile_command,
+                title_by=["example", "modem"],
+            )
+    if len(arduino_ex_commands) > 0:
+        arduino_job_matrix.append(
+            {
+                "job_name": f"Arduino - {board}",
+                "job_tag": f"arduino_{board}".lower(),
+                "command": "\n".join(
+                    start_job_commands + arduino_ex_commands + end_job_commands
+                ),
+            }
+        )
+    if len(pio_ex_commands) > 0:
+        pio_job_matrix.append(
+            {
+                "job_name": f"PlatformIO - {board}",
+                "job_tag": f"pio_{board}".lower(),
+                "command": "\n".join(
+                    start_job_commands + pio_ex_commands + end_job_commands
+                ),
+            }
+        )
 
+print(f"Total jobs: {len(arduino_job_matrix)+len(pio_job_matrix)}")
 
 # %%
 # Convert commands in the matrix into bash scripts
