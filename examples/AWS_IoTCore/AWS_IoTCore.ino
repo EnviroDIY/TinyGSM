@@ -44,12 +44,12 @@
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
-#ifndef __AVR_ATmega328P__
+#if !defined(__AVR_ATmega328P__) && !defined(SerialAT)
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-#else
-#include <SoftwareSerialMon.h>
+#elif !defined(SerialAT)
+#include <SoftwareSerial.h>
 SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
 
@@ -89,8 +89,8 @@ const char gprsUser[] = "";
 const char gprsPass[] = "";
 
 // Your WiFi connection credentials, if applicable
-// const char wifiSSID[] = "YourSSID";
-// const char wifiPass[] = "YourWiFiPass";
+const char wifiSSID[] = "YourSSID";
+const char wifiPass[] = "YourWiFiPass";
 
 // MQTT details
 // get the broker host/endpoint from AWS IoT Core / Connect / Domain
