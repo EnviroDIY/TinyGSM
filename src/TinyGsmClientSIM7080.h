@@ -166,7 +166,7 @@ class TinyGsmSim7080
     String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
    protected:
-    size_t realMaxSendSize;
+    size_t realMaxSendSize = TINY_GSM_SEND_MAX_SIZE;
   };
 
   /*

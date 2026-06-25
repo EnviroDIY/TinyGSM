@@ -488,14 +488,14 @@ class TinyGsmTCP {
 #endif
     }
 
-    modemType* at;
-    uint8_t    mux;
-    uint16_t   sock_available;
-    uint32_t   prev_check;
-    bool       sock_connected;
-    bool       got_data;
-    bool       is_secure;
-    bool       is_mid_send = false;
+    modemType*                       at             = nullptr;
+    uint8_t                          mux            = 0;
+    uint16_t                         sock_available = 0;
+    uint32_t                         prev_check     = 0;
+    bool                             sock_connected = false;
+    bool                             got_data       = false;
+    bool                             is_secure      = false;
+    bool                             is_mid_send    = false;
     TinyGsmFifo<uint8_t, bufferSize> rx;
   };
 
