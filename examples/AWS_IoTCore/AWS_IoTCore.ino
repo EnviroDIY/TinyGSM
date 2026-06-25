@@ -216,7 +216,8 @@ void printModemInfo() {
   String modemRevision = modem.getModemRevision();
   SerialMon.print("Modem Revision: ");
   SerialMon.println(modemRevision);
-#ifndef TINY_GSM_MODEM_ESP32
+#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) && \
+    !defined(TINY_GSM_MODEM_ESP8266_NONOS)
   String modemSerial = modem.getModemSerialNumber();
   SerialMon.print("Modem Serial: ");
   SerialMon.println(modemSerial);
