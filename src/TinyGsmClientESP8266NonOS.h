@@ -43,8 +43,6 @@
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
-static uint8_t TINY_GSM_TCP_KEEP_ALIVE = 120;
-
 // <stat> status of ESP8266 station interface
 // 0: ESP8266 station is not initialized.
 // 1: ESP8266 station is initialized, but not started a Wi-Fi connection yet.
@@ -308,8 +306,12 @@ class TinyGsmESP8266NonOS
       }
     }
     sendAT(GF("+CIPSTART="), mux, ',', ssl ? GF("\"SSL") : GF("\"TCP"),
-           GF("\",\""), host, GF("\","), port, GF(","),
-           TINY_GSM_TCP_KEEP_ALIVE);
+           GF("\",\""), host, GF("\","), port
+#if defined(TINY_GSM_TCP_KEEP_ALIVE)
+           ,
+           ',', TINY_GSM_TCP_KEEP_ALIVE
+#endif
+    );
     // TODO(?): Check mux
     int8_t rsp = waitResponse(timeout_ms, GFP(GSM_OK), GFP(GSM_ERROR),
                               GF("ALREADY CONNECT"));
