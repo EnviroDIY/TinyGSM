@@ -372,7 +372,8 @@ String createInitMessage() {
   msgInit += ",\"modemModel\":\"" + modemModel + "\"";
   String modemRevision = modem.getModemRevision();
   msgInit += ",\"modemRevision\":\"" + modemRevision + "\"";
-#ifndef TINY_GSM_MODEM_ESP32
+#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) && \
+    !defined(TINY_GSM_MODEM_ESP8266_NONOS)
   String modemSerial = modem.getModemSerialNumber();
   msgInit += ",\"modemSerial\":\"" + modemSerial + "\"";
 #endif
