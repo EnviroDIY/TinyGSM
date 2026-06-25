@@ -342,10 +342,8 @@ void loop() {
   if (!client.connect(server, port)) {
     DBG("... failed");
   } else {
-    // Write the request out to the server so it goes all at once
-    client.beginWrite(strlen(request));
+    // Write the request out
     client.write((uint8_t*)request, strlen(request));
-    client.endWrite(strlen(request));
 
     // Wait for data to arrive
     uint32_t start = millis();

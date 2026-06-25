@@ -95,6 +95,19 @@ void loop() {
   client.print(String("Host: ") + server + "\r\n");
   client.print("Connection: close\r\n\r\n");
 
+#if !defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
+  // Write the request out to the server so it goes all at once
+  client.beginWrite(63);
+  client.write("GET ");
+  client.write(resource);
+  client.write(" HTTP/1.0\r\n");
+  client.write("Host: ");
+  client.write(server);
+  client.write("\r\n");
+  client.write("Connection: close\r\n\r\n");
+  client.endWrite(63);
+#endif
+
   uint32_t timeout = millis();
   while (client.connected() && millis() - timeout < 10000L) {
     while (client.available()) {
