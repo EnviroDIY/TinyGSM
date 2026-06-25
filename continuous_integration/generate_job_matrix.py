@@ -29,7 +29,7 @@ if "RUNNER_DEBUG" in os.environ.keys() and os.environ["RUNNER_DEBUG"] == "1":
 
 # The workspace directory
 if "GITHUB_WORKSPACE" in os.environ.keys():
-    workspace_dir = os.environ.get("GITHUB_WORKSPACE")
+    workspace_dir = os.environ.get("GITHUB_WORKSPACE", os.getcwd())
 else:
     workspace_dir = os.getcwd()
 if "\\continuous_integration" in workspace_dir:
@@ -159,11 +159,15 @@ for pio_env_name in pio_config.envs():
 
 # %%
 # Parse the boards to build
-if "BOARDS_TO_BUILD" in os.environ.keys() and os.environ.get("BOARDS_TO_BUILD") not in [
+if "BOARDS_TO_BUILD" in os.environ.keys() and os.environ.get(
+    "BOARDS_TO_BUILD", ""
+) not in [
     "all",
     "",
 ]:
-    boards = [board.strip() for board in os.environ.get("BOARDS_TO_BUILD").split(",")]
+    boards = [
+        board.strip() for board in os.environ.get("BOARDS_TO_BUILD", "").split(",")
+    ]
     if use_verbose:
         print("::debug::Building only boards specified in yaml.")
         print(f"::debug::{os.environ.get("BOARDS_TO_BUILD")}")
@@ -175,7 +179,7 @@ else:
 
 # remove any ignored boards from the list
 if "BOARDS_TO_IGNORE" in os.environ.keys() and os.environ.get(
-    "BOARDS_TO_IGNORE"
+    "BOARDS_TO_IGNORE", ""
 ) not in [
     "",
 ]:
@@ -186,7 +190,8 @@ if "BOARDS_TO_IGNORE" in os.environ.keys() and os.environ.get(
         for board in boards
         if board
         not in [
-            board_.strip() for board_ in os.environ.get("BOARDS_TO_IGNORE").split(",")
+            board_.strip()
+            for board_ in os.environ.get("BOARDS_TO_IGNORE", "").split(",")
         ]
     ]
 
@@ -247,17 +252,15 @@ if use_verbose:
 
 # %%
 # Get the examples to build
-if (
-    "EXAMPLES_TO_BUILD" in os.environ.keys()
-    and len(os.environ.get("EXAMPLES_TO_BUILD")) > 0
-    and os.environ.get("EXAMPLES_TO_BUILD")
-    not in [
-        "all",
-        "",
-    ]
-):
+if "EXAMPLES_TO_BUILD" in os.environ.keys() and os.environ.get(
+    "EXAMPLES_TO_BUILD", ""
+) not in [
+    "all",
+    "",
+]:
     examples_to_build = [
-        example.strip() for example in os.environ.get("EXAMPLES_TO_BUILD").split(",")
+        example.strip()
+        for example in os.environ.get("EXAMPLES_TO_BUILD", "").split(",")
     ]
     if use_verbose:
         print("::debug::Building only examples specified in yaml.")
@@ -292,14 +295,14 @@ if "EXAMPLES_TO_IGNORE" in os.environ.keys() and os.environ.get(
 ) not in [
     "",
 ]:
+    ex_ignore = os.environ.get("EXAMPLES_TO_IGNORE", "").split(",")
     examples_to_build = [
         example
         for example in examples_to_build
-        if example
-        not in [
-            example_.strip()
-            for example_ in os.environ.get("EXAMPLES_TO_IGNORE").split(",")
-        ]
+        if not any(
+            e.lower() in os.path.normpath(example).split(os.sep)
+            for e in [example_.lower().strip() for example_ in ex_ignore]
+        )
     ]
 
 if use_verbose:
