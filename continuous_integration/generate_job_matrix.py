@@ -403,7 +403,7 @@ def create_multi_env_pio_ci_compile_command(
     return " ".join(pio_command_args)
 
 
-def add_log_to_compile_command(command: str, group_title: str) -> List:
+def add_log_to_compile_command(command: str, group_title: str) -> List[str]:
     command_list = []
     command_list.append("\necho ::group::{}".format(group_title))
     command_list.append(command + " 2>&1 | tee output.log")
@@ -429,77 +429,79 @@ def add_log_to_compile_command(command: str, group_title: str) -> List:
 # set up outputs
 arduino_job_matrix = []
 pio_job_matrix = []
-start_job_commands = "status=0"
-end_job_commands = "\n\nexit $status"
+start_job_commands: str = "status=0"
+end_job_commands: str = "\n\nexit $status"
+
+
+def generate_job_cmds_for_examples(create_command_function, *args, **kwargs):
+    command_list: List[str] = []
+    for example in examples_to_build:
+        example_title = f"{os.path.split(example)[-1]}"
+        example_full_path = os.path.join(
+            workspace_path, example, example_title + ".ino"
+        )
+        command_list.append(start_job_commands)
+        sed_comment = f"sed -i 's/#define TINY_GSM_MODEM_/\\/\\/ #define TINY_GSM_MODEM_/g' \"{example_full_path}\""
+        sed_addition = f"sed -i '1i\\\n#define {modem}\\\n' \"{example_full_path}\""
+
+        build_command: str = create_command_function(code_subfolder=example, **kwargs)
+        command_with_log: List[str] = add_log_to_compile_command(
+            command=sed_comment + "\n" + sed_addition + "\n" + build_command,
+            group_title=f"{example_title}",
+        )
+        command_list += command_with_log
+    return command_list
+
 
 # %%
 # Create job info for the basic examples
 # Use one job per board with one command per example
-for example in examples_to_build:
-    start_commands = [
-        start_job_commands,
-        f"sed -i 's/#define TINY_GSM_MODEM_/\\/\\/ #define TINY_GSM_MODEM_/g' \"{os.path.join(workspace_path,example,os.path.split(example)[-1]+'.ino')}\"",
-        # f"sed -i 's/\\/\\/ #pragma/#pragma/g' \"{os.path.join(workspace_path, 'src', 'TinyGsmClient.h')}\"",
-    ]
+for modem in modem_list:
+    # create commands for the Arduino CLI
+    # can only specify FQBN, so each board can only be built one way
+    for fqbn in fqbns_to_build:
+        arduino_ex_commands = generate_job_cmds_for_examples(
+            create_command_function=create_arduino_cli_compile_command,
+            fqbn=fqbn,
+        )
+        arduino_job_matrix.append(
+            {
+                "job_name": f"Arduino - {fqbn.split(':')[-1]} - {modem}",
+                "job_tag": f"arduino_{fqbn.split(':')[-1]}_{modem}".lower(),
+                "command": "\n".join(arduino_ex_commands + [end_job_commands]),
+            }
+        )
 
-    arduino_ex_commands = deepcopy(start_commands)
-    pio_ex_commands = deepcopy(start_commands)
-    for modem in modem_list:
-        sed_addition = f"sed -i '1i\\\n#define {modem}\\\n' \"{os.path.join(workspace_path,example,os.path.split(example)[-1]+'.ino')}\""
+    # create commands for PlatformIO
+    # use the environments list to catch all environments - even those using the same board
+    for env in pio_envs_to_build:
+        pio_ex_commands = generate_job_cmds_for_examples(
+            create_command_function=create_pio_ci_compile_command,
+            pio_board_or_env=env,
+            use_pio_config_file=True,
+        )
+        pio_job_matrix.append(
+            {
+                "job_name": f"PlatformIO - {env} - {modem}",
+                "job_tag": f"pio_{env}_{modem}".lower(),
+                "command": "\n".join(pio_ex_commands + [end_job_commands]),
+            }
+        )
 
-        # create commands for the Arduino CLI
-        # can only specify FQBN, so each board can only be built one way
-        for fqbn in fqbns_to_build:
-            build_command = create_arduino_cli_compile_command(
-                code_subfolder=example,
-                fqbn=fqbn,
-            )
-            command_with_log = add_log_to_compile_command(
-                command=sed_addition + "\n" + build_command,
-                group_title=f"{fqbn} - {modem}",
-            )
-            arduino_ex_commands.extend(command_with_log)
-
-        # create commands for PlatformIO
-        # use the environments list to catch all environments - even those using the same board
-        for env in pio_envs_to_build:
-            build_command = create_pio_ci_compile_command(
-                code_subfolder=example,
-                pio_board_or_env=env,
-                use_pio_config_file=True,
-            )
-            command_with_log = add_log_to_compile_command(
-                command=sed_addition + "\n" + build_command,
-                group_title=f"{env} - {modem}",
-            )
-            pio_ex_commands.extend(command_with_log)
-        # use the bare board list to catch boards requested in the inputs but not in the platformio.ini file
-        for pio_board in pio_bare_boards:
-            build_command = create_pio_ci_compile_command(
-                code_subfolder=example,
-                pio_board_or_env=pio_board,
-                use_pio_config_file=False,
-            )
-            command_with_log = add_log_to_compile_command(
-                command=sed_addition + "\n" + build_command,
-                group_title=f"{pio_board} - {modem}",
-            )
-            pio_ex_commands.extend(command_with_log)
-
-    arduino_job_matrix.append(
-        {
-            "job_name": "Arduino - {}".format(os.path.split(example)[-1]),
-            "job_tag": os.path.split(example)[-1].lower().replace(" ", "-"),
-            "command": "\n".join(arduino_ex_commands + [end_job_commands]),
-        }
-    )
-    pio_job_matrix.append(
-        {
-            "job_name": "PlatformIO - {}".format(os.path.split(example)[-1]),
-            "job_tag": os.path.split(example)[-1].lower().replace(" ", "-"),
-            "command": "\n".join(pio_ex_commands + [end_job_commands]),
-        }
-    )
+    # use the bare board list to catch boards requested in the inputs but not in the platformio.ini file
+    for pio_board in pio_bare_boards:
+        pio_ex_commands = generate_job_cmds_for_examples(
+            create_command_function=create_pio_ci_compile_command,
+            pio_board_or_env=pio_board,
+            use_pio_config_file=False,
+        )
+        pio_job_matrix.append(
+            {
+                "job_name": f"PlatformIO - {pio_board} - {modem}",
+                "job_tag": f"pio_{pio_board}_{modem}".lower(),
+                "command": "\n".join(pio_ex_commands + [end_job_commands]),
+            }
+        )
 
 
 # %%
