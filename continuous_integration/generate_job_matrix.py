@@ -286,12 +286,12 @@ cart_join = list(product(*[examples_to_build, boards, modem_list]))
 # a list of known failures to skip in the job matrix
 matrix_exclusions = [
     {
-        "example": "examples\\BlynkClient",
+        "example": os.path.join("examples", "BlynkClient"),
         "boards": ["nona4809", "nano_nora"],  # not supported by the Blynk library
         "modems": deepcopy(modem_list),
     },
     {
-        "example": "examples\\AllFunctions",
+        "example": os.path.join("examples", "AllFunctions"),
         "boards": [
             "uno",
             "leonardo",
@@ -302,7 +302,7 @@ matrix_exclusions = [
         "modems": deepcopy(modem_list),
     },
     {
-        "example": "examples\\test_build",
+        "example": os.path.join("examples", "test_build"),
         "boards": [
             "uno",
             "leonardo",
@@ -310,6 +310,16 @@ matrix_exclusions = [
             "feather328p",
             "feather32u4",
         ],  # doesn't fit on 328p
+        "modems": deepcopy(modem_list),
+    },
+    {
+        "example": os.path.join("extras", "tools", "AT_Debug"),
+        "boards": boards,
+        "modems": deepcopy(modem_list),
+    },
+    {
+        "example": os.path.join("extras", "tools", "AT_Spy"),
+        "boards": boards,
         "modems": deepcopy(modem_list),
     },
 ]
@@ -324,7 +334,11 @@ favorite_boards = [
 for example in [
     e
     for e in examples_to_build
-    if e not in ["examples\\AllFunctions", "extras\\tools\\test_build"]
+    if e
+    not in [
+        os.path.join("examples", "AllFunctions"),
+        os.path.join("extras", "tools", "test_build"),
+    ]
 ]:
     matrix_exclusions.append(
         {
