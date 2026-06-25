@@ -75,15 +75,15 @@ typedef TinyGsmUBLOX::GsmClientSecureUBLOX TinyGsmClientSecure;
 #elif defined(TINY_GSM_MODEM_SARAR4)
 #pragma message("TinyGSM:  TinyGsmClientSaraR4.h")
 #include "TinyGsmClientSaraR4.h"
-typedef TinyGsmSaraR4                    TinyGsm;
-typedef TinyGsmSaraR4::GsmClientSaraR4   TinyGsmClient;
+typedef TinyGsmSaraR4                        TinyGsm;
+typedef TinyGsmSaraR4::GsmClientSaraR4       TinyGsmClient;
 typedef TinyGsmSaraR4::GsmClientSecureSaraR4 TinyGsmClientSecure;
 
 #elif defined(TINY_GSM_MODEM_SARAR5)
 #pragma message("TinyGSM:  TinyGsmClientSaraR5.h")
 #include "TinyGsmClientSaraR5.h"
-typedef TinyGsmSaraR5                    TinyGsm;
-typedef TinyGsmSaraR5::GsmClientSaraR5   TinyGsmClient;
+typedef TinyGsmSaraR5                        TinyGsm;
+typedef TinyGsmSaraR5::GsmClientSaraR5       TinyGsmClient;
 typedef TinyGsmSaraR5::GsmClientSecureSaraR5 TinyGsmClientSecure;
 
 #elif defined(TINY_GSM_MODEM_M95)
