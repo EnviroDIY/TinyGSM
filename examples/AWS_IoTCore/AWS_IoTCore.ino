@@ -249,6 +249,7 @@ bool setupCertificates() {
     return false;
   }
   SerialMon.println(" ...success");
+#if !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600)
   if (print_certs) {
     // print out the certificate to make sure it matches
     SerialMon.println(
@@ -256,6 +257,7 @@ bool setupCertificates() {
     modem.printCertificate(root_ca_name, SerialMon);
     delay(1000);
   }
+#endif
   // convert the certificate to the modem's format
   SerialMon.print("Converting Certificate Authority Certificate");
   ca_cert_success &= modem.convertCACertificate(root_ca_name);
@@ -278,20 +280,24 @@ bool setupCertificates() {
   client_cert_success &= modem.loadCertificate(client_cert_name, client_cert,
                                                strlen(client_cert));
   delay(250);
+#if !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600)
   if (print_certs) {
     // print out the certificate to make sure it matches
     modem.printCertificate(client_cert_name, SerialMon);
     delay(1000);
   }
+#endif
   SerialMon.print(" and Client Private Key ");
   client_cert_success &= modem.loadCertificate(client_key_name, client_key,
                                                strlen(client_key));
   delay(250);
+#if !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600)
   if (print_certs) {
     // print out the certificate to make sure it matches
     modem.printCertificate(client_key_name, SerialMon);
     delay(1000);
   }
+#endif
   if (!client_cert_success) {
     SerialMon.println(" ...failed to load client certificate or key!");
     return false;
