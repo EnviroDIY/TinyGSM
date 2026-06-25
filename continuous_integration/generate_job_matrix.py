@@ -323,6 +323,8 @@ matrix_exclusions = [
         "modems": deepcopy(modem_list),
     },
 ]
+
+# Exclude not-favorite boards from all examples except AllFunctions and test_build
 favorite_boards = [
     "mayfly",
     "envirodiy_stonefly_m4",
@@ -347,6 +349,33 @@ for example in [
             "modems": deepcopy(modem_list),
         }
     )
+
+# Exclude modems without SSL support from HttpsClient and AWS_IoTCore examples
+unsecured_modems = [
+    "TINY_GSM_MODEM_A6",
+    "TINY_GSM_MODEM_A7",
+    "TINY_GSM_MODEM_BG95",
+    "TINY_GSM_MODEM_M95",
+    "TINY_GSM_MODEM_M590",
+    "TINY_GSM_MODEM_MC60",
+    "TINY_GSM_MODEM_MC60E",
+    "TINY_GSM_MODEM_SIM5360",
+    "TINY_GSM_MODEM_SIM7000",
+    "TINY_GSM_MODEM_SIM900",
+]
+for example in [
+    os.path.join("examples", "HttpsClient"),
+    os.path.join("examples", "AWS_IoTCore"),
+]:
+    matrix_exclusions.append(
+        {
+            "example": example,
+            "boards": boards,
+            "modems": [modem for modem in modem_list if modem in unsecured_modems],
+        }
+    )
+
+# expand the matrix exclusions to a list of tuples for easier filtering
 expanded_matrix_exclusions = []
 for known_failure in matrix_exclusions:
     b_m_x = list(product(*[known_failure["boards"], known_failure["modems"]]))
