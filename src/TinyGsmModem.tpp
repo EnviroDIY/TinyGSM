@@ -651,27 +651,26 @@ class TinyGsmModem {
 #endif
   }
 
-  static inline bool TinyGsmEndsWith(const String& data, GsmConstStr needle,
-                                     size_t needleLen) {
-    return needle && needleLen && data.length() >= needleLen &&
-        data.endsWith(needle);
+  static inline bool TinyGsmEndsWith(const String& data, GsmConstStr urc,
+                                     size_t urcLen) {
+    return urc && urcLen && data.length() >= urcLen && data.endsWith(urc);
   }
 
-  struct TinyGsmTailToken {
-    GsmConstStr needle;
-    size_t      needleLen;
+  struct TinyGsmURCToken {
+    GsmConstStr urc;
+    size_t      urcLen;
     char        lastChar;
   };
 
-  static inline TinyGsmTailToken TinyGsmMakeTailToken(GsmConstStr needle) {
-    const size_t len = TinyGsmConstStrLen(needle);
-    return {needle, len, len ? TinyGsmConstStrCharAt(needle, len - 1) : '\0'};
+  static inline TinyGsmURCToken TinyGsmMakeURCToken(GsmConstStr urc) {
+    const size_t len = TinyGsmConstStrLen(urc);
+    return {urc, len, len ? TinyGsmConstStrCharAt(urc, len - 1) : '\0'};
   }
 
-  static inline bool TinyGsmTailMatches(const String& data, char tail,
-                                        const TinyGsmTailToken& token) {
-    return token.needleLen && tail == token.lastChar &&
-        TinyGsmEndsWith(data, token.needle, token.needleLen);
+  static inline bool TinyGsmURCMatches(const String& data, char tail,
+                                       const TinyGsmURCToken& token) {
+    return token.urcLen && tail == token.lastChar &&
+        TinyGsmEndsWith(data, token.urc, token.urcLen);
   }
 
   static inline IPAddress TinyGsmIpFromString(const String& strIP) {

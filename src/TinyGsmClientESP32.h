@@ -1066,7 +1066,28 @@ class TinyGsmESP32
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(AT_NL "+IPD,"))) {
+    using ModemBase = TinyGsmModem<TinyGsmESP32>;
+    using URCToken  = ModemBase::TinyGsmURCToken;
+
+    const auto makeToken = [](GsmConstStr str) -> URCToken {
+      return ModemBase::TinyGsmMakeURCToken(str);
+    };
+    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
+    const auto urcMatches = [&](const URCToken& token) -> bool {
+      return ModemBase::TinyGsmURCMatches(data, tail, token);
+    };
+
+    const URCToken kIpd         = makeToken(GF(AT_NL "+IPD,"));
+    const URCToken kClosed      = makeToken(GF("CLOSED"));
+    const URCToken kErrCode     = makeToken(GF("ERR CODE:"));
+    const URCToken kTimeUpdated = makeToken(GF("+TIME_UPDATED"));
+    const URCToken kBusy        = makeToken(GF("busy p..."));
+    const URCToken kReady       = makeToken(GF(AT_NL "ready" AT_NL));
+    const URCToken kWifiGotIp   = makeToken(GF("WIFI GOT IP"));
+    const URCToken kWifiConn    = makeToken(GF("WIFI CONNECTED"));
+    const URCToken kWifiDisconn = makeToken(GF("WIFI DISCONNECT"));
+
+    if (urcMatches(kIpd)) {
       int8_t   mux = streamGetIntBefore(',');
       uint16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -1079,7 +1100,7 @@ class TinyGsmESP32
       data = "";
       DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (data.endsWith(GF("CLOSED"))) {
+    } else if (urcMatches(kClosed)) {
       int8_t muxStart = TinyGsmMax(0,
                                    data.lastIndexOf(AT_NL, data.length() - 8));
       int8_t coma     = data.indexOf(',', muxStart);
@@ -1091,7 +1112,7 @@ class TinyGsmESP32
       data = "";
       DBG("### Closed: ", mux);
       return true;
-    } else if (data.endsWith(GF("ERR CODE:"))) {
+    } else if (urcMatches(kErrCode)) {
 #if defined(TINY_GSM_DEBUG) && !defined(DUMP_AT_COMMANDS)
       DBG("### ERR CODE: ", stream.readStringUntil('\n'));
 #else
@@ -1099,33 +1120,33 @@ class TinyGsmESP32
 #endif
       data = "";
       return true;
-    } else if (data.endsWith(GF("+TIME_UPDATED"))) {
+    } else if (urcMatches(kTimeUpdated)) {
       streamSkipUntil('\n');  // Refresh time and time zone by network
       data = "";
       DBG("### Network time updated.");
       return true;
-    } else if (data.endsWith(GF("busy p..."))) {
+    } else if (urcMatches(kBusy)) {
       streamSkipUntil('\n');
       data = "";
       // DBG("### Busy, please wait");
       return true;
-    } else if (data.endsWith(GF(AT_NL "ready" AT_NL))) {
+    } else if (urcMatches(kReady)) {
       streamSkipUntil('\n');
       data = "";
       // DBG("### Module ready!");
       return true;
-    } else if (data.endsWith(GF("WIFI GOT IP"))) {
+    } else if (urcMatches(kWifiGotIp)) {
       // WIFI GOT IP; WIFI GOT IPv6 LL; WIFI GOT IPv6 GL
       streamSkipUntil('\n');
       data = "";
       // DBG("### Wifi got IP");
       return true;
-    } else if (data.endsWith(GF("WIFI CONNECTED"))) {
+    } else if (urcMatches(kWifiConn)) {
       streamSkipUntil('\n');
       data = "";
       // DBG("### Wifi connected");
       return true;
-    } else if (data.endsWith(GF("WIFI DISCONNECT"))) {
+    } else if (urcMatches(kWifiDisconn)) {
       streamSkipUntil('\n');
       data = "";
       // DBG("### Wifi disconnected");

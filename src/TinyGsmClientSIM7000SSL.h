@@ -1063,7 +1063,27 @@ class TinyGsmSim7000SSL
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF("+CARECV:"))) {
+    using ModemBase = TinyGsmModem<TinyGsmSim7000SSL>;
+    using URCToken  = ModemBase::TinyGsmURCToken;
+
+    const auto makeToken = [](GsmConstStr str) -> URCToken {
+      return ModemBase::TinyGsmMakeURCToken(str);
+    };
+    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
+    const auto urcMatches = [&](const URCToken& token) -> bool {
+      return ModemBase::TinyGsmURCMatches(data, tail, token);
+    };
+
+    const URCToken kCaRecv    = makeToken(GF("+CARECV:"));
+    const URCToken kCaDataInd = makeToken(GF("+CADATAIND:"));
+    const URCToken kCaState   = makeToken(GF("+CASTATE:"));
+    const URCToken kPsnWid    = makeToken(GF("*PSNWID:"));
+    const URCToken kPsuTtz    = makeToken(GF("*PSUTTZ:"));
+    const URCToken kCtzv      = makeToken(GF("+CTZV:"));
+    const URCToken kDst       = makeToken(GF("DST: "));
+    const URCToken kSmsReady  = makeToken(GF(AT_NL "SMS Ready" AT_NL));
+
+    if (urcMatches(kCaRecv)) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -1073,7 +1093,7 @@ class TinyGsmSim7000SSL
       data = "";
       DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (data.endsWith(GF("+CADATAIND:"))) {
+    } else if (urcMatches(kCaDataInd)) {
       int8_t mux = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->got_data = true;
@@ -1081,7 +1101,7 @@ class TinyGsmSim7000SSL
       data = "";
       DBG("### Got Data:", mux);
       return true;
-    } else if (data.endsWith(GF("+CASTATE:"))) {
+    } else if (urcMatches(kCaState)) {
       int8_t mux   = streamGetIntBefore(',');
       int8_t state = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -1092,27 +1112,27 @@ class TinyGsmSim7000SSL
       }
       data = "";
       return true;
-    } else if (data.endsWith(GF("*PSNWID:"))) {
+    } else if (urcMatches(kPsnWid)) {
       streamSkipUntil('\n');  // Refresh network name by network
       data = "";
       DBG("### Network name updated.");
       return true;
-    } else if (data.endsWith(GF("*PSUTTZ:"))) {
+    } else if (urcMatches(kPsuTtz)) {
       streamSkipUntil('\n');  // Refresh time and time zone by network
       data = "";
       DBG("### Network time and time zone updated.");
       return true;
-    } else if (data.endsWith(GF("+CTZV:"))) {
+    } else if (urcMatches(kCtzv)) {
       streamSkipUntil('\n');  // Refresh network time zone by network
       data = "";
       DBG("### Network time zone updated.");
       return true;
-    } else if (data.endsWith(GF("DST: "))) {
+    } else if (urcMatches(kDst)) {
       streamSkipUntil('\n');  // Refresh Network Daylight Saving Time by network
       data = "";
       DBG("### Daylight savings time state updated.");
       return true;
-    } else if (data.endsWith(GF(AT_NL "SMS Ready" AT_NL))) {
+    } else if (urcMatches(kSmsReady)) {
       data = "";
       DBG("### Unexpected module reset!");
       init();

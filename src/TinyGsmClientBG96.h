@@ -1232,7 +1232,21 @@ class TinyGsmBG96
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(AT_NL "+QIURC:"))) {
+    using ModemBase = TinyGsmModem<TinyGsmBG96>;
+    using URCToken  = ModemBase::TinyGsmURCToken;
+
+    const auto makeToken = [](GsmConstStr str) -> URCToken {
+      return ModemBase::TinyGsmMakeURCToken(str);
+    };
+    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
+    const auto urcMatches = [&](const URCToken& token) -> bool {
+      return ModemBase::TinyGsmURCMatches(data, tail, token);
+    };
+
+    const URCToken kQiUrc   = makeToken(GF(AT_NL "+QIURC:"));
+    const URCToken kQsslUrc = makeToken(GF(AT_NL "+QSSLURC:"));
+
+    if (urcMatches(kQiUrc)) {
       streamSkipUntil('\"');
       String urc = stream.readStringUntil('\"');
       streamSkipUntil(',');
@@ -1254,7 +1268,7 @@ class TinyGsmBG96
       data = "";
       return true;
     }
-    if (data.endsWith(GF(AT_NL "+QSSLURC:"))) {
+    if (urcMatches(kQsslUrc)) {
       streamSkipUntil('\"');
       String urc = stream.readStringUntil('\"');
       streamSkipUntil(',');

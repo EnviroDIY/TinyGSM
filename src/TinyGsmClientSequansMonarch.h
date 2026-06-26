@@ -758,7 +758,21 @@ class TinyGsmSequansMonarch
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(AT_NL "+SQNSRING:"))) {
+    using ModemBase = TinyGsmModem<TinyGsmSequansMonarch>;
+    using URCToken  = ModemBase::TinyGsmURCToken;
+
+    const auto makeToken = [](GsmConstStr str) -> URCToken {
+      return ModemBase::TinyGsmMakeURCToken(str);
+    };
+    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
+    const auto urcMatches = [&](const URCToken& token) -> bool {
+      return ModemBase::TinyGsmURCMatches(data, tail, token);
+    };
+
+    const URCToken kSqnsRing = makeToken(GF(AT_NL "+SQNSRING:"));
+    const URCToken kSqnsH    = makeToken(GF("SQNSH: "));
+
+    if (urcMatches(kSqnsRing)) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT &&
@@ -769,7 +783,7 @@ class TinyGsmSequansMonarch
       data = "";
       DBG("### URC Data Received:", len, "on", mux);
       return true;
-    } else if (data.endsWith(GF("SQNSH: "))) {
+    } else if (urcMatches(kSqnsH)) {
       int8_t mux = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT &&
           sockets[mux % TINY_GSM_MUX_COUNT]) {
