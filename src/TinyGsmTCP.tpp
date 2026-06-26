@@ -241,7 +241,7 @@ class TinyGsmTCP {
 
     size_t write(const char* str) {
       if (str == nullptr) return 0;
-      return write((const uint8_t*)str, strlen(str));
+      return write(reinterpret_cast<const uint8_t*>(str), strlen(str));
     }
 
     int available() override {

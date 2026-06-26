@@ -183,7 +183,7 @@ class TinyGsmModem {
 
         // test for at response from the modem
         DBG("Checking for a response at", targetBaud, "...");
-        bool at_success = thisModem().testAT(1500L);
+        at_success = thisModem().testAT(1500L);
         // if we got a response and it's the baud rate we want, we're done
         if (at_success) {
           DBG(GF("Successfully changed the baud rate from"), rate, GF("to"),
