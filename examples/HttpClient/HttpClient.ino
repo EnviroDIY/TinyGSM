@@ -131,7 +131,7 @@ const int  port       = 80;
 StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm        modem(debugger);
 #else
-TinyGsm        modem(SerialAT);
+TinyGsm modem(SerialAT);
 #endif
 
 TinyGsmClient client(modem);
