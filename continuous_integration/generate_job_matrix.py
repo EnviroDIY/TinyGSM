@@ -215,7 +215,7 @@ if "BOARDS_TO_BUILD" in os.environ.keys() and os.environ.get(
     ]
     if use_verbose:
         print("::debug::Building only boards specified in yaml.")
-        print(f"::debug::{os.environ.get("BOARDS_TO_BUILD")}")
+        print(f"::debug::{os.environ.get('BOARDS_TO_BUILD')}")
 else:
     boards = list(board_to_pio_env.keys())
     if use_verbose:
@@ -313,18 +313,18 @@ matrix_exclusions = [
             "yun",
             "feather328p",
             "feather32u4",
-        ],  # doesn't fit on 328p
+        ],  # doesn't fit on 328p or 32u
         "modems": deepcopy(modem_list),
     },
     {
-        "example": os.path.join("examples", "test_build"),
+        "example": os.path.join("extras", "tools", "test_build"),
         "boards": [
             "uno",
             "leonardo",
             "yun",
             "feather328p",
             "feather32u4",
-        ],  # doesn't fit on 328p
+        ],  # doesn't fit on 328p or 32u
         "modems": deepcopy(modem_list),
     },
     {
@@ -339,31 +339,31 @@ matrix_exclusions = [
     },
 ]
 
-# Exclude not-favorite boards from all examples except AllFunctions and test_build
-favorite_boards = [
-    "mayfly",
-    "envirodiy_stonefly_m4",
-    "zero",
-    "nodemcu",
-    "esp32dev",
-    "uno_r4_wifi",
-]
-for example in [
-    e
-    for e in examples_to_build
-    if e
-    not in [
-        os.path.join("examples", "AllFunctions"),
-        os.path.join("extras", "tools", "test_build"),
-    ]
-]:
-    matrix_exclusions.append(
-        {
-            "example": example,
-            "boards": [board for board in boards if board not in favorite_boards],
-            "modems": deepcopy(modem_list),
-        }
-    )
+# # Exclude not-favorite boards from all examples except AllFunctions and test_build
+# favorite_boards = [
+#     "mayfly",
+#     "envirodiy_stonefly_m4",
+#     "zero",
+#     "nodemcu",
+#     "esp32dev",
+#     "uno_r4_wifi",
+# ]
+# for example in [
+#     e
+#     for e in examples_to_build
+#     if e
+#     not in [
+#         os.path.join("examples", "AllFunctions"),
+#         os.path.join("extras", "tools", "test_build"),
+#     ]
+# ]:
+#     matrix_exclusions.append(
+#         {
+#             "example": example,
+#             "boards": [board for board in boards if board not in favorite_boards],
+#             "modems": deepcopy(modem_list),
+#         }
+#     )
 
 # Exclude modems without SSL support from HttpsClient and AWS_IoTCore examples
 unsecured_modems = [
@@ -504,18 +504,14 @@ def group_and_log_commands(commands: List[str], group_title: str) -> List[str]:
         command_list.append(command + " 2>&1 | tee output.log")
     command_list.append("result_code=${PIPESTATUS[0]}")
     command_list.append(
-        'if [ "$result_code" -eq "0" ]; then echo -e " - {title} :white_check_mark:" >> $GITHUB_STEP_SUMMARY; else echo -e " - {title} :x:" >> $GITHUB_STEP_SUMMARY; fi'.format(
-            title=group_title
-        )
+        f'if [ "$result_code" -eq "0" ]; then echo -e " - {group_title} :white_check_mark:" >> $GITHUB_STEP_SUMMARY; else echo -e " - {group_title} :x:" >> $GITHUB_STEP_SUMMARY; fi'
     )
     command_list.append(
         'if [ "$result_code" -eq "0" ] && [ "$status" -eq "0" ]; then status=0; else status=1; fi'
     )
     command_list.append("echo ::endgroup::")
     command_list.append(
-        'if [ "$result_code" -eq "0" ]; then echo -e "\\e[32m{title} successfully compiled\\e[0m"; else echo -e "\\e[31m{title} failed to compile\\e[0m"; fi'.format(
-            title=group_title
-        )
+        f'if [ "$result_code" -eq "0" ]; then echo -e "\\e[32m{group_title} successfully compiled\\e[0m"; else echo -e "\\e[31m{group_title} failed to compile\\e[0m"; fi'
     )
     return command_list
 
@@ -594,44 +590,45 @@ end_job_commands: List[str] = ["\n\nexit $status"]
 print(
     f"Total tests: {len(filtered_matrix)} (filtered from {len(cart_join)} total combinations)"
 )
-for board in favorite_boards:
-    b_matrix = [item for item in filtered_matrix if item[1] == board]
-    for modem in modem_list:
-        m_matrix = [item for item in b_matrix if item[2] == modem]
-        arduino_ex_commands = []
-        pio_ex_commands = []
-        for matrix_item in m_matrix:
-            arduino_ex_commands += create_command_list_from_matrix(
-                matrix_item=matrix_item,
-                create_command_function=create_arduino_cli_compile_command,
-                title_by=["example"],
-            )
-            pio_ex_commands += create_command_list_from_matrix(
-                matrix_item=matrix_item,
-                create_command_function=create_pio_ci_compile_command,
-                title_by=["example"],
-            )
-        if len(arduino_ex_commands) > 0:
-            arduino_job_matrix.append(
-                {
-                    "job_name": f"Arduino - {board} - {modem}",
-                    "job_tag": f"arduino_{board}_{modem}".lower(),
-                    "command": "\n".join(
-                        start_job_commands + arduino_ex_commands + end_job_commands
-                    ),
-                }
-            )
-        if len(pio_ex_commands) > 0:
-            pio_job_matrix.append(
-                {
-                    "job_name": f"PlatformIO - {board} - {modem}",
-                    "job_tag": f"pio_{board}_{modem}".lower(),
-                    "command": "\n".join(
-                        start_job_commands + pio_ex_commands + end_job_commands
-                    ),
-                }
-            )
-for board in [board for board in boards if board not in favorite_boards]:
+# for board in favorite_boards:
+#     b_matrix = [item for item in filtered_matrix if item[1] == board]
+#     for modem in modem_list:
+#         m_matrix = [item for item in b_matrix if item[2] == modem]
+#         arduino_ex_commands = []
+#         pio_ex_commands = []
+#         for matrix_item in m_matrix:
+#             arduino_ex_commands += create_command_list_from_matrix(
+#                 matrix_item=matrix_item,
+#                 create_command_function=create_arduino_cli_compile_command,
+#                 title_by=["example"],
+#             )
+#             pio_ex_commands += create_command_list_from_matrix(
+#                 matrix_item=matrix_item,
+#                 create_command_function=create_pio_ci_compile_command,
+#                 title_by=["example"],
+#             )
+#         if len(arduino_ex_commands) > 0:
+#             arduino_job_matrix.append(
+#                 {
+#                     "job_name": f"Arduino - {board} - {modem}",
+#                     "job_tag": f"arduino_{board}_{modem}".lower(),
+#                     "command": "\n".join(
+#                         start_job_commands + arduino_ex_commands + end_job_commands
+#                     ),
+#                 }
+#             )
+#         if len(pio_ex_commands) > 0:
+#             pio_job_matrix.append(
+#                 {
+#                     "job_name": f"PlatformIO - {board} - {modem}",
+#                     "job_tag": f"pio_{board}_{modem}".lower(),
+#                     "command": "\n".join(
+#                         start_job_commands + pio_ex_commands + end_job_commands
+#                     ),
+#                 }
+#             )
+# for board in [board for board in boards if board not in favorite_boards]:
+for board in boards:
     b_matrix = [item for item in filtered_matrix if item[1] == board]
     arduino_ex_commands = []
     pio_ex_commands = []
