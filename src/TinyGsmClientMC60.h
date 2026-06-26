@@ -579,7 +579,22 @@ class TinyGsmMC60
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(AT_NL "+QIRDI:"))) {  // TODO(?):  QIRD? or QIRDI?
+    using ModemBase = TinyGsmModem<TinyGsmMC60>;
+    using URCToken  = ModemBase::TinyGsmURCToken;
+
+    const auto makeToken = [](GsmConstStr str) -> URCToken {
+      return ModemBase::TinyGsmMakeURCToken(str);
+    };
+    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
+    const auto urcMatches = [&](const URCToken& token) -> bool {
+      return ModemBase::TinyGsmURCMatches(data, tail, token);
+    };
+
+    const URCToken kQirdi  = makeToken(GF(AT_NL "+QIRDI:"));
+    const URCToken kClosed = makeToken(GF("CLOSED" AT_NL));
+    const URCToken kQnitz  = makeToken(GF("+QNITZ:"));
+
+    if (urcMatches(kQirdi)) {  // TODO(?):  QIRD? or QIRDI?
       // +QIRDI: <id>,<sc>,<sid>,<num>,<len>,< tlen>
       streamSkipUntil(',');  // Skip the context
       streamSkipUntil(',');  // Skip the role
@@ -599,7 +614,7 @@ class TinyGsmMC60
       data = "";
       // DBG("### Got Data:", len_total, "on", mux);
       return true;
-    } else if (data.endsWith(GF("CLOSED" AT_NL))) {
+    } else if (urcMatches(kClosed)) {
       int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
@@ -609,7 +624,7 @@ class TinyGsmMC60
       data = "";
       DBG("### Closed: ", mux);
       return true;
-    } else if (data.endsWith(GF("+QNITZ:"))) {
+    } else if (urcMatches(kQnitz)) {
       streamSkipUntil('\n');  // URC for time sync
       data = "";
       DBG("### Network time updated.");

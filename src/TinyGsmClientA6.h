@@ -547,7 +547,21 @@ class TinyGsmA6
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF("+CIPRCV:"))) {
+    using ModemBase = TinyGsmModem<TinyGsmA6>;
+    using URCToken  = ModemBase::TinyGsmURCToken;
+
+    const auto makeToken = [](GsmConstStr str) -> URCToken {
+      return ModemBase::TinyGsmMakeURCToken(str);
+    };
+    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
+    const auto urcMatches = [&](const URCToken& token) -> bool {
+      return ModemBase::TinyGsmURCMatches(data, tail, token);
+    };
+
+    const URCToken kCipRcv    = makeToken(GF("+CIPRCV:"));
+    const URCToken kTcpClosed = makeToken(GF("+TCPCLOSED:"));
+
+    if (urcMatches(kCipRcv)) {
       int8_t  mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(',');
       int16_t len          = len_reported;
@@ -563,7 +577,7 @@ class TinyGsmA6
       data = "";
       DBG("### Got Data: ", len_reported, "on", mux);
       return true;
-    } else if (data.endsWith(GF("+TCPCLOSED:"))) {
+    } else if (urcMatches(kTcpClosed)) {
       int8_t mux = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->sock_connected = false;
