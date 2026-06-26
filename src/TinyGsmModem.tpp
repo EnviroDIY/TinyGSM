@@ -632,6 +632,48 @@ class TinyGsmModem {
     res.trim();
   }
 
+  static inline size_t TinyGsmConstStrLen(GsmConstStr str) {
+    if (!str) { return 0; }
+#if defined(PROGMEM) && (defined(__AVR__) || defined(ARDUINO_ARCH_AVR)) && \
+    !defined(__AVR_ATmega4809__)
+    return strlen_P(reinterpret_cast<const char*>(str));
+#else
+    return strlen(str);
+#endif
+  }
+
+  static inline char TinyGsmConstStrCharAt(GsmConstStr str, size_t idx) {
+#if defined(PROGMEM) && (defined(__AVR__) || defined(ARDUINO_ARCH_AVR)) && \
+    !defined(__AVR_ATmega4809__)
+    return pgm_read_byte(reinterpret_cast<const char*>(str) + idx);
+#else
+    return str[idx];
+#endif
+  }
+
+  static inline bool TinyGsmEndsWith(const String& data, GsmConstStr needle,
+                                     size_t needleLen) {
+    return needle && needleLen && data.length() >= needleLen &&
+        data.endsWith(needle);
+  }
+
+  struct TinyGsmTailToken {
+    GsmConstStr needle;
+    size_t      needleLen;
+    char        lastChar;
+  };
+
+  static inline TinyGsmTailToken TinyGsmMakeTailToken(GsmConstStr needle) {
+    const size_t len = TinyGsmConstStrLen(needle);
+    return {needle, len, len ? TinyGsmConstStrCharAt(needle, len - 1) : '\0'};
+  }
+
+  static inline bool TinyGsmTailMatches(const String& data, char tail,
+                                        const TinyGsmTailToken& token) {
+    return token.needleLen && tail == token.lastChar &&
+        TinyGsmEndsWith(data, token.needle, token.needleLen);
+  }
+
   static inline IPAddress TinyGsmIpFromString(const String& strIP) {
     int Parts[4] = {
         0,
@@ -680,7 +722,6 @@ class TinyGsmModem {
     return false;
   }
 
-  // TODO(vshymanskyy): Optimize this!
   int8_t waitResponseImpl(uint32_t timeout_ms, String& data,
                           GsmConstStr r1 = GFP(GSM_OK),
                           GsmConstStr r2 = GFP(GSM_ERROR),
@@ -688,6 +729,22 @@ class TinyGsmModem {
                           GsmConstStr r5 = nullptr, GsmConstStr r6 = nullptr,
                           GsmConstStr r7 = nullptr) {
     data.reserve(64);
+
+    const GsmConstStr responses[7] = {r1, r2, r3, r4, r5, r6, r7};
+    size_t            responseLens[7];
+    char              responseLastChars[7];
+    for (uint8_t i = 0; i < 7; i++) {
+      responseLens[i]      = TinyGsmConstStrLen(responses[i]);
+      responseLastChars[i] = responseLens[i]
+          ? TinyGsmConstStrCharAt(responses[i], responseLens[i] - 1)
+          : '\0';
+    }
+
+#if defined TINY_GSM_DEBUG
+    const size_t verboseLen1 = TinyGsmConstStrLen(GFP(GSM_VERBOSE));
+    const size_t verboseLen2 = TinyGsmConstStrLen(GFP(GSM_VERBOSE_2));
+    const int    len_atnl    = strnlen(AT_NL, 3);
+#endif
 
 #ifdef TINY_GSM_DEBUG_DEEP
     DBG(GF("r1 <"), r1 ? r1 : GF("NULL"), GF("> r2 <"), r2 ? r2 : GF("NULL"),
@@ -704,34 +761,20 @@ class TinyGsmModem {
         int8_t a = thisModem().stream.read();
         if (a <= 0) continue;  // Skip 0x00 bytes, just in case
         data += static_cast<char>(a);
-        if (r1 && data.endsWith(r1)) {
-          index = 1;
-          goto finish;
-        } else if (r2 && data.endsWith(r2)) {
-          index = 2;
-          goto finish;
-        } else if (r3 && data.endsWith(r3)) {
-          index = 3;
-          goto finish;
-        } else if (r4 && data.endsWith(r4)) {
-          index = 4;
-          goto finish;
-        } else if (r5 && data.endsWith(r5)) {
-          index = 5;
-          goto finish;
-        } else if (r6 && data.endsWith(r6)) {
-          index = 6;
-          goto finish;
-        } else if (r7 && data.endsWith(r7)) {
-          index = 7;
-          goto finish;
+        for (uint8_t i = 0; i < 7; i++) {
+          if (responseLens[i] && a == responseLastChars[i] &&
+              TinyGsmEndsWith(data, responses[i], responseLens[i])) {
+            index = i + 1;
+            goto finish;
+          }
         }
 #if defined TINY_GSM_DEBUG
-        else if (data.endsWith(GFP(GSM_VERBOSE)) ||
-                 data.endsWith(GFP(GSM_VERBOSE_2))) {
+        if ((verboseLen1 &&
+             TinyGsmEndsWith(data, GFP(GSM_VERBOSE), verboseLen1)) ||
+            (verboseLen2 &&
+             TinyGsmEndsWith(data, GFP(GSM_VERBOSE_2), verboseLen2))) {
           // check how long the new line is
           // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
-          int len_atnl = strnlen(AT_NL, 3);
           // Read out the verbose message, until the last character of the new
           // line
           data += thisModem().stream.readStringUntil(AT_NL[len_atnl]);
@@ -743,9 +786,7 @@ class TinyGsmModem {
           goto finish;
         }
 #endif
-        else if (thisModem().handleURCs(data)) {
-          data = "";
-        }
+        if (thisModem().handleURCs(data)) { data = ""; }
       }
     } while (millis() - startMillis < timeout_ms);
   finish:
