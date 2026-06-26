@@ -651,11 +651,6 @@ class TinyGsmModem {
 #endif
   }
 
-  static inline bool TinyGsmEndsWith(const String& data, GsmConstStr urc,
-                                     size_t urcLen) {
-    return urc && urcLen && data.length() >= urcLen && data.endsWith(urc);
-  }
-
   static inline IPAddress TinyGsmIpFromString(const String& strIP) {
     int Parts[4] = {
         0,
@@ -745,16 +740,14 @@ class TinyGsmModem {
         data += static_cast<char>(a);
         for (uint8_t i = 0; i < 7; i++) {
           if (responseLens[i] && a == responseLastChars[i] &&
-              TinyGsmEndsWith(data, responses[i], responseLens[i])) {
+              data.endsWith(responses[i])) {
             index = i + 1;
             goto finish;
           }
         }
 #if defined TINY_GSM_DEBUG
-        if ((verboseLen1 &&
-             TinyGsmEndsWith(data, GFP(GSM_VERBOSE), verboseLen1)) ||
-            (verboseLen2 &&
-             TinyGsmEndsWith(data, GFP(GSM_VERBOSE_2), verboseLen2))) {
+        if ((verboseLen1 && data.endsWith(GFP(GSM_VERBOSE))) ||
+            (verboseLen2 && data.endsWith(GFP(GSM_VERBOSE_2)))) {
           // check how long the new line is
           // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
           // Read out the verbose message, until the last character of the new
