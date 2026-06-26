@@ -35,12 +35,7 @@ void setup() {
   delay(6000);
 }
 
-void loop()
-{
-  while (MODEM_TX.available()) {
-    SPY.write(MODEM_TX.read());
-  }
-  while (BOARD_TX.available()) {
-    SPY.write(BOARD_TX.read());
-  }
+void loop() {
+  while (MODEM_TX.available()) { SPY.write(MODEM_TX.read()); }
+  while (BOARD_TX.available()) { SPY.write(BOARD_TX.read()); }
 }

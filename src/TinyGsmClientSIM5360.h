@@ -231,7 +231,8 @@ class TinyGsmSim5360
     if (waitResponse(10000L) != 1) { return false; }
 
     SimStatus ret = getSimStatus();
-    // if the sim isn't ready and a pin has been provided, try to unlock the sim
+    // if the sim isn't ready and a pin has been provided, try to unlock the
+    // sim
     if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
@@ -391,7 +392,8 @@ class TinyGsmSim5360
     //            <AsyncMode>, <TimeoutVal>
     // NmRetry = number of retransmission to be made for an IP packet
     //         = 10 (default)
-    // DelayTm = number of milliseconds to delay before outputting received data
+    // DelayTm = number of milliseconds to delay before outputting received
+    // data
     //          = 0 (default)
     // Ack = sets whether reporting a string "Send ok" = 0 (don't report)
     // errMode = mode of reporting error result code = 0 (numberic values)
@@ -486,7 +488,8 @@ class TinyGsmSim5360
   /*
    * Text messaging (SMS) functions
    */
-  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
+  // Follows all text messaging (SMS) functions as inherited from
+  // TinyGsmSMS.tpp
 
   /*
    * GSM Location functions
@@ -753,7 +756,7 @@ class TinyGsmSim5360
    */
  public:
   bool handleURCs(String& data) {
-        const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
+    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
     if (tail == ':' && data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {

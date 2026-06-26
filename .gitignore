@@ -66,3 +66,4 @@ generateKeywords.bat
 installWorkingDependencies.bat
 pio_common_libdeps.ini
 continuous_integration/arduino_cli_local.yaml
+clang-format-all.py

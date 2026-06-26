@@ -118,7 +118,7 @@ const char resource[] = "/TinyGSM/logo.txt";
 StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm        modem(debugger);
 #else
-TinyGsm        modem(SerialAT);
+TinyGsm modem(SerialAT);
 #endif
 
 TinyGsmClient client0(modem, 0);
@@ -132,8 +132,8 @@ const int     port0 = 80;
 TinyGsmClientSecure client1(modem, 1);
 const int           port1 = 443;
 #else
-TinyGsmClient  client1(modem, 1);
-const int      port1 = 80;
+TinyGsmClient client1(modem, 1);
+const int     port1 = 80;
 #endif
 
 void setup() {
