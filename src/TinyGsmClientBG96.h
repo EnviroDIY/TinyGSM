@@ -415,8 +415,8 @@ class TinyGsmBG96
    * Secure socket layer (SSL) certificate management functions
    */
  protected:
-  // NOTE: Some of the documentation suggests this set of commands for
-  // uploading certs, but the BG96 I have doesn't accept them.
+// NOTE: Some of the documentation suggests this set of commands for
+// uploading certs, but the BG96 I have doesn't accept them.
 #if 0
   // AT+QSECWRITE=<filename>,<filesize> [,<timeout>]
   // <filename> - The name of the certificate/key/password file. The file name
@@ -1232,21 +1232,8 @@ class TinyGsmBG96
    */
  public:
   bool handleURCs(String& data) {
-    using ModemBase = TinyGsmModem<TinyGsmBG96>;
-    using URCToken  = ModemBase::TinyGsmURCToken;
-
-    const auto makeToken = [](GsmConstStr str) -> URCToken {
-      return ModemBase::TinyGsmMakeURCToken(str);
-    };
     const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    const auto urcMatches = [&](const URCToken& token) -> bool {
-      return ModemBase::TinyGsmURCMatches(data, tail, token);
-    };
-
-    const URCToken kQiUrc   = makeToken(GF(AT_NL "+QIURC:"));
-    const URCToken kQsslUrc = makeToken(GF(AT_NL "+QSSLURC:"));
-
-    if (urcMatches(kQiUrc)) {
+    if (tail == ':' && data.endsWith(GF(AT_NL "+QIURC:"))) {
       streamSkipUntil('\"');
       String urc = stream.readStringUntil('\"');
       streamSkipUntil(',');
@@ -1268,7 +1255,7 @@ class TinyGsmBG96
       data = "";
       return true;
     }
-    if (urcMatches(kQsslUrc)) {
+    if (tail == ':' && data.endsWith(GF(AT_NL "+QSSLURC:"))) {
       streamSkipUntil('\"');
       String urc = stream.readStringUntil('\"');
       streamSkipUntil(',');

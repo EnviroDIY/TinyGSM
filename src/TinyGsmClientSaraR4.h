@@ -902,22 +902,8 @@ class TinyGsmSaraR4
    */
  public:
   bool handleURCs(String& data) {
-    using ModemBase = TinyGsmModem<TinyGsmSaraR4>;
-    using URCToken  = ModemBase::TinyGsmURCToken;
-
-    const auto makeToken = [](GsmConstStr str) -> URCToken {
-      return ModemBase::TinyGsmMakeURCToken(str);
-    };
     const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    const auto urcMatches = [&](const URCToken& token) -> bool {
-      return ModemBase::TinyGsmURCMatches(data, tail, token);
-    };
-
-    const URCToken kUusOrd = makeToken(GF("+UUSORD:"));
-    const URCToken kUusOcl = makeToken(GF("+UUSOCL:"));
-    const URCToken kUusOco = makeToken(GF("+UUSOCO:"));
-
-    if (urcMatches(kUusOrd)) {
+    if (tail == ':' && data.endsWith(GF("+UUSORD:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -928,7 +914,7 @@ class TinyGsmSaraR4
       data = "";
       DBG("### URC Data Received:", len, "on", mux);
       return true;
-    } else if (urcMatches(kUusOcl)) {
+    } else if (tail == ':' && data.endsWith(GF("+UUSOCL:"))) {
       int8_t mux = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->sock_connected = false;
@@ -936,7 +922,7 @@ class TinyGsmSaraR4
       data = "";
       DBG("### URC Sock Closed: ", mux);
       return true;
-    } else if (urcMatches(kUusOco)) {
+    } else if (tail == ':' && data.endsWith(GF("+UUSOCO:"))) {
       int8_t mux          = streamGetIntBefore('\n');
       int8_t socket_error = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux] &&

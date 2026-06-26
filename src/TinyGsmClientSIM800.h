@@ -692,26 +692,9 @@ class TinyGsmSim800
    */
  public:
   bool handleURCs(String& data) {
-    using ModemBase = TinyGsmModem<TinyGsmSim800>;
-    using URCToken  = ModemBase::TinyGsmURCToken;
-
-    const auto makeToken = [](GsmConstStr str) -> URCToken {
-      return ModemBase::TinyGsmMakeURCToken(str);
-    };
     const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    const auto urcMatches = [&](const URCToken& token) -> bool {
-      return ModemBase::TinyGsmURCMatches(data, tail, token);
-    };
 
-    const URCToken kCipRxGet = makeToken(GF(AT_NL "+CIPRXGET:"));
-    const URCToken kReceive  = makeToken(GF(AT_NL "+RECEIVE:"));
-    const URCToken kClosed   = makeToken(GF("CLOSED" AT_NL));
-    const URCToken kPsnWid   = makeToken(GF("*PSNWID:"));
-    const URCToken kPsuTtz   = makeToken(GF("*PSUTTZ:"));
-    const URCToken kCtzv     = makeToken(GF("+CTZV:"));
-    const URCToken kDst      = makeToken(GF("DST:"));
-
-    if (urcMatches(kCipRxGet)) {
+    if (tail == ':' && data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
@@ -725,7 +708,7 @@ class TinyGsmSim800
         data += mode;
         return false;
       }
-    } else if (urcMatches(kReceive)) {
+    } else if (tail == ':' && data.endsWith(GF(AT_NL "+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -735,7 +718,7 @@ class TinyGsmSim800
       data = "";
       // DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (urcMatches(kClosed)) {
+    } else if (tail == '\n' && data.endsWith(GF("CLOSED" AT_NL))) {
       int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
@@ -745,22 +728,22 @@ class TinyGsmSim800
       data = "";
       DBG("### Closed: ", mux);
       return true;
-    } else if (urcMatches(kPsnWid)) {
+    } else if (tail == ':' && data.endsWith(GF("*PSNWID:"))) {
       streamSkipUntil('\n');  // Refresh network name by network
       data = "";
       DBG("### Network name updated.");
       return true;
-    } else if (urcMatches(kPsuTtz)) {
+    } else if (tail == ':' && data.endsWith(GF("*PSUTTZ:"))) {
       streamSkipUntil('\n');  // Refresh time and time zone by network
       data = "";
       DBG("### Network time and time zone updated.");
       return true;
-    } else if (urcMatches(kCtzv)) {
+    } else if (tail == ':' && data.endsWith(GF("+CTZV:"))) {
       streamSkipUntil('\n');  // Refresh network time zone by network
       data = "";
       DBG("### Network time zone updated.");
       return true;
-    } else if (urcMatches(kDst)) {
+    } else if (tail == ':' && data.endsWith(GF("DST:"))) {
       streamSkipUntil('\n');  // Refresh Network Daylight Saving Time by network
       data = "";
       DBG("### Daylight savings time state updated.");

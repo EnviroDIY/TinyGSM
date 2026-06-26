@@ -1230,27 +1230,8 @@ class TinyGsmSim7080
    */
  public:
   bool handleURCs(String& data) {
-    using ModemBase = TinyGsmModem<TinyGsmSim7080>;
-    using URCToken  = ModemBase::TinyGsmURCToken;
-
-    const auto makeToken = [](GsmConstStr str) -> URCToken {
-      return ModemBase::TinyGsmMakeURCToken(str);
-    };
     const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    const auto urcMatches = [&](const URCToken& token) -> bool {
-      return ModemBase::TinyGsmURCMatches(data, tail, token);
-    };
-
-    const URCToken kCaRecv    = makeToken(GF("+CARECV:"));
-    const URCToken kCaDataInd = makeToken(GF("+CADATAIND:"));
-    const URCToken kCaState   = makeToken(GF("+CASTATE:"));
-    const URCToken kPsnWid    = makeToken(GF("*PSNWID:"));
-    const URCToken kPsuTtz    = makeToken(GF("*PSUTTZ:"));
-    const URCToken kCtzv      = makeToken(GF("+CTZV:"));
-    const URCToken kDst       = makeToken(GF("DST: "));
-    const URCToken kSmsReady  = makeToken(GF(AT_NL "SMS Ready" AT_NL));
-
-    if (urcMatches(kCaRecv)) {
+    if (tail == ':' && data.endsWith(GF("+CARECV:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -1260,7 +1241,7 @@ class TinyGsmSim7080
       data = "";
       DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (urcMatches(kCaDataInd)) {
+    } else if (tail == '\n' && data.endsWith(GF("+CADATAIND:"))) {
       int8_t mux = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->got_data = true;
@@ -1268,7 +1249,7 @@ class TinyGsmSim7080
       data = "";
       DBG("### Got Data:", mux);
       return true;
-    } else if (urcMatches(kCaState)) {
+    } else if (tail == '\n' && data.endsWith(GF("+CASTATE:"))) {
       int8_t mux   = streamGetIntBefore(',');
       int8_t state = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -1279,27 +1260,27 @@ class TinyGsmSim7080
       }
       data = "";
       return true;
-    } else if (urcMatches(kPsnWid)) {
+    } else if (tail == ':' && data.endsWith(GF("*PSNWID:"))) {
       streamSkipUntil('\n');  // Refresh network name by network
       data = "";
       DBG("### Network name updated.");
       return true;
-    } else if (urcMatches(kPsuTtz)) {
+    } else if (tail == ':' && data.endsWith(GF("*PSUTTZ:"))) {
       streamSkipUntil('\n');  // Refresh time and time zone by network
       data = "";
       DBG("### Network time and time zone updated.");
       return true;
-    } else if (urcMatches(kCtzv)) {
+    } else if (tail == ':' && data.endsWith(GF("+CTZV:"))) {
       streamSkipUntil('\n');  // Refresh network time zone by network
       data = "";
       DBG("### Network time zone updated.");
       return true;
-    } else if (urcMatches(kDst)) {
+    } else if (tail == ' ' && data.endsWith(GF("DST: "))) {
       streamSkipUntil('\n');  // Refresh Network Daylight Saving Time by network
       data = "";
       DBG("### Daylight savings time state updated.");
       return true;
-    } else if (urcMatches(kSmsReady)) {
+    } else if (tail == '\n' && data.endsWith(GF(AT_NL "SMS Ready" AT_NL))) {
       data = "";
       DBG("### Unexpected module reset!");
       init();
