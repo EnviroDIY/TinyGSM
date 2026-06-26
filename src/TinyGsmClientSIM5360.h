@@ -753,23 +753,8 @@ class TinyGsmSim5360
    */
  public:
   bool handleURCs(String& data) {
-    using ModemBase = TinyGsmModem<TinyGsmSim5360>;
-    using URCToken  = ModemBase::TinyGsmURCToken;
-
-    const auto makeToken = [](GsmConstStr str) -> URCToken {
-      return ModemBase::TinyGsmMakeURCToken(str);
-    };
-    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    const auto urcMatches = [&](const URCToken& token) -> bool {
-      return ModemBase::TinyGsmURCMatches(data, tail, token);
-    };
-
-    const URCToken kCipRxGet = makeToken(GF(AT_NL "+CIPRXGET:"));
-    const URCToken kReceive  = makeToken(GF(AT_NL "+RECEIVE:"));
-    const URCToken kIpClose  = makeToken(GF("+IPCLOSE:"));
-    const URCToken kCipEvent = makeToken(GF("+CIPEVENT:"));
-
-    if (urcMatches(kCipRxGet)) {
+        const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
+    if (tail == ':' && data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
@@ -783,7 +768,7 @@ class TinyGsmSim5360
         data += mode;
         return false;
       }
-    } else if (urcMatches(kReceive)) {
+    } else if (tail == ':' && data.endsWith(GF(AT_NL "+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -793,7 +778,7 @@ class TinyGsmSim5360
       data = "";
       // DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (urcMatches(kIpClose)) {
+    } else if (tail == ':' && data.endsWith(GF("+IPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
       streamSkipUntil('\n');  // Skip the reason code
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -802,7 +787,7 @@ class TinyGsmSim5360
       data = "";
       DBG("### Closed: ", mux);
       return true;
-    } else if (urcMatches(kCipEvent)) {
+    } else if (tail == ':' && data.endsWith(GF("+CIPEVENT:"))) {
       // Need to close all open sockets and release the network library.
       // User will then need to reconnect.
       DBG("### Network error!");

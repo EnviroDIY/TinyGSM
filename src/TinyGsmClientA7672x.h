@@ -894,31 +894,8 @@ class TinyGsmA7672X
    */
  public:
   bool handleURCs(String& data) {
-    // aliases to shorten the code and make it more readable
-    using ModemBase = TinyGsmModem<TinyGsmA7672X>;
-    using URCToken  = ModemBase::TinyGsmURCToken;
-
-    // helper lambdas to make the code more readable
-    const auto makeToken = [](GsmConstStr str) -> URCToken {
-      return ModemBase::TinyGsmMakeURCToken(str);
-    };
     const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    const auto urcMatches = [&](const URCToken& token) -> bool {
-      return ModemBase::TinyGsmURCMatches(data, tail, token);
-    };
-
-    const URCToken kCipRxGet      = makeToken(GF(AT_NL "+CIPRXGET:"));
-    const URCToken kRecvEvent     = makeToken(GF("RECV EVENT" AT_NL));
-    const URCToken kCchRecvZero   = makeToken(GF("+CCHRECV: 0,0" AT_NL));
-    const URCToken kIpClose       = makeToken(GF("+IPCLOSE:"));
-    const URCToken kCchClose      = makeToken(GF("+CCHCLOSE:"));
-    const URCToken kCchPeerClosed = makeToken(GF("+CCH_PEER_CLOSED:"));
-    const URCToken kPsnWid        = makeToken(GF("*PSNWID:"));
-    const URCToken kPsuTtz        = makeToken(GF("*PSUTTZ:"));
-    const URCToken kCtzv          = makeToken(GF("+CTZV:"));
-    const URCToken kDst           = makeToken(GF("DST:"));
-
-    if (urcMatches(kCipRxGet)) {
+    if (tail == ':' && data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
@@ -932,7 +909,7 @@ class TinyGsmA7672X
         data += mode;
         return false;
       }
-    } else if (urcMatches(kRecvEvent)) {
+    } else if (tail == '\n' && data.endsWith(GF("RECV EVENT" AT_NL))) {
       // WHAT??? No, no, no, you can't issue a sendAT/waitResponse here!! The
       // handle URC's function is the module-unique part of the general purpose
       // waitResponse function.
@@ -951,7 +928,7 @@ class TinyGsmA7672X
       data = "";
       DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (urcMatches(kCchRecvZero)) {
+    } else if (tail == '\n' && data.endsWith(GF("+CCHRECV: 0,0" AT_NL))) {
       int8_t mux = data.substring(data.lastIndexOf(',') + 1).toInt();
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->sock_connected = true;
@@ -959,7 +936,7 @@ class TinyGsmA7672X
       data = "";
       DBG("### ACK:", mux);
       return true;
-    } else if (urcMatches(kIpClose)) {
+    } else if (tail == ':' && data.endsWith(GF("+IPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->sock_connected = false;
@@ -968,7 +945,7 @@ class TinyGsmA7672X
       streamSkipUntil('\n');
       DBG("### TCP Closed: ", mux);
       return true;
-    } else if (urcMatches(kCchClose)) {
+    } else if (tail == ':' && data.endsWith(GF("+CCHCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->sock_connected = false;
@@ -977,7 +954,7 @@ class TinyGsmA7672X
       streamSkipUntil('\n');
       DBG("### SSL Closed: ", mux);
       return true;
-    } else if (urcMatches(kCchPeerClosed)) {
+    } else if (tail == ':' && data.endsWith(GF("+CCH_PEER_CLOSED:"))) {
       int8_t mux = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->sock_connected = false;
@@ -985,22 +962,22 @@ class TinyGsmA7672X
       data = "";
       DBG("### SSL Closed: ", mux);
       return true;
-    } else if (urcMatches(kPsnWid)) {
+    } else if (tail == ':' && data.endsWith(GF("*PSNWID:"))) {
       streamSkipUntil('\n');  // Refresh network name by network
       data = "";
       DBG("### Network name updated.");
       return true;
-    } else if (urcMatches(kPsuTtz)) {
+    } else if (tail == ':' && data.endsWith(GF("*PSUTTZ:"))) {
       streamSkipUntil('\n');  // Refresh time and time zone by network
       data = "";
       DBG("### Network time and time zone updated.");
       return true;
-    } else if (urcMatches(kCtzv)) {
+    } else if (tail == ':' && data.endsWith(GF("+CTZV:"))) {
       streamSkipUntil('\n');  // Refresh network time zone by network
       data = "";
       DBG("### Network time zone updated.");
       return true;
-    } else if (urcMatches(kDst)) {
+    } else if (tail == ':' && data.endsWith(GF("DST:"))) {
       streamSkipUntil('\n');  // Refresh Network Daylight Saving Time by network
       data = "";
       DBG("### Daylight savings time state updated.");

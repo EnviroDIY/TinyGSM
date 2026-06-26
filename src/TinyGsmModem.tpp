@@ -656,23 +656,6 @@ class TinyGsmModem {
     return urc && urcLen && data.length() >= urcLen && data.endsWith(urc);
   }
 
-  struct TinyGsmURCToken {
-    GsmConstStr urc;
-    size_t      urcLen;
-    char        lastChar;
-  };
-
-  static inline TinyGsmURCToken TinyGsmMakeURCToken(GsmConstStr urc) {
-    const size_t len = TinyGsmConstStrLen(urc);
-    return {urc, len, len ? TinyGsmConstStrCharAt(urc, len - 1) : '\0'};
-  }
-
-  static inline bool TinyGsmURCMatches(const String& data, char tail,
-                                       const TinyGsmURCToken& token) {
-    return token.urcLen && tail == token.lastChar &&
-        TinyGsmEndsWith(data, token.urc, token.urcLen);
-  }
-
   static inline IPAddress TinyGsmIpFromString(const String& strIP) {
     int Parts[4] = {
         0,

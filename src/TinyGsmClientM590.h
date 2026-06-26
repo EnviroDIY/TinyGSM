@@ -554,21 +554,8 @@ class TinyGsmM590
    */
  public:
   bool handleURCs(String& data) {
-    using ModemBase = TinyGsmModem<TinyGsmM590>;
-    using URCToken  = ModemBase::TinyGsmURCToken;
-
-    const auto makeToken = [](GsmConstStr str) -> URCToken {
-      return ModemBase::TinyGsmMakeURCToken(str);
-    };
     const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    const auto urcMatches = [&](const URCToken& token) -> bool {
-      return ModemBase::TinyGsmURCMatches(data, tail, token);
-    };
-
-    const URCToken kTcpRecv  = makeToken(GF("+TCPRECV:"));
-    const URCToken kTcpClose = makeToken(GF("+TCPCLOSE:"));
-
-    if (urcMatches(kTcpRecv)) {
+    if (tail == ':' && data.endsWith(GF("+TCPRECV:"))) {
       int8_t  mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(',');
       int16_t len          = len_reported;
@@ -583,7 +570,7 @@ class TinyGsmM590
       }
       data = "";
       return true;
-    } else if (urcMatches(kTcpClose)) {
+    } else if (tail == ':' && data.endsWith(GF("+TCPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
       streamSkipUntil('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
