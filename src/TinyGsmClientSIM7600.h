@@ -215,7 +215,7 @@ class TinyGsmSim7600
    public:
     TINY_GSM_SECURE_CLIENT_CTORS(Sim7600)
 
-    virtual int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
