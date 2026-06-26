@@ -245,8 +245,7 @@ class TinyGsmUBLOX
       is_secure = true;
     }
 
-    virtual int connect(const char* host, uint16_t port,
-                        int timeout_s) override {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       is_mid_send = false;
       // stop();  // DON'T stop! We don't know our actual mux yet!
       TINY_GSM_YIELD();

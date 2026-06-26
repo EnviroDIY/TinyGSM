@@ -184,7 +184,7 @@ class TinyGsmSim7080
     // insecure connections, we don't need to re-check for mux number
     // availability.
 
-    virtual int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();

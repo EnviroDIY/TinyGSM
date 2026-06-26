@@ -215,7 +215,7 @@ class TinyGsmBG96
     // Because we have the same potetial range of mux numbers for secure and
     // insecure connections, we don't need to re-check for mux number
     // availability.
-    virtual int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();

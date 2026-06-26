@@ -210,8 +210,7 @@ class TinyGsmSequansMonarch
     bool strictSSL = false;
 
    public:
-    virtual int connect(const char* host, uint16_t port,
-                        int timeout_s) override {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
