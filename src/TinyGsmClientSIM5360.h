@@ -369,7 +369,7 @@ class TinyGsmSim5360
 
     // Set the embedded authentication
     if (user && strlen(user) > 0) {
-      sendAT(GF("+CSOCKAUTH=1,1,\""), user, "\",\"", pwd, '"');
+      sendAT(GF("+CSOCKAUTH=1,1,\""), user, GF("\",\""), pwd, '"');
       waitResponse();
     }
 

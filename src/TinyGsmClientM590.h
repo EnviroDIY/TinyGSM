@@ -210,7 +210,7 @@ class TinyGsmM590
 
   // This is extracted from the modem info
   String getModemNameImpl() {
-    sendAT(GF("I"));
+    sendAT('I');
     String factory = stream.readStringUntil('\n');  // read the factory
     factory.trim();
     String model = stream.readStringUntil('\n');  // read the model
@@ -222,7 +222,7 @@ class TinyGsmM590
 
   // This is extracted from the modem info
   String getModemManufacturerImpl() {
-    sendAT(GF("I"));
+    sendAT('I');
     String factory = stream.readStringUntil('\n');  // read the factory
     factory.trim();
     streamSkipUntil('\n');  // skip the model
@@ -233,7 +233,7 @@ class TinyGsmM590
 
   // This is extracted from the modem info
   String getModemModelImpl() {
-    sendAT(GF("I"));
+    sendAT('I');
     streamSkipUntil('\n');                        // skip the factory
     String model = stream.readStringUntil('\n');  // read the model
     model.trim();
@@ -245,7 +245,7 @@ class TinyGsmM590
   // Gets the modem firmware version
   // This is extracted from the modem info
   String getModemRevisionImpl() {
-    sendAT(GF("I"));
+    sendAT('I');
     streamSkipUntil('\n');                      // skip the factory
     streamSkipUntil('\n');                      // skip the model
     String res = stream.readStringUntil('\n');  // read the revision
@@ -345,7 +345,7 @@ class TinyGsmM590
 
     if (!user) user = "";
     if (!pwd) pwd = "";
-    sendAT(GF("+XGAUTH=1,1,\""), user, GF("\",\""), pwd, GF("\""));
+    sendAT(GF("+XGAUTH=1,1,\""), user, GF("\",\""), pwd, '"');
     waitResponse();
 
     sendAT(GF("+XIIC=1"));
@@ -463,7 +463,7 @@ class TinyGsmM590
     for (int i = 0; i < 3; i++) {  // TODO(?): no need for loop?
       String ip = dnsIpQuery(host);
 
-      sendAT(GF("+TCPSETUP="), mux, GF(","), ip, GF(","), port);
+      sendAT(GF("+TCPSETUP="), mux, ',', ip, ',', port);
       int8_t rsp = waitResponse(timeout_ms, GF(",OK" AT_NL), GF(",FAIL" AT_NL),
                                 GF("+TCPSETUP:Error" AT_NL));
       if (1 == rsp) {
@@ -543,7 +543,7 @@ class TinyGsmM590
   }
 
   String dnsIpQuery(const char* host) {
-    sendAT(GF("+DNS=\""), host, GF("\""));
+    sendAT(GF("+DNS=\""), host, '"');
     if (waitResponse(10000L, GF(AT_NL "+DNS:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse(GF("+DNS:OK" AT_NL));

@@ -72,7 +72,7 @@ static void DBG_PLAIN(T head, Args... tail) {
 
 template <typename... Args>
 static void DBG(Args... args) {
-  TINY_GSM_DEBUG.print(GF("["));
+  TINY_GSM_DEBUG.print('[');
   TINY_GSM_DEBUG.print(millis());
   TINY_GSM_DEBUG.print(GF("] "));
   DBG_PLAIN(args...);

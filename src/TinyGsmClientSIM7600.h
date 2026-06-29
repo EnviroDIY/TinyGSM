@@ -406,7 +406,7 @@ class TinyGsmSim7600
   }
 
   bool deleteCertificateImpl(const char* certificateName) {
-    sendAT(GF("+CCERTDELE=\""), certificateName, GF("\""));
+    sendAT(GF("+CCERTDELE=\""), certificateName, '"');
     return waitResponse(5000L) == 1;
   }
 
@@ -718,7 +718,7 @@ class TinyGsmSim7600
    */
   String setGNSSModeImpl(uint8_t mode, bool dpo) {
     String res;
-    sendAT(GF("+CGNSSMODE="), mode, ",", dpo);
+    sendAT(GF("+CGNSSMODE="), mode, ',', dpo);
     if (waitResponse(10000L, res) != 1) { return ""; }
     res.replace(AT_NL, "");
     res.trim();
@@ -827,7 +827,7 @@ class TinyGsmSim7600
       // Not supported; select "ALL" and hope for the best
       sslVersion = SSLVersion::ALL_SSL;
     }
-    sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, GF(","),
+    sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, ',',
            static_cast<int8_t>(sslVersion));
     success &= waitResponse(5000L) == 1;
 
@@ -838,21 +838,21 @@ class TinyGsmSim7600
       /* Configure the server root CA of the specified SSL context
       AT + CSSLCFG = "cacert", <ssl_ctx_index>,<ca_file> */
       sendAT(GF("+CSSLCFG=\"cacert\","), context_id, GF(",\""), CAcertName,
-             GF("\""));
+             '"');
       success &= waitResponse(5000L) == 1;
     }
     if (clientCertName != nullptr &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
          sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
       sendAT(GF("+CSSLCFG=\"clientcert\","), context_id, GF(",\""),
-             clientCertName, GF("\""));
+             clientCertName, '"');
       success &= waitResponse(5000L) == 1;
     }
     if (clientKeyName != nullptr &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
          sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
       sendAT(GF("+CSSLCFG=\"clientkey\","), context_id, GF(",\""),
-             clientKeyName, GF("\""));
+             clientKeyName, '"');
       success &= waitResponse(5000L) == 1;
     }
 
@@ -877,7 +877,7 @@ class TinyGsmSim7600
         authModeValue = 0;  // Default to no validation if unknown
         break;
     }
-    sendAT(GF("+CSSLCFG=\"authmode\","), context_id, GF(","),
+    sendAT(GF("+CSSLCFG=\"authmode\","), context_id, ',',
            static_cast<int8_t>(authModeValue));
     success &= waitResponse(5000L) == 1;
 

@@ -327,7 +327,7 @@ class TinyGsmSim7000SSL
     // AT+CFSGFIS=<index>,<filename>
     //<index> 3: "/customer/" (always use customer for certificates)
     //<file name> File name length should less or equal 230 characters
-    sendAT(GF("+CFSGFIS=3,\""), certificateName, GF("\""));
+    sendAT(GF("+CFSGFIS=3,\""), certificateName, '"');
     success &= waitResponse(5000L, GF("+CFSGFIS:")) == 1;
     if (success) {
       uint16_t len_confirmed = stream.parseInt();
@@ -520,7 +520,7 @@ class TinyGsmSim7000SSL
       waitResponse();
     } else if (user && strlen(user) > 0) {
       // Set the user name only
-      sendAT(GF("+CNCFG=1,\""), apn, "\",\"", user, '"');
+      sendAT(GF("+CNCFG=1,\""), apn, GF("\",\""), user, '"');
       waitResponse();
     } else {
       // Set the APN only
@@ -538,7 +538,7 @@ class TinyGsmSim7000SSL
     bool res    = false;
     int  ntries = 0;
     while (!res && ntries < 5) {
-      sendAT(GF("+CNACT=1,\""), apn, GF("\""));
+      sendAT(GF("+CNACT=1,\""), apn, '"');
       res = waitResponse(60000L, GF(AT_NL "+APP PDP: ACTIVE"),
                          GF(AT_NL "+APP PDP: DEACTIVE")) == 1;
       waitResponse();
@@ -728,7 +728,7 @@ class TinyGsmSim7000SSL
     // <ctxindex> SSL context identifier
     // <servername> Sever name (we use the host)
     // NOTE:  despite docs using caps, "sni" must be in lower case
-    sendAT(GF("+CSSLCFG=\"sni\","), context_id, GF(",\""), sni, GF("\""));
+    sendAT(GF("+CSSLCFG=\"sni\","), context_id, GF(",\""), sni, '"');
     success &= waitResponse() == 1;
 
     // Ignore the RTC time?
@@ -801,8 +801,7 @@ class TinyGsmSim7000SSL
       // <pskTableName> Alphanumeric ASCII text string up to 64 characters.
       // PSK table name that has been configured by AT+CSSLCFG. File content
       // format is <identity>:<hex string>.
-      sendAT(GF("+CASSLCFG=\"psktable\","), mux, GF(",\""), pskTableName,
-             GF("\""));
+      sendAT(GF("+CASSLCFG=\"psktable\","), mux, GF(",\""), pskTableName, '"');
       success &= waitResponse() == 1;
     }
 

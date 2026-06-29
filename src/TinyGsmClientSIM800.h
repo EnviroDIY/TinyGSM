@@ -442,7 +442,7 @@ class TinyGsmSim800
     if (waitResponse() != 1) { return false; }
 
     // Start Task and Set APN, USER NAME, PASSWORD
-    sendAT(GF("+CSTT=\""), apn, GF("\",\""), user, GF("\",\""), pwd, GF("\""));
+    sendAT(GF("+CSTT=\""), apn, GF("\",\""), user, GF("\",\""), pwd, '"');
     if (waitResponse(60000L) != 1) { return false; }
 
     // Bring Up Wireless Connection with GPRS or CSD

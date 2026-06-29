@@ -299,7 +299,7 @@ class TinyGsmA6
 
     if (!user) user = "";
     if (!pwd) pwd = "";
-    sendAT(GF("+CSTT=\""), apn, GF("\",\""), user, GF("\",\""), pwd, GF("\""));
+    sendAT(GF("+CSTT=\""), apn, GF("\",\""), user, GF("\",\""), pwd, '"');
     if (waitResponse(60000L) != 1) { return false; }
 
     sendAT(GF("+CGACT=1,1"));
@@ -358,7 +358,7 @@ class TinyGsmA6
     if (number == GF("last")) {
       sendAT(GF("DLST"));
     } else {
-      sendAT(GF("D\""), number, "\";");
+      sendAT(GF("D\""), number, GF("\";"));
     }
 
     if (waitResponse(5000L) != 1) { return false; }

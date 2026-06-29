@@ -317,8 +317,7 @@ class TinyGsmM95
     if (waitResponse() != 1) { return false; }
 
     // Select GPRS (=1) as the Bearer
-    sendAT(GF("+QICSGP=1,\""), apn, GF("\",\""), user, GF("\",\""), pwd,
-           GF("\""));
+    sendAT(GF("+QICSGP=1,\""), apn, GF("\",\""), user, GF("\",\""), pwd, '"');
     if (waitResponse() != 1) { return false; }
 
     // Select TCP/IP transfer mode - NOT transparent mode
@@ -330,7 +329,7 @@ class TinyGsmM95
     if (waitResponse() != 1) { return false; }
 
     // Start TCPIP Task and Set APN, User Name and Password
-    sendAT("+QIREGAPP=\"", apn, "\",\"", user, "\",\"", pwd, "\"");
+    sendAT("+QIREGAPP=\"", apn, GF("\",\""), user, GF("\",\""), pwd, '"');
     if (waitResponse() != 1) { return false; }
 
     // Activate GPRS/CSD Context

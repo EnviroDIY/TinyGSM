@@ -306,7 +306,7 @@ class TinyGsmSequansMonarch
   bool factoryDefaultImpl() {
     sendAT(GF("&F0"));  // Factory
     waitResponse();
-    sendAT(GF("Z"));  // default configuration
+    sendAT('Z');  // default configuration
     waitResponse();
     sendAT(GF("+IPR=0"));  // Auto-baud
     return waitResponse() == 1;
@@ -421,7 +421,7 @@ class TinyGsmSequansMonarch
 
     // Set authentication
     if (user && strlen(user) > 0) {
-      sendAT(GF("+CGAUTH=3,1,\""), user, GF("\",\""), pwd, GF("\""));
+      sendAT(GF("+CGAUTH=3,1,\""), user, GF("\",\""), pwd, '"');
       waitResponse();
     }
 
@@ -592,8 +592,8 @@ class TinyGsmSequansMonarch
     // <lPort> = UDP connection local port, has no effect for TCP connections.
     // <connMode> = Connection mode = 1 - command mode connection
     // <acceptAnyRemote> = Applies to UDP only
-    sendAT(GF("+SQNSD="), mux, ",0,", port, ',', GF("\""), host, GF("\""),
-           ",0,0,1");
+    sendAT(GF("+SQNSD="), mux, GF(",0,"), port, ',', '"', host, '"',
+           GF(",0,0,1"));
     rsp = waitResponse((timeout_ms - (millis() - startMillis)), GFP(GSM_OK),
                        GFP(GSM_ERROR), GF("NO CARRIER" AT_NL));
 

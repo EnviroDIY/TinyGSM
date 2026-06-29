@@ -396,7 +396,7 @@ class TinyGsmSaraR5
     // 0: GSM / GPRS / eGPRS
     // 2: UTRAN
     // 3: LTE
-    sendAT(GF("+URAT="), selected, GF(","), preferred);
+    sendAT(GF("+URAT="), selected, ',', preferred);
     if (waitResponse() != 1) { return false; }
     return true;
   }
@@ -814,7 +814,7 @@ class TinyGsmSaraR5
     // waitResponse();
 
     // connect on the allocated socket
-    sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
+    sendAT(GF("+USOCO="), *mux, GF(",\""), host, GF("\","), port);
     int8_t rsp = waitResponse(timeout_ms - (millis() - startMillis));
     return (1 == rsp);
   }

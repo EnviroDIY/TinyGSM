@@ -610,7 +610,7 @@ class TinyGsmESP8266
       // set the SSL SNI (server name indication)
       // Multiple connections: (AT+CIPMUX=1)
       // AT+CIPSSLCSNI=<link ID>,<"sni">
-      sendAT(GF("+CIPSSLCSNI="), mux, GF(",\""), host, GF("\""));
+      sendAT(GF("+CIPSSLCSNI="), mux, GF(",\""), host, '"');
       waitResponse();
     }
 
@@ -620,7 +620,7 @@ class TinyGsmESP8266
     // establish a connection.
     if (strlen(host) > 64) {
       // AT+CIPDOMAIN=<"domain name">[,<ip network>][,<timeout>]
-      sendAT(GF("+CIPDOMAIN=\""), host, GF("\""));
+      sendAT(GF("+CIPDOMAIN=\""), host, '"');
       // +CIPDOMAIN:<"IP address"> then OK
       if (waitResponse(GF("+CIPDOMAIN:\"")) != 1) { return false; }
       String ip = stream.readStringUntil('"');

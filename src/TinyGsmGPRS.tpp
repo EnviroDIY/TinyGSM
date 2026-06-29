@@ -104,7 +104,7 @@ class TinyGsmGPRS {
   // Unlocks a sim via the 3GPP TS command AT+CPIN
   bool simUnlockImpl(const char* pin) {
     if (pin && strlen(pin) > 0) {
-      thisModem().sendAT(GF("+CPIN=\""), pin, GF("\""));
+      thisModem().sendAT(GF("+CPIN=\""), pin, '"');
       return thisModem().waitResponse() == 1;
     }
     return true;

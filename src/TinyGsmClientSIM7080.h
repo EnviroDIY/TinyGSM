@@ -373,7 +373,7 @@ class TinyGsmSim7080
     // AT+CFSGFIS=<index>,<filename>
     //<index> 3: "/customer/" (always use customer for certificates)
     //<file name> File name length should less or equal 230 characters
-    sendAT(GF("+CFSGFIS=3,\""), certificateName, GF("\""));
+    sendAT(GF("+CFSGFIS=3,\""), certificateName, '"');
     success &= waitResponse(5000L, GF("+CFSGFIS:")) == 1;
     if (success) {
       uint16_t len_confirmed = stream.parseInt();
@@ -572,11 +572,12 @@ class TinyGsmSim7080
     //                  2: CHAP
     //                  3: PAP or CHAP
     if (pwd && strlen(pwd) > 0 && user && strlen(user) > 0) {
-      sendAT(GF("+CNCFG=0,1,\""), apn, "\",\"", user, "\",\"", pwd, "\",3");
+      sendAT(GF("+CNCFG=0,1,\""), apn, GF("\",\""), user, GF("\",\""), pwd,
+             GF("\",3"));
       waitResponse();
     } else if (user && strlen(user) > 0) {
       // Set the user name only
-      sendAT(GF("+CNCFG=0,1,\""), apn, "\",\"", user, '"');
+      sendAT(GF("+CNCFG=0,1,\""), apn, GF("\",\""), user, '"');
       waitResponse();
     } else {
       // Set the APN only
@@ -672,7 +673,7 @@ class TinyGsmSim7080
 
     // Set NTP server and timezone - write command
     // AT+CNTP=<ntpserver>[,<time zone>][,<cid>][,<mode>]
-    sendAT(GF("+CNTP=\""), server, "\",", String(TimeZone * 4), ",0,2");
+    sendAT(GF("+CNTP=\""), server, GF("\","), String(TimeZone * 4), GF(",0,2"));
     // <ntpserver> - NTP server’s url
     // <time zone> - Local time zone, the range is (-47 to 48), in fact, time
     // zone range (-12 to 12), but taking into account that some countries and
@@ -847,7 +848,7 @@ class TinyGsmSim7080
     // <ctxindex> SSL context identifier
     // <servername> Sever name (we use the host)
     // NOTE:  despite docs using caps, "sni" must be in lower case
-    sendAT(GF("+CSSLCFG=\"sni\","), context_id, GF(",\""), sni, GF("\""));
+    sendAT(GF("+CSSLCFG=\"sni\","), context_id, GF(",\""), sni, '"');
     success &= waitResponse() == 1;
 
     // Ignore the RTC time?
@@ -921,8 +922,7 @@ class TinyGsmSim7080
       // <pskTableName> Alphanumeric ASCII text string up to 64 characters.
       // PSK table name that has been configured by AT+CSSLCFG. File content
       // format is <identity>:<hex string>.
-      sendAT(GF("+CASSLCFG=\"psktable\","), mux, GF(",\""), pskTableName,
-             GF("\""));
+      sendAT(GF("+CASSLCFG=\"psktable\","), mux, GF(",\""), pskTableName, '"');
       success &= waitResponse() == 1;
     }
 

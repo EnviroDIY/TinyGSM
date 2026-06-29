@@ -323,7 +323,7 @@ class TinyGsmA7672X
   //  wake up
   bool sleepEnableImpl(bool enable = true) {
     sendAT(GF("+CSCLK="),
-           enable ? "2" : "1");  // 2: RXsleep (at wakeup) 1: DTR sleep
+           enable ? '2' : '1');  // 2: RXsleep (at wakeup) 1: DTR sleep
     return waitResponse() == 1;
   }
 
@@ -385,7 +385,7 @@ class TinyGsmA7672X
   // certificate does not matter here
   bool loadCertificateImpl(const char* certificateName, const char* cert,
                            const uint16_t len) {
-    sendAT(GF("+CCERTDOWN="), certificateName, GF(","), len);
+    sendAT(GF("+CCERTDOWN="), certificateName, ',', len);
     if (waitResponse(5000L, GF(">")) != 1) { return false; }
     stream.write(cert, len);
     stream.flush();
@@ -602,7 +602,7 @@ class TinyGsmA7672X
       // Not supported; select "ALL" and hope for the best
       sslVersion = SSLVersion::ALL_SSL;
     }
-    sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, GF(","),
+    sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, ',',
            static_cast<int8_t>(sslVersion));
     success &= waitResponse(5000L) == 1;
 
@@ -615,7 +615,7 @@ class TinyGsmA7672X
     //            (SSLAuthMode::MUTUAL_AUTHENTICATION)
     //            3: client authentication and no server authentication
     //            (SSLAuthMode::CLIENT_VALIDATION)
-    sendAT(GF("+CSSLCFG=\"authmode\","), context_id, GF(","),
+    sendAT(GF("+CSSLCFG=\"authmode\","), context_id, ',',
            static_cast<int8_t>(sslAuthMode));
     success &= waitResponse(5000L) == 1;
 
@@ -625,20 +625,19 @@ class TinyGsmA7672X
          sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       /* Configure the server root CA of the specified SSL context
       AT + CSSLCFG = "cacert", <ssl_ctx_index>,<ca_file> */
-      sendAT(GF("+CSSLCFG=\"cacert\","), context_id, GF(","), CAcertName);
+      sendAT(GF("+CSSLCFG=\"cacert\","), context_id, ',', CAcertName);
       success &= waitResponse(5000L) == 1;
     }
     if (clientCertName != nullptr &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
          sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
-      sendAT(GF("+CSSLCFG=\"clientcert\","), context_id, GF(","),
-             clientCertName);
+      sendAT(GF("+CSSLCFG=\"clientcert\","), context_id, ',', clientCertName);
       success &= waitResponse(5000L) == 1;
     }
     if (clientKeyName != nullptr &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
          sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
-      sendAT(GF("+CSSLCFG=\"clientkey\","), context_id, GF(","), clientKeyName);
+      sendAT(GF("+CSSLCFG=\"clientkey\","), context_id, ',', clientKeyName);
       success &= waitResponse(5000L) == 1;
     }
 

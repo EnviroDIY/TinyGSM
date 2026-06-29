@@ -139,7 +139,7 @@ class TinyGsmSMS {
     thisModem().sendAT(GF("+CSCS=\"HEX\""));
     thisModem().waitResponse();
     // Send the message
-    thisModem().sendAT(GF("+CUSD=1,\""), code, GF("\""));
+    thisModem().sendAT(GF("+CUSD=1,\""), code, '"');
     if (thisModem().waitResponse() != 1) { return ""; }
     if (thisModem().waitResponse(10000L, GF("+CUSD:")) != 1) { return ""; }
     thisModem().stream.readStringUntil('"');
@@ -163,7 +163,7 @@ class TinyGsmSMS {
     // Set GSM 7 bit default alphabet (3GPP TS 23.038)
     thisModem().sendAT(GF("+CSCS=\"GSM\""));
     thisModem().waitResponse();
-    thisModem().sendAT(GF("+CMGS=\""), number, GF("\""));
+    thisModem().sendAT(GF("+CMGS=\""), number, '"');
     if (thisModem().waitResponse(GF(">")) != 1) { return false; }
     thisModem().stream.print(text);  // Actually send the message
     thisModem().stream.write(static_cast<char>(0x1A));  // Terminate the message
@@ -210,7 +210,7 @@ class TinyGsmSMS {
     thisModem().sendAT(GF("+CSMP=17,167,0,8"));
     thisModem().waitResponse();
 
-    thisModem().sendAT(GF("+CMGS=\""), number, GF("\""));
+    thisModem().sendAT(GF("+CMGS=\""), number, '"');
     return thisModem().waitResponse(GF(">")) == 1;
   }
   bool sendSMS_UTF8_end() {

@@ -822,7 +822,7 @@ class TinyGsmESP32
       modem_time     = atol(buf);
     }
     waitResponse();
-    DBG(GF("### Modem Raw Time:"), buf, GF("("), modem_time, GF(")"));
+    DBG(GF("### Modem Raw Time:"), buf, '(', modem_time, ')');
 
     if (modem_time != 0) {
       switch (epoch) {
@@ -940,7 +940,7 @@ class TinyGsmESP32
       // set the SSL SNI (server name indication)
       // Multiple connections: (AT+CIPMUX=1)
       // AT+CIPSSLCSNI=<link ID>,<"sni">
-      sendAT(GF("+CIPSSLCSNI="), requested_mux, GF(",\""), host, GF("\""));
+      sendAT(GF("+CIPSSLCSNI="), requested_mux, GF(",\""), host, '"');
       waitResponse();
     }
 
@@ -950,7 +950,7 @@ class TinyGsmESP32
     // establish a connection.
     if (strlen(host) > 64) {
       // AT+CIPDOMAIN=<"domain name">[,<ip network>][,<timeout>]
-      sendAT(GF("+CIPDOMAIN=\""), host, GF("\""));
+      sendAT(GF("+CIPDOMAIN=\""), host, '"');
       // +CIPDOMAIN:<"IP address"> then OK
       if (waitResponse(GF("+CIPDOMAIN:\"")) != 1) { return false; }
       String ip = stream.readStringUntil('"');
