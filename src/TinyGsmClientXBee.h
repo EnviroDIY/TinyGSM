@@ -1068,7 +1068,7 @@ class TinyGsmXBee
     // Get out of command mode to actually send the text
     exitCommand();
 
-    streamWrite(text);
+    stream.print(text);
     stream.write(
         static_cast<char>(0x0D));  // close off with the carriage return
 
@@ -1622,7 +1622,7 @@ class TinyGsmXBee
       // Cannot send anything for 1 "guard time" before entering command mode
       // Default guard time is 1s, but the init fxn decreases it to 100 ms
       delay(guardTime + 10);
-      streamWrite(GF("+++"));  // enter command mode
+      stream.print(GF("+++"));  // enter command mode
 
       if (beeType != XBEE_S6B_WIFI && beeType != XBEE3_LTEM3) {
         res = waitResponse(guardTime * 2);
