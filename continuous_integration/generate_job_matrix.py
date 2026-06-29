@@ -339,32 +339,6 @@ matrix_exclusions = [
     },
 ]
 
-# # Exclude not-favorite boards from all examples except AllFunctions and test_build
-# favorite_boards = [
-#     "mayfly",
-#     "envirodiy_stonefly_m4",
-#     "zero",
-#     "nodemcu",
-#     "esp32dev",
-#     "uno_r4_wifi",
-# ]
-# for example in [
-#     e
-#     for e in examples_to_build
-#     if e
-#     not in [
-#         os.path.join("examples", "AllFunctions"),
-#         os.path.join("extras", "tools", "test_build"),
-#     ]
-# ]:
-#     matrix_exclusions.append(
-#         {
-#             "example": example,
-#             "boards": [board for board in boards if board not in favorite_boards],
-#             "modems": deepcopy(modem_list),
-#         }
-#     )
-
 # Exclude modems without SSL support from HttpsClient and AWS_IoTCore examples
 unsecured_modems = [
     "TINY_GSM_MODEM_SIM900",
@@ -590,44 +564,7 @@ end_job_commands: List[str] = ["\n\nexit $status"]
 print(
     f"Total tests: {len(filtered_matrix)} (filtered from {len(cart_join)} total combinations)"
 )
-# for board in favorite_boards:
-#     b_matrix = [item for item in filtered_matrix if item[1] == board]
-#     for modem in modem_list:
-#         m_matrix = [item for item in b_matrix if item[2] == modem]
-#         arduino_ex_commands = []
-#         pio_ex_commands = []
-#         for matrix_item in m_matrix:
-#             arduino_ex_commands += create_command_list_from_matrix(
-#                 matrix_item=matrix_item,
-#                 create_command_function=create_arduino_cli_compile_command,
-#                 title_by=["example"],
-#             )
-#             pio_ex_commands += create_command_list_from_matrix(
-#                 matrix_item=matrix_item,
-#                 create_command_function=create_pio_ci_compile_command,
-#                 title_by=["example"],
-#             )
-#         if len(arduino_ex_commands) > 0:
-#             arduino_job_matrix.append(
-#                 {
-#                     "job_name": f"Arduino - {board} - {modem}",
-#                     "job_tag": f"arduino_{board}_{modem}".lower(),
-#                     "command": "\n".join(
-#                         start_job_commands + arduino_ex_commands + end_job_commands
-#                     ),
-#                 }
-#             )
-#         if len(pio_ex_commands) > 0:
-#             pio_job_matrix.append(
-#                 {
-#                     "job_name": f"PlatformIO - {board} - {modem}",
-#                     "job_tag": f"pio_{board}_{modem}".lower(),
-#                     "command": "\n".join(
-#                         start_job_commands + pio_ex_commands + end_job_commands
-#                     ),
-#                 }
-#             )
-# for board in [board for board in boards if board not in favorite_boards]:
+
 for board in boards:
     b_matrix = [item for item in filtered_matrix if item[1] == board]
     arduino_ex_commands = []

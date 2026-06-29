@@ -13,7 +13,9 @@
 #define SRC_TINYGSMCLIENTMC60_H_
 // #pragma message("TinyGSM:  TinyGsmClientMC60")
 
-// #define TINY_GSM_DEBUG Serial
+#if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
+#define TINY_GSM_MAX_RESPONSE_CHECKS 6
+#endif
 
 #if !defined(TINY_GSM_RX_BUFFER)
 #define TINY_GSM_RX_BUFFER 64

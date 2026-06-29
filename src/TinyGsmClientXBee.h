@@ -11,7 +11,9 @@
 #define SRC_TINYGSMCLIENTXBEE_H_
 // #pragma message("TinyGSM:  TinyGsmClientXBee")
 
-// #define TINY_GSM_DEBUG Serial
+#if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
+#define TINY_GSM_MAX_RESPONSE_CHECKS 2
+#endif
 
 #if !defined(TINY_GSM_RX_BUFFER)
 #define TINY_GSM_RX_BUFFER 64

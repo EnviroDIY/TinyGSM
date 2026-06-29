@@ -10,8 +10,6 @@
 #define SRC_TINYGSMCLIENTESP32_H_
 // #pragma message("TinyGSM:  TinyGsmClientESP32")
 
-// #define TINY_GSM_DEBUG Serial
-
 #if !defined(TINY_GSM_RX_BUFFER)
 #define TINY_GSM_RX_BUFFER 64
 #endif
