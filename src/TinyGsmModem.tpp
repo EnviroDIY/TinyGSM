@@ -33,6 +33,10 @@
 #endif
 #endif
 
+#ifndef TINY_GSM_MAX_RESPONSE_CHECKS
+#define TINY_GSM_MAX_RESPONSE_CHECKS 5
+#endif
+
 #ifndef MODEM_MANUFACTURER
 #define MODEM_MANUFACTURER "unknown"
 #endif
@@ -234,11 +238,57 @@ class TinyGsmModem {
    */
   int8_t waitResponse(uint32_t timeout_ms, String& data,
                       GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = nullptr,
-                      GsmConstStr r4 = nullptr, GsmConstStr r5 = nullptr,
-                      GsmConstStr r6 = nullptr, GsmConstStr r7 = nullptr) {
-    return thisModem().waitResponseImpl(timeout_ms, data, r1, r2, r3, r4, r5,
-                                        r6, r7);
+                      GsmConstStr r2 = GFP(GSM_ERROR)
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
+                          ,
+                      GsmConstStr r3 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
+                      ,
+                      GsmConstStr r4 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
+                      ,
+                      GsmConstStr r5 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
+                      ,
+                      GsmConstStr r6 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
+                      ,
+                      GsmConstStr r7 = nullptr
+#if TINY_GSM_MAX_RES, PONSE_CHECKS > 7
+                      GsmConstStr r8 = nullptr
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+  ) {
+    return thisModem().waitResponseImpl(timeout_ms, data, r1, r2
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
+                                        ,
+                                        r3
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
+                                        ,
+                                        r4
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
+                                        ,
+                                        r5
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
+                                        ,
+                                        r6
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
+                                        ,
+                                        r7
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
+                                        ,
+                                        r8
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+    );
   }
 
   /**
@@ -262,11 +312,58 @@ class TinyGsmModem {
    * @return *int8_t* the index of the response input
    */
   int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = nullptr,
-                      GsmConstStr r4 = nullptr, GsmConstStr r5 = nullptr,
-                      GsmConstStr r6 = nullptr, GsmConstStr r7 = nullptr) {
+                      GsmConstStr r2 = GFP(GSM_ERROR)
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
+                          ,
+                      GsmConstStr r3 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
+                      ,
+                      GsmConstStr r4 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
+                      ,
+                      GsmConstStr r5 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
+                      ,
+                      GsmConstStr r6 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
+                      ,
+                      GsmConstStr r7 = nullptr
+#if TINY_GSM_MAX_RES, PONSE_CHECKS > 7
+                      GsmConstStr r8 = nullptr
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+  ) {
     String data;
-    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5, r6, r7);
+    return waitResponse(timeout_ms, data, r1, r2
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
+                        ,
+                        r3
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
+                        ,
+                        r4
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
+                        ,
+                        r5
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
+                        ,
+                        r6
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
+                        ,
+                        r7
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
+                        ,
+                        r8
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+    );
   }
 
   /**
@@ -290,10 +387,57 @@ class TinyGsmModem {
    * @return *int8_t* the index of the response input
    */
   int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = nullptr,
-                      GsmConstStr r4 = nullptr, GsmConstStr r5 = nullptr,
-                      GsmConstStr r6 = nullptr, GsmConstStr r7 = nullptr) {
-    return waitResponse(1000L, r1, r2, r3, r4, r5, r6, r7);
+                      GsmConstStr r2 = GFP(GSM_ERROR)
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
+                          ,
+                      GsmConstStr r3 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
+                      ,
+                      GsmConstStr r4 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
+                      ,
+                      GsmConstStr r5 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
+                      ,
+                      GsmConstStr r6 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
+                      ,
+                      GsmConstStr r7 = nullptr
+#if TINY_GSM_MAX_RES, PONSE_CHECKS > 7
+                      GsmConstStr r8 = nullptr
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+  ) {
+    return waitResponse(1000L, r1, r2
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
+                        ,
+                        r3
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
+                        ,
+                        r4
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
+                        ,
+                        r5
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
+                        ,
+                        r6
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
+                        ,
+                        r7
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
+                        ,
+                        r8
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+    );
   }
 
   /**
@@ -701,16 +845,64 @@ class TinyGsmModem {
 
   int8_t waitResponseImpl(uint32_t timeout_ms, String& data,
                           GsmConstStr r1 = GFP(GSM_OK),
-                          GsmConstStr r2 = GFP(GSM_ERROR),
-                          GsmConstStr r3 = nullptr, GsmConstStr r4 = nullptr,
-                          GsmConstStr r5 = nullptr, GsmConstStr r6 = nullptr,
-                          GsmConstStr r7 = nullptr) {
+                          GsmConstStr r2 = GFP(GSM_ERROR)
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
+                              ,
+                          GsmConstStr r3 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
+                          ,
+                          GsmConstStr r4 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
+                          ,
+                          GsmConstStr r5 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
+                          ,
+                          GsmConstStr r6 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
+                          ,
+                          GsmConstStr r7 = nullptr
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
+                          ,
+                          GsmConstStr r8 = nullptr
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+  ) {
     data.reserve(64);
 
-    const GsmConstStr responses[7] = {r1, r2, r3, r4, r5, r6, r7};
-    size_t            responseLens[7];
-    char              responseLastChars[7];
-    for (uint8_t i = 0; i < 7; i++) {
+    const GsmConstStr responses[TINY_GSM_MAX_RESPONSE_CHECKS] = {r1,
+                                                                 r2
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
+                                                                 ,
+                                                                 r3
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
+                                                                 ,
+                                                                 r4
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
+                                                                 ,
+                                                                 r5
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
+                                                                 ,
+                                                                 r6
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
+                                                                 ,
+                                                                 r7
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
+                                                                 ,
+                                                                 r8
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+    };
+    size_t responseLens[TINY_GSM_MAX_RESPONSE_CHECKS];
+    char   responseLastChars[TINY_GSM_MAX_RESPONSE_CHECKS];
+    for (uint8_t i = 0; i < TINY_GSM_MAX_RESPONSE_CHECKS; i++) {
       responseLens[i]      = TinyGsmConstStrLen(responses[i]);
       responseLastChars[i] = responseLens[i]
           ? TinyGsmConstStrCharAt(responses[i], responseLens[i] - 1)
@@ -725,9 +917,25 @@ class TinyGsmModem {
 
 #ifdef TINY_GSM_DEBUG_DEEP
     DBG(GF("r1 <"), r1 ? r1 : GF("NULL"), GF("> r2 <"), r2 ? r2 : GF("NULL"),
-        GF("> r3 <"), r3 ? r3 : GF("NULL"), GF("> r4 <"), r4 ? r4 : GF("NULL"),
-        GF("> r5 <"), r5 ? r5 : GF("NULL"), GF("> r6 <"), r6 ? r6 : GF("NULL"),
-        GF("> r7 <"), r7 ? r7 : GF("NULL"), '>');
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
+        GF("> r3 <"), r3 ? r3 : GF("NULL"),
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
+        GF("> r4 <"), r4 ? r4 : GF("NULL"),
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
+        GF("> r5 <"), r5 ? r5 : GF("NULL"),
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
+        GF("> r6 <"), r6 ? r6 : GF("NULL"),
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
+        GF("> r7 <"), r7 ? r7 : GF("NULL"),
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
+        GF("> r8 <"), r8 ? r8 : GF("NULL"),
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+        '>');
 #endif
     uint8_t  index       = 0;
     uint32_t startMillis = millis();

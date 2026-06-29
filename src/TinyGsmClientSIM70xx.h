@@ -9,6 +9,9 @@
 #ifndef SRC_TINYGSMCLIENTSIM70XX_H_
 #define SRC_TINYGSMCLIENTSIM70XX_H_
 
+#if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
+#define TINY_GSM_MAX_RESPONSE_CHECKS 5
+#endif
 #ifdef AT_NL
 #undef AT_NL
 #endif

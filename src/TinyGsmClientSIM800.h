@@ -10,6 +10,10 @@
 #define SRC_TINYGSMCLIENTSIM800_H_
 // #pragma message("TinyGSM:  TinyGsmClientSIM800")
 
+#if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
+#define TINY_GSM_MAX_RESPONSE_CHECKS 5
+#endif
+
 #if !defined(TINY_GSM_RX_BUFFER)
 #define TINY_GSM_RX_BUFFER 64
 #endif
