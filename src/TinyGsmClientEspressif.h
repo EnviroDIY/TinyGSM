@@ -281,10 +281,10 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   bool networkConnectImpl(const char* ssid, const char* pwd) {
     // attempt first without than with the 'current' flag used in some firmware
     // versions
-    thisModem().sendAT(GF("+CWJAP=\""), ssid, GF("\",\""), pwd, GF("\""));
+    thisModem().sendAT(GF("+CWJAP=\""), ssid, GF("\",\""), pwd, '"');
     if (thisModem().waitResponse(30000L, GFP(GSM_OK), GF(AT_NL "FAIL" AT_NL)) !=
         1) {
-      thisModem().sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
+      thisModem().sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, '"');
       if (thisModem().waitResponse(30000L, GFP(GSM_OK),
                                    GF(AT_NL "FAIL" AT_NL)) != 1) {
         return false;

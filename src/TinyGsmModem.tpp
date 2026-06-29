@@ -991,7 +991,7 @@ class TinyGsmModem {
 
 
   String getModemInfoImpl() {
-    thisModem().sendAT(GF("I"));  // 3GPP TS 27.007
+    thisModem().sendAT('I');  // 3GPP TS 27.007
     String res;
     if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
     thisModem().cleanResponseString(res);

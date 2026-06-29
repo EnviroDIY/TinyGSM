@@ -596,8 +596,7 @@ class TinyGsmBG96
     gprsDisconnect();
 
     // Configure the TCPIP Context
-    sendAT(GF("+QICSGP=1,1,\""), apn, GF("\",\""), user, GF("\",\""), pwd,
-           GF("\""));
+    sendAT(GF("+QICSGP=1,1,\""), apn, GF("\",\""), user, GF("\",\""), pwd, '"');
     if (waitResponse() != 1) { return false; }
 
     // Activate GPRS/CSD Context
@@ -958,7 +957,7 @@ class TinyGsmBG96
       // <sslctxID> SSL Context ID, range 0-5
       // <cacertpath> certificate file path
       sendAT(GF("+QSSLCFG=\"cacert\","), context_id, GF(",\""), CAcertName,
-             GF("\""));
+             '"');
       success &= waitResponse(5000L) == 1;
     }
     // SRGD WARNING: UNTESTED!!
@@ -966,7 +965,7 @@ class TinyGsmBG96
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       // AT+QSSLCFG="clientcert",<sslctxID>,<client_cert_path>
       sendAT(GF("+QSSLCFG=\"clientcert\","), context_id, GF(",\""),
-             clientCertName, GF("\""));
+             clientCertName, '"');
       success &= waitResponse(5000L) == 1;
     }
     // SRGD WARNING: UNTESTED!!
@@ -974,7 +973,7 @@ class TinyGsmBG96
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       // AT+QSSLCFG="clientkey",<sslctxID>[,<client_key_path>]
       sendAT(GF("+QSSLCFG=\"clientkey\","), context_id, GF(",\""),
-             clientKeyName, GF("\""));
+             clientKeyName, '"');
       success &= waitResponse(5000L) == 1;
     }
 
@@ -1021,7 +1020,7 @@ class TinyGsmBG96
         break;
       }
     }
-    sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, GF(","), q_ssl_version);
+    sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, ',', q_ssl_version);
     success &= waitResponse(5000L) == 1;
 
     // set the ssl sec level

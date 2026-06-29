@@ -799,7 +799,7 @@ class TinyGsmSaraR4
     if (supportsAsyncSockets) {
       DBG("### Opening socket asynchronously!  Socket cannot be used until "
           "the URC '+UUSOCO' appears.");
-      sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",1");
+      sendAT(GF("+USOCO="), *mux, GF(",\""), host, '"', port, GF(",1"));
       if (waitResponse(timeout_ms - (millis() - startMillis),
                        GF(AT_NL "+UUSOCO:")) == 1) {
         streamGetIntBefore(',');  // skip repeated mux
@@ -813,7 +813,7 @@ class TinyGsmSaraR4
       }
     } else {
       // use synchronous open
-      sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
+      sendAT(GF("+USOCO="), *mux, GF(",\""), host, GF("\","), port);
       int8_t rsp = waitResponse(timeout_ms - (millis() - startMillis));
       return (1 == rsp);
     }

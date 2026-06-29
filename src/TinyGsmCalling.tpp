@@ -95,7 +95,7 @@ class TinyGsmCalling {
    */
  protected:
   bool callAnswerImpl() {
-    thisModem().sendAT(GF("A"));
+    thisModem().sendAT('A');
     return thisModem().waitResponse() == 1;
   }
 
@@ -104,7 +104,7 @@ class TinyGsmCalling {
     if (number == GF("last")) {
       thisModem().sendAT(GF("DL"));
     } else {
-      thisModem().sendAT(GF("D"), number, ";");
+      thisModem().sendAT('D', number, ';');
     }
     int8_t status = thisModem().waitResponse(60000L, GF("OK"), GF("BUSY"),
                                              GF("NO ANSWER"), GF("NO CARRIER"));
@@ -117,7 +117,7 @@ class TinyGsmCalling {
   }
 
   bool callHangupImpl() {
-    thisModem().sendAT(GF("H"));
+    thisModem().sendAT('H');
     return thisModem().waitResponse() == 1;
   }
 

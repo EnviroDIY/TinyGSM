@@ -286,7 +286,7 @@ class TinyGsmSim7000
     if (waitResponse() != 1) { return false; }
 
     // Start the TCP application toolkit task and set APN, USER NAME, PASSWORD
-    sendAT(GF("+CSTT=\""), apn, GF("\",\""), user, GF("\",\""), pwd, GF("\""));
+    sendAT(GF("+CSTT=\""), apn, GF("\",\""), user, GF("\",\""), pwd, '"');
     if (waitResponse(60000L) != 1) { return false; }
 
     // Bring up the TCP application toolkit wireless connection with GPRS or CSD
