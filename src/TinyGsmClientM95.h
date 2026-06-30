@@ -190,7 +190,7 @@ class TinyGsmM95
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientM95"));
 
@@ -231,7 +231,7 @@ class TinyGsmM95
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = nullptr) {
+  bool restartImpl(const char* pin) {
     if (!testAT()) { return false; }
     sendAT(GF("+CFUN=0"));
     if (waitResponse(10000L, GF("NORMAL POWER DOWN"), GF("OK"), GF("FAIL")) ==
@@ -255,13 +255,13 @@ class TinyGsmM95
   // into sleep mode is enabled, DTR is pulled down, and WAKEUP_IN is pulled
   // down, there is a need to pull the DTR pin and the WAKEUP_IN pin up first,
   // and then the module can enter into sleep mode.
-  bool sleepEnableImpl(bool enable = true) {
+  bool sleepEnableImpl(bool enable) {
     sendAT(GF("+QSCLK="), enable);
     return waitResponse() == 1;
   }
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false)
-      TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool setPhoneFunctionalityImpl(uint8_t fun,
+                                 bool    reset) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Generic network functions
@@ -308,8 +308,7 @@ class TinyGsmM95
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
-                       const char* pwd = nullptr) {
+  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
     gprsDisconnect();
 
     // select foreground context 0 = VIRTUAL_UART_1

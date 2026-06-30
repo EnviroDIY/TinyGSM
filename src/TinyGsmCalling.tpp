@@ -122,7 +122,7 @@ class TinyGsmCalling {
   }
 
   // 0-9,*,#,A,B,C,D
-  bool dtmfSendImpl(char cmd, int duration_ms = 100) {
+  bool dtmfSendImpl(char cmd, int duration_ms) {
     duration_ms = constrain(duration_ms, 100, 1000);
 
     thisModem().sendAT(GF("+VTD="),

@@ -319,7 +319,7 @@ class TinyGsmBG96
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientBG96"));
 
@@ -361,7 +361,7 @@ class TinyGsmBG96
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = nullptr) {
+  bool restartImpl(const char* pin) {
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(1, true)) { return false; }
     waitResponse(10000L, GF("APP RDY"));
@@ -379,13 +379,12 @@ class TinyGsmBG96
   // into sleep mode is enabled, DTR is pulled down, and WAKEUP_IN is pulled
   // down, there is a need to pull the DTR pin and the WAKEUP_IN pin up first,
   // and then the module can enter into sleep mode.
-  bool sleepEnableImpl(bool enable = true) {
+  bool sleepEnableImpl(bool enable) {
     sendAT(GF("+QSCLK="), enable);
     return waitResponse() == 1;
   }
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false,
-                                 uint32_t timeout_ms = 15500L) {
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset, uint32_t timeout_ms) {
     sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
     return waitResponse(timeout_ms, GF("OK")) == 1;
   }
@@ -591,8 +590,7 @@ class TinyGsmBG96
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
-                       const char* pwd = nullptr) {
+  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
     gprsDisconnect();
 
     // Configure the TCPIP Context
@@ -691,10 +689,9 @@ class TinyGsmBG96
   }
 
   // get GPS informations
-  bool getGPSImpl(float* lat, float* lon, float* speed = 0, float* alt = 0,
-                  int* vsat = 0, int* usat = 0, float* accuracy = 0,
-                  int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
-                  int* minute = 0, int* second = 0) {
+  bool getGPSImpl(float* lat, float* lon, float* speed, float* alt, int* vsat,
+                  int* usat, float* accuracy, int* year, int* month, int* day,
+                  int* hour, int* minute, int* second) {
     sendAT(GF("+QGPSLOC=2"));
     if (waitResponse(10000L, GF(AT_NL "+QGPSLOC: ")) != 1) {
       // NOTE:  Will return an error if the position isn't fixed
@@ -873,7 +870,7 @@ class TinyGsmBG96
    * NTP server functions
    */
 
-  byte NTPServerSyncImpl(const char* server = "pool.ntp.org", byte = -5) {
+  byte NTPServerSyncImpl(const char* server, byte) {
     // Request network synchronization
     // AT+QNTP=<contextID>,<server>[,<port>][,<autosettime>]
     sendAT(GF("+QNTP=1,\""), server, '"');
@@ -888,7 +885,7 @@ class TinyGsmBG96
     return -1;
   }
 
-  bool waitForTimeSyncImpl(int timeout_s = 120) {
+  bool waitForTimeSyncImpl(int timeout_s) {
     // if we're not connected, we'll never get the time
     if (!isNetworkConnected()) { return false; }
     // if we're sure we should be able to get the time, wait for it

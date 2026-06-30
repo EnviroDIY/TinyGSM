@@ -193,7 +193,7 @@ class TinyGsmMC60
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientMC60"));
 
@@ -234,7 +234,7 @@ class TinyGsmMC60
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = nullptr) {
+  bool restartImpl(const char* pin) {
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(0)) { return false; }
     if (!setPhoneFunctionality(1, true)) { return false; }
@@ -252,12 +252,12 @@ class TinyGsmMC60
   // into sleep mode is enabled, DTR is pulled down, and WAKEUP_IN is pulled
   // down, there is a need to pull the DTR pin and the WAKEUP_IN pin up first,
   // and then the module can enter into sleep mode.
-  bool sleepEnableImpl(bool enable = true) {
+  bool sleepEnableImpl(bool enable) {
     sendAT(GF("+QSCLK="), enable);
     return waitResponse() == 1;
   }
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset) {
     sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
     return waitResponse(10000L) == 1;
   }
@@ -298,8 +298,7 @@ class TinyGsmMC60
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
-                       const char* pwd = nullptr) {
+  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
     gprsDisconnect();
 
     // select foreground context 0 = VIRTUAL_UART_1
@@ -368,7 +367,7 @@ class TinyGsmMC60
    * SIM card functions
    */
  protected:
-  SimStatus getSimStatusImpl(uint32_t timeout_ms = 10000L) {
+  SimStatus getSimStatusImpl(uint32_t timeout_ms) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
       sendAT(GF("+CPIN?"));
       if (waitResponse(GF(AT_NL "+CPIN:")) != 1) {

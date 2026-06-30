@@ -196,7 +196,7 @@ class TinyGsmSim7000SSL
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM7000SSL"));
 
@@ -486,8 +486,7 @@ class TinyGsmSim7000SSL
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
-                       const char* pwd = nullptr) {
+  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
     gprsDisconnect();
 
     // Define the PDP context

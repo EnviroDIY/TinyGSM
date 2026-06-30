@@ -89,7 +89,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = nullptr) {
+  bool restartImpl(const char* pin) {
     thisModem().sendAT(GF("E0"));  // Echo Off
     thisModem().waitResponse();
     if (!thisModem().setPhoneFunctionality(0)) { return false; }
@@ -107,12 +107,12 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
   // In order to reestablish communication pull the DRT-pin of the SIM70xx
   // module LOW for at least 50ms. Then use this function to disable sleep
   // mode. The DTR-pin can then be released again.
-  bool sleepEnableImpl(bool enable = true) {
+  bool sleepEnableImpl(bool enable) {
     thisModem().sendAT(GF("+CSCLK="), enable);
     return thisModem().waitResponse() == 1;
   }
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset) {
     thisModem().sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
     return thisModem().waitResponse(10000L) == 1;
   }
@@ -269,10 +269,9 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
   }
 
   // get GPS informations
-  bool getGPSImpl(float* lat, float* lon, float* speed = 0, float* alt = 0,
-                  int* vsat = 0, int* usat = 0, float* accuracy = 0,
-                  int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
-                  int* minute = 0, int* second = 0) {
+  bool getGPSImpl(float* lat, float* lon, float* speed, float* alt, int* vsat,
+                  int* usat, float* accuracy, int* year, int* month, int* day,
+                  int* hour, int* minute, int* second) {
     thisModem().sendAT(GF("+CGNSINF"));
     if (thisModem().waitResponse(10000L, GF(AT_NL "+CGNSINF:")) != 1) {
       return false;

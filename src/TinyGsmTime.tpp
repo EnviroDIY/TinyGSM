@@ -180,8 +180,7 @@ class TinyGsmTime {
                              float* timezone) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   uint32_t
-  getNetworkEpochImpl(TinyGSM_EpochStart epoch = TinyGSM_EpochStart::UNIX)
-      TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  getNetworkEpochImpl(TinyGSM_EpochStart epoch) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
 #endif  // SRC_TINYGSMTIME_H_

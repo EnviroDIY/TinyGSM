@@ -257,7 +257,7 @@ class TinyGsmSequansMonarch
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSequansMonarch"));
 
@@ -329,7 +329,7 @@ class TinyGsmSequansMonarch
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = nullptr) {
+  bool restartImpl(const char* pin) {
     if (!testAT()) { return false; }
 
     sendAT(GF("+CFUN=0"));
@@ -357,13 +357,13 @@ class TinyGsmSequansMonarch
   //  milliseconds (100ms to 10s, default 5s) after the last sent character,
   //  then module will go to sleep mode as soon as DTE set RTS line to OFF state
   //  (driver high level).
-  bool sleepEnableImpl(bool enable = true) {
+  bool sleepEnableImpl(bool enable) {
     sendAT(GF("+SQNIPSCFG="), enable);
     return waitResponse() == 1;
   }
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false)
-      TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool setPhoneFunctionalityImpl(uint8_t fun,
+                                 bool    reset) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Generic network functions
@@ -411,8 +411,7 @@ class TinyGsmSequansMonarch
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
-                       const char* pwd = nullptr) {
+  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
     gprsDisconnect();
 
     // Define the PDP context (This uses context #3!)
@@ -465,8 +464,7 @@ class TinyGsmSequansMonarch
    */
  protected:
   bool callAnswerImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool dtmfSendImpl(char cmd,
-                    int  duration_ms = 100) TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool dtmfSendImpl(char cmd, int duration_ms) TINY_GSM_ATTR_NOT_AVAILABLE;
 
 
   /*
@@ -722,7 +720,7 @@ class TinyGsmSequansMonarch
     return result;
   }
 
-  bool modemGetConnectedImpl(uint8_t mux = 1) {
+  bool modemGetConnectedImpl(uint8_t mux) {
     // This single command always returns the connection status of all
     // six possible sockets.
     sendAT(GF("+SQNSS"));

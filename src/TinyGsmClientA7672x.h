@@ -251,7 +251,7 @@ class TinyGsmA7672X
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  A7672X"));
 
@@ -301,7 +301,7 @@ class TinyGsmA7672X
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = nullptr) {
+  bool restartImpl(const char* pin) {
     if (!testAT()) { return false; }
     sendAT(GF("+CRESET"));
     waitResponse();
@@ -321,7 +321,7 @@ class TinyGsmA7672X
   //  module can go to DTR sleep. If set to 2, the module will enter RXsleep. RX
   //  wakeup directly sends data through the serial port (for example: AT) to
   //  wake up
-  bool sleepEnableImpl(bool enable = true) {
+  bool sleepEnableImpl(bool enable) {
     sendAT(GF("+CSCLK="),
            enable ? '2' : '1');  // 2: RXsleep (at wakeup) 1: DTR sleep
     return waitResponse() == 1;
@@ -336,7 +336,7 @@ class TinyGsmA7672X
   // <rst> 0 do not reset the ME before setting it to <fun> power level
   // <rst> 1 reset the ME before setting it to <fun> power level. This
   // valueonlytakes effect when <fun> equals 1
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset) {
     sendAT(GF("+CFUN="), fun, reset ? ",1" : ",0");
     return waitResponse(10000L) == 1;
   }
@@ -349,7 +349,7 @@ class TinyGsmA7672X
     return (A7672xRegStatus)getRegistrationStatusXREG("CREG");
   }
 
-  String getLocalIPImpl(bool getSecureAddress = false) {
+  String getLocalIPImpl(bool getSecureAddress) {
     // TODO: figure out when to use each command properly
     if (getSecureAddress) {
       // AT+CCHADDR is used to get the IPv4 address after calling AT+CCHSTART.
@@ -425,8 +425,7 @@ class TinyGsmA7672X
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* = nullptr,
-                       const char* = nullptr) {
+  bool gprsConnectImpl(const char* apn, const char*, const char*) {
     gprsDisconnect();
 
     // Define the PDP context
@@ -480,7 +479,7 @@ class TinyGsmA7672X
    * SIM card functions
    */
  protected:
-  SimStatus getSimStatusImpl(uint32_t timeout_ms = 10000L) {
+  SimStatus getSimStatusImpl(uint32_t timeout_ms) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
       sendAT(GF("+CPIN?"));
       if (waitResponse(GF("+CPIN:")) != 1) {

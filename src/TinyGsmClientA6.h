@@ -174,7 +174,7 @@ class TinyGsmA6
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientA6"));
 
@@ -230,7 +230,7 @@ class TinyGsmA6
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = nullptr) {
+  bool restartImpl(const char* pin) {
     if (!testAT()) { return false; }
     sendAT(GF("+RST=1"));
     delay(3000);
@@ -243,10 +243,10 @@ class TinyGsmA6
     return waitResponse() == 1;
   }
 
-  bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool sleepEnableImpl(bool enable) TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false)
-      TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool setPhoneFunctionalityImpl(uint8_t fun,
+                                 bool    reset) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Generic network functions
@@ -285,8 +285,7 @@ class TinyGsmA6
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
-                       const char* pwd = nullptr) {
+  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
     gprsDisconnect();
 
     sendAT(GF("+CGATT=1"));
@@ -378,7 +377,7 @@ class TinyGsmA6
   }
 
   // 0-9,*,#,A,B,C,D
-  bool dtmfSendImpl(char cmd, int duration_ms = 100) {
+  bool dtmfSendImpl(char cmd, int duration_ms) {
     duration_ms = constrain(duration_ms, 100, 1000);
 
     // The duration parameter is not working, so we simulate it using delay..

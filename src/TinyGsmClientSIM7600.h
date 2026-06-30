@@ -259,7 +259,7 @@ class TinyGsmSim7600
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM7600"));
 
@@ -305,7 +305,7 @@ class TinyGsmSim7600
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = nullptr) {
+  bool restartImpl(const char* pin) {
     if (!testAT()) { return false; }
     sendAT(GF("+CRESET"));
     if (waitResponse(10000L) != 1) { return false; }
@@ -324,12 +324,12 @@ class TinyGsmSim7600
     return true;
   }
 
-  bool sleepEnableImpl(bool enable = true) {
+  bool sleepEnableImpl(bool enable) {
     sendAT(GF("+CSCLK="), enable);
     return waitResponse() == 1;
   }
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset) {
     sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
     return waitResponse(10000L) == 1;
   }
@@ -436,8 +436,7 @@ class TinyGsmSim7600
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
-                       const char* pwd = nullptr) {
+  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
     gprsDisconnect();  // Make sure we're not connected first
 
     // Define the PDP context
@@ -627,10 +626,9 @@ class TinyGsmSim7600
   }
 
   // get GPS informations
-  bool getGPSImpl(float* lat, float* lon, float* speed = 0, float* alt = 0,
-                  int* vsat = 0, int* usat = 0, float* accuracy = 0,
-                  int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
-                  int* minute = 0, int* second = 0) {
+  bool getGPSImpl(float* lat, float* lon, float* speed, float* alt, int* vsat,
+                  int* usat, float* accuracy, int* year, int* month, int* day,
+                  int* hour, int* minute, int* second) {
     sendAT(GF("+CGNSSINFO"));
     if (waitResponse(GF(AT_NL "+CGNSSINFO:")) != 1) { return false; }
 

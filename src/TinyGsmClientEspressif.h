@@ -94,7 +94,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientEspressif"));
 
@@ -205,7 +205,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = nullptr) {
+  bool restartImpl(const char* pin) {
     if (!thisModem().testAT()) { return false; }
     thisModem().sendAT(GF("+RST"));
     if (thisModem().waitResponse(10000L) != 1) { return false; }
@@ -224,10 +224,10 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
 
   bool radioOffImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool sleepEnableImpl(bool enable) TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false)
-      TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool setPhoneFunctionalityImpl(uint8_t fun,
+                                 bool    reset) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Generic network functions
