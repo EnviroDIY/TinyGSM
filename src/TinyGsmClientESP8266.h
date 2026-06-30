@@ -549,8 +549,8 @@ class TinyGsmESP8266
     uint8_t     pki_number  = 0;
     // If we actually have a secure socket populate the above with real values
     if (ssl) {
-      GsmClientSecureESP8266* thisClient =
-          static_cast<GsmClientSecureESP8266*>(sockets[mux]);
+      const GsmClientSecureESP8266* thisClient =
+          static_cast<const GsmClientSecureESP8266*>(sockets[mux]);
       sslAuthMode = thisClient->sslAuthMode;
       ca_number   = thisClient->ca_number;
       pki_number  = thisClient->pki_number;

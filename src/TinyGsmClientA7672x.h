@@ -688,8 +688,8 @@ class TinyGsmA7672X
       // mode and certificate names. This isn't really "safe" but since we've
       // already checked that the socket is a secure one, we're pretty sure of
       // the type and it should work.
-      GsmClientSecureA7672X* thisClient =
-          static_cast<GsmClientSecureA7672X*>(sockets[mux]);
+      const GsmClientSecureA7672X* thisClient =
+          static_cast<const GsmClientSecureA7672X*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
 
       // TODO: Should CCHSTART be called once during the GPRS connection process

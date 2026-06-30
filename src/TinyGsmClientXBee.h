@@ -1226,8 +1226,8 @@ class TinyGsmXBee
       // authentication mode and certificate names. This isn't really "safe"
       // but since we've already checked that the socket is a secure one,
       // we're pretty sure of the type and it should work.
-      GsmClientSecureXBee* thisClient =
-          static_cast<GsmClientSecureXBee*>(sockets[0]);
+      const GsmClientSecureXBee* thisClient =
+          static_cast<const GsmClientSecureXBee*>(sockets[0]);
       SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
       SSLVersion  sslVersion     = thisClient->sslVersion;
       const char* CAcertName     = thisClient->CAcertName;

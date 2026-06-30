@@ -879,8 +879,8 @@ class TinyGsmESP32
     uint8_t     pki_number  = 0;
     // If we actually have a secure socket populate the above with real values
     if (ssl) {
-      GsmClientSecureESP32* thisClient =
-          static_cast<GsmClientSecureESP32*>(sockets[requested_mux]);
+      const GsmClientSecureESP32* thisClient =
+          static_cast<const GsmClientSecureESP32*>(sockets[requested_mux]);
       sslAuthMode = thisClient->sslAuthMode;
       ca_number   = thisClient->ca_number;
       pki_number  = thisClient->pki_number;

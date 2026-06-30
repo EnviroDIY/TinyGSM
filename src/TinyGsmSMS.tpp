@@ -54,7 +54,7 @@ class TinyGsmSMS {
    * Utilities
    */
  protected:
-  static inline String TinyGsmDecodeHex7bit(String& instr) {
+  static inline String TinyGsmDecodeHex7bit(const String& instr) {
     String result;
     byte   reminder = 0;
     int8_t bitstate = 7;
@@ -81,7 +81,7 @@ class TinyGsmSMS {
     return result;
   }
 
-  static inline String TinyGsmDecodeHex8bit(String& instr) {
+  static inline String TinyGsmDecodeHex8bit(const String& instr) {
     String result;
     for (uint16_t i = 0; i < instr.length(); i += 2) {
       char buf[4] = {
@@ -95,7 +95,7 @@ class TinyGsmSMS {
     return result;
   }
 
-  static inline String TinyGsmDecodeHex16bit(String& instr) {
+  static inline String TinyGsmDecodeHex16bit(const String& instr) {
     String result;
     for (uint16_t i = 0; i < instr.length(); i += 4) {
       char buf[4] = {
@@ -226,7 +226,7 @@ class TinyGsmSMS {
                          size_t len) {
     if (!sendSMS_UTF8_begin(number)) { return false; }
 
-    uint16_t* t =
+    const uint16_t* t =
         const_cast<uint16_t*>(reinterpret_cast<const uint16_t*>(text));
     for (size_t i = 0; i < len; i++) {
       uint8_t c = t[i] >> 8;

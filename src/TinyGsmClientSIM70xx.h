@@ -350,6 +350,10 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
     thisModem().waitResponse();
     return false;
   }
+
+  /*
+   * Utilities
+   */
   bool handleURCs(String& data) {
     return thisModem().handleURCs(data);
   }

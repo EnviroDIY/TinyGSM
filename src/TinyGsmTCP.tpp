@@ -374,7 +374,7 @@ class TinyGsmTCP {
     }
 
     int peek() override {
-      return (uint8_t)rx.peek();
+      return rx.peek();
     }
 
     void flush() override {

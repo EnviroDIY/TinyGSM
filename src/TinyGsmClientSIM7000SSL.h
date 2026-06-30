@@ -841,8 +841,8 @@ class TinyGsmSim7000SSL
     // save us from ourselves. We cannot use a dynamic cast because Arduino
     // compiles with -fno-rtti.
     if (ssl) {
-      GsmClientSecureSim7000SSL* thisClient =
-          static_cast<GsmClientSecureSim7000SSL*>(sockets[mux]);
+      const GsmClientSecureSim7000SSL* thisClient =
+          static_cast<const GsmClientSecureSim7000SSL*>(sockets[mux]);
       uint8_t     sslCtxIndex    = thisClient->sslCtxIndex;
       SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
       const char* CAcertName     = thisClient->CAcertName;
