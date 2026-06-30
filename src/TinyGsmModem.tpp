@@ -977,20 +977,22 @@ class TinyGsmModem {
 
   // Gets the modem manufacturer
   String getModemManufacturerImpl() {
-    String manufacturer = MODEM_MANUFACTURER;
     thisModem().sendAT(GF("+CGMI"));  // 3GPP TS 27.007 standard
     String res;
-    if (thisModem().waitResponse(1000L, res) != 1) { return manufacturer; }
+    if (thisModem().waitResponse(1000L, res) != 1) {
+      return String(MODEM_MANUFACTURER);
+    }
     thisModem().cleanResponseString(res);
     return res;
   }
 
   // Gets the modem hardware version
   String getModemModelImpl() {
-    String model = MODEM_MODEL;
     thisModem().sendAT(GF("+CGMM"));  // 3GPP TS 27.007 standard
     String res;
-    if (thisModem().waitResponse(1000L, res) != 1) { return model; }
+    if (thisModem().waitResponse(1000L, res) != 1) {
+      return String(MODEM_MODEL);
+    }
     thisModem().cleanResponseString(res);
     return res;
   }
