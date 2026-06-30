@@ -774,25 +774,6 @@ class TinyGsmModem {
     res.trim();
   }
 
-  static inline size_t TinyGsmConstStrLen(GsmConstStr str) {
-    if (!str) { return 0; }
-#if defined(PROGMEM) && (defined(__AVR__) || defined(ARDUINO_ARCH_AVR)) && \
-    !defined(__AVR_ATmega4809__)
-    return strlen_P(reinterpret_cast<const char*>(str));
-#else
-    return strlen(str);
-#endif
-  }
-
-  static inline char TinyGsmConstStrCharAt(GsmConstStr str, size_t idx) {
-#if defined(PROGMEM) && (defined(__AVR__) || defined(ARDUINO_ARCH_AVR)) && \
-    !defined(__AVR_ATmega4809__)
-    return pgm_read_byte(reinterpret_cast<const char*>(str) + idx);
-#else
-    return str[idx];
-#endif
-  }
-
   static inline IPAddress TinyGsmIpFromString(const String& strIP) {
     int Parts[4] = {
         0,
@@ -899,25 +880,6 @@ class TinyGsmModem {
 #endif
 #endif
     };
-    // Make arrays of the lengths and last characters of the responses so we can
-    // check
-    size_t responseLens[TINY_GSM_MAX_RESPONSE_CHECKS];
-    char   responseLastChars[TINY_GSM_MAX_RESPONSE_CHECKS];
-    for (uint8_t i = 0; i < TINY_GSM_MAX_RESPONSE_CHECKS; i++) {
-      responseLens[i]      = TinyGsmConstStrLen(responses[i]);
-      responseLastChars[i] = responseLens[i]
-          ? TinyGsmConstStrCharAt(responses[i], responseLens[i] - 1)
-          : '\0';
-    }
-
-#if defined TINY_GSM_DEBUG
-    // check how long the verbose info tags are
-    const size_t verboseLen1 = TinyGsmConstStrLen(GFP(GSM_VERBOSE));
-    const size_t verboseLen2 = TinyGsmConstStrLen(GFP(GSM_VERBOSE_2));
-    // check how long the new line is
-    // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
-    const int len_atnl = strnlen(AT_NL, 3);
-#endif
 
 #ifdef TINY_GSM_DEBUG_DEEP
     DBG(GF("r1 <"), r1 ? r1 : GF("NULL"), GF("> r2 <"), r2 ? r2 : GF("NULL"),
@@ -952,8 +914,7 @@ class TinyGsmModem {
         data += static_cast<char>(a);
         // loop through the possible responses and see if we have a match
         for (uint8_t i = 0; i < TINY_GSM_MAX_RESPONSE_CHECKS; i++) {
-          if (responseLens[i] && a == responseLastChars[i] &&
-              data.endsWith(responses[i])) {
+          if (responses[i] && data.endsWith(responses[i])) {
             index = i + 1;
             goto finish;
           }
@@ -961,6 +922,9 @@ class TinyGsmModem {
 #if defined TINY_GSM_DEBUG
         if ((verboseLen1 && data.endsWith(GFP(GSM_VERBOSE))) ||
             (verboseLen2 && data.endsWith(GFP(GSM_VERBOSE_2)))) {
+          // check how long the new line is
+          // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
+          const int len_atnl = strnlen(AT_NL, 3);
           // Read out the verbose message, until the last character of the new
           // line
           data += thisModem().stream.readStringUntil(AT_NL[len_atnl]);
