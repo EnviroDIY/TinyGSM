@@ -234,7 +234,7 @@ class TinyGsmSim5360
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the
     // sim
-    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strnlen(pin, 16) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -352,7 +352,7 @@ class TinyGsmSim5360
     // The CGDCONT commands set up the "external" PDP context
 
     // Set the external authentication
-    if (user && strlen(user) > 0) {
+    if (user && strnlen(user, 64) > 0) {
       sendAT(GF("+CGAUTH=1,0,\""), user, GF("\",\""), pwd, '"');
       waitResponse();
     }
@@ -368,7 +368,7 @@ class TinyGsmSim5360
     waitResponse();
 
     // Set the embedded authentication
-    if (user && strlen(user) > 0) {
+    if (user && strnlen(user, 64) > 0) {
       sendAT(GF("+CSOCKAUTH=1,1,\""), user, GF("\",\""), pwd, '"');
       waitResponse();
     }

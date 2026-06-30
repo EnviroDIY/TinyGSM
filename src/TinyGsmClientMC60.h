@@ -220,7 +220,7 @@ class TinyGsmMC60
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strnlen(pin, 16) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {

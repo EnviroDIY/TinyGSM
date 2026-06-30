@@ -363,7 +363,7 @@ class TinyGsmXBee
     bool ret_val     = true;
 
     // if there's a pin, we need to re-write to flash each time
-    if (pin && strlen(pin) > 0) {
+    if (pin && strnlen(pin, 16) > 0) {
       sendAT(GF("PN"), pin);
       if (waitResponse() != 1) {
         ret_val = false;
@@ -892,7 +892,7 @@ class TinyGsmXBee
 
     changesMade |= changeSettingIfNeeded(GF("ID"), ssid);
 
-    if (pwd && strlen(pwd) > 0) {
+    if (pwd && strnlen(pwd, 128) > 0) {
       // Set security to WPA2
       changesMade |= changeSettingIfNeeded(GF("EE"), 0x2);
       // set the password
@@ -940,7 +940,7 @@ class TinyGsmXBee
     // the cellular bees will NOT return the previously set username or
     // password, so we have no way of knowing if they have changed
     // and must re-write to flash each time
-    if (user && strlen(user) > 0) {
+    if (user && strnlen(user, 64) > 0) {
       sendAT(GF("CU"), user);  // Set the user for the APN
       if (waitResponse() != 1) {
         success = false;
@@ -948,7 +948,7 @@ class TinyGsmXBee
         changesMade = true;
       }
     }
-    if (pwd && strlen(pwd) > 0) {
+    if (pwd && strnlen(pwd, 128) > 0) {
       sendAT(GF("CW"), pwd);  // Set the password for the APN
       if (waitResponse() != 1) {
         success = false;
@@ -990,7 +990,7 @@ class TinyGsmXBee
    */
  protected:
   bool simUnlockImpl(const char* pin) {
-    if (pin && strlen(pin) > 0) {
+    if (pin && strnlen(pin, 16) > 0) {
       sendAT(GF("PN"), pin);
       return waitResponse() == 1;
     }

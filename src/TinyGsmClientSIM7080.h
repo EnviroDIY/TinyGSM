@@ -253,7 +253,7 @@ class TinyGsmSim7080
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strnlen(pin, 16) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -561,11 +561,11 @@ class TinyGsmSim7080
     //                  1: PAP
     //                  2: CHAP
     //                  3: PAP or CHAP
-    if (pwd && strlen(pwd) > 0 && user && strlen(user) > 0) {
+    if (pwd && strnlen(pwd, 128) > 0 && user && strnlen(user, 64) > 0) {
       sendAT(GF("+CNCFG=0,1,\""), apn, GF("\",\""), user, GF("\",\""), pwd,
              GF("\",3"));
       waitResponse();
-    } else if (user && strlen(user) > 0) {
+    } else if (user && strnlen(user, 64) > 0) {
       // Set the user name only
       sendAT(GF("+CNCFG=0,1,\""), apn, GF("\",\""), user, '"');
       waitResponse();
