@@ -349,18 +349,13 @@ class TinyGsmA7672X
     return (A7672xRegStatus)getRegistrationStatusXREG("CREG");
   }
 
-  String getLocalIPImpl(bool getSecureAddress) {
+  String getLocalIPSecure() {
     // TODO: figure out when to use each command properly
-    if (getSecureAddress) {
-      // AT+CCHADDR is used to get the IPv4 address after calling AT+CCHSTART.
-      sendAT(GF("+CCHADDR"));
-      if (waitResponse(GF("+CCHADDR:")) != 1) { return ""; }
-    } else {
-      // The write command returns a list of PDP addresses for the specified
-      // context identifiers.
-      sendAT(GF("+CGPADDR=1"));
-      if (waitResponse(GF("+CGPADDR:")) != 1) { return ""; }
-    }
+    // AT+CCHADDR is used to get the IPv4 address after calling AT+CCHSTART (ie,
+    // when using the SSL application on the module) AT+CGPADDR is used to get
+    // the IPv4 address for the packet domain service (PDP)
+    sendAT(GF("+CCHADDR"));
+    if (waitResponse(GF("+CCHADDR:")) != 1) { return ""; }
     streamSkipUntil(',');  // Skip context id
     String res = stream.readStringUntil('\r');
     if (waitResponse() != 1) { return ""; }

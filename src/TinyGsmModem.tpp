@@ -1077,6 +1077,8 @@ class TinyGsmModem {
   }
 
   String getLocalIPImpl() {
+    // AT+CGPADDR=<cid> where cid is the context id, which is usually 1 for the
+    // first context
     thisModem().sendAT(GF("+CGPADDR=1"));
     if (thisModem().waitResponse(GF("+CGPADDR:")) != 1) { return ""; }
     thisModem().streamSkipUntil(',');  // Skip context id
