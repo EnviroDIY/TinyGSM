@@ -209,26 +209,29 @@ class TinyGsmSim7080
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
-    DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
-    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM7080"));
-
-    bool gotATOK = false;
-    for (uint32_t start = millis(); millis() - start < 10000L;) {
+  bool testATImpl(uint32_t timeout_ms = 10000L) {
+    for (uint32_t start = millis(); millis() - start < timeout_ms;) {
       sendAT(GF(""));
       int8_t resp = waitResponse(200L, GFP(GSM_OK), GFP(GSM_ERROR),
                                  GFP(GSM_AT));
       if (resp == 1) {
-        gotATOK = true;
-        break;
+        return true;
       } else if (resp == 3) {
         waitResponse(200L);  // get the OK
-        sendAT(GF("E0"));    // Echo Off
         DBG(GF("## Turning off echo!"));
+        sendAT(GF("E0"));  // Echo Off
         waitResponse(2000L);
       }
       delay(100);
     }
+    return false;
+  }
+
+  bool initImpl(const char* pin = nullptr) {
+    DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM7080"));
+
+    bool gotATOK = testAT();
     if (!gotATOK) { return false; }
 
 #ifdef TINY_GSM_DEBUG
@@ -284,22 +287,7 @@ class TinyGsmSim7080
   bool restartImpl(const char* pin = nullptr) {
     bool success = true;
 
-    bool gotATOK = false;
-    for (uint32_t start = millis(); millis() - start < 10000L;) {
-      sendAT(GF(""));
-      int8_t resp = waitResponse(200L, GFP(GSM_OK), GFP(GSM_ERROR),
-                                 GFP(GSM_AT));
-      if (resp == 1) {
-        gotATOK = true;
-        break;
-      } else if (resp == 3) {
-        waitResponse(200L);  // get the OK
-        DBG(GF("## Turning off echo!"));
-        sendAT(GF("E0"));  // Echo Off
-        waitResponse(2000L);
-      }
-      delay(100);
-    }
+    bool gotATOK = testAT();
     if (!gotATOK) { return false; }
 
     sendAT(GF("+CREBOOT"));  // Reboot
