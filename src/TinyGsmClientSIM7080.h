@@ -675,7 +675,7 @@ class TinyGsmSim7080
 
     // Set NTP server and timezone - write command
     // AT+CNTP=<ntpserver>[,<time zone>][,<cid>][,<mode>]
-    sendAT(GF("+CNTP=\""), server, GF("\","), String(TimeZone * 4), GF(",0,2"));
+    sendAT(GF("+CNTP=\""), server, GF("\","), TimeZone * 4, GF(",0,2"));
     // <ntpserver> - NTP server’s url
     // <time zone> - Local time zone, the range is (-47 to 48), in fact, time
     // zone range (-12 to 12), but taking into account that some countries and
