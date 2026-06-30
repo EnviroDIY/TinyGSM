@@ -921,8 +921,8 @@ class TinyGsmModem {
           }
         }
 #if defined TINY_GSM_DEBUG
-        if ((verboseLen1 && data.endsWith(GFP(GSM_VERBOSE))) ||
-            (verboseLen2 && data.endsWith(GFP(GSM_VERBOSE_2)))) {
+        if ((data.endsWith(GFP(GSM_VERBOSE))) ||
+            (data.endsWith(GFP(GSM_VERBOSE_2)))) {
           // check how long the new line is
           // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
           const int len_atnl = strnlen(AT_NL, 3);
