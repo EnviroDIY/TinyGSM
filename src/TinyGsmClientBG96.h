@@ -384,9 +384,9 @@ class TinyGsmBG96
     return waitResponse() == 1;
   }
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset, uint32_t timeout_ms) {
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset) {
     sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
-    return waitResponse(timeout_ms, GF("OK")) == 1;
+    return waitResponse(15500L, GF("OK")) == 1;
   }
 
   /*
