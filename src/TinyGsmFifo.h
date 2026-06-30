@@ -142,7 +142,8 @@ class TinyGsmFifo {
     return n - c;
   }
 
-  uint8_t peek() {
+  int peek() {
+    if (!readable()) { return -1; }
     return _b[_r];
   }
 
@@ -159,9 +160,9 @@ class TinyGsmFifo {
     return (i + n) % N;
   }
 
-  T   _b[N];  /// The buffer, containing 'N' items of type 'T'
-  int _w;     /// The write position in the buffer
-  int _r;     /// The read position in the buffer
+  T   _b[N]{};  /// The buffer, containing 'N' items of type 'T'
+  int _w = 0;   /// The write position in the buffer
+  int _r = 0;   /// The read position in the buffer
 };
 
 #endif
