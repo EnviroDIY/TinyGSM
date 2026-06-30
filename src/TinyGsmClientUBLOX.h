@@ -303,7 +303,7 @@ class TinyGsmUBLOX
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strnlen(pin, 16) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -454,11 +454,11 @@ class TinyGsmUBLOX
     sendAT(GF("+UPSD=0,1,\""), apn, '"');  // Set APN for PSD profile 0
     waitResponse();
 
-    if (user && strlen(user) > 0) {
+    if (user && strnlen(user, 64) > 0) {
       sendAT(GF("+UPSD=0,2,\""), user, '"');  // Set user for PSD profile 0
       waitResponse();
     }
-    if (pwd && strlen(pwd) > 0) {
+    if (pwd && strnlen(pwd, 128) > 0) {
       sendAT(GF("+UPSD=0,3,\""), pwd, '"');  // Set password for PSD profile 0
       waitResponse();
     }

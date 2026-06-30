@@ -266,7 +266,7 @@ class TinyGsmSim800
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strnlen(pin, 16) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -400,12 +400,12 @@ class TinyGsmSim800
     waitResponse();
 
     // Set the user name
-    if (user && strlen(user) > 0) {
+    if (user && strnlen(user, 64) > 0) {
       sendAT(GF("+SAPBR=3,1,\"USER\",\""), user, '"');
       waitResponse();
     }
     // Set the password
-    if (pwd && strlen(pwd) > 0) {
+    if (pwd && strnlen(pwd, 128) > 0) {
       sendAT(GF("+SAPBR=3,1,\"PWD\",\""), pwd, '"');
       waitResponse();
     }
