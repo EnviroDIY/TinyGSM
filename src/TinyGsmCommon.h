@@ -118,7 +118,7 @@ const T& TinyGsmMax(const T& a, const T& b) {
  * NOTE: This DOES NOT work with the XBee module
  */
 template <class T>
-uint32_t TinyGsmAutoBaud(T& SerialAT, uint32_t minimum = 9600,
+uint32_t TinyGsmAutoBaud(T& at_serial, uint32_t minimum = 9600,
                          uint32_t maximum = 921600) {
   static uint32_t rates[] = {115200, 57600, 9600,  921600, 38400, 19200, 460800,
                              230400, 74400, 74880, 2400,   4800,  14400, 28800};
@@ -128,18 +128,19 @@ uint32_t TinyGsmAutoBaud(T& SerialAT, uint32_t minimum = 9600,
     if (rate < minimum || rate > maximum) continue;
 
     DBG("Trying baud rate", rate, "...");
-    SerialAT.begin(rate);
+    at_serial.end();
+    at_serial.begin(rate);
     delay(10);
     for (int j = 0; j < 10; j++) {
-      SerialAT.print("AT\r\n");
-      String input = SerialAT.readString();
+      at_serial.print("AT\r\n");
+      String input = at_serial.readString();
       if (input.indexOf("OK") >= 0) {
         DBG("Modem responded at rate", rate);
         return rate;
       }
     }
   }
-  SerialAT.begin(minimum);
+  at_serial.begin(minimum);
   return 0;
 }
 
