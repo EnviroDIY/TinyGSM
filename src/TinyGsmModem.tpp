@@ -873,6 +873,7 @@ class TinyGsmModem {
   ) {
     data.reserve(64);
 
+    // put the possible responses into an array so we can loop through them
     const GsmConstStr responses[TINY_GSM_MAX_RESPONSE_CHECKS] = {r1,
                                                                  r2
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 2
@@ -900,6 +901,8 @@ class TinyGsmModem {
 #endif
 #endif
     };
+    // Make arrays of the lengths and last characters of the responses so we can
+    // check
     size_t responseLens[TINY_GSM_MAX_RESPONSE_CHECKS];
     char   responseLastChars[TINY_GSM_MAX_RESPONSE_CHECKS];
     for (uint8_t i = 0; i < TINY_GSM_MAX_RESPONSE_CHECKS; i++) {
@@ -910,9 +913,12 @@ class TinyGsmModem {
     }
 
 #if defined TINY_GSM_DEBUG
+    // check how long the verbose info tags are
     const size_t verboseLen1 = TinyGsmConstStrLen(GFP(GSM_VERBOSE));
     const size_t verboseLen2 = TinyGsmConstStrLen(GFP(GSM_VERBOSE_2));
-    const int    len_atnl    = strnlen(AT_NL, 3);
+    // check how long the new line is
+    // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
+    const int len_atnl = strnlen(AT_NL, 3);
 #endif
 
 #ifdef TINY_GSM_DEBUG_DEEP
@@ -946,7 +952,8 @@ class TinyGsmModem {
         int8_t a = thisModem().stream.read();
         if (a <= 0) continue;  // Skip 0x00 bytes, just in case
         data += static_cast<char>(a);
-        for (uint8_t i = 0; i < 7; i++) {
+        // loop through the possible responses and see if we have a match
+        for (uint8_t i = 0; i < TINY_GSM_MAX_RESPONSE_CHECKS; i++) {
           if (responseLens[i] && a == responseLastChars[i] &&
               data.endsWith(responses[i])) {
             index = i + 1;
@@ -956,8 +963,6 @@ class TinyGsmModem {
 #if defined TINY_GSM_DEBUG
         if ((verboseLen1 && data.endsWith(GFP(GSM_VERBOSE))) ||
             (verboseLen2 && data.endsWith(GFP(GSM_VERBOSE_2)))) {
-          // check how long the new line is
-          // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
           // Read out the verbose message, until the last character of the new
           // line
           data += thisModem().stream.readStringUntil(AT_NL[len_atnl]);
