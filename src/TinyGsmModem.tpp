@@ -94,7 +94,7 @@ class TinyGsmModem {
    * @param cmd The commands to send
    */
   template <typename... Args>
-  inline void sendAT(Args... cmd) {
+  void sendAT(Args... cmd) {
     thisModem().streamWrite(GSM_AT, cmd..., AT_NL);
     thisModem().stream.flush();
     TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
@@ -671,12 +671,12 @@ class TinyGsmModem {
  public:
   // Utility templates for writing/skipping characters on a stream
   template <typename T>
-  inline void streamWrite(T last) {
+  void streamWrite(T last) {
     thisModem().stream.print(last);
   }
 
   template <typename T, typename... Args>
-  inline void streamWrite(T head, Args... tail) {
+  void streamWrite(T head, Args... tail) {
     thisModem().stream.print(head);
     thisModem().streamWrite(tail...);
   }
