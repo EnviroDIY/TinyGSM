@@ -83,7 +83,7 @@ class TinyGsmNTP {
     thisModem().waitResponse(10000L);
 
     // Set NTP server and timezone
-    thisModem().sendAT(GF("+CNTP=\""), server, GF("\","), String(TimeZone));
+    thisModem().sendAT(GF("+CNTP=\""), server, GF("\","), TimeZone);
     if (thisModem().waitResponse(10000L) != 1) { return -1; }
 
     // Request network synchronization
