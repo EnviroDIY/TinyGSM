@@ -45,6 +45,8 @@
 #define MODEM_MODEL "unknown"
 #endif
 
+static const char GSM_AT[] TINY_GSM_PROGMEM = "AT";
+
 static const char GSM_OK[] TINY_GSM_PROGMEM    = AT_OK AT_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = AT_ERROR AT_NL;
 
@@ -93,7 +95,7 @@ class TinyGsmModem {
    */
   template <typename... Args>
   inline void sendAT(Args... cmd) {
-    thisModem().streamWrite("AT", cmd..., AT_NL);
+    thisModem().streamWrite(GSM_AT, cmd..., AT_NL);
     thisModem().stream.flush();
     TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
   }
