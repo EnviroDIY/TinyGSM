@@ -654,7 +654,8 @@ class TinyGsmSim7080
    * NTP server functions
    */
  protected:
-  byte NTPServerSyncImpl(String server = "pool.ntp.org", int TimeZone = 0) {
+  byte NTPServerSyncImpl(const char* server   = "pool.ntp.org",
+                         int         TimeZone = 0) {
     // Set GPRS bearer profile to associate with NTP sync
     // this may fail, it's not supported by all modules
     sendAT(GF("+CNTPCID=0"));  // CID must be 0. With 1 (like other modules)
