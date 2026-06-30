@@ -1068,8 +1068,8 @@ class TinyGsmBG96
       // mode and certificate names. This isn't really "safe" but since we've
       // already checked that the socket is a secure one, we're pretty sure of
       // the type and it should work.
-      GsmClientSecureBG96* thisClient =
-          static_cast<GsmClientSecureBG96*>(sockets[mux]);
+      const GsmClientSecureBG96* thisClient =
+          static_cast<const GsmClientSecureBG96*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
 
       // AT+QSSLOPEN=<pdpctxID>,<sslctxID>,<clientID>,<serveraddr>,<server_port>[,<access_mode>]

@@ -903,8 +903,8 @@ class TinyGsmSim7600
       // mode and certificate names. This isn't really "safe" but since we've
       // already checked that the socket is a secure one, we're pretty sure of
       // the type and it should work.
-      GsmClientSecureSim7600* thisClient =
-          static_cast<GsmClientSecureSim7600*>(sockets[mux]);
+      const GsmClientSecureSim7600* thisClient =
+          static_cast<const GsmClientSecureSim7600*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
 
 
