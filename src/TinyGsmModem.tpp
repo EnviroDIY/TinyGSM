@@ -131,14 +131,14 @@ class TinyGsmModem {
    * and begin() the serial object.
    */
   template <class StreamObject>
-  bool forceModemBaud(StreamObject& SerialAT, uint32_t targetBaud) {
+  bool forceModemBaud(StreamObject& at_serial, uint32_t targetBaud) {
     static uint32_t rates[] = {115200, 57600,  9600,   921600, 38400,
                                19200,  460800, 230400, 74400,  74880,
                                2400,   4800,   14400,  28800};
 
     // start the modem serial at the current baud rate
-    SerialAT.end();
-    SerialAT.begin(targetBaud);
+    at_serial.end();
+    at_serial.begin(targetBaud);
     // test for at response from the modem
     bool at_success = thisModem().testAT(1500L);
     // if we got a response and it's the baud rate we want, we're done
@@ -173,9 +173,9 @@ class TinyGsmModem {
       uint32_t rate = rates[i];
       for (uint8_t j = 0; j < 3; j++) {
         DBG("Trying to set the baud rate from a rate of", rate, "...");
-        SerialAT.end();
-        SerialAT.begin(rate);
-        delay(50);
+        at_serial.end();
+        at_serial.begin(rate);
+        delay(25);  // settle
 
 #if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_ESP8266)
         thisModem().setDefaultBaud(targetBaud);
@@ -183,9 +183,9 @@ class TinyGsmModem {
         thisModem().setBaud(targetBaud);
 #endif
 
-        SerialAT.end();
-        SerialAT.begin(targetBaud);
-        delay(50);
+        at_serial.end();
+        at_serial.begin(targetBaud);
+        delay(25);  // settle
 
         // test for at response from the modem
         DBG("Checking for a response at", targetBaud, "...");
@@ -201,7 +201,7 @@ class TinyGsmModem {
     DBG("Failed to successfully find the baud at any common rate or to change "
         "the baud rate to",
         targetBaud, "...");
-    SerialAT.begin(targetBaud);
+    at_serial.begin(targetBaud);
     return false;
   }
 
