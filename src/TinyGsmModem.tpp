@@ -768,11 +768,9 @@ class TinyGsmModem {
   }
 
   inline void cleanResponseString(String& res) {
-    // Do the replaces twice so we cover both \r and \r\n type endings
-    res.replace("\r\nOK\r\n", "");
-    res.replace("\rOK\r", "");
-    res.replace("\r\n", " ");
-    res.replace("\r", " ");
+    // Remove the OK from the string, as well as any newlines
+    res.replace(AT_NL "OK" AT_NL, "");
+    res.replace(AT_NL, " ");
     res.trim();
   }
 
