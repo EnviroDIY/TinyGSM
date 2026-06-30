@@ -26,15 +26,15 @@
 #undef MODEM_MODEL
 #endif
 #if defined(TINY_GSM_MODEM_SIM7070)
-#define MODEM_MODEL "SIM7070";
+#define MODEM_MODEL "SIM7070"
 #elif defined(TINY_GSM_MODEM_SIM7080)
-#define MODEM_MODEL "SIM7080";
+#define MODEM_MODEL "SIM7080"
 #elif defined(TINY_GSM_MODEM_SIM7090)
-#define MODEM_MODEL "SIM7090";
+#define MODEM_MODEL "SIM7090"
 #elif defined(TINY_GSM_MODEM_SIM7000) || defined(TINY_GSM_MODEM_SIM7000SSL)
-#define MODEM_MODEL "SIM7000";
+#define MODEM_MODEL "SIM7000"
 #else
-#define MODEM_MODEL "SIM70xx";
+#define MODEM_MODEL "SIM70xx"
 #endif
 
 #include "TinyGsmModem.tpp"

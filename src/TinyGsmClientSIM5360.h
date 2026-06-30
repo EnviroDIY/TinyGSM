@@ -62,13 +62,13 @@
 #undef MODEM_MODEL
 #endif
 #if defined(TINY_GSM_MODEM_SIM5320)
-#define MODEM_MODEL "SIM5320";
+#define MODEM_MODEL "SIM5320"
 #elif defined(TINY_GSM_MODEM_SIM5300)
-#define MODEM_MODEL "SIM5300";
+#define MODEM_MODEL "SIM5300"
 #elif defined(TINY_GSM_MODEM_SIM7100)
-#define MODEM_MODEL "SIM7100";
+#define MODEM_MODEL "SIM7100"
 #else
-#define MODEM_MODEL "SIM5360";
+#define MODEM_MODEL "SIM5360"
 #endif
 
 #include "TinyGsmModem.tpp"
