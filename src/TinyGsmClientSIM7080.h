@@ -216,7 +216,8 @@ class TinyGsmSim7080
     bool gotATOK = false;
     for (uint32_t start = millis(); millis() - start < 10000L;) {
       sendAT(GF(""));
-      int8_t resp = waitResponse(200L, GFP(GSM_OK), GFP(GSM_ERROR), GF("AT"));
+      int8_t resp = waitResponse(200L, GFP(GSM_OK), GFP(GSM_ERROR),
+                                 GFP(GSM_AT));
       if (resp == 1) {
         gotATOK = true;
         break;
@@ -286,7 +287,8 @@ class TinyGsmSim7080
     bool gotATOK = false;
     for (uint32_t start = millis(); millis() - start < 10000L;) {
       sendAT(GF(""));
-      int8_t resp = waitResponse(200L, GFP(GSM_OK), GFP(GSM_ERROR), GF("AT"));
+      int8_t resp = waitResponse(200L, GFP(GSM_OK), GFP(GSM_ERROR),
+                                 GFP(GSM_AT));
       if (resp == 1) {
         gotATOK = true;
         break;
@@ -961,8 +963,8 @@ class TinyGsmSim7080
     // save us from ourselves. We cannot use a dynamic cast because Arduino
     // compiles with -fno-rtti.
     if (ssl) {
-      GsmClientSecureSim7080* thisClient =
-          static_cast<GsmClientSecureSim7080*>(sockets[mux]);
+      const GsmClientSecureSim7080* thisClient =
+          static_cast<const GsmClientSecureSim7080*>(sockets[mux]);
       uint8_t     sslCtxIndex    = thisClient->sslCtxIndex;
       SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
       const char* CAcertName     = thisClient->CAcertName;
