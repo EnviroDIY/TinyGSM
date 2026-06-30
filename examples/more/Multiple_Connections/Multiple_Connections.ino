@@ -58,10 +58,10 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
 
 // See all AT commands, if wanted
-#define DUMP_AT_COMMANDS
+// #define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
-#define TINY_GSM_DEBUG SerialMon
+// #define TINY_GSM_DEBUG SerialMon
 
 // Range to attempt to autobaud
 // NOTE:  DO NOT AUTOBAUD in production code.  Once you've established
