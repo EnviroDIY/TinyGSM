@@ -14,8 +14,6 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 4
 #endif
 
-// #define TINY_GSM_DEBUG Serial
-
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
