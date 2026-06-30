@@ -18,9 +18,6 @@
 #define TINY_GSM_RX_BUFFER 64
 #endif
 
-// #define TINY_GSM_DEBUG Serial
-// #define TINY_GSM_USE_HEX
-
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
