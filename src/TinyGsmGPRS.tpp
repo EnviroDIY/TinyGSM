@@ -142,7 +142,7 @@ class TinyGsmGPRS {
     return res;
   }
 
-  SimStatus getSimStatusImpl(uint32_t timeout_ms = 10000L) {
+  SimStatus getSimStatusImpl(uint32_t timeout_ms) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
       thisModem().sendAT(GF("+CPIN?"));
       if (thisModem().waitResponse(GF("+CPIN:")) != 1) {

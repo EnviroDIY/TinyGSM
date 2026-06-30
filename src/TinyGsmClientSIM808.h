@@ -54,10 +54,9 @@ class TinyGsmSim808 : public TinyGsmSim800,
 
   // get GPS informations
   // works only with ans SIM808 V2
-  bool getGPSImpl(float* lat, float* lon, float* speed = 0, float* alt = 0,
-                  int* vsat = 0, int* usat = 0, float* accuracy = 0,
-                  int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
-                  int* minute = 0, int* second = 0) {
+  bool getGPSImpl(float* lat, float* lon, float* speed, float* alt, int* vsat,
+                  int* usat, float* accuracy, int* year, int* month, int* day,
+                  int* hour, int* minute, int* second) {
     sendAT(GF("+CGNSINF"));
     if (waitResponse(10000L, GF(AT_NL "+CGNSINF:")) != 1) { return false; }
 

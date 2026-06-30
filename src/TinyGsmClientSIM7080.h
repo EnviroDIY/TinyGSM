@@ -209,7 +209,7 @@ class TinyGsmSim7080
    * Basic functions
    */
  protected:
-  bool testATImpl(uint32_t timeout_ms = 10000L) {
+  bool testATImpl(uint32_t timeout_ms) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
       sendAT(GF(""));
       int8_t resp = waitResponse(200L, GFP(GSM_OK), GFP(GSM_ERROR),
@@ -227,7 +227,7 @@ class TinyGsmSim7080
     return false;
   }
 
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM7080"));
 
@@ -284,7 +284,7 @@ class TinyGsmSim7080
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = nullptr) {
+  bool restartImpl(const char* pin) {
     bool success = true;
 
     bool gotATOK = testAT();
@@ -525,8 +525,7 @@ class TinyGsmSim7080
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
-                       const char* pwd = nullptr) {
+  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
     gprsDisconnect();
 
     // Define the PDP context
@@ -654,8 +653,7 @@ class TinyGsmSim7080
    * NTP server functions
    */
  protected:
-  byte NTPServerSyncImpl(const char* server   = "pool.ntp.org",
-                         int         TimeZone = 0) {
+  byte NTPServerSyncImpl(const char* server, int TimeZone) {
     // Set GPRS bearer profile to associate with NTP sync
     // this may fail, it's not supported by all modules
     sendAT(GF("+CNTPCID=0"));  // CID must be 0. With 1 (like other modules)
@@ -1060,7 +1058,7 @@ class TinyGsmSim7080
     return leftsize;
   }
 
-  size_t modemWaitForSendImpl(uint8_t mux, uint32_t timeout_ms = 15000L) {
+  size_t modemWaitForSendImpl(uint8_t mux, uint32_t timeout_ms) {
     size_t sendLength = modemGetSendLength(mux);
 #if defined(TINY_GSM_DEBUG)
     if (sendLength != sockets[mux]->realMaxSendSize) {

@@ -308,7 +308,7 @@ class TinyGsmSaraR4
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSaraR4"));
 
@@ -377,7 +377,7 @@ class TinyGsmSaraR4
    */
  protected:
   // using +CFUN=15 instead of the more common CFUN=1,1
-  bool restartImpl(const char* pin = nullptr) {
+  bool restartImpl(const char* pin) {
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(15)) { return false; }
     delay(3000);  // TODO(?):  Verify delay timing here
@@ -389,9 +389,9 @@ class TinyGsmSaraR4
     return waitResponse(40000L) == 1;
   }
 
-  bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool sleepEnableImpl(bool enable) TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset) {
     sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
     return waitResponse(10000L) == 1;
   }
@@ -457,8 +457,7 @@ class TinyGsmSaraR4
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
-                       const char* pwd = nullptr) {
+  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
     // gprsDisconnect();
 
     sendAT(GF("+CGATT=1"));  // attach to GPRS
@@ -680,16 +679,15 @@ class TinyGsmSaraR4
     waitResponse();
     return true;
   }
-  bool getGsmLocationImpl(float* lat, float* lon, float* accuracy = 0,
-                          int* year = 0, int* month = 0, int* day = 0,
-                          int* hour = 0, int* minute = 0, int* second = 0) {
+  bool getGsmLocationImpl(float* lat, float* lon, float* accuracy, int* year,
+                          int* month, int* day, int* hour, int* minute,
+                          int* second) {
     return getUbloxLocation(2, lat, lon, 0, 0, 0, 0, accuracy, year, month, day,
                             hour, minute, second);
   }
-  bool getGPSImpl(float* lat, float* lon, float* speed = 0, float* alt = 0,
-                  int* vsat = 0, int* usat = 0, float* accuracy = 0,
-                  int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
-                  int* minute = 0, int* second = 0) {
+  bool getGPSImpl(float* lat, float* lon, float* speed, float* alt, int* vsat,
+                  int* usat, float* accuracy, int* year, int* month, int* day,
+                  int* hour, int* minute, int* second) {
     return getUbloxLocation(1, lat, lon, speed, alt, vsat, usat, accuracy, year,
                             month, day, hour, minute, second);
   }

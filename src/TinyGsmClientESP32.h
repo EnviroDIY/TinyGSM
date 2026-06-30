@@ -279,7 +279,7 @@ class TinyGsmESP32
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientEspressif"));
     bool success = true;
@@ -697,7 +697,7 @@ class TinyGsmESP32
     waitResponse();
   }
 
-  bool waitForTimeSyncImpl(int timeout_s = 120) {
+  bool waitForTimeSyncImpl(int timeout_s) {
     // if we're not connected, we'll never get the time
     if (!isNetworkConnected()) {
       DBG(GF("### Not connected to network; cannot sync time!"));
@@ -805,8 +805,7 @@ class TinyGsmESP32
                              int* minute, int* second,
                              float* timezone) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  uint32_t
-  getNetworkEpochImpl(TinyGSM_EpochStart epoch = TinyGSM_EpochStart::UNIX) {
+  uint32_t getNetworkEpochImpl(TinyGSM_EpochStart epoch) {
     // Returns unix timestamp.  Will match SNTP after SNTP syncs.
     sendAT(GF("+SYSTIMESTAMP?"));
     if (waitResponse(2000L, GF("+SYSTIMESTAMP:")) != 1) { return 0; }
@@ -841,8 +840,7 @@ class TinyGsmESP32
    */
  protected:
   // NOTE: I don't think this forces an immediate sync
-  byte NTPServerSyncImpl(const char* server   = "pool.ntp.org",
-                         int         TimeZone = 0) {
+  byte NTPServerSyncImpl(const char* server, int TimeZone) {
     // configure the NTP settings for the modem
     sendAT(GF("+CIPSNTPCFG="), 1, ',', TimeZone, GF(",\""), server, '"');
     waitResponse();

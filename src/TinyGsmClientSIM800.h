@@ -235,7 +235,7 @@ class TinyGsmSim800
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM800"));
 
@@ -307,7 +307,7 @@ class TinyGsmSim800
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = nullptr) {
+  bool restartImpl(const char* pin) {
     if (!testAT()) { return false; }
     sendAT(GF("&W"));
     waitResponse();
@@ -326,7 +326,7 @@ class TinyGsmSim800
   // order to reestablish communication pull the DRT-pin of the SIM800 module
   // LOW for at least 50ms. Then use this function to disable sleep mode. The
   // DTR-pin can then be released again.
-  bool sleepEnableImpl(bool enable = true) {
+  bool sleepEnableImpl(bool enable) {
     sendAT(GF("+CSCLK="), enable);
     return waitResponse() == 1;
   }
@@ -335,7 +335,7 @@ class TinyGsmSim800
   // <fun> 1 Full functionality (Default)
   // <fun> 4 Disable phone both transmit and receive RF circuits.
   // <rst> Reset the MT before setting it to <fun> power level.
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset) {
     sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
     return waitResponse(10000L) == 1;
   }
@@ -386,8 +386,7 @@ class TinyGsmSim800
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
-                       const char* pwd = nullptr) {
+  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
     gprsDisconnect();
 
     // Bearer settings for applications based on IP

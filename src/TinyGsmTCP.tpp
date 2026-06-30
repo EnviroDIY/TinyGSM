@@ -690,7 +690,7 @@ class TinyGsmTCP {
     return TINY_GSM_SEND_MAX_SIZE;
   }
 
-  size_t modemWaitForSendImpl(uint8_t mux, uint32_t timeout_ms = 15000L) {
+  size_t modemWaitForSendImpl(uint8_t mux, uint32_t timeout_ms) {
     size_t sendLength = thisModem().modemGetSendLength(mux);
 #if defined(TINY_GSM_DEBUG)
     if (sendLength != TINY_GSM_SEND_MAX_SIZE) {

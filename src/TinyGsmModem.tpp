@@ -815,7 +815,7 @@ class TinyGsmModem {
     return thisModem().waitResponse() == 1;
   }
 
-  bool testATImpl(uint32_t timeout_ms = 10000L) {
+  bool testATImpl(uint32_t timeout_ms) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
       thisModem().sendAT(GF(""));
       if (thisModem().waitResponse(200) == 1) { return true; }
@@ -824,27 +824,26 @@ class TinyGsmModem {
     return false;
   }
 
-  int8_t waitResponseImpl(uint32_t timeout_ms, String& data,
-                          GsmConstStr r1 = GFP(GSM_OK),
-                          GsmConstStr r2 = GFP(GSM_ERROR)
+  int8_t waitResponseImpl(uint32_t timeout_ms, String& data, GsmConstStr r1,
+                          GsmConstStr r2
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 2
-                              ,
-                          GsmConstStr r3 = nullptr
+                          ,
+                          GsmConstStr r3
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 3
                           ,
-                          GsmConstStr r4 = nullptr
+                          GsmConstStr r4
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 4
                           ,
-                          GsmConstStr r5 = nullptr
+                          GsmConstStr r5
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 5
                           ,
-                          GsmConstStr r6 = nullptr
+                          GsmConstStr r6
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 6
                           ,
-                          GsmConstStr r7 = nullptr
+                          GsmConstStr r7
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 7
                           ,
-                          GsmConstStr r8 = nullptr
+                          GsmConstStr r8
 #endif
 #endif
 #endif
@@ -1034,10 +1033,10 @@ class TinyGsmModem {
     return true;
   }
 
-  bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool sleepEnableImpl(bool enable) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false)
-      TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool setPhoneFunctionalityImpl(uint8_t fun,
+                                 bool    reset) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Generic network functions
@@ -1059,8 +1058,7 @@ class TinyGsmModem {
     return status;
   }
 
-  bool waitForNetworkImpl(uint32_t timeout_ms   = 60000L,
-                          bool     check_signal = false) {
+  bool waitForNetworkImpl(uint32_t timeout_ms, bool check_signal) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
       if (check_signal) { thisModem().getSignalQuality(); }
       if (thisModem().isNetworkConnected()) { return true; }

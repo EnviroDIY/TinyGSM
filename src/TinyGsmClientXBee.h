@@ -348,7 +348,7 @@ class TinyGsmXBee
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientXBee"));
 
@@ -469,7 +469,7 @@ class TinyGsmXBee
     return true;
   }
 
-  bool testATImpl(uint32_t timeout_ms = 10000L) {
+  bool testATImpl(uint32_t timeout_ms) {
     uint32_t start   = millis();
     bool     success = false;
     while (!success && millis() - start < timeout_ms) {
@@ -564,7 +564,7 @@ class TinyGsmXBee
  protected:
   // The XBee's have a bad habit of getting into an unresponsive funk
   // This uses the board's hardware reset pin to force it to reset
-  void pinReset() {
+  void pinReset(const char* pin = nullptr) {
     if (resetPin >= 0) {
       DBG("### Forcing a modem reset!\r\n");
       digitalWrite(resetPin, LOW);
@@ -572,11 +572,11 @@ class TinyGsmXBee
       digitalWrite(resetPin, HIGH);
     } else {
       DBG("### Attempting a modem software restart");
-      restartImpl();
+      restart(pin);
     }
   }
 
-  bool restartImpl(const char* pin = nullptr) {
+  bool restartImpl(const char* pin) {
     if (!commandMode()) {
       DBG("### XBee not in command mode for restart; Exit");
       return false;
@@ -665,10 +665,10 @@ class TinyGsmXBee
     return success;
   }
 
-  bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool sleepEnableImpl(bool enable) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false)
-      TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool setPhoneFunctionalityImpl(uint8_t fun,
+                                 bool    reset) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Generic network functions
@@ -814,8 +814,7 @@ class TinyGsmXBee
     }
   }
 
-  bool waitForNetworkImpl(uint32_t timeout_ms   = 60000L,
-                          bool     check_signal = false) {
+  bool waitForNetworkImpl(uint32_t timeout_ms, bool check_signal) {
     bool retVal = false;
     XBEE_COMMAND_START_DECORATOR(5, false)
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
@@ -931,8 +930,7 @@ class TinyGsmXBee
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
-                       const char* pwd = nullptr) {
+  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
     bool success     = true;
     bool changesMade = false;
     XBEE_COMMAND_START_DECORATOR(5, false)
@@ -1429,7 +1427,7 @@ class TinyGsmXBee
     return true;
   }
 
-  bool modemBeginSendImpl(size_t, uint8_t mux = 0) {
+  bool modemBeginSendImpl(size_t, uint8_t mux) {
     if (mux != 0) {
       DBG("XBee only supports 1 IP channel in transparent mode!");
       return false;
