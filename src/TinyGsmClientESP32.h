@@ -841,7 +841,8 @@ class TinyGsmESP32
    */
  protected:
   // NOTE: I don't think this forces an immediate sync
-  byte NTPServerSyncImpl(String server = "pool.ntp.org", int TimeZone = 0) {
+  byte NTPServerSyncImpl(const char* server   = "pool.ntp.org",
+                         int         TimeZone = 0) {
     // configure the NTP settings for the modem
     sendAT(GF("+CIPSNTPCFG="), 1, ',', TimeZone, GF(",\""), server, '"');
     waitResponse();

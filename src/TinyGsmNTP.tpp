@@ -28,7 +28,7 @@ class TinyGsmNTP {
    */
 
  public:
-  byte NTPServerSync(String server = "pool.ntp.org", int TimeZone = 0) {
+  byte NTPServerSync(const char* server = "pool.ntp.org", int TimeZone = 0) {
     return thisModem().NTPServerSyncImpl(server, TimeZone);
   }
   bool waitForTimeSync(int timeout_s = 120) {
@@ -76,7 +76,8 @@ class TinyGsmNTP {
    * NTP server functions
    */
  protected:
-  byte NTPServerSyncImpl(String server = "pool.ntp.org", int TimeZone = 0) {
+  byte NTPServerSyncImpl(const char* server   = "pool.ntp.org",
+                         int         TimeZone = 0) {
     // Set GPRS bearer profile to associate with NTP sync
     // this may fail, it's not supported by all modules
     thisModem().sendAT(GF("+CNTPCID=1"));
