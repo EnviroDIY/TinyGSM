@@ -801,10 +801,6 @@ class TinyGsmESP32
     return 0;
   }
 
-  bool getNetworkUTCTimeImpl(int* year, int* month, int* day, int* hour,
-                             int* minute, int* second,
-                             float* timezone) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
   uint32_t getNetworkEpochImpl(TinyGSM_EpochStart epoch) {
     // Returns unix timestamp.  Will match SNTP after SNTP syncs.
     sendAT(GF("+SYSTIMESTAMP?"));
