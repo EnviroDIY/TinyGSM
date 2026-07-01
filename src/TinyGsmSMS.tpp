@@ -226,8 +226,7 @@ class TinyGsmSMS {
                          size_t len) {
     if (!sendSMS_UTF8_begin(number)) { return false; }
 
-    const uint16_t* t =
-        const_cast<uint16_t*>(reinterpret_cast<const uint16_t*>(text));
+    const uint16_t* t = reinterpret_cast<const uint16_t*>(text);
     for (size_t i = 0; i < len; i++) {
       uint8_t c = t[i] >> 8;
       if (c < 0x10) { thisModem().stream.print('0'); }
