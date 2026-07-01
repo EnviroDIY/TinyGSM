@@ -34,6 +34,11 @@
 #endif
 
 #ifndef TINY_GSM_MAX_RESPONSE_CHECKS
+// NOTE: The minimum value of 5 is required for any modem that uses the default
+// implementation of getSimStatusImpl for the SIM status check, as it requires 5
+// checks to determine the SIM status.
+// Modems that have their own implementation of getSimStatusImpl or that do not
+// implement it can use a lower value.
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
@@ -257,6 +262,7 @@ class TinyGsmModem {
                       ,
                       GsmConstStr r7 = nullptr
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 7
+                      ,
                       GsmConstStr r8 = nullptr
 #endif
 #endif
@@ -331,6 +337,7 @@ class TinyGsmModem {
                       ,
                       GsmConstStr r7 = nullptr
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 7
+                      ,
                       GsmConstStr r8 = nullptr
 #endif
 #endif
@@ -406,6 +413,7 @@ class TinyGsmModem {
                       ,
                       GsmConstStr r7 = nullptr
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 7
+                      ,
                       GsmConstStr r8 = nullptr
 #endif
 #endif
