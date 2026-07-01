@@ -8,7 +8,7 @@
 
 #ifndef SRC_TINYGSMCLIENTESP8266NONOS_H_
 #define SRC_TINYGSMCLIENTESP8266NONOS_H_
-// #pragma message("TinyGSM:  TinyGsmClientESP8266NonOS")
+#pragma message("TinyGSM:  TinyGsmClientESP8266NonOS")
 
 #if !defined(TINY_GSM_RX_BUFFER)
 #define TINY_GSM_RX_BUFFER 64

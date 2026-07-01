@@ -8,7 +8,7 @@
 
 #ifndef SRC_TINYGSMCLIENTESP32_H_
 #define SRC_TINYGSMCLIENTESP32_H_
-// #pragma message("TinyGSM:  TinyGsmClientESP32")
+#pragma message("TinyGSM:  TinyGsmClientESP32")
 
 #if !defined(TINY_GSM_RX_BUFFER)
 #define TINY_GSM_RX_BUFFER 64

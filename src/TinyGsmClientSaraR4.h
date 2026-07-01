@@ -8,7 +8,7 @@
 
 #ifndef SRC_TINYGSMCLIENTSARAR4_H_
 #define SRC_TINYGSMCLIENTSARAR4_H_
-// #pragma message("TinyGSM:  TinyGsmClientSaraR4")
+#pragma message("TinyGSM:  TinyGsmClientSaraR4")
 
 #if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5

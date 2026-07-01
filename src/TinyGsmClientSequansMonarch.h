@@ -8,6 +8,7 @@
 
 #ifndef SRC_TINYGSMCLIENTSEQUANSMONARCH_H_
 #define SRC_TINYGSMCLIENTSEQUANSMONARCH_H_
+#pragma message("TinyGSM:  TinyGsmClientSequansMonarch")
 
 #if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
