@@ -49,8 +49,6 @@
 SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
 
-// #define TINY_GSM_DEBUG SerialMon
-
 #include <TinyGsmClient.h>
 
 // Module baud rate
