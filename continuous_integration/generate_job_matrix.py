@@ -345,6 +345,8 @@ matrix_exclusions = [
             "TINY_GSM_MODEM_SIM7000SSL",
             "TINY_GSM_MODEM_SIM7070",
             "TINY_GSM_MODEM_SIM7600",
+            "TINY_GSM_MODEM_ESP32",
+            "TINY_GSM_MODEM_A7672X",
         ],
     },
     {
@@ -495,18 +497,19 @@ def create_multi_env_pio_ci_compile_command(
 def group_and_log_commands(commands: List[str], group_title: str) -> List[str]:
     command_list = []
     command_list.append("\necho ::group::{}".format(group_title))
+    command_list.append("group_failed=0")
     for command in commands:
-        command_list.append(command + " 2>&1 | tee output.log")
-    command_list.append("result_code=${PIPESTATUS[0]}")
+        command_list.append(command + " 2>&1 | tee -a output.log")
+        command_list.append("result_code=${PIPESTATUS[0]}")
+        command_list.append(
+            'if [ "$result_code" -ne "0" ]; then group_failed=1; status=1; fi'
+        )
     command_list.append(
-        f'if [ "$result_code" -eq "0" ]; then echo -e " - {group_title} :white_check_mark:" >> $GITHUB_STEP_SUMMARY; else echo -e " - {group_title} :x:" >> $GITHUB_STEP_SUMMARY; fi'
-    )
-    command_list.append(
-        'if [ "$result_code" -eq "0" ] && [ "$status" -eq "0" ]; then status=0; else status=1; fi'
+        f'if [ "$group_failed" -eq "0" ]; then echo -e " - {group_title} :white_check_mark:" >> $GITHUB_STEP_SUMMARY; else echo -e " - {group_title} :x:" >> $GITHUB_STEP_SUMMARY; fi'
     )
     command_list.append("echo ::endgroup::")
     command_list.append(
-        f'if [ "$result_code" -eq "0" ]; then echo -e "\\e[32m{group_title} successfully compiled\\e[0m"; else echo -e "\\e[31m{group_title} failed to compile\\e[0m"; fi'
+        f'if [ "$group_failed" -eq "0" ]; then echo -e "\\e[32m{group_title} successfully compiled\\e[0m"; else echo -e "\\e[31m{group_title} failed to compile\\e[0m"; fi'
     )
     return command_list
 

@@ -45,25 +45,30 @@ extras/At Command Manuals - Unsupported/*
 # Filters
 .gitconfig
 filters/*
-platformio_extra_envs.ini
-*.tar.gz
-pioScripts/generate_compile_commands.py
-compile_commands.json
-src/TinyGsmATDefines.h
-variants/*
-boards/*
-tests/*
-lib/*
-archive/*
-clang_format_all.bat
+
+# Certificates
 *.cert
 *.crt
 *.pem
 *.key
 src/CipherSuiteCodes.csv
+
+# Other stuff
+platformio_extra_envs.ini
+*.tar.gz
+pioScripts/*
+variants/*
+boards/*
+tests/*
+lib/*
+archive/*
+docs/*
+clang_format_all.bat
 continuous_integration_artifacts/*
 generateKeywords.bat
 installWorkingDependencies.bat
 pio_common_libdeps.ini
 continuous_integration/arduino_cli_local.yaml
 clang-format-all.py
+runDoxygen.bat
+compile_commands.json

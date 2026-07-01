@@ -50,21 +50,23 @@ void loop() {
 
   // Test Power functions
   modem.restart();
-#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) && \
-    !defined(TINY_GSM_MODEM_ESP8266_NONOS) &&                             \
-    !defined(TINY_GSM_MODEM_UBLOX) && !defined(TINY_GSM_MODEM_SARAR4) &&  \
+  modem.poweroff();
+#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) &&    \
+    !defined(TINY_GSM_MODEM_ESP8266_NONOS) && !defined(TINY_GSM_MODEM_A6) && \
+    !defined(TINY_GSM_MODEM_UBLOX) && !defined(TINY_GSM_MODEM_SARAR4) &&     \
     !defined(TINY_GSM_MODEM_SARAR5) && !defined(TINY_GSM_MODEM_XBEE)
   modem.sleepEnable();
   modem.sleepEnable(false);
 #endif
-#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) && \
-    !defined(TINY_GSM_MODEM_ESP8266_NONOS)
-  modem.radioOff();
-#endif
-  modem.poweroff();
 #if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) &&    \
     !defined(TINY_GSM_MODEM_ESP8266_NONOS) && !defined(TINY_GSM_MODEM_A6) && \
     !defined(TINY_GSM_MODEM_M95) && !defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
+  modem.radioOff();
+#endif
+#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) &&    \
+    !defined(TINY_GSM_MODEM_ESP8266_NONOS) && !defined(TINY_GSM_MODEM_A6) && \
+    !defined(TINY_GSM_MODEM_M95) &&                                          \
+    !defined(TINY_GSM_MODEM_SEQUANS_MONARCH) && !defined(TINY_GSM_MODEM_XBEE)
   modem.setPhoneFunctionality(1, true);
 #endif
 
@@ -316,7 +318,9 @@ void loop() {
 #if defined(TINY_GSM_MODEM_HAS_NTP)
   modem.NTPServerSync("pool.ntp.org", 3);
   modem.waitForTimeSync(1);
+#if !defined(TINY_GSM_MODEM_BG96)
   modem.ShowNTPError(1);
+#endif
   modem.TinyGsmIsValidNumber("1.0");
 #endif
 
@@ -332,7 +336,7 @@ void loop() {
   float ntp_timezone = 0;
   modem.getNetworkTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour, &ntp_min,
                        &ntp_sec, &ntp_timezone);
-#if defined(TinyGSM_MODEM_BG96)
+#if defined(TINY_GSM_MODEM_BG96)
   modem.getNetworkUTCTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour, &ntp_min,
                           &ntp_sec, &ntp_timezone);
 #endif
