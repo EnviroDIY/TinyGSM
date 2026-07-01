@@ -797,7 +797,7 @@ class TinyGsmSaraR4
     if (supportsAsyncSockets) {
       DBG("### Opening socket asynchronously!  Socket cannot be used until "
           "the URC '+UUSOCO' appears.");
-      sendAT(GF("+USOCO="), *mux, GF(",\""), host, '"', port, GF(",1"));
+      sendAT(GF("+USOCO="), *mux, GF(",\""), host, GF("\","), port, GF(",1"));
       if (waitResponse(timeout_ms - (millis() - startMillis),
                        GF(AT_NL "+UUSOCO:")) == 1) {
         streamGetIntBefore(',');  // skip repeated mux
