@@ -8,7 +8,7 @@
 
 #ifndef SRC_TINYGSMCLIENTSIM808_H_
 #define SRC_TINYGSMCLIENTSIM808_H_
-// #pragma message("TinyGSM:  TinyGsmClientSIM808")
+#pragma message("TinyGSM:  TinyGsmClientSIM808")
 
 #include "TinyGsmClientSIM800.h"
 #include "TinyGsmGPS.tpp"

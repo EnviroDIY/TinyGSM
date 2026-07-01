@@ -8,6 +8,7 @@
 
 #ifndef SRC_TINYGSMCLIENTSIM7080_H_
 #define SRC_TINYGSMCLIENTSIM7080_H_
+#pragma message("TinyGSM:  TinyGsmClientSim7080")
 
 #if !defined(TINY_GSM_RX_BUFFER)
 #define TINY_GSM_RX_BUFFER 64

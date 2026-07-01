@@ -9,7 +9,7 @@
 
 #ifndef SRC_TINYGSMCLIENTM95_H_
 #define SRC_TINYGSMCLIENTM95_H_
-// #pragma message("TinyGSM:  TinyGsmClientM95")
+#pragma message("TinyGSM:  TinyGsmClientM95")
 
 #if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5

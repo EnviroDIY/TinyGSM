@@ -8,7 +8,7 @@
 
 #ifndef SRC_TINYGSMCLIENTUBLOX_H_
 #define SRC_TINYGSMCLIENTUBLOX_H_
-// #pragma message("TinyGSM:  TinyGsmClientUBLOX")
+#pragma message("TinyGSM:  TinyGsmClientUBLOX")
 
 #if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5

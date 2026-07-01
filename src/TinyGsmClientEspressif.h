@@ -8,7 +8,7 @@
 
 #ifndef SRC_TINYGSMCLIENTESPRESSIF_H_
 #define SRC_TINYGSMCLIENTESPRESSIF_H_
-// #pragma message("TinyGSM:  TinyGsmClientEspressif")
+#pragma message("TinyGSM:  TinyGsmClientEspressif")
 
 #if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
 #define TINY_GSM_MAX_RESPONSE_CHECKS 4
