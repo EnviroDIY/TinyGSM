@@ -278,7 +278,7 @@ The general flow of your code should be:
   - restart generally takes longer than init but ensures the module doesn't have lingering connections
 - Unlock your SIM, if necessary:
   - ```modem.simUnlock(GSM_PIN)```
-- If using **WiFi**, specify your SSID information:
+- If using a **WiFi** module, specify your SSID information:
   - ```modem.networkConnect(wifiSSID, wifiPass)```
   - Network registration should be automatic on cellular modules
 - Wait for network registration to be successful
@@ -306,12 +306,12 @@ Many GSM modems, WiFi and radio modules can be controlled by sending AT commands
 TinyGSM knows which commands to send, and how to handle AT responses, and wraps that into standard Arduino Client interface.
 
 This library is "blocking" in all of its communication.
-Depending on the function, your code may be blocked for a long time waiting for the module responses.
+Depending on the function, your code may be blocked for several _minutes_ while waiting for the module responses.
 Apart from the obvious (ie, `waitForNetwork()`) several other functions may block your code for up to several _minutes_.
 The `gprsConnect()` and `client.connect()` functions commonly block the longest, especially in poorer service regions.
 The module shutdown and restart may also be quite slow.
 
-This libary _does not_ support any sort of "hardware" or pin level controls for the modules.
+This library _does not_ support any sort of "hardware" or pin level controls for the modules.
 If you need to turn your module on or reset it using some sort of High/Low/High pin sequence, you must write those functions yourself.
 If you're interested in pin controls for your module, there's documentation of the wake/sleep protocols for most of the modules supported by this library in the modems compnents of the [ModularSensors library](https://github.com/EnviroDIY/ModularSensors/).
 

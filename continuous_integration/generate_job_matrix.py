@@ -267,6 +267,8 @@ client_file.close()
 
 modem_list = []
 # if defined(TINY_GSM_MODEM_SIM800)
+# NOTE: in cases where there are multiple #if defined() statements on the same line, this will only find the first one.
+# This is what we want, because we only want to build one example per modem, not one example per #if defined() statement.
 pattern = re.compile(
     r"^(?:#if|#elif) defined[\s\(](?P<define>TINY_GSM_MODEM_\w+)",
     re.MULTILINE,
@@ -328,6 +330,24 @@ matrix_exclusions = [
         "modems": deepcopy(modem_list),
     },
     {
+        "example": os.path.join("examples", "AWS_IoTCore"),
+        "boards": [
+            "uno",
+            "leonardo",
+            "yun",
+            "feather328p",
+            "feather32u4",
+        ],  # doesn't fit on 328p or 32u
+        "modems": [
+            "TINY_GSM_MODEM_SARAR4",
+            "TINY_GSM_MODEM_SARAR5",
+            "TINY_GSM_MODEM_BG96",
+            "TINY_GSM_MODEM_SIM7000SSL",
+            "TINY_GSM_MODEM_SIM7070",
+            "TINY_GSM_MODEM_SIM7600",
+        ],
+    },
+    {
         "example": os.path.join("extras", "tools", "AT_Debug"),
         "boards": boards,
         "modems": deepcopy(modem_list),
@@ -378,7 +398,8 @@ for known_failure in matrix_exclusions:
 
 # %%
 # filter out the known failures from the job matrix
-filtered_matrix = [e for e in cart_join if e not in expanded_matrix_exclusions]
+expanded_matrix_exclusions_set = set(expanded_matrix_exclusions)
+filtered_matrix = [e for e in cart_join if e not in expanded_matrix_exclusions_set]
 
 
 # %%
