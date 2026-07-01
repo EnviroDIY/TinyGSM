@@ -256,7 +256,7 @@ class TinyGsmModem {
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 6
                       ,
                       GsmConstStr r7 = nullptr
-#if TINY_GSM_MAX_RES, PONSE_CHECKS > 7
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
                       GsmConstStr r8 = nullptr
 #endif
 #endif
@@ -330,7 +330,7 @@ class TinyGsmModem {
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 6
                       ,
                       GsmConstStr r7 = nullptr
-#if TINY_GSM_MAX_RES, PONSE_CHECKS > 7
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
                       GsmConstStr r8 = nullptr
 #endif
 #endif
@@ -405,7 +405,7 @@ class TinyGsmModem {
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 6
                       ,
                       GsmConstStr r7 = nullptr
-#if TINY_GSM_MAX_RES, PONSE_CHECKS > 7
+#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
                       GsmConstStr r8 = nullptr
 #endif
 #endif
