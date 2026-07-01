@@ -66,7 +66,7 @@
 #if defined(TINY_GSM_MODEM_SIM808)
 #define MODEM_MODEL "SIM808"
 #elif defined(TINY_GSM_MODEM_SIM868)
-#define MODEM_MODEL "SIM868";
+#define MODEM_MODEL "SIM868"
 #elif defined(TINY_GSM_MODEM_SIM900)
 #define MODEM_MODEL "SIM900"
 #else
