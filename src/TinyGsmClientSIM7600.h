@@ -1102,8 +1102,7 @@ class TinyGsmSim7600
    */
  public:
   bool handleURCs(String& data) {
-    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    if (tail == ':' && data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
+    if (data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
@@ -1117,7 +1116,7 @@ class TinyGsmSim7600
         data += mode;
         return false;
       }
-    } else if (tail == ':' && data.endsWith(GF(AT_NL "+RECEIVE:"))) {
+    } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -1127,7 +1126,7 @@ class TinyGsmSim7600
       data = "";
       // DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (tail == ':' && data.endsWith(GF("+IPCLOSE:"))) {
+    } else if (data.endsWith(GF("+IPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
       streamSkipUntil('\n');  // Skip the reason code
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -1136,7 +1135,7 @@ class TinyGsmSim7600
       data = "";
       DBG("### Closed: ", mux);
       return true;
-    } else if (tail == ':' && data.endsWith(GF("+CIPEVENT:"))) {
+    } else if (data.endsWith(GF("+CIPEVENT:"))) {
       // Need to close all open sockets and release the network library.
       // User will then need to reconnect.
       DBG("### Network error!");

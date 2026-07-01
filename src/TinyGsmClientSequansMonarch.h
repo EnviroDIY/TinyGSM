@@ -758,8 +758,7 @@ class TinyGsmSequansMonarch
    */
  public:
   bool handleURCs(String& data) {
-    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    if (tail == ':' && data.endsWith(GF(AT_NL "+SQNSRING:"))) {
+    if (data.endsWith(GF(AT_NL "+SQNSRING:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT &&
@@ -770,7 +769,7 @@ class TinyGsmSequansMonarch
       data = "";
       DBG("### URC Data Received:", len, "on", mux);
       return true;
-    } else if (tail == ' ' && data.endsWith(GF("SQNSH: "))) {
+    } else if (data.endsWith(GF("SQNSH: "))) {
       int8_t mux = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT &&
           sockets[mux % TINY_GSM_MUX_COUNT]) {

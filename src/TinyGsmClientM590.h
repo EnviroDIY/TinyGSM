@@ -555,8 +555,7 @@ class TinyGsmM590
    */
  public:
   bool handleURCs(String& data) {
-    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    if (tail == ':' && data.endsWith(GF("+TCPRECV:"))) {
+    if (data.endsWith(GF("+TCPRECV:"))) {
       int8_t  mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(',');
       int16_t len          = len_reported;
@@ -571,7 +570,7 @@ class TinyGsmM590
       }
       data = "";
       return true;
-    } else if (tail == ':' && data.endsWith(GF("+TCPCLOSE:"))) {
+    } else if (data.endsWith(GF("+TCPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
       streamSkipUntil('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {

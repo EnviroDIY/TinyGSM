@@ -597,8 +597,7 @@ class TinyGsmM95
    */
  public:
   bool handleURCs(String& data) {
-    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    if (tail == ':' && data.endsWith(GF(AT_NL "+QIRDI:"))) {
+    if (data.endsWith(GF(AT_NL "+QIRDI:"))) {
       streamSkipUntil(',');  // Skip the context
       streamSkipUntil(',');  // Skip the role
       int8_t mux = streamGetIntBefore('\n');
@@ -610,7 +609,7 @@ class TinyGsmM95
       }
       data = "";
       return true;
-    } else if (tail == 'D' && data.endsWith(GF("CLOSED" AT_NL))) {
+    } else if (data.endsWith(GF("CLOSED" AT_NL))) {
       int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
@@ -620,7 +619,7 @@ class TinyGsmM95
       data = "";
       DBG("### Closed: ", mux);
       return true;
-    } else if (tail == ':' && data.endsWith(GF("+QNITZ:"))) {
+    } else if (data.endsWith(GF("+QNITZ:"))) {
       streamSkipUntil('\n');  // URC for time sync
       data = "";
       DBG("### Network time updated.");

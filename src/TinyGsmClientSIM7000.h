@@ -462,8 +462,7 @@ class TinyGsmSim7000
    */
  public:
   bool handleURCs(String& data) {
-    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    if (tail == ':' && data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
+    if (data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
@@ -477,7 +476,7 @@ class TinyGsmSim7000
         data += mode;
         return false;
       }
-    } else if (tail == ':' && data.endsWith(GF(AT_NL "+RECEIVE:"))) {
+    } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -487,7 +486,7 @@ class TinyGsmSim7000
       data = "";
       // DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (tail == '\n' && data.endsWith(GF("CLOSED" AT_NL))) {
+    } else if (data.endsWith(GF("CLOSED" AT_NL))) {
       int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
@@ -497,27 +496,27 @@ class TinyGsmSim7000
       data = "";
       DBG("### Closed: ", mux);
       return true;
-    } else if (tail == ':' && data.endsWith(GF("*PSNWID:"))) {
+    } else if (data.endsWith(GF("*PSNWID:"))) {
       streamSkipUntil('\n');  // Refresh network name by network
       data = "";
       DBG("### Network name updated.");
       return true;
-    } else if (tail == ':' && data.endsWith(GF("*PSUTTZ:"))) {
+    } else if (data.endsWith(GF("*PSUTTZ:"))) {
       streamSkipUntil('\n');  // Refresh time and time zone by network
       data = "";
       DBG("### Network time and time zone updated.");
       return true;
-    } else if (tail == ':' && data.endsWith(GF("+CTZV:"))) {
+    } else if (data.endsWith(GF("+CTZV:"))) {
       streamSkipUntil('\n');  // Refresh network time zone by network
       data = "";
       DBG("### Network time zone updated.");
       return true;
-    } else if (tail == ' ' && data.endsWith(GF("DST: "))) {
+    } else if (data.endsWith(GF("DST: "))) {
       streamSkipUntil('\n');  // Refresh Network Daylight Saving Time by network
       data = "";
       DBG("### Daylight savings time state updated.");
       return true;
-    } else if (tail == '\n' && data.endsWith(GF(AT_NL "SMS Ready" AT_NL))) {
+    } else if (data.endsWith(GF(AT_NL "SMS Ready" AT_NL))) {
       data = "";
       DBG("### Unexpected module reset!");
       init();

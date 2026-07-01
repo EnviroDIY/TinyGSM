@@ -548,8 +548,7 @@ class TinyGsmA6
    */
  public:
   bool handleURCs(String& data) {
-    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    if (tail == ':' && data.endsWith(GF("+CIPRCV:"))) {
+    if (data.endsWith(GF("+CIPRCV:"))) {
       int8_t  mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(',');
       int16_t len          = len_reported;
@@ -565,7 +564,7 @@ class TinyGsmA6
       data = "";
       DBG("### Got Data: ", len_reported, "on", mux);
       return true;
-    } else if (tail == ':' && data.endsWith(GF("+TCPCLOSED:"))) {
+    } else if (data.endsWith(GF("+TCPCLOSED:"))) {
       int8_t mux = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->sock_connected = false;

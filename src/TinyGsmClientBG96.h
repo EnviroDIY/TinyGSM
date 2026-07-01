@@ -1230,8 +1230,7 @@ class TinyGsmBG96
    */
  public:
   bool handleURCs(String& data) {
-    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    if (tail == ':' && data.endsWith(GF(AT_NL "+QIURC:"))) {
+    if (data.endsWith(GF(AT_NL "+QIURC:"))) {
       streamSkipUntil('\"');
       String urc = stream.readStringUntil('\"');
       streamSkipUntil(',');
@@ -1253,7 +1252,7 @@ class TinyGsmBG96
       data = "";
       return true;
     }
-    if (tail == ':' && data.endsWith(GF(AT_NL "+QSSLURC:"))) {
+    if (data.endsWith(GF(AT_NL "+QSSLURC:"))) {
       streamSkipUntil('\"');
       String urc = stream.readStringUntil('\"');
       streamSkipUntil(',');
