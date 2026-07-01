@@ -702,8 +702,7 @@ class TinyGsmESP8266
    */
  public:
   bool handleURCs(String& data) {
-    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    if (tail == ',' && data.endsWith(GF(AT_NL "+IPD,"))) {
+    if (data.endsWith(GF(AT_NL "+IPD,"))) {
       int8_t  mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(':');
       int16_t len          = len_reported;
@@ -718,7 +717,7 @@ class TinyGsmESP8266
       }
       data = "";
       return true;
-    } else if (tail == 'D' && data.endsWith(GF("CLOSED"))) {
+    } else if (data.endsWith(GF("CLOSED"))) {
       int8_t muxStart = TinyGsmMax(0,
                                    data.lastIndexOf(AT_NL, data.length() - 8));
       int8_t coma     = data.indexOf(',', muxStart);
@@ -730,32 +729,32 @@ class TinyGsmESP8266
       data = "";
       DBG("### Closed: ", mux);
       return true;
-    } else if (tail == 'D' && data.endsWith(GF("+TIME_UPDATED"))) {
+    } else if (data.endsWith(GF("+TIME_UPDATED"))) {
       streamSkipUntil('\n');  // Refresh time and time zone by network
       data = "";
       DBG("### Network time updated.");
       return true;
-    } else if (tail == '.' && data.endsWith(GF("busy p..."))) {
+    } else if (data.endsWith(GF("busy p..."))) {
       streamSkipUntil('\n');
       data = "";
       // DBG("### Busy, please wait");
       return true;
-    } else if (tail == '\n' && data.endsWith(GF(AT_NL "ready" AT_NL))) {
+    } else if (data.endsWith(GF(AT_NL "ready" AT_NL))) {
       streamSkipUntil('\n');
       data = "";
       // DBG("### Module ready!");
       return true;
-    } else if (tail == 'P' && data.endsWith(GF("WIFI GOT IP"))) {
+    } else if (data.endsWith(GF("WIFI GOT IP"))) {
       streamSkipUntil('\n');
       data = "";
       // DBG("### Wifi got IP");
       return true;
-    } else if (tail == 'D' && data.endsWith(GF("WIFI CONNECTED"))) {
+    } else if (data.endsWith(GF("WIFI CONNECTED"))) {
       streamSkipUntil('\n');
       data = "";
       // DBG("### Wifi connected");
       return true;
-    } else if (tail == 'T' && data.endsWith(GF("WIFI DISCONNECT"))) {
+    } else if (data.endsWith(GF("WIFI DISCONNECT"))) {
       streamSkipUntil('\n');
       data = "";
       // DBG("### Wifi disconnected");

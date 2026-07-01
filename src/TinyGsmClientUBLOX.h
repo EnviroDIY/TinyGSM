@@ -870,8 +870,7 @@ class TinyGsmUBLOX
    */
  public:
   bool handleURCs(String& data) {
-    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    if (tail == ':' && data.endsWith(GF("+UUSORD:"))) {
+    if (data.endsWith(GF("+UUSORD:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -882,7 +881,7 @@ class TinyGsmUBLOX
       data = "";
       // DBG("### URC Data Received:", len, "on", mux);
       return true;
-    } else if (tail == ':' && data.endsWith(GF("+UUSOCL:"))) {
+    } else if (data.endsWith(GF("+UUSOCL:"))) {
       int8_t mux = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->sock_connected = false;

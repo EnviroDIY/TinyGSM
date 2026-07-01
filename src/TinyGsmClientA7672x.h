@@ -888,8 +888,7 @@ class TinyGsmA7672X
    */
  public:
   bool handleURCs(String& data) {
-    const char tail = data.length() ? data.charAt(data.length() - 1) : '\0';
-    if (tail == ':' && data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
+    if (data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
@@ -903,7 +902,7 @@ class TinyGsmA7672X
         data += mode;
         return false;
       }
-    } else if (tail == '\n' && data.endsWith(GF("RECV EVENT" AT_NL))) {
+    } else if (data.endsWith(GF("RECV EVENT" AT_NL))) {
       // WHAT??? No, no, no, you can't issue a sendAT/waitResponse here!! The
       // handle URC's function is the module-unique part of the general purpose
       // waitResponse function.
@@ -922,7 +921,7 @@ class TinyGsmA7672X
       data = "";
       DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (tail == '\n' && data.endsWith(GF("+CCHRECV: 0,0" AT_NL))) {
+    } else if (data.endsWith(GF("+CCHRECV: 0,0" AT_NL))) {
       int8_t mux = data.substring(data.lastIndexOf(',') + 1).toInt();
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->sock_connected = true;
@@ -930,7 +929,7 @@ class TinyGsmA7672X
       data = "";
       DBG("### ACK:", mux);
       return true;
-    } else if (tail == ':' && data.endsWith(GF("+IPCLOSE:"))) {
+    } else if (data.endsWith(GF("+IPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->sock_connected = false;
@@ -939,7 +938,7 @@ class TinyGsmA7672X
       streamSkipUntil('\n');
       DBG("### TCP Closed: ", mux);
       return true;
-    } else if (tail == ':' && data.endsWith(GF("+CCHCLOSE:"))) {
+    } else if (data.endsWith(GF("+CCHCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->sock_connected = false;
@@ -948,7 +947,7 @@ class TinyGsmA7672X
       streamSkipUntil('\n');
       DBG("### SSL Closed: ", mux);
       return true;
-    } else if (tail == ':' && data.endsWith(GF("+CCH_PEER_CLOSED:"))) {
+    } else if (data.endsWith(GF("+CCH_PEER_CLOSED:"))) {
       int8_t mux = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->sock_connected = false;
@@ -956,22 +955,22 @@ class TinyGsmA7672X
       data = "";
       DBG("### SSL Closed: ", mux);
       return true;
-    } else if (tail == ':' && data.endsWith(GF("*PSNWID:"))) {
+    } else if (data.endsWith(GF("*PSNWID:"))) {
       streamSkipUntil('\n');  // Refresh network name by network
       data = "";
       DBG("### Network name updated.");
       return true;
-    } else if (tail == ':' && data.endsWith(GF("*PSUTTZ:"))) {
+    } else if (data.endsWith(GF("*PSUTTZ:"))) {
       streamSkipUntil('\n');  // Refresh time and time zone by network
       data = "";
       DBG("### Network time and time zone updated.");
       return true;
-    } else if (tail == ':' && data.endsWith(GF("+CTZV:"))) {
+    } else if (data.endsWith(GF("+CTZV:"))) {
       streamSkipUntil('\n');  // Refresh network time zone by network
       data = "";
       DBG("### Network time zone updated.");
       return true;
-    } else if (tail == ':' && data.endsWith(GF("DST:"))) {
+    } else if (data.endsWith(GF("DST:"))) {
       streamSkipUntil('\n');  // Refresh Network Daylight Saving Time by network
       data = "";
       DBG("### Daylight savings time state updated.");
