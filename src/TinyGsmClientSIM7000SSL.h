@@ -802,7 +802,7 @@ class TinyGsmSim7000SSL
       // <pskTableName> Alphanumeric ASCII text string up to 64 characters.
       // PSK table name that has been configured by AT+CSSLCFG. File content
       // format is <identity>:<hex string>.
-      sendAT(GF("+CASSLCFG=\"psktable\","), mux, GF(",\""), pskTableName, '"');
+      sendAT(GF("+CASSLCFG="), mux, GF(",\"psktable\",\""), pskTableName, '"');
       success &= waitResponse() == 1;
     }
 
