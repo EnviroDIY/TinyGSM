@@ -95,7 +95,7 @@ class TinyGsmModem {
    */
   template <typename... Args>
   void sendAT(Args... cmd) {
-    thisModem().streamWrite(GSM_AT, cmd..., AT_NL);
+    thisModem().streamWrite(GFP(GSM_AT), cmd..., AT_NL);
     thisModem().stream.flush();
     TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
   }
@@ -925,10 +925,11 @@ class TinyGsmModem {
             (data.endsWith(GFP(GSM_VERBOSE_2)))) {
           // check how long the new line is
           // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
-          const int len_atnl = strnlen(AT_NL, 3);
+          const int  len_atnl    = strnlen(AT_NL, 3);
+          const char last_atnl_c = len_atnl > 0 ? AT_NL[len_atnl - 1] : '\n';
           // Read out the verbose message, until the last character of the new
           // line
-          data += thisModem().stream.readStringUntil(AT_NL[len_atnl]);
+          data += thisModem().stream.readStringUntil(last_atnl_c);
 #ifdef TINY_GSM_DEBUG_DEEP
           data.trim();
           DBG(GF("Verbose details <<<"), data, GF(">>>"));
