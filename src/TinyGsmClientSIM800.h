@@ -198,6 +198,7 @@ class TinyGsmSim800
     String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
   };
 
+#if !defined(TINY_GSM_MODEM_SIM900)
   /*
    * Inner Secure Client
    */
@@ -219,6 +220,7 @@ class TinyGsmSim800
     // insecure connections, we don't need to re-check for mux number
     // availability.
   };
+#endif
 
   /*
    * GSM Modem Constructor
