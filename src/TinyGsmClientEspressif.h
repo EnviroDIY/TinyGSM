@@ -99,7 +99,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     bool success = true;
 
     if (!thisModem().testAT()) { return false; }
-    if (pin && strnlen(pin, 16) > 0) {
+    if (pin && strlen(pin) > 0) {
       DBG("Espressif modules do not use an unlock pin!");
     }
     thisModem().sendAT(GF("E0"));  // Echo Off
