@@ -4,6 +4,9 @@
  *  This is NOT an example for use of this library!
  *
  **************************************************************/
+#define TINY_GSM_DEBUG Serial
+#define TINY_GSM_DEBUG_DEEP
+
 #include <TinyGsmClient.h>
 #include <TinyGsmEnums.h>
 
@@ -20,9 +23,17 @@ void loop() {
   modem.begin("1234");
   modem.init();
   modem.init("1234");
+  modem.sendAT("+CGMI");
+  String waitData;
+  modem.waitResponse(1000L, waitData);
+  modem.waitResponse(1000L);
+  modem.waitResponse();
+  TinyGsmAutoBaud(Serial, 9600, 115200);
   modem.forceModemBaud(Serial, 115200);
   modem.setBaud(115200);
   modem.testAT();
+  modem.streamWrite("AT", "\r\n");
+  modem.streamClear();
 
   modem.getModemInfo();
   modem.getModemName();
@@ -39,10 +50,23 @@ void loop() {
 
   // Test Power functions
   modem.restart();
-  // modem.sleepEnable();  // Not available for all modems
-  // modem.radioOff();     // Not available for all modems
+#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) && \
+    !defined(TINY_GSM_MODEM_ESP8266_NONOS) &&                             \
+    !defined(TINY_GSM_MODEM_UBLOX) && !defined(TINY_GSM_MODEM_SARAR4) &&  \
+    !defined(TINY_GSM_MODEM_SARAR5) && !defined(TINY_GSM_MODEM_XBEE)
+  modem.sleepEnable();
+  modem.sleepEnable(false);
+#endif
+#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) && \
+    !defined(TINY_GSM_MODEM_ESP8266_NONOS)
+  modem.radioOff();
+#endif
   modem.poweroff();
-  // modem.setPhoneFunctionality(1, 1);  // Not available for all modems
+#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) &&    \
+    !defined(TINY_GSM_MODEM_ESP8266_NONOS) && !defined(TINY_GSM_MODEM_A6) && \
+    !defined(TINY_GSM_MODEM_M95) && !defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
+  modem.setPhoneFunctionality(1, true);
+#endif
 
   // Test generic network functions
   modem.getRegistrationStatus();
@@ -69,12 +93,18 @@ void loop() {
   modem.gprsConnect("myAPN", "myUser");
   modem.gprsConnect("myAPN", "myAPNUser", "myAPNPass");
   modem.gprsDisconnect();
+  modem.isGprsConnected();
 
   modem.getSimCCID();
   modem.getIMEI();
   modem.getIMSI();
   modem.getOperator();
-  // modem.getProvider();  // Not available for all modems
+#if defined(TINY_GSM_MODEM_A7672X) || defined(TINY_GSM_MODEM_BG96) ||     \
+    defined(TINY_GSM_MODEM_M95) || defined(TINY_GSM_MODEM_MC60) ||        \
+    defined(TINY_GSM_MODEM_SIM5360) || defined(TINY_GSM_MODEM_SIM7600) || \
+    defined(TINY_GSM_MODEM_SIM800)
+  modem.getProvider();
+#endif
 #endif
 
   char server[]   = "somewhere";
@@ -160,8 +190,11 @@ void loop() {
   modem.convertClientCertificates("client_cert_name", "client_cert_key");
   modem.convertClientCertificates(String("client_cert_name"),
                                   String("client_cert_key"));
-  // modem.convertPSKandID("psk", "pskIdent");
-  // modem.convertPSKandID(String("psk"), String("pskIdent"));
+#if defined(TINY_GSM_MODEM_A7672X) || defined(TINY_GSM_MODEM_BG96) || \
+    defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_SIM7600)
+  modem.convertPSKandID("psk", "pskIdent");
+  modem.convertPSKandID(String("psk"), String("pskIdent"));
+#endif
   modem.convertPSKTable("psk_table_name");
   modem.convertPSKTable(String("psk_table_name"));
 #endif
@@ -247,8 +280,10 @@ void loop() {
 
 // Test the GPS functions
 #if defined(TINY_GSM_MODEM_HAS_GPS)
-  // modem.setGNSSMode(1, true);        // Not available for all modems
-  // modem.getGNSSMode();               // Not available for all modems
+#if defined(TINY_GSM_MODEM_SIM7600)
+  modem.setGNSSMode(1, true);
+  modem.getGNSSMode();
+#endif
 #if !defined(TINY_GSM_MODEM_SARAR5)  // not available for this module
   modem.enableGPS();
 #endif
@@ -269,6 +304,8 @@ void loop() {
   modem.getGPS(&gps_latitude, &gps_longitude, &gps_speed, &gps_altitude,
                &gps_vsat, &gps_usat, &gps_accuracy, &gps_year, &gps_month,
                &gps_day, &gps_hour, &gps_minute, &gps_second);
+  modem.getGPSTime(&gps_year, &gps_month, &gps_day, &gps_hour, &gps_minute,
+                   &gps_second);
   modem.getGPSraw();
 #if !defined(TINY_GSM_MODEM_SARAR5)  // not available for this module
   modem.disableGPS();
@@ -278,7 +315,9 @@ void loop() {
 // Test the Network time functions
 #if defined(TINY_GSM_MODEM_HAS_NTP)
   modem.NTPServerSync("pool.ntp.org", 3);
-  // modem.ShowNTPError(1);  // Not available for all modems
+  modem.waitForTimeSync(1);
+  modem.ShowNTPError(1);
+  modem.TinyGsmIsValidNumber("1.0");
 #endif
 
 // Test the Network time function
@@ -293,10 +332,14 @@ void loop() {
   float ntp_timezone = 0;
   modem.getNetworkTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour, &ntp_min,
                        &ntp_sec, &ntp_timezone);
-  // modem.getNetworkUTCTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour,
-  // &ntp_min,
-  //                         &ntp_sec,
-  //                         &ntp_timezone);  // Not available for all modems
+#if defined(TinyGSM_MODEM_BG96)
+  modem.getNetworkUTCTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour, &ntp_min,
+                          &ntp_sec, &ntp_timezone);
+#endif
+#if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_ESP8266)
+  modem.getNetworkEpoch();
+  modem.getNetworkEpoch(TinyGSM_EpochStart::Y2K);
+#endif
 #endif
 
 // Test bluetooth functions
@@ -309,9 +352,18 @@ void loop() {
 
 // Test Battery functions
 #if defined(TINY_GSM_MODEM_HAS_BATTERY)
-  // modem.getBattVoltage();      // Not available for all modems
-  // modem.getBattPercent();      // Not available for all modems
-  // modem.getBattChargeState();  // Not available for all modems
+#if !defined(TINY_GSM_MODEM_A6) && !defined(TINY_GSM_MODEM_SARAR4) && \
+    !defined(TINY_GSM_MODEM_SARAR5) && !defined(TINY_GSM_MODEM_UBLOX)
+  modem.getBattVoltage();
+#endif
+#if !defined(TINY_GSM_MODEM_SIM7600) && !defined(TINY_GSM_MODEM_XBEE)
+  modem.getBattPercent();
+#endif
+#if !defined(TINY_GSM_MODEM_SARAR4) && !defined(TINY_GSM_MODEM_SARAR5) && \
+    !defined(TINY_GSM_MODEM_UBLOX) && !defined(TINY_GSM_MODEM_SIM7600) && \
+    !defined(TINY_GSM_MODEM_XBEE)
+  modem.getBattChargeState();
+#endif
   int8_t  chargeState   = -99;
   int8_t  chargePercent = -99;
   int16_t milliVolts    = -9999;
