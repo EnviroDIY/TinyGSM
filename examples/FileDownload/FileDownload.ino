@@ -153,7 +153,7 @@ void setup() {
   // Set your reset, enable, power pins here
   // !!!!!!!!!!!
 
-  SerialMon.println("Wait...");
+  SerialMon.println(F("Wait..."));
   delay(500L);
 
   // Set GSM module baud rate
@@ -162,12 +162,12 @@ void setup() {
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
-  SerialMon.println("Initializing modem...");
+  SerialMon.println(F("Initializing modem..."));
   modem.restart();
   // modem.init();
 
   String modemInfo = modem.getModemInfo();
-  SerialMon.print("Modem Info: ");
+  SerialMon.print(F("Modem Info: "));
   SerialMon.println(modemInfo);
 
 #if TINY_GSM_USE_GPRS
@@ -179,7 +179,7 @@ void setup() {
 void printPercent(uint32_t readLength, uint32_t contentLength) {
   // If we know the total length
   if (contentLength != (uint32_t)-1) {
-    SerialMon.print("\r ");
+    SerialMon.print(F("\r "));
     SerialMon.print((100.0 * readLength) / contentLength);
     SerialMon.print('%');
   } else {
@@ -192,11 +192,11 @@ void loop() {
   // Wifi connection parameters must be set before waiting for the network
   SerialMon.print(F("Setting SSID/password..."));
   if (!modem.networkConnect(wifiSSID, wifiPass)) {
-    SerialMon.println(" fail");
+    SerialMon.println(F(" fail"));
     delay(10000);
     return;
   }
-  SerialMon.println(" success");
+  SerialMon.println(F(" success"));
 #endif
 
 #if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_XBEE
@@ -204,43 +204,43 @@ void loop() {
   modem.gprsConnect(apn, gprsUser, gprsPass);
 #endif
 
-  SerialMon.print("Waiting for network...");
+  SerialMon.print(F("Waiting for network..."));
   if (!modem.waitForNetwork()) {
-    SerialMon.println(" fail");
+    SerialMon.println(F(" fail"));
     delay(10000);
     return;
   }
-  SerialMon.println(" success");
+  SerialMon.println(F(" success"));
 
-  if (modem.isNetworkConnected()) { SerialMon.println("Network connected"); }
+  if (modem.isNetworkConnected()) { SerialMon.println(F("Network connected")); }
 
 #if TINY_GSM_USE_GPRS
   // GPRS connection parameters are usually set after network registration
   SerialMon.print(F("Connecting to "));
   SerialMon.print(apn);
   if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-    SerialMon.println(" fail");
+    SerialMon.println(F(" fail"));
     delay(10000);
     return;
   }
-  SerialMon.println(" success");
+  SerialMon.println(F(" success"));
 
-  if (modem.isGprsConnected()) { SerialMon.println("GPRS connected"); }
+  if (modem.isGprsConnected()) { SerialMon.println(F("GPRS connected")); }
 #endif
 
   SerialMon.print(F("Connecting to "));
   SerialMon.print(server);
   if (!client.connect(server, port)) {
-    SerialMon.println(" fail");
+    SerialMon.println(F(" fail"));
     delay(10000);
     return;
   }
-  SerialMon.println(" success");
+  SerialMon.println(F(" success"));
 
   // Make a HTTP GET request:
   client.print(String("GET ") + resource + " HTTP/1.0\r\n");
   client.print(String("Host: ") + server + "\r\n");
-  client.print("Connection: close\r\n\r\n");
+  client.print(F("Connection: close\r\n\r\n"));
 
   // Let's see what the entire elapsed time is, from after we send the request.
   uint32_t timeElapsed = millis();
@@ -363,17 +363,17 @@ void loop() {
   float duration = float(timeElapsed) / 1000;
 
   SerialMon.println();
-  SerialMon.print("Content-Length: ");
+  SerialMon.print(F("Content-Length: "));
   SerialMon.println(contentLength);
-  SerialMon.print("Actually read:  ");
+  SerialMon.print(F("Actually read:  "));
   SerialMon.println(readLength);
-  SerialMon.print("Calc. CRC32:    0x");
+  SerialMon.print(F("Calc. CRC32:    0x"));
   SerialMon.println(crc.finalize(), HEX);
-  SerialMon.print("Known CRC32:    0x");
+  SerialMon.print(F("Known CRC32:    0x"));
   SerialMon.println(knownCRC32, HEX);
-  SerialMon.print("Duration:       ");
+  SerialMon.print(F("Duration:       "));
   SerialMon.print(duration);
-  SerialMon.println("s");
+  SerialMon.println('s');
 
   // Do nothing forevermore
   while (true) { delay(1000); }
