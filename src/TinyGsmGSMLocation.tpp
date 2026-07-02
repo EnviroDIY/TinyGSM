@@ -1,20 +1,28 @@
 /**
- * @file       TinyGsmGSMLocation.h
+ * @file       TinyGsmGSMLocation.tpp
+ * @brief      The CRTP parent class for GSM location functions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMGSMLOCATION_H_
-#define SRC_TINYGSMGSMLOCATION_H_
+#ifndef SRC_TINYGSMGSMLOCATION_TPP_
+#define SRC_TINYGSMGSMLOCATION_TPP_
 
 #include "TinyGsmCommon.h"
 
 #ifndef TINY_GSM_MODEM_HAS_GSM_LOCATION
+/// flag to indicate that the modem has GSM location functions
 #define TINY_GSM_MODEM_HAS_GSM_LOCATION
 #endif
 
+
+/**
+ * @class TinyGsmGSMLocation
+ * @brief The CRTP parent class for GSM location functions.
+ * @tparam modemType The derived modem class
+ */
 template <class modemType>
 class TinyGsmGSMLocation {
   /* =========================================== */
@@ -26,14 +34,38 @@ class TinyGsmGSMLocation {
   /*
    * GSM Location functions
    */
+
+  /**
+   * @brief Get the raw GSM location data.
+   * @return The raw GSM location data as a String.
+   */
   String getGsmLocationRaw() {
     return thisModem().getGsmLocationRawImpl();
   }
 
+  /**
+   * @brief Get the GSM location data.
+   * @return The GSM location data as a String.
+   */
   String getGsmLocation() {
     return thisModem().getGsmLocationRawImpl();
   }
 
+  /**
+   * @brief Get the GSM location data with detailed information.
+   *
+   * @param lat Pointer to store the latitude.
+   * @param lon Pointer to store the longitude.
+   * @param accuracy Pointer to store the accuracy (optional).
+   * @param year Pointer to store the year (optional).
+   * @param month Pointer to store the month (optional).
+   * @param day Pointer to store the day (optional).
+   * @param hour Pointer to store the hour (optional).
+   * @param minute Pointer to store the minute (optional).
+   * @param second Pointer to store the second (optional).
+   *
+   * @return True if the location was successfully retrieved, false otherwise.
+   */
   bool getGsmLocation(float* lat, float* lon, float* accuracy = 0,
                       int* year = 0, int* month = 0, int* day = 0,
                       int* hour = 0, int* minute = 0, int* second = 0) {
@@ -41,6 +73,18 @@ class TinyGsmGSMLocation {
                                           hour, minute, second);
   };
 
+  /**
+   * @brief Get the time attached to the GSM location data.
+   *
+   * @param year Pointer to store the year.
+   * @param month Pointer to store the month.
+   * @param day Pointer to store the day.
+   * @param hour Pointer to store the hour.
+   * @param minute Pointer to store the minute.
+   * @param second Pointer to store the second.
+   *
+   * @return True if the time was successfully retrieved, false otherwise.
+   */
   bool getGsmLocationTime(int* year, int* month, int* day, int* hour,
                           int* minute, int* second) {
     float lat      = 0;
@@ -162,4 +206,4 @@ class TinyGsmGSMLocation {
   }
 };
 
-#endif  // SRC_TINYGSMGSMLOCATION_H_
+#endif  // SRC_TINYGSMGSMLOCATION_TPP_

@@ -9,7 +9,7 @@
 #ifndef SRC_TINYGSMCOMMON_H_
 #define SRC_TINYGSMCOMMON_H_
 
-// The current library version number
+/// The current library version number
 #define TINYGSM_VERSION "0.12.0"
 
 #if defined(SPARK) || defined(PARTICLE)
@@ -31,10 +31,12 @@
 #include "TinyGsmEnums.h"
 
 #ifndef TINY_GSM_YIELD_MS
+/// The number of milliseconds to yield to the system in the main loop
 #define TINY_GSM_YIELD_MS 0
 #endif
 
 #ifndef TINY_GSM_YIELD
+/// The macro to yield to the system in the main loop
 #define TINY_GSM_YIELD() \
   { delay(TINY_GSM_YIELD_MS); }
 #endif

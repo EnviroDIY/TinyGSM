@@ -6,15 +6,20 @@
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMSMS_H_
-#define SRC_TINYGSMSMS_H_
+#ifndef SRC_TINYGSMSMS_TPP_
+#define SRC_TINYGSMSMS_TPP_
 
 #include "TinyGsmCommon.h"
 
 #ifndef TINY_GSM_MODEM_HAS_SMS
+/// flag to indicate that the modem has Short Message Service (SMS) functions
 #define TINY_GSM_MODEM_HAS_SMS
 #endif
 
+/**
+ * @brief The CRTP parent class for Short Message Service (SMS) functions.
+ * @tparam modemType The derived modem class
+ */
 template <class modemType>
 class TinyGsmSMS {
   /* =========================================== */
@@ -26,12 +31,34 @@ class TinyGsmSMS {
   /*
    * Text messaging (SMS) functions
    */
+
+  /**
+   * @brief Send a USSD code to the network.
+   *
+   * @param code The USSD code to send.
+   * @return The response from the network as a String.
+   */
   String sendUSSD(const String& code) {
     return thisModem().sendUSSDImpl(code);
   }
+  /**
+   * @brief Send an SMS message.
+   *
+   * @param number The recipient's phone number.
+   * @param text The message text.
+   * @return True if the message was successfully sent, false otherwise.
+   */
   bool sendSMS(const String& number, const String& text) {
     return thisModem().sendSMSImpl(number, text);
   }
+  /**
+   * @brief Send an SMS message in UTF-16 encoding.
+   *
+   * @param number The recipient's phone number.
+   * @param text The message text in UTF-16 encoding.
+   * @param len The length of the message text.
+   * @return True if the message was successfully sent, false otherwise.
+   */
   bool sendSMS_UTF16(const char* const number, const void* text, size_t len) {
     return thisModem().sendSMS_UTF16Impl(number, text, len);
   }
@@ -240,4 +267,4 @@ class TinyGsmSMS {
   }
 };
 
-#endif  // SRC_TINYGSMSMS_H_
+#endif  // SRC_TINYGSMSMS_TPP_

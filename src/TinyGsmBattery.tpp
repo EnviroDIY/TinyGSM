@@ -6,15 +6,21 @@
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMBATTERY_H_
-#define SRC_TINYGSMBATTERY_H_
+#ifndef SRC_TINYGSMBATTERY_TPP_
+#define SRC_TINYGSMBATTERY_TPP_
 
 #include "TinyGsmCommon.h"
 
 #ifndef TINY_GSM_MODEM_HAS_BATTERY
+/// flag to indicate that the modem has battery functions
 #define TINY_GSM_MODEM_HAS_BATTERY
 #endif
 
+/**
+ * @class TinyGsmBattery
+ * @brief The CRTP parent class for battery functions.
+ * @tparam modemType The derived modem class
+ */
 template <class modemType>
 class TinyGsmBattery {
   /* =========================================== */
@@ -55,7 +61,6 @@ class TinyGsmBattery {
 
   /**
    * @brief Get the battery charging state.
-   *
    * @return *int8_t* The battery charge state.
    */
   int8_t getBattChargeState() {
@@ -68,9 +73,8 @@ class TinyGsmBattery {
    * @param chargeState A reference to an int to set to the battery charge state
    * @param percent A reference to an int to set to the battery percent
    * @param milliVolts A reference to an int to set to the battery voltage
-   * @return *true* The battery stats were updated by the module.
-   * @return *false* There was a failure in updating the battery stats from the
-   * module.
+   * @return True if the battery stats were updated by the module, false
+   * otherwise.
    */
   bool getBattStats(int8_t& chargeState, int8_t& percent, int16_t& milliVolts) {
     return thisModem().getBattStatsImpl(chargeState, percent, milliVolts);
@@ -147,4 +151,4 @@ class TinyGsmBattery {
   }
 };
 
-#endif  // SRC_TINYGSMBATTERY_H_
+#endif  // SRC_TINYGSMBATTERY_TPP_
