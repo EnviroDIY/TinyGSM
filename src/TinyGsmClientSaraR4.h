@@ -426,7 +426,7 @@ class TinyGsmSaraR4
   }
 
  public:
-  bool setURAT(uint8_t urat) {
+  bool setRadioAccessTechnology(uint8_t urat) {
     // AT+URAT=<SelectedAcT>[,<PreferredAct>[,<2ndPreferredAct>]]
 
     sendAT(GF("+COPS=2"));  // Deregister from network

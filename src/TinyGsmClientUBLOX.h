@@ -369,7 +369,7 @@ class TinyGsmUBLOX
     return (UBLOXRegStatus)getRegistrationStatusXREG("CGREG");
   }
 
-  bool setRadioAccessTecnology(int selected, int preferred) {
+  bool setRadioAccessTechnology(int selected, int preferred) {
     // selected:
     // 0: GSM / GPRS / eGPRS (single mode)
     // 1: GSM / UMTS (dual mode)
@@ -387,7 +387,7 @@ class TinyGsmUBLOX
     return true;
   }
 
-  bool getCurrentRadioAccessTecnology(int&) {
+  bool getCurrentRadioAccessTechnology(int&) {
     // @TODO
     return false;
   }
