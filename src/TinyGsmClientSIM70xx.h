@@ -10,6 +10,11 @@
 #define SRC_TINYGSMCLIENTSIM70XX_H_
 #pragma message("TinyGSM:  TinyGsmClientSIM70xx")
 
+#if defined(TINY_GSM_MAX_RESPONSE_CHECKS)
+#if TINY_GSM_MAX_RESPONSE_CHECKS < 5
+#undef TINY_GSM_MAX_RESPONSE_CHECKS
+#endif
+#endif
 #if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
