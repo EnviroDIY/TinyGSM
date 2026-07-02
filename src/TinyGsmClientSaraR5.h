@@ -406,11 +406,11 @@ class TinyGsmSaraR5
     return true;
   }
 
-  bool getCurrentRadioAccessTechnology() {
+  bool getCurrentRadioAccessTechnology(int& rat) {
     sendAT(GF("+URAT?"));
-    String response;
-    if (waitResponse(10000L, response) != 1) { return false; }
-
+    if (waitResponse(10000L, GF("+URAT:")) != 1) { return false; }
+    rat = streamGetIntBefore('\n');
+    waitResponse();  // OK after the result
     return true;
   }
 

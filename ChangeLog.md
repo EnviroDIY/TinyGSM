@@ -28,6 +28,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Fixed various compiler warnings, where possible
 - Increased max baud rate for autobauding.
 - Minor changes in notes and comments
+- **BREAKING** Corrected the spelling of the function `setRadioAccessTecnology` to `setRadioAccessTechnology` and `getCurrentRadioAccessTecnology` to `getCurrentRadioAccessTechnology` for generic u-blox modules.
+- **BREAKING** Renamed the function `setURAT` to `setRadioAccessTechnology` for u-blox SARA R4 modules.
+- **BREAKING** Changed inputs and outputs of the `getCurrentRadioAccessTechnology` for the u-blox SARA R5 modules and made functional.
 
 ### Added
 
