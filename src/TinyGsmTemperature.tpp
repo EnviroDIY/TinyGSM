@@ -6,15 +6,24 @@
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMTEMPERATURE_H_
-#define SRC_TINYGSMTEMPERATURE_H_
+#ifndef SRC_TINYGSMTEMPERATURE_TPP_
+#define SRC_TINYGSMTEMPERATURE_TPP_
 
 #include "TinyGsmCommon.h"
 
 #ifndef TINY_GSM_MODEM_HAS_TEMPERATURE
+/// flag to indicate that the modem has temperature functions
 #define TINY_GSM_MODEM_HAS_TEMPERATURE
 #endif
 
+/**
+ * @brief Provides temperature-related functions for the modem.
+ *
+ * This class allows you to access the modem's temperature sensor and retrieve
+ * the current temperature in degrees Celsius.
+ *
+ * @tparam modemType The derived modem class
+ */
 template <class modemType>
 class TinyGsmTemperature {
   /* =========================================== */
@@ -29,7 +38,6 @@ class TinyGsmTemperature {
 
   /**
    * @brief Get the modem chip temperature in degrees celsius.
-   *
    * @return *float* The modem chip temperature in degrees celsius.
    */
   float getTemperature() {
@@ -63,4 +71,4 @@ class TinyGsmTemperature {
   float getTemperatureImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
-#endif  // SRC_TINYGSMTEMPERATURE_H_
+#endif  // SRC_TINYGSMTEMPERATURE_TPP_

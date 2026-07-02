@@ -6,15 +6,21 @@
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMNTP_H_
-#define SRC_TINYGSMNTP_H_
+#ifndef SRC_TINYGSMNTP_TPP_
+#define SRC_TINYGSMNTP_TPP_
 
 #include "TinyGsmCommon.h"
 
 #ifndef TINY_GSM_MODEM_HAS_NTP
+/// flag to indicate that the modem has network time protocol (NTP) functions
 #define TINY_GSM_MODEM_HAS_NTP
 #endif
 
+/**
+ * @brief The CRTP parent class for network time protocol (NTP) configuration
+ * and synchronization functions.
+ * @tparam modemType The derived modem class
+ */
 template <class modemType>
 class TinyGsmNTP {
   /* =========================================== */
@@ -28,18 +34,48 @@ class TinyGsmNTP {
    */
 
  public:
+  /**
+   * @brief Synchronize the modem with an NTP server
+   *
+   * @param server The NTP server to use
+   * @param TimeZone The timezone offset
+   *
+   * @return The result of the synchronization
+   */
   byte NTPServerSync(const char* server = "pool.ntp.org", int TimeZone = 0) {
     return thisModem().NTPServerSyncImpl(server, TimeZone);
   }
+  /**
+   * @brief Wait for the modem to synchronize with the NTP server
+   *
+   * @param timeout_s The timeout in seconds
+   *
+   * @return True if the modem synchronized successfully, false otherwise.
+   */
   bool waitForTimeSync(int timeout_s = 120) {
     return thisModem().waitForTimeSyncImpl(timeout_s);
   }
+  /**
+   * @brief Show the NTP error message
+   *
+   * @param error The error code
+   *
+   * @return The error message
+   */
   String ShowNTPError(byte error) {
     return thisModem().ShowNTPErrorImpl(error);
   }
 
   /*
    * Utilities
+   */
+
+  /**
+   * @brief Check if a string is a valid number
+   *
+   * @param str The string to check
+   *
+   * @return True if the string is a valid number, false otherwise.
    */
   bool TinyGsmIsValidNumber(String str) {
     if (!(str.charAt(0) == '+' || str.charAt(0) == '-' ||
@@ -139,4 +175,4 @@ class TinyGsmNTP {
   }
 };
 
-#endif  // SRC_TINYGSMNTP_H_
+#endif  // SRC_TINYGSMNTP_TPP_

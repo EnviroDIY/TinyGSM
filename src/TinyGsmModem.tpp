@@ -6,8 +6,8 @@
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMMODEM_H_
-#define SRC_TINYGSMMODEM_H_
+#ifndef SRC_TINYGSMMODEM_TPP_
+#define SRC_TINYGSMMODEM_TPP_
 
 #include "TinyGsmCommon.h"
 
@@ -50,16 +50,28 @@
 #define MODEM_MODEL "unknown"
 #endif
 
+/// @include{doc} defines.dox
+
+/// The AT string
 static const char GSM_AT[] TINY_GSM_PROGMEM = "AT";
 
-static const char GSM_OK[] TINY_GSM_PROGMEM    = AT_OK AT_NL;
+/// The OK string
+static const char GSM_OK[] TINY_GSM_PROGMEM = AT_OK AT_NL;
+/// The ERROR string
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = AT_ERROR AT_NL;
 
 #if defined TINY_GSM_DEBUG
-static const char GSM_VERBOSE[] TINY_GSM_PROGMEM   = AT_VERBOSE;
+/// The verbose error string
+static const char GSM_VERBOSE[] TINY_GSM_PROGMEM = AT_VERBOSE;
+/// A second verbose error string
 static const char GSM_VERBOSE_2[] TINY_GSM_PROGMEM = AT_VERBOSE_2;
 #endif
 
+/**
+ * @class TinyGsmModem
+ * @brief The CRTP parent class for basic modem functions.
+ * @tparam modemType The derived modem class
+ */
 template <class modemType>
 class TinyGsmModem {
   /* =========================================== */
@@ -79,8 +91,7 @@ class TinyGsmModem {
    *
    * @param pin A pin code to unlock the SIM, if necessary
    *
-   * @return *true* The module was set up as expected
-   * @return *false* Something failed in module set up
+   * @return True if the module was set up as expected, false otherwise.
    */
   bool begin(const char* pin = nullptr) {
     return thisModem().initImpl(pin);
@@ -130,7 +141,10 @@ class TinyGsmModem {
    * and not recognized as a response, because in this case you still want to
    * try to set the baud rate.
    *
+   * @param at_serial The serial object to use for communicating with the modem
    * @param targetBaud The final baud rate to try to set the modem to
+   * @return True if the modem responded after the baud rate was set, false
+   * otherwise.
    *
    * @note After setting and applying the new baud rate, you will have to end()
    * and begin() the serial object.
@@ -213,10 +227,9 @@ class TinyGsmModem {
   /**
    * @brief Test response to AT commands
    *
-   * @param timeout_ms The the amount of time to test for; optional with a
+   * @param timeout_ms the amount of time to test for; optional with a
    * default value of 10s.
-   * @return *true*  The module responded to AT commands
-   * @return *false*  The module failed to respond
+   * @return True if the module responded to AT commands, false otherwise.
    */
   bool testAT(uint32_t timeout_ms = 10000L) {
     return thisModem().testATImpl(timeout_ms);
@@ -240,6 +253,8 @@ class TinyGsmModem {
    * @param r6 The sixth output to test against, optional with a default value
    * of nullptr
    * @param r7 The seventh output to test against, optional with a default value
+   * of nullptr
+   * @param r8 The eighth output to test against, optional with a default value
    * of nullptr
    * @return *int8_t* the index of the response input
    */
@@ -317,6 +332,8 @@ class TinyGsmModem {
    * of nullptr
    * @param r7 The seventh output to test against, optional with a default value
    * of nullptr
+   * @param r8 The eighth output to test against, optional with a default value
+   * of nullptr
    * @return *int8_t* the index of the response input
    */
   int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
@@ -392,6 +409,8 @@ class TinyGsmModem {
    * @param r6 The sixth output to test against, optional with a default value
    * of nullptr
    * @param r7 The seventh output to test against, optional with a default value
+   * of nullptr
+   * @param r8 The eighth output to test against, optional with a default value
    * of nullptr
    * @return *int8_t* the index of the response input
    */
@@ -473,7 +492,6 @@ class TinyGsmModem {
 
   /**
    * @brief Get the modem manufacturer
-   *
    * @return *String* The modem manufacturer
    */
   String getModemManufacturer() {
@@ -482,7 +500,6 @@ class TinyGsmModem {
 
   /**
    * @brief Get the modem model
-   *
    * @return *String* The modem model, as it calls itself
    */
   String getModemModel() {
@@ -503,7 +520,6 @@ class TinyGsmModem {
 
   /**
    * @brief Get the modem serial number
-   *
    * @return *String* The modem serial number
    */
   String getModemSerialNumber() {
@@ -515,8 +531,7 @@ class TinyGsmModem {
    *
    * This generally restarts the module as well.
    *
-   * @return *true* The module successfully reset to default.
-   * @return *false* The module failed to reset to default.
+   * @return *True if the module successfully reset to default, false otherwise.
    */
   bool factoryDefault() {
     return thisModem().factoryDefaultImpl();
@@ -534,26 +549,22 @@ class TinyGsmModem {
    *
    * @param pin A pin code to unlock the SIM, if necessary
    *
-   * @return *true* The module was successfully restarted.
-   * @return *false* There was an error in restarting the module.
+   * @return True if the module was successfully restarted, false otherwise.
    */
   bool restart(const char* pin = nullptr) {
     return thisModem().restartImpl(pin);
   }
   /**
    * @brief Power off the module
-   *
-   * @return *true* The module was successfully powered down.
-   * @return *false* There was an error in powering down module.
+   * @return True if the module was successfully powered down, false otherwise.
    */
   bool poweroff() {
     return thisModem().powerOffImpl();
   }
   /**
    * @brief Turn off the module radio
-   *
-   * @return *true* The module radio was successfully turned off.
-   * @return *false* There was an error in turning off the radio.
+   * @return True if the module radio was successfully turned off, false
+   * otherwise.
    */
   bool radioOff() {
     return thisModem().radioOffImpl();
@@ -567,8 +578,8 @@ class TinyGsmModem {
    * pin levels.
    *
    * @param enable True to enable sleep, false to disable
-   * @return *true* Sleep was successfully enabled or disabled
-   * @return *false* There was a problem setting sleep
+   * @return True if sleep was successfully enabled or disabled, false
+   * otherwise.
    */
   bool sleepEnable(bool enable = true) {
     return thisModem().sleepEnableImpl(enable);
@@ -580,8 +591,8 @@ class TinyGsmModem {
    * @param fun The phone functionality setting. The value and meaning of this
    * varies by module; check your documentation.
    * @param reset True to reset the module before changing the functionality.
-   * @return *true* The phone functionality was successfully changed.
-   * @return *false* There was a problem changing the functionality.
+   * @return True if the phone functionality was successfully changed, false
+   * otherwise.
    */
   bool setPhoneFunctionality(uint8_t fun, bool reset = false) {
     return thisModem().setPhoneFunctionalityImpl(fun, reset);
@@ -600,8 +611,7 @@ class TinyGsmModem {
    * @brief Confirm whether the module is currently connected to the
    * GSM/GPRS/LTE network.
    *
-   * @return *true* The module is connected to the network
-   * @return *false* The module is not connected to the network
+   * @return True if the module is connected to the network, false otherwise.
    */
   bool isNetworkConnected() {
     return thisModem().isNetworkConnectedImpl();
@@ -614,9 +624,8 @@ class TinyGsmModem {
    * with a default value of 1 minute.
    * @param check_signal True to alternate between checking for connection and
    * checking the signal strength.
-   * @return *true* The module is now connected to the network.
-   * @return *false* The module did not connect to the network even after
-   * waiting.
+   * @return True if the module is now connected to the network, false
+   * otherwise.
    */
   bool waitForNetwork(uint32_t timeout_ms = 60000L, bool check_signal = false) {
     return thisModem().waitForNetworkImpl(timeout_ms, check_signal);
@@ -678,17 +687,34 @@ class TinyGsmModem {
   /**@{*/
  public:
   // Utility templates for writing/skipping characters on a stream
+  /**
+   * @brief Write a value to the modem stream.
+   *
+   * @tparam T The type of the value to write.
+   * @param last The value to write.
+   */
   template <typename T>
   void streamWrite(T last) {
     thisModem().stream.print(last);
   }
 
+  /**
+   * @brief Recursively write multiple values to the modem stream.
+   *
+   * @tparam T The type of the first value to write.
+   * @tparam Args The types of the remaining values to write.
+   * @param head The first value to write.
+   * @param tail The remaining values to write.
+   */
   template <typename T, typename... Args>
   void streamWrite(T head, Args... tail) {
     thisModem().stream.print(head);
     thisModem().streamWrite(tail...);
   }
 
+  /**
+   * @brief Clear the modem stream.
+   */
   inline void streamClear() {
     while (thisModem().stream.available()) {
       thisModem().waitResponse(50, nullptr, nullptr);
@@ -1097,4 +1123,4 @@ class TinyGsmModem {
   }
 };
 
-#endif  // SRC_TINYGSMMODEM_H_
+#endif  // SRC_TINYGSMMODEM_TPP_

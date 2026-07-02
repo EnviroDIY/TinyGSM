@@ -6,12 +6,13 @@
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMTCP_H_
-#define SRC_TINYGSMTCP_H_
+#ifndef SRC_TINYGSMTCP_TPP_
+#define SRC_TINYGSMTCP_TPP_
 
 #include "TinyGsmCommon.h"
 
 #ifndef TINY_GSM_MODEM_HAS_TCP
+/// flag to indicate that the modem has TCP functions
 #define TINY_GSM_MODEM_HAS_TCP
 #endif
 
@@ -66,6 +67,14 @@
 // // For modules that always use the mux you assign them
 // #define TINY_GSM_MUX_STATIC
 
+
+/**
+ * @brief The CRTP parent class for TCP functions of the modem.
+ * @tparam modemType The derived modem class
+ * @tparam muxCount The number of simultaneous TCP connections the modem can
+ * handle
+ * @tparam bufferSize The size of the buffer used for incoming data
+ */
 template <class modemType, uint8_t muxCount, unsigned bufferSize>
 class TinyGsmTCP {
   /* =========================================== */
@@ -77,10 +86,16 @@ class TinyGsmTCP {
   /*
    * Basic functions
    */
+  /// Maintain the modem connection and check for incoming data.
   void maintain() {
     return thisModem().maintainImpl();
   }
 
+  /**
+   * @brief Find the number of the first unassigned mux socket
+   * @return The mux number of the first unassigned socket, or -1 if all sockets
+   * are assigned
+   */
   uint8_t findFirstUnassignedMux() {
     // Try to iterate through the assigned client sockets to find the next spot
     // in the array of client pointers that has not been linked to an object.
@@ -175,6 +190,7 @@ class TinyGsmTCP {
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClient : public Client {
     // Make all classes created from the modem template friends
     friend class TinyGsmTCP<modemType, muxCount, bufferSize>;
@@ -196,6 +212,7 @@ class TinyGsmTCP {
     //   return connect(ip, port, TINY_GSM_CONNECT_TIMEOUT);
     // }
 
+    /// convert a IPAddress to a String for use in connect()
     static inline String TinyGsmStringFromIp(IPAddress ip) {
       String host;
       host.reserve(16);
@@ -214,7 +231,7 @@ class TinyGsmTCP {
     //   stop(15000L);
     // }
 
-    // Writes data out on the client using the modem send functionality
+    /// Writes data out on the client using the modem send functionality
     size_t write(const uint8_t* buf, size_t size) override {
       if (is_mid_send) {
         // if we're in the middle of a write, pass directly to the stream
@@ -244,6 +261,13 @@ class TinyGsmTCP {
       return write(reinterpret_cast<const uint8_t*>(str), strlen(str));
     }
 
+    /**
+     * @brief Get the number of bytes available for in the client's receive
+     * buffer.
+     * This returns the combined total of the number of bytes available
+     * in the TinyGSM fifo and the modem chip's internal fifo (where supported).
+     * @return int The number of bytes available in the client's receive buffer.
+     */
     int available() override {
       is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                             // send to fail
@@ -279,6 +303,14 @@ class TinyGsmTCP {
 #endif
     }
 
+    /**
+     * @brief Read data from the client's receive buffer into a user provided
+     * buffer.
+     *
+     * @param buf The buffer to read data into.
+     * @param size The maximum number of bytes to read.
+     * @return int The number of bytes actually read.
+     */
     int read(uint8_t* buf, size_t size) override {
       TINY_GSM_YIELD();
       is_mid_send = false;  // Any calls to the AT when mid-send will cause the
@@ -367,20 +399,38 @@ class TinyGsmTCP {
 #endif
     }
 
+    /**
+     * @brief Read a single byte from the client's receive buffer.
+     * @return int The byte read, or -1 if no data is available.
+     */
     int read() override {
       uint8_t c;
       if (read(&c, 1) == 1) { return c; }
       return -1;
     }
 
+    /**
+     * @brief Peek at the next byte in the client's receive buffer without
+     * removing it.
+     *
+     * @return int The next byte, or -1 if no data is available.
+     */
     int peek() override {
       return rx.peek();
     }
 
+    /**
+     * @brief Flush the client's receive buffer (ie, wait for all data to be
+     * sent).
+     */
     void flush() override {
       at->stream.flush();
     }
 
+    /**
+     * @brief Check if the client is connected.
+     * @return uint8_t True if the client is connected, false otherwise.
+     */
     uint8_t connected() override {
       if (is_mid_send) { return true; }  // Don't interrupt a send
       if (available()) { return true; }
@@ -401,11 +451,12 @@ class TinyGsmTCP {
 #error Modem client has been incorrectly created
 #endif
     }
+    /// Check if the client is connected (overrides operator bool)
     operator bool() override {
       return connected();
     }
 
-    // destructor - need to remove self from the socket pointer array
+    /// destructor - need to remove self from the socket pointer array
     virtual ~GsmClient() {
       if (mux < muxCount) {
         if (at->sockets[mux] == this) { at->sockets[mux] = nullptr; }
@@ -416,8 +467,16 @@ class TinyGsmTCP {
      * Extended API
      */
 
+    /**
+     * @brief Get the remote IP address of the connected client
+     * @return The remote IP address as a String
+     */
     String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
+    /**
+     * @brief Get the socket number of the connected client
+     * @return The socket number as a uint8_t
+     */
     uint8_t getMux() {
       return mux;
     }
@@ -731,4 +790,4 @@ class TinyGsmTCP {
   bool modemGetConnectedImpl(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
-#endif  // SRC_TINYGSMTCP_H_
+#endif  // SRC_TINYGSMTCP_TPP_

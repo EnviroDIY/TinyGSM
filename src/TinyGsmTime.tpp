@@ -6,15 +6,20 @@
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMTIME_H_
-#define SRC_TINYGSMTIME_H_
+#ifndef SRC_TINYGSMTIME_TPP_
+#define SRC_TINYGSMTIME_TPP_
 
 #include "TinyGsmCommon.h"
 
 #ifndef TINY_GSM_MODEM_HAS_TIME
+/// flag to indicate that the modem has time printing and retrieval functions
 #define TINY_GSM_MODEM_HAS_TIME
 #endif
 
+/**
+ * @brief The CRTP parent class for time printing and retrieval functions
+ * @tparam modemType The derived modem class
+ */
 template <class modemType>
 class TinyGsmTime {
   /* =========================================== */
@@ -49,9 +54,8 @@ class TinyGsmTime {
    * @param minute Reference to an int for the minute
    * @param second Reference to an int for the second
    * @param timezone Reference to a float for the timezone
-   * @return *true*  The references have been filled with valid values from the
-   * GSM module.
-   * @return *false*  There was a problem getting the time from the module.
+   * @return True if the references have been filled with valid values from
+   * the GSM module, false otherwise.
    */
   bool getNetworkTime(int* year, int* month, int* day, int* hour, int* minute,
                       int* second, float* timezone) {
@@ -69,9 +73,8 @@ class TinyGsmTime {
    * @param minute Reference to an int for the minute
    * @param second Reference to an int for the second
    * @param timezone Reference to a float for the timezone
-   * @return *true*  The references have been filled with valid values from the
-   * GSM module.
-   * @return *false*  There was a problem getting the time from the module.
+   * @return True if the references have been filled with valid values from
+   * the GSM module, false otherwise.
    */
   bool getNetworkUTCTime(int* year, int* month, int* day, int* hour,
                          int* minute, int* second, float* timezone) {
@@ -183,4 +186,4 @@ class TinyGsmTime {
   getNetworkEpochImpl(TinyGSM_EpochStart epoch) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
-#endif  // SRC_TINYGSMTIME_H_
+#endif  // SRC_TINYGSMTIME_TPP_
