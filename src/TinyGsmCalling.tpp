@@ -29,9 +29,11 @@ class TinyGsmCalling {
    * Define the interface
    */
  public:
-  /*
-   * Phone Call functions
+  /**
+   * @anchor calling_functions
+   * @name Phone Call functions
    */
+  /**@{*/
 
   /**
    * @brief Answer an incoming phone call
@@ -69,6 +71,8 @@ class TinyGsmCalling {
   bool dtmfSend(char cmd, int duration_ms = 100) {
     return thisModem().dtmfSendImpl(cmd, duration_ms);
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)

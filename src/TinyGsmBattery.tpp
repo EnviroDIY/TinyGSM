@@ -29,9 +29,11 @@ class TinyGsmBattery {
    * Define the interface
    */
  public:
-  /*
-   * Battery functions
+  /**
+   * @anchor battery_functions
+   * @name Battery functions
    */
+  /**@{*/
 
   /**
    * @brief Get the current battery voltage.
@@ -79,6 +81,8 @@ class TinyGsmBattery {
   bool getBattStats(int8_t& chargeState, int8_t& percent, int16_t& milliVolts) {
     return thisModem().getBattStatsImpl(chargeState, percent, milliVolts);
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)

@@ -40,9 +40,13 @@ class TinyGsmSSL {
    * Define the interface
    */
  public:
-  /*
-   * Secure socket layer (SSL) certificate management functions
+  /**
+   * @anchor ssl_certificate_management_functions
+   * @name Secure socket layer (SSL) certificate management functions
    */
+  /**@{*/
+
+  /// Default constructor
   TinyGsmSSL() {}
 
   /**
@@ -193,6 +197,8 @@ class TinyGsmSSL {
   bool convertPSKTable(String psk_table_name) {
     return thisModem().convertPSKTable(psk_table_name.c_str());
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)
@@ -246,6 +252,7 @@ class TinyGsmSSL {
  */
 class GsmSecureClient {
  public:
+  /// Create a new secure client instance
   GsmSecureClient() {
     sslCtxIndex      = TINY_GSM_DEFAULT_SSL_CTX;
     sslCtxConfigured = false;
@@ -260,8 +267,12 @@ class GsmSecureClient {
   }
 
   /**
+   * @anchor client_ssl_config
+   * @name Client SSL configuration functions
+   */
+  /**@{*/
+  /**
    * @brief Set the SSL context index to use for this connection
-   *
    * @param sslCtxIndex The SSL context index
    */
   virtual void setSSLContextIndex(uint8_t sslCtxIndex) {
@@ -271,7 +282,6 @@ class GsmSecureClient {
 
   /**
    * @brief Set the SSL authorization mode to use for this connection
-   *
    * @param mode The SSL authorization mode
    */
   virtual void setSSLAuthMode(SSLAuthMode mode) {
@@ -281,17 +291,21 @@ class GsmSecureClient {
 
   /**
    * @brief Set the SSL version to use for this connection
-   *
    * @param version The SSL version
    */
   virtual void setSSLVersion(SSLVersion version) {
     this->sslVersion = version;
     sslCtxConfigured = false;
   }
+  /**@}*/
 
   /**
+   * @anchor client_cert_assignment
+   * @name Client certificate assignment functions
+   */
+  /**@{*/
+  /**
    * @brief Set the CA certificate name to use for this connection
-   *
    * @param CAcertName The CA certificate name
    */
   virtual void setCACertName(const char* CAcertName) {
@@ -305,7 +319,6 @@ class GsmSecureClient {
 
   /**
    * @brief Set the client certificate name to use for this connection
-   *
    * @param clientCertName The client certificate name
    */
   virtual void setClientCertName(const char* clientCertName) {
@@ -319,7 +332,6 @@ class GsmSecureClient {
 
   /**
    * @brief Set the client private key name to use for this connection
-   *
    * @param clientKeyName The client private key name
    */
   virtual void setPrivateKeyName(const char* clientKeyName) {
@@ -330,10 +342,16 @@ class GsmSecureClient {
   virtual void setPrivateKeyName(String clientKeyName) {
     setPrivateKeyName(clientKeyName.c_str());
   }
+  /**@}*/
+
+  /**
+   * @anchor client_psk_assignment
+   * @name Client PSK assignment functions
+   */
+  /**@{*/
 
   /**
    * @brief Set the PSK table name to use for this connection
-   *
    * @param pskTableName The PSK table name
    */
   virtual void setPSKTableName(const char* pskTableName) {
@@ -360,8 +378,9 @@ class GsmSecureClient {
   virtual void setPreSharedKey(String pskIdent, String psKey) {
     setPreSharedKey(pskIdent.c_str(), psKey.c_str());
   }
+  /**@}*/
 
-  // destructor
+  /// destructor
   virtual ~GsmSecureClient() {}
 
  protected:

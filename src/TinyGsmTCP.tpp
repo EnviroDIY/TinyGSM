@@ -83,9 +83,11 @@ class TinyGsmTCP {
    * Define the interface
    */
  public:
-  /*
-   * Basic functions
+  /**
+   * @anchor tcp_functions
+   * @name TCP functions
    */
+  /**@{*/
   /// Maintain the modem connection and check for incoming data.
   void maintain() {
     return thisModem().maintainImpl();
@@ -172,6 +174,7 @@ class TinyGsmTCP {
   bool modemGetConnected(uint8_t mux) {
     return thisModem().modemGetConnectedImpl(mux);
   }
+  /**@}*/
 
   // destructor (protected!)
   ~TinyGsmTCP() {}
@@ -565,7 +568,7 @@ class TinyGsmTCP {
    */
 
   /*
-   * Basic functions
+   * TCP functions
    */
  protected:
   void maintainImpl() {

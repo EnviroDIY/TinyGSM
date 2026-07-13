@@ -31,9 +31,12 @@ class TinyGsmGSMLocation {
    * Define the interface
    */
  public:
-  /*
-   * GSM Location functions
+  /**
+   * @anchor gsm_location_functions
+   * @name GSM Location functions
+   * @brief Functions for retrieving GSM-based location data.
    */
+  /**@{*/
 
   /**
    * @brief Get the raw GSM location data.
@@ -93,6 +96,8 @@ class TinyGsmGSMLocation {
     return thisModem().getGsmLocation(&lat, &lon, &accuracy, year, month, day,
                                       hour, minute, second);
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)

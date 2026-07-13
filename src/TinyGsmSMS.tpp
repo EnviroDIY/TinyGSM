@@ -28,9 +28,11 @@ class TinyGsmSMS {
    * Define the interface
    */
  public:
-  /*
-   * Text messaging (SMS) functions
+  /**
+   * @anchor sms_functions
+   * @name Text messaging (SMS) functions
    */
+  /**@{*/
 
   /**
    * @brief Send a USSD code to the network.
@@ -62,6 +64,8 @@ class TinyGsmSMS {
   bool sendSMS_UTF16(const char* const number, const void* text, size_t len) {
     return thisModem().sendSMS_UTF16Impl(number, text, len);
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)
@@ -77,10 +81,13 @@ class TinyGsmSMS {
     return static_cast<modemType&>(*this);
   }
 
-  /*
-   * Utilities
-   */
+
  protected:
+  /**
+   * @anchor sms_utilities
+   * @name Utilities
+   */
+  /**@{*/
   static inline String TinyGsmDecodeHex7bit(const String& instr) {
     String result;
     byte   reminder = 0;
@@ -147,6 +154,7 @@ class TinyGsmSMS {
     }
     return result;
   }
+  /**@}*/
 
   /* =========================================== */
   /* =========================================== */

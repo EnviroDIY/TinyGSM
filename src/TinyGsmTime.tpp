@@ -28,9 +28,11 @@ class TinyGsmTime {
    * Define the interface
    */
  public:
-  /*
-   * Time functions
+  /**
+   * @anchor time_functions
+   * @name Time functions
    */
+  /**@{*/
 
   /**
    * @brief Get the Date Time as a String
@@ -92,6 +94,8 @@ class TinyGsmTime {
   getNetworkEpoch(TinyGSM_EpochStart epoch = TinyGSM_EpochStart::UNIX) {
     return thisModem().getNetworkEpochImpl(epoch);
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)

@@ -29,9 +29,11 @@ class TinyGsmNTP {
    * Define the interface
    */
  public:
-  /*
-   * NTP server functions
+  /**
+   * @anchor ntp_server_functions
+   * @name NTP server functions
    */
+  /**@{*/
 
  public:
   /**
@@ -47,9 +49,7 @@ class TinyGsmNTP {
   }
   /**
    * @brief Wait for the modem to synchronize with the NTP server
-   *
    * @param timeout_s The timeout in seconds
-   *
    * @return True if the modem synchronized successfully, false otherwise.
    */
   bool waitForTimeSync(int timeout_s = 120) {
@@ -57,18 +57,19 @@ class TinyGsmNTP {
   }
   /**
    * @brief Show the NTP error message
-   *
    * @param error The error code
-   *
    * @return The error message
    */
   String ShowNTPError(byte error) {
     return thisModem().ShowNTPErrorImpl(error);
   }
+  /**@}*/
 
-  /*
-   * Utilities
+  /**
+   * @anchor ntp_utilities
+   * @name NTP Utilities
    */
+  /**@{*/
 
   /**
    * @brief Check if a string is a valid number
@@ -87,6 +88,8 @@ class TinyGsmNTP {
     }
     return true;
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)

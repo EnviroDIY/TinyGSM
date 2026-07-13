@@ -29,9 +29,13 @@ class TinyGsmGPS {
    * Define the interface
    */
  public:
-  /*
-   * GPS/GNSS/GLONASS location functions
+  /**
+   * @anchor gps_functions
+   * @name GPS functions
+   * @brief Functions for enabling, disabling, and retrieving GPS (GNSS,
+   * GLONASS) data.
    */
+  /**@{*/
   /**
    * @brief Enable the GPS module.
    * @return True if the GPS module was successfully enabled, false otherwise.
@@ -113,6 +117,8 @@ class TinyGsmGPS {
   uint8_t getGNSSMode() {
     return thisModem().getGNSSModeImpl();
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)
