@@ -232,7 +232,7 @@ class TinyGsmSaraR4
       return connect(ip, port, 120);
     }
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       is_mid_send          = false;
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
