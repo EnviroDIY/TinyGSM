@@ -188,7 +188,7 @@ class TinyGsmXBee
       return connect(ip, port, 0);
     }
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       at->streamClear();  // Empty anything in the buffer
       // empty the saved currently-in-use destination address
       at->modemStop(maxWaitMs);
