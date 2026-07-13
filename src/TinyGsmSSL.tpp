@@ -475,6 +475,7 @@ class GsmSecureClient {
       TinyGsm##modemAbbrev& modem, uint8_t mux, const char* pskTableName,     \
       SSLVersion sslVersion = SSLVersion::TLS1_2)                             \
       : GsmClient##modemAbbrev(modem, mux) {                                  \
+    is_secure = true;                                                         \
     setSSLAuthMode(SSLAuthMode::PRE_SHARED_KEYS);                             \
     setSSLVersion(sslVersion);                                                \
     setPSKTableName(pskTableName);                                            \
