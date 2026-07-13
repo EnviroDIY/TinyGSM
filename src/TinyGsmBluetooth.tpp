@@ -31,13 +31,16 @@ class TinyGsmBluetooth {
    * Define the interface
    */
  public:
-  /*
-   * Bluetooth functions
+  /**
+   * @anchor bluetooth_functions
+   * @name Bluetooth functions
    */
+  /**@{*/
 
   /**
    * @brief Enable module Bluetooth
-   * @return True if the Bluetooth was successfully enabled, false otherwise.
+   * @return True if the Bluetooth was successfully enabled, false
+   * otherwise.
    */
   bool enableBluetooth() {
     return thisModem().enableBluetoothImpl();
@@ -73,6 +76,8 @@ class TinyGsmBluetooth {
   bool setBluetoothHostName(const char* name) {
     return thisModem().setBluetoothHostNameImpl(name);
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)

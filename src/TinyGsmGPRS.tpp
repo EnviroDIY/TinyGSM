@@ -38,14 +38,14 @@ class TinyGsmGPRS {
    * Define the interface
    */
  public:
-  /*
-   * SIM card functions
+  /**
+   * @anchor sim_card_functions
+   * @name SIM card functions
    */
+  /**@{*/
   /**
    * @brief Unlock the SIM card with a PIN code.
-   *
    * @param pin The PIN code to unlock the SIM card.
-   *
    * @return True if the SIM card was successfully unlocked, false otherwise
    */
   bool simUnlock(const char* pin) {
@@ -76,18 +76,19 @@ class TinyGsmGPRS {
   }
   /**
    * @brief Get the SIM card status.
-   *
    * @param timeout_ms The timeout in milliseconds to wait for a response.
-   *
    * @return The SIM card status as a SimStatus enum value.
    */
   SimStatus getSimStatus(uint32_t timeout_ms = 10000L) {
     return thisModem().getSimStatusImpl(timeout_ms);
   }
+  /**@}*/
 
-  /*
-   * GPRS functions
+  /**
+   * @anchor gprs_functions
+   * @name GPRS functions
    */
+  /**@{*/
 
   /**
    * @brief Connect to a GPRS network.
@@ -131,6 +132,8 @@ class TinyGsmGPRS {
   String getProvider() {
     return thisModem().getProviderImpl();
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)

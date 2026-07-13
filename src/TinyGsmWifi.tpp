@@ -28,9 +28,11 @@ class TinyGsmWifi {
    * Define the interface
    */
  public:
-  /*
-   * WiFi functions
+  /**
+   * @anchor wifi_functions
+   * @name WiFi functions
    */
+  /**@{*/
 
   /**
    * @brief Connect to a WiFi network
@@ -51,6 +53,8 @@ class TinyGsmWifi {
   bool networkDisconnect() {
     return thisModem().networkDisconnectImpl();
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)

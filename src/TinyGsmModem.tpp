@@ -39,7 +39,11 @@
 // checks to determine the SIM status.
 // Modems that have their own implementation of getSimStatusImpl or that do not
 // implement it can use a lower value.
+#if defined(DOXYGEN)
+#define TINY_GSM_MAX_RESPONSE_CHECKS 8
+#else
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
+#endif
 #endif
 
 #ifndef MODEM_MANUFACTURER
@@ -88,9 +92,7 @@ class TinyGsmModem {
 
   /**
    * @brief Sets up the GSM module
-   *
    * @param pin A pin code to unlock the SIM, if necessary
-   *
    * @return True if the module was set up as expected, false otherwise.
    */
   bool begin(const char* pin = nullptr) {
@@ -118,8 +120,8 @@ class TinyGsmModem {
 
   /**
    * @brief Set the module baud rate
-   *
    * @param baud The baud rate the use
+   * @return True if the baud rate was set successfully, false otherwise.
    *
    * @note After setting and applying the new baud rate, you will have to end()
    * and begin() the serial object.
@@ -546,9 +548,7 @@ class TinyGsmModem {
 
   /**
    * @brief Restart the module
-   *
    * @param pin A pin code to unlock the SIM, if necessary
-   *
    * @return True if the module was successfully restarted, false otherwise.
    */
   bool restart(const char* pin = nullptr) {
@@ -664,12 +664,15 @@ class TinyGsmModem {
   }
   /**@}*/
 
+ protected:
+  // destructor (protected!)
+  ~TinyGsmModem() {}
+
   /**
    * @anchor crtp_helper
    * @name CRTP Helper
    */
   /**@{*/
- protected:
   inline const modemType& thisModem() const {
     return static_cast<const modemType&>(*this);
   }
@@ -677,7 +680,6 @@ class TinyGsmModem {
     return static_cast<modemType&>(*this);
   }
   /**@}*/
-  ~TinyGsmModem() {}
 
 
   /**

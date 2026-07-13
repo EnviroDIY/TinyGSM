@@ -32,9 +32,11 @@ class TinyGsmTemperature {
    * Define the interface
    */
  public:
-  /*
-   * Temperature functions
+  /**
+   * @anchor temperature_functions
+   * @name Temperature functions
    */
+  /**@{*/
 
   /**
    * @brief Get the modem chip temperature in degrees celsius.
@@ -43,6 +45,8 @@ class TinyGsmTemperature {
   float getTemperature() {
     return thisModem().getTemperatureImpl();
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)
