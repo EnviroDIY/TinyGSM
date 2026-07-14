@@ -4,6 +4,7 @@
   "dictionaryDefinitions": [],
   "dictionaries": [],
   "words": [
+    "Adafruit",
     "Arduinos",
     "Aurelien",
     "Bergner",
@@ -18,8 +19,10 @@
     "Espressif",
     "Geleskie",
     "GPRS",
+    "HSPA",
     "Krumpus",
     "MQTT",
+    "MQTTS",
     "Neoway",
     "nodemcu",
     "Pacman",
@@ -31,9 +34,12 @@
     "Rosso",
     "SIMCOM",
     "SRGD",
+    "SRGDamia1",
     "Tamas",
     "u-blox",
-    "Unruh"
+    "Unruh",
+    "vshymanskyy",
+    "WCDMA"
   ],
   "ignoreWords": [],
   "import": [],
