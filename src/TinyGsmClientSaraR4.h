@@ -116,7 +116,7 @@ enum SaraR4RegStatus {
 
 /// Class for the u-blox SARA-R4
 class TinyGsmSaraR4
-    : public TinyGsmModem<TinyGsmSaraR4>,
+    : public TinyGsmModem<TinyGsmSaraR4, SaraR4RegStatus>,
       public TinyGsmGPRS<TinyGsmSaraR4>,
       public TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
       public TinyGsmSMS<TinyGsmSaraR4>,
@@ -125,7 +125,7 @@ class TinyGsmSaraR4
       public TinyGsmTime<TinyGsmSaraR4>,
       public TinyGsmBattery<TinyGsmSaraR4>,
       public TinyGsmTemperature<TinyGsmSaraR4> {
-  friend class TinyGsmModem<TinyGsmSaraR4>;
+  friend class TinyGsmModem<TinyGsmSaraR4, SaraR4RegStatus>;
   friend class TinyGsmGPRS<TinyGsmSaraR4>;
   friend class TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;
@@ -448,8 +448,8 @@ class TinyGsmSaraR4
   /*
    * Generic network functions
    */
- public:
-  SaraR4RegStatus getRegistrationStatus() {
+ protected:
+  SaraR4RegStatus getRegistrationStatusImpl() {
     // Check first for EPS registration
     SaraR4RegStatus epsStatus =
         (SaraR4RegStatus)getRegistrationStatusXREG("CEREG");
@@ -463,9 +463,8 @@ class TinyGsmSaraR4
     }
   }
 
- protected:
   bool isNetworkConnectedImpl() {
-    SaraR4RegStatus s = getRegistrationStatus();
+    SaraR4RegStatus s = this->getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

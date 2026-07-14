@@ -64,10 +64,10 @@ enum SIM70xxRegStatus {
  * @tparam SIM70xxType The derived class type
  */
 template <class SIM70xxType>
-class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
+class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxRegStatus>,
                        public TinyGsmGPRS<SIM70xxType>,
                        public TinyGsmGPS<SIM70xxType> {
-  friend class TinyGsmModem<SIM70xxType>;
+  friend class TinyGsmModem<SIM70xxType, SIM70xxRegStatus>;
   friend class TinyGsmGPRS<SIM70xxType>;
   friend class TinyGsmGPS<SIM70xxType>;
 
@@ -136,8 +136,8 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
   /*
    * Generic network functions
    */
- public:
-  SIM70xxRegStatus getRegistrationStatus() {
+ protected:
+  SIM70xxRegStatus getRegistrationStatusImpl() {
     SIM70xxRegStatus epsStatus =
         (SIM70xxRegStatus)thisModem().getRegistrationStatusXREG("CEREG");
     // If we're connected on EPS, great!
@@ -150,9 +150,8 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
     }
   }
 
- protected:
   bool isNetworkConnectedImpl() {
-    SIM70xxRegStatus s = getRegistrationStatus();
+    SIM70xxRegStatus s = this->getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

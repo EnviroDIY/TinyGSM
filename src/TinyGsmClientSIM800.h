@@ -114,7 +114,7 @@ enum SIM800RegStatus {
 
 /// Class for the SIMCOM SIM800 and SIM900 (with some limitations)
 class TinyGsmSim800
-    : public TinyGsmModem<TinyGsmSim800>,
+    : public TinyGsmModem<TinyGsmSim800, SIM800RegStatus>,
       public TinyGsmGPRS<TinyGsmSim800>,
       public TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
       public TinyGsmCalling<TinyGsmSim800>,
@@ -123,7 +123,7 @@ class TinyGsmSim800
       public TinyGsmTime<TinyGsmSim800>,
       public TinyGsmNTP<TinyGsmSim800>,
       public TinyGsmBattery<TinyGsmSim800> {
-  friend class TinyGsmModem<TinyGsmSim800>;
+  friend class TinyGsmModem<TinyGsmSim800, SIM800RegStatus>;
   friend class TinyGsmGPRS<TinyGsmSim800>;
   friend class TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;
@@ -393,14 +393,13 @@ class TinyGsmSim800
   /*
    * Generic network functions
    */
- public:
-  SIM800RegStatus getRegistrationStatus() {
+ protected:
+  SIM800RegStatus getRegistrationStatusImpl() {
     return (SIM800RegStatus)getRegistrationStatusXREG("CREG");
   }
 
- protected:
   bool isNetworkConnectedImpl() {
-    SIM800RegStatus s = getRegistrationStatus();
+    SIM800RegStatus s = this->getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

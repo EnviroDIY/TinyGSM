@@ -63,13 +63,13 @@ enum ESP8266RegStatus {
  * programmed with the AT command firmware.
  */
 class TinyGsmESP8266
-    : public TinyGsmEspressif<TinyGsmESP8266>,
+    : public TinyGsmEspressif<TinyGsmESP8266, ESP8266RegStatus>,
       public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
       public TinyGsmSSL<TinyGsmESP8266>,
       public TinyGsmTime<TinyGsmESP8266>,
       public TinyGsmNTP<TinyGsmESP8266> {
-  friend class TinyGsmEspressif<TinyGsmESP8266>;
-  friend class TinyGsmModem<TinyGsmESP8266>;
+  friend class TinyGsmEspressif<TinyGsmESP8266, ESP8266RegStatus>;
+  friend class TinyGsmModem<TinyGsmESP8266, ESP8266RegStatus>;
   friend class TinyGsmWifi<TinyGsmESP8266>;
   friend class TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;
@@ -273,7 +273,7 @@ class TinyGsmESP8266
    * @param stream Stream used to communicate with the modem.
    */
   explicit TinyGsmESP8266(Stream& stream)
-      : TinyGsmEspressif<TinyGsmESP8266>(stream) {
+      : TinyGsmEspressif<TinyGsmESP8266, ESP8266RegStatus>(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -292,8 +292,8 @@ class TinyGsmESP8266
   /*
    * Generic network functions
    */
- public:
-  ESP8266RegStatus getRegistrationStatus() {
+ protected:
+  ESP8266RegStatus getRegistrationStatusImpl() {
     sendAT(GF("+CWSTATE?"));
     if (waitResponse(3000, GF("+CWSTATE:")) != 1) return REG_UNKNOWN;
     // +CWSTATE:{state},{"ssid"}
@@ -304,9 +304,8 @@ class TinyGsmESP8266
     return (ESP8266RegStatus)status;
   }
 
- protected:
   bool isNetworkConnectedImpl() {
-    ESP8266RegStatus s = getRegistrationStatus();
+    ESP8266RegStatus s = this->getRegistrationStatus();
     return (s == REG_OK);
   }
 

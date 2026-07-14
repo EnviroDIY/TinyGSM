@@ -101,7 +101,7 @@ enum SIM5360RegStatus {
 
 /// Class for the SIMCOM SIM5360, SIM5300, SIM5320, and SIM7100
 class TinyGsmSim5360
-    : public TinyGsmModem<TinyGsmSim5360>,
+    : public TinyGsmModem<TinyGsmSim5360, SIM5360RegStatus>,
       public TinyGsmGPRS<TinyGsmSim5360>,
       public TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
       public TinyGsmSMS<TinyGsmSim5360>,
@@ -111,7 +111,7 @@ class TinyGsmSim5360
       public TinyGsmNTP<TinyGsmSim5360>,
       public TinyGsmBattery<TinyGsmSim5360>,
       public TinyGsmTemperature<TinyGsmSim5360> {
-  friend class TinyGsmModem<TinyGsmSim5360>;
+  friend class TinyGsmModem<TinyGsmSim5360, SIM5360RegStatus>;
   friend class TinyGsmGPRS<TinyGsmSim5360>;
   friend class TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;
@@ -325,14 +325,13 @@ class TinyGsmSim5360
   /*
    * Generic network functions
    */
- public:
-  SIM5360RegStatus getRegistrationStatus() {
+ protected:
+  SIM5360RegStatus getRegistrationStatusImpl() {
     return (SIM5360RegStatus)getRegistrationStatusXREG("CGREG");
   }
 
- protected:
   bool isNetworkConnectedImpl() {
-    SIM5360RegStatus s = getRegistrationStatus();
+    SIM5360RegStatus s = this->getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

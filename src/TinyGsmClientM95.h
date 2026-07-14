@@ -92,7 +92,7 @@ enum M95RegStatus {
 
 /// Class for the Quectel M95
 class TinyGsmM95
-    : public TinyGsmModem<TinyGsmM95>,
+    : public TinyGsmModem<TinyGsmM95, M95RegStatus>,
       public TinyGsmGPRS<TinyGsmM95>,
       public TinyGsmTCP<TinyGsmM95, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
       public TinyGsmCalling<TinyGsmM95>,
@@ -100,7 +100,7 @@ class TinyGsmM95
       public TinyGsmTime<TinyGsmM95>,
       public TinyGsmBattery<TinyGsmM95>,
       public TinyGsmTemperature<TinyGsmM95> {
-  friend class TinyGsmModem<TinyGsmM95>;
+  friend class TinyGsmModem<TinyGsmM95, M95RegStatus>;
   friend class TinyGsmGPRS<TinyGsmM95>;
   friend class TinyGsmTCP<TinyGsmM95, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
   friend class TinyGsmCalling<TinyGsmM95>;
@@ -307,14 +307,13 @@ class TinyGsmM95
   /*
    * Generic network functions
    */
- public:
-  M95RegStatus getRegistrationStatus() {
+ protected:
+  M95RegStatus getRegistrationStatusImpl() {
     return (M95RegStatus)getRegistrationStatusXREG("CREG");
   }
 
- protected:
   bool isNetworkConnectedImpl() {
-    M95RegStatus s = getRegistrationStatus();
+    M95RegStatus s = this->getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

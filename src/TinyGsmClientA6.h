@@ -95,14 +95,14 @@ enum A6RegStatus {
  * module.
  */
 class TinyGsmA6
-    : public TinyGsmModem<TinyGsmA6>,
+    : public TinyGsmModem<TinyGsmA6, A6RegStatus>,
       public TinyGsmGPRS<TinyGsmA6>,
       public TinyGsmTCP<TinyGsmA6, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
       public TinyGsmCalling<TinyGsmA6>,
       public TinyGsmSMS<TinyGsmA6>,
       public TinyGsmTime<TinyGsmA6>,
       public TinyGsmBattery<TinyGsmA6> {
-  friend class TinyGsmModem<TinyGsmA6>;
+  friend class TinyGsmModem<TinyGsmA6, A6RegStatus>;
   friend class TinyGsmGPRS<TinyGsmA6>;
   friend class TinyGsmTCP<TinyGsmA6, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
   friend class TinyGsmCalling<TinyGsmA6>;
@@ -291,14 +291,13 @@ class TinyGsmA6
   /*
    * Generic network functions
    */
- public:
-  A6RegStatus getRegistrationStatus() {
+ protected:
+  A6RegStatus getRegistrationStatusImpl() {
     return (A6RegStatus)getRegistrationStatusXREG("CREG");
   }
 
- protected:
   bool isNetworkConnectedImpl() {
-    A6RegStatus s = getRegistrationStatus();
+    A6RegStatus s = this->getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

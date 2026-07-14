@@ -108,7 +108,7 @@ enum UBLOXRegStatus {
 
 /// Class for the u-blox family of modems
 class TinyGsmUBLOX
-    : public TinyGsmModem<TinyGsmUBLOX>,
+    : public TinyGsmModem<TinyGsmUBLOX, UBLOXRegStatus>,
       public TinyGsmGPRS<TinyGsmUBLOX>,
       public TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
       public TinyGsmCalling<TinyGsmUBLOX>,
@@ -117,7 +117,7 @@ class TinyGsmUBLOX
       public TinyGsmGPS<TinyGsmUBLOX>,
       public TinyGsmTime<TinyGsmUBLOX>,
       public TinyGsmBattery<TinyGsmUBLOX> {
-  friend class TinyGsmModem<TinyGsmUBLOX>;
+  friend class TinyGsmModem<TinyGsmUBLOX, UBLOXRegStatus>;
   friend class TinyGsmGPRS<TinyGsmUBLOX>;
   friend class TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
   friend class TinyGsmCalling<TinyGsmUBLOX>;
@@ -405,9 +405,6 @@ class TinyGsmUBLOX
    * Generic network functions
    */
  public:
-  UBLOXRegStatus getRegistrationStatus() {
-    return (UBLOXRegStatus)getRegistrationStatusXREG("CGREG");
-  }
   /**
    * @brief Set the radio access technology (RAT) for the modem.
    *
@@ -446,8 +443,12 @@ class TinyGsmUBLOX
   }
 
  protected:
+  UBLOXRegStatus getRegistrationStatusImpl() {
+    return (UBLOXRegStatus)getRegistrationStatusXREG("CGREG");
+  }
+
   bool isNetworkConnectedImpl() {
-    UBLOXRegStatus s = getRegistrationStatus();
+    UBLOXRegStatus s = this->getRegistrationStatus();
     if (s == REG_OK_HOME || s == REG_OK_ROAMING)
       return true;
     else if (s == REG_UNKNOWN)  // for some reason, it can hang at unknown..

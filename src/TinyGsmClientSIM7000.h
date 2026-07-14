@@ -60,7 +60,7 @@ class TinyGsmSim7000
       public TinyGsmGSMLocation<TinyGsmSim7000>,
       public TinyGsmBattery<TinyGsmSim7000> {
   friend class TinyGsmSim70xx<TinyGsmSim7000>;
-  friend class TinyGsmModem<TinyGsmSim7000>;
+  friend class TinyGsmModem<TinyGsmSim7000, SIM70xxRegStatus>;
   friend class TinyGsmGPRS<TinyGsmSim7000>;
   friend class TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;

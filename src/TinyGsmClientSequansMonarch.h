@@ -114,7 +114,7 @@ enum SocketStatus {
 
 /// Class for the Sequans Monarch
 class TinyGsmSequansMonarch
-    : public TinyGsmModem<TinyGsmSequansMonarch>,
+    : public TinyGsmModem<TinyGsmSequansMonarch, MonarchRegStatus>,
       public TinyGsmGPRS<TinyGsmSequansMonarch>,
       public TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT,
                         TINY_GSM_RX_BUFFER>,
@@ -122,7 +122,7 @@ class TinyGsmSequansMonarch
       public TinyGsmSMS<TinyGsmSequansMonarch>,
       public TinyGsmTime<TinyGsmSequansMonarch>,
       public TinyGsmTemperature<TinyGsmSequansMonarch> {
-  friend class TinyGsmModem<TinyGsmSequansMonarch>;
+  friend class TinyGsmModem<TinyGsmSequansMonarch, MonarchRegStatus>;
   friend class TinyGsmGPRS<TinyGsmSequansMonarch>;
   friend class TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;
@@ -425,14 +425,13 @@ class TinyGsmSequansMonarch
   /*
    * Generic network functions
    */
- public:
-  MonarchRegStatus getRegistrationStatus() {
+ protected:
+  MonarchRegStatus getRegistrationStatusImpl() {
     return (MonarchRegStatus)getRegistrationStatusXREG("CEREG");
   }
 
- protected:
   bool isNetworkConnectedImpl() {
-    MonarchRegStatus s = getRegistrationStatus();
+    MonarchRegStatus s = this->getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
   String getLocalIPImpl() {
