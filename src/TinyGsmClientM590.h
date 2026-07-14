@@ -109,6 +109,11 @@ class TinyGsmM590
     friend class TinyGsmM590;
 
    public:
+    using TinyGsmTCP<TinyGsmM590, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmM590, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+
     /**
      * @brief Create a new GsmClientM590 object.  This must be initialized with
      * a TinyGsmM590 modem before it can be used.
@@ -161,25 +166,21 @@ class TinyGsmM590
     }
 
    public:
-    virtual int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop(TINY_GSM_STOP_TIMEOUT * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    virtual void stop(uint32_t maxWaitMs) {
+    void stop(uint32_t maxWaitMs) override {
       is_mid_send = false;
       TINY_GSM_YIELD();
       at->sendAT(GF("+TCPCLOSE="), mux);
       sock_connected = false;
       at->waitResponse(maxWaitMs);
       rx.clear();
-    }
-    void stop() override {
-      stop(1000L);
     }
 
     /*

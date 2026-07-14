@@ -146,6 +146,11 @@ class TinyGsmSaraR4
     friend class TinyGsmSaraR4;
 
    public:
+    using TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
      * before it can be used.
@@ -211,7 +216,7 @@ class TinyGsmSaraR4
     }
 
    public:
-    virtual int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       is_mid_send = false;
       // stop();  // DON'T stop! We don't know our actual mux yet!
       TINY_GSM_YIELD();
@@ -252,7 +257,7 @@ class TinyGsmSaraR4
       return connect(ip, port, 120);
     }
 
-    virtual void stop(uint32_t maxWaitMs) {
+    void stop(uint32_t maxWaitMs) override {
       is_mid_send          = false;
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
@@ -284,9 +289,6 @@ class TinyGsmSaraR4
         sock_connected = false;
       }
     }
-    void stop() override {
-      stop(135000L);
-    }
 
     virtual ~GsmClientSaraR4() {
       // remove self from the socket array
@@ -309,6 +311,9 @@ class TinyGsmSaraR4
     friend class TinyGsmSaraR4;
 
    public:
+    using GsmClientSaraR4::connect;
+    using GsmClientSaraR4::stop;
+
     /**
      * @brief Create a new secured TCP (SSL) client.  This must be initialized
      * with a modem before it can be used.

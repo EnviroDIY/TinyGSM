@@ -102,6 +102,11 @@ class TinyGsmSim7080
     friend class TinyGsmSim7080;
 
    public:
+    using TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
      * before it can be used.
@@ -155,25 +160,22 @@ class TinyGsmSim7080
     }
 
    public:
-    virtual int connect(const char* host, uint16_t port, int timeout_s) {
-      stop();
+    int connect(const char* host, uint16_t port, int timeout_s) override {
+      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    virtual void stop(uint32_t maxWaitMs) {
+    void stop(uint32_t maxWaitMs) override {
       is_mid_send = false;
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CACLOSE="), mux);
       sock_connected = false;
       at->waitResponse(3000);
     }
-    void stop() override {
-      stop(15000L);
-    }
+
 
     /*
      * Extended API
@@ -195,6 +197,9 @@ class TinyGsmSim7080
     friend class TinyGsmSim7080;
 
    public:
+    using GsmClientSim7080::connect;
+    using GsmClientSim7080::stop;
+
     TINY_GSM_SECURE_CLIENT_CTORS(Sim7080)
 
     // Because we have the same potential range of mux numbers for secure and
@@ -212,7 +217,6 @@ class TinyGsmSim7080
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
   /*

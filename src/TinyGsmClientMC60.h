@@ -122,6 +122,11 @@ class TinyGsmMC60
     friend class TinyGsmMC60;
 
    public:
+    using TinyGsmTCP<TinyGsmMC60, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmMC60, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
      * before it can be used.
@@ -175,16 +180,15 @@ class TinyGsmMC60
     }
 
    public:
-    virtual int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop(TINY_GSM_STOP_TIMEOUT * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    virtual void stop(uint32_t maxWaitMs) {
+    void stop(uint32_t maxWaitMs) override {
       is_mid_send          = false;
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
@@ -192,9 +196,6 @@ class TinyGsmMC60
       sock_connected = false;
       at->waitResponse((maxWaitMs - (millis() - startMillis)), GF("CLOSED"),
                        GF("CLOSE OK"), GF("ERROR"));
-    }
-    void stop() override {
-      stop(75000L);
     }
 
     /*
