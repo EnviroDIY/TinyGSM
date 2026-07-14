@@ -141,13 +141,13 @@ class TinyGsmXBee
     GsmClientXBee() {
       is_secure = false;
     }
-
-    explicit GsmClientXBee(TinyGsmXBee& modem, uint8_t mux = 0) {
-      init(&modem, mux);
+    explicit GsmClientXBee(TinyGsmXBee& modem, uint8_t /*mux*/ = 0) {
+      init(&modem);
       is_secure = false;
     }
 
-    bool init(TinyGsmXBee* modem, uint8_t = 0) {
+
+    bool init(TinyGsmXBee* modem, uint8_t /*mux*/ = 0) {
       this->at       = modem;
       this->mux      = 0;
       sock_connected = false;
