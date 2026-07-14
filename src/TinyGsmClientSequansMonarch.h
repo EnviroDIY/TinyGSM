@@ -142,6 +142,11 @@ class TinyGsmSequansMonarch
     friend class TinyGsmSequansMonarch;
 
    public:
+    using TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
      * before it can be used.
@@ -188,7 +193,7 @@ class TinyGsmSequansMonarch
     }
 
    public:
-    virtual int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       is_mid_send = false;
       if (sock_connected) stop();
       TINY_GSM_YIELD();
@@ -196,18 +201,15 @@ class TinyGsmSequansMonarch
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    virtual void stop(uint32_t maxWaitMs) {
+    void stop(uint32_t maxWaitMs) override {
       is_mid_send = false;
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+SQNSH="), mux);
       sock_connected = false;
       at->waitResponse();
     }
-    void stop() override {
-      stop(15000L);
-    }
+
 
     /*
      * Extended API
@@ -225,6 +227,9 @@ class TinyGsmSequansMonarch
     friend class TinyGsmSequansMonarch;
 
    public:
+    using GsmClientSequansMonarch::connect;
+    using GsmClientSequansMonarch::stop;
+
     /**
      * @brief Create a new secured TCP (SSL) client.  This must be initialized
      * with a modem before it can be used.
@@ -275,7 +280,6 @@ class TinyGsmSequansMonarch
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     /**
      * @brief Require minimum of TLS 1.2

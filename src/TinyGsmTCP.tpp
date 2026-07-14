@@ -203,23 +203,62 @@ class TinyGsmTCP {
     friend class TinyGsmTCP<modemType, muxCount, bufferSize>;
 
    public:
-    // bool init(modemType* modem, uint8_t);
-    // int connect(const char* host, uint16_t port, int timeout_s);
+    /**
+     * @brief Initialize this client with modem context and channel state.
+     *
+     * @param modem Pointer to the modem instance.
+     * @param mux Multiplexing channel to assign.
+     * @return true if initialization completed.
+     */
+    virtual bool init(modemType* modem, uint8_t mux) = 0;
 
-    // Connect to a IP address given as an IPAddress object by
-    // converting said IP address to text
-    // virtual int connect(IPAddress ip,uint16_t port, int timeout_s) {
-    //   return connect(TinyGsmStringFromIp(ip).c_str(), port,
-    //   timeout_s);
-    // }
-    // int connect(const char* host, uint16_t port) override {
-    //   return connect(host, port, TINY_GSM_CONNECT_TIMEOUT);
-    // }
-    // int connect(IPAddress ip,uint16_t port) override {
-    //   return connect(ip, port, TINY_GSM_CONNECT_TIMEOUT);
-    // }
+    /**
+     * @brief Connect to a server using a host name and port number, with a
+     * specified timeout.
+     *
+     * @param host The host name of the server to connect to.
+     * @param port The port number to connect to on the server.
+     * @param timeout_s The timeout for the connection attempt, in seconds.
+     * @return 1 if the connection was successful, 0 otherwise.
+     */
+    virtual int connect(const char* host, uint16_t port, int timeout_s) = 0;
 
-    /// convert a IPAddress to a String for use in connect()
+    /**
+     * @brief Connect to a server using an IPAddress and port number, with a
+     * specified timeout.
+     *
+     * The default implementation of this function converts the IPAddress to a
+     * string and calls the connect(const char* host, uint16_t port, int
+     * timeout_s) function.
+     *
+     * @param ip The IP address of the server to connect to.
+     * @param port The port number to connect to on the server.
+     * @param timeout_s The timeout for the connection attempt, in seconds.
+     * @return 1 if the connection was successful, 0 otherwise.
+     */
+    virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
+      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
+    }
+    /**
+     * @fn int connect(const char* host, uint16_t port) override
+     * @brief Connect to a server using a host name and port number
+     * @param host The host name of the server to connect to.
+     * @param port The port number to connect to on the server.
+     * @return 1 if the connection was successful, 0 otherwise.
+     */
+    int connect(const char* host, uint16_t port) override {
+      return connect(host, port, TINY_GSM_CONNECT_TIMEOUT);
+    }
+    /**
+     * @fn int connect(IPAddress ip, uint16_t port) override
+     * @brief Connect to a server using an IPAddress and port number
+     * @param ip The IP address of the server to connect to.
+     * @param port The port number to connect to on the server.
+     * @return 1 if the connection was successful, 0 otherwise.
+     */
+    int connect(IPAddress ip, uint16_t port) override {
+      return connect(ip, port, TINY_GSM_CONNECT_TIMEOUT);
+    }
 
     /**
      * @brief Convert an IPAddress to a String for use in connect()
@@ -239,12 +278,20 @@ class TinyGsmTCP {
       return host;
     }
 
-    // void stop(uint32_t maxWaitMs);
-    // void stop() override {
-    //   stop(15000L);
-    // }
-
-    /// Writes data out on the client using the modem send functionality
+    /**
+     * @brief Close the client connection, with a specified maximum wait time
+     * for the operation.
+     *
+     * @param maxWaitMs The maximum time to wait for the connection to close,
+     * in milliseconds.
+     */
+    virtual void stop(uint32_t maxWaitMs) = 0;
+    /**
+     * @brief Close the client connection, with a default maximum wait time
+     */
+    void stop() override {
+      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+    }
 
     /**
      * @brief Writes data out on the client using the modem send functionality
@@ -290,7 +337,7 @@ class TinyGsmTCP {
      * @param str The null-terminated string to send
      * @return The number of bytes written
      */
-    size_t write(const char* str) {
+    virtual size_t write(const char* str) {
       if (str == nullptr) return 0;
       return write(reinterpret_cast<const uint8_t*>(str), strlen(str));
     }

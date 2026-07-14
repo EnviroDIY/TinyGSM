@@ -160,6 +160,11 @@ class TinyGsmXBee
     friend class TinyGsmXBee;
 
    public:
+    using TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
      * before it can be used.
@@ -197,7 +202,7 @@ class TinyGsmXBee
     // The TCP connection itself is not opened until you attempt to send data.
     // Because all settings are saved to flash, it is possible (or likely) that
     // you could send data even if you haven't "made" any connection.
-    virtual int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       // NOTE:  Not calling stop() or yield() here
       at->streamClear();  // Empty anything in the buffer before starting
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -220,7 +225,7 @@ class TinyGsmXBee
       return connect(ip, port, 0);
     }
 
-    virtual void stop(uint32_t maxWaitMs) {
+    void stop(uint32_t maxWaitMs) override {
       at->streamClear();  // Empty anything in the buffer
       // empty the saved currently-in-use destination address
       at->modemStop(maxWaitMs);
@@ -233,9 +238,6 @@ class TinyGsmXBee
       // Setting sock_connected to false after the stop ensures that connected()
       // will return false after a stop has been ordered.  This makes it play
       // much more nicely with libraries like PubSubClient.
-    }
-    void stop() override {
-      stop(5000L);
     }
 
     size_t write(const uint8_t* buf, size_t size) override {
@@ -341,6 +343,9 @@ class TinyGsmXBee
     friend class TinyGsmXBee;
 
    public:
+    using GsmClientXBee::connect;
+    using GsmClientXBee::stop;
+
     TINY_GSM_SECURE_CLIENT_CTORS(XBee)
   };
 

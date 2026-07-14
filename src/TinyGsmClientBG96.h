@@ -143,6 +143,11 @@ class TinyGsmBG96
     friend class TinyGsmBG96;
 
    public:
+    using TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
      * before it can be used.
@@ -198,16 +203,15 @@ class TinyGsmBG96
     }
 
    public:
-    virtual int connect(const char* host, uint16_t port, int timeout_s) {
-      stop();
+    int connect(const char* host, uint16_t port, int timeout_s) override {
+      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    virtual void stop(uint32_t maxWaitMs) {
+    void stop(uint32_t maxWaitMs) override {
       is_mid_send          = false;
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
@@ -215,9 +219,7 @@ class TinyGsmBG96
       sock_connected = false;
       at->waitResponse((maxWaitMs - (millis() - startMillis)));
     }
-    void stop() override {
-      stop(15000L);
-    }
+
 
     /*
      * Extended API
@@ -235,6 +237,9 @@ class TinyGsmBG96
     friend class TinyGsmBG96;
 
    public:
+    using GsmClientBG96::connect;
+    using GsmClientBG96::stop;
+
     TINY_GSM_SECURE_CLIENT_CTORS(BG96)
 
     // Because we have the same potetial range of mux numbers for secure and
@@ -257,7 +262,6 @@ class TinyGsmBG96
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     void stop(uint32_t maxWaitMs) override {
       is_mid_send          = false;
@@ -267,9 +271,7 @@ class TinyGsmBG96
       sock_connected = false;
       at->waitResponse((maxWaitMs - (millis() - startMillis)));
     }
-    void stop() override {
-      stop(15000L);
-    }
+
 
     // NOTE: Unlike the unsecured client, we can't check the size of the buffer
     // for an SSL socket. This means we have to overwrite all of the

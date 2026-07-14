@@ -137,6 +137,11 @@ class TinyGsmUBLOX
     friend class TinyGsmUBLOX;
 
    public:
+    using TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
      * before it can be used.
@@ -202,7 +207,7 @@ class TinyGsmUBLOX
     }
 
    public:
-    virtual int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       is_mid_send = false;
       // stop();  // DON'T stop! We don't know our actual mux yet!
       TINY_GSM_YIELD();
@@ -232,18 +237,15 @@ class TinyGsmUBLOX
 
       return sock_connected;
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    virtual void stop(uint32_t maxWaitMs) {
+    void stop(uint32_t maxWaitMs) override {
       is_mid_send = false;
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+USOCL="), mux);
       at->waitResponse();  // should return within 1s
       sock_connected = false;
     }
-    void stop() override {
-      stop(15000L);
-    }
+
 
     /*
      * Extended API
@@ -261,6 +263,9 @@ class TinyGsmUBLOX
     friend class TinyGsmUBLOX;
 
    public:
+    using GsmClientUBLOX::connect;
+    using GsmClientUBLOX::stop;
+
     /**
      * @brief Create a new secured TCP (SSL) client.  This must be initialized
      * with a modem before it can be used.
@@ -295,7 +300,6 @@ class TinyGsmUBLOX
       at->maintain();
       return sock_connected;
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
   /*

@@ -87,6 +87,11 @@ class TinyGsmESP8266
     friend class TinyGsmESP8266;
 
    public:
+    using TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT,
+             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
      * before it can be used.
@@ -139,7 +144,7 @@ class TinyGsmESP8266
     }
 
    public:
-    virtual int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       is_mid_send = false;
       if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] != nullptr) { stop(); }
       TINY_GSM_YIELD();
@@ -147,18 +152,14 @@ class TinyGsmESP8266
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    virtual void stop(uint32_t maxWaitMs) {
+    void stop(uint32_t maxWaitMs) override {
       is_mid_send = false;
       TINY_GSM_YIELD();
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
       at->waitResponse(maxWaitMs);
       rx.clear();
-    }
-    void stop() override {
-      stop(5000L);
     }
 
     /*
@@ -178,6 +179,9 @@ class TinyGsmESP8266
     friend class TinyGsmESP8266;
 
    public:
+    using GsmClientESP8266::connect;
+    using GsmClientESP8266::stop;
+
     TINY_GSM_SECURE_CLIENT_CTORS(ESP8266)
 
     // Because we have the same potetial range of mux numbers for secure and
