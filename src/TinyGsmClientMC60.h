@@ -97,14 +97,14 @@ enum MC60RegStatus {
 
 /// Class for the Quectel MC60
 class TinyGsmMC60
-    : public TinyGsmModem<TinyGsmMC60>,
+    : public TinyGsmModem<TinyGsmMC60, MC60RegStatus>,
       public TinyGsmGPRS<TinyGsmMC60>,
       public TinyGsmTCP<TinyGsmMC60, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
       public TinyGsmCalling<TinyGsmMC60>,
       public TinyGsmSMS<TinyGsmMC60>,
       public TinyGsmTime<TinyGsmMC60>,
       public TinyGsmBattery<TinyGsmMC60> {
-  friend class TinyGsmModem<TinyGsmMC60>;
+  friend class TinyGsmModem<TinyGsmMC60, MC60RegStatus>;
   friend class TinyGsmGPRS<TinyGsmMC60>;
   friend class TinyGsmTCP<TinyGsmMC60, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
   friend class TinyGsmCalling<TinyGsmMC60>;
@@ -306,14 +306,13 @@ class TinyGsmMC60
   /*
    * Generic network functions
    */
- public:
-  MC60RegStatus getRegistrationStatus() {
+ protected:
+  MC60RegStatus getRegistrationStatusImpl() {
     return (MC60RegStatus)getRegistrationStatusXREG("CREG");
   }
 
- protected:
   bool isNetworkConnectedImpl() {
-    MC60RegStatus s = getRegistrationStatus();
+    MC60RegStatus s = this->getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

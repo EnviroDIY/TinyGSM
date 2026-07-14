@@ -80,7 +80,7 @@ class TinyGsmSim7080
       public TinyGsmNTP<TinyGsmSim7080>,
       public TinyGsmBattery<TinyGsmSim7080> {
   friend class TinyGsmSim70xx<TinyGsmSim7080>;
-  friend class TinyGsmModem<TinyGsmSim7080>;
+  friend class TinyGsmModem<TinyGsmSim7080, SIM70xxRegStatus>;
   friend class TinyGsmGPRS<TinyGsmSim7080>;
   friend class TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;

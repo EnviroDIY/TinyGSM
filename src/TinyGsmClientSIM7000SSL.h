@@ -70,7 +70,7 @@ class TinyGsmSim7000SSL
       public TinyGsmNTP<TinyGsmSim7000SSL>,
       public TinyGsmBattery<TinyGsmSim7000SSL> {
   friend class TinyGsmSim70xx<TinyGsmSim7000SSL>;
-  friend class TinyGsmModem<TinyGsmSim7000SSL>;
+  friend class TinyGsmModem<TinyGsmSim7000SSL, SIM70xxRegStatus>;
   friend class TinyGsmGPRS<TinyGsmSim7000SSL>;
   friend class TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;

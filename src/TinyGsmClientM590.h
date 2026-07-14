@@ -88,12 +88,12 @@ enum M590RegStatus {
 
 /// Class for the Neoway M590
 class TinyGsmM590
-    : public TinyGsmModem<TinyGsmM590>,
+    : public TinyGsmModem<TinyGsmM590, M590RegStatus>,
       public TinyGsmGPRS<TinyGsmM590>,
       public TinyGsmTCP<TinyGsmM590, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
       public TinyGsmSMS<TinyGsmM590>,
       public TinyGsmTime<TinyGsmM590> {
-  friend class TinyGsmModem<TinyGsmM590>;
+  friend class TinyGsmModem<TinyGsmM590, M590RegStatus>;
   friend class TinyGsmGPRS<TinyGsmM590>;
   friend class TinyGsmTCP<TinyGsmM590, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
   friend class TinyGsmSMS<TinyGsmM590>;
@@ -340,14 +340,13 @@ class TinyGsmM590
   /*
    * Generic network functions
    */
- public:
-  M590RegStatus getRegistrationStatus() {
+ protected:
+  M590RegStatus getRegistrationStatusImpl() {
     return (M590RegStatus)getRegistrationStatusXREG("CREG");
   }
 
- protected:
   bool isNetworkConnectedImpl() {
-    M590RegStatus s = getRegistrationStatus();
+    M590RegStatus s = this->getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

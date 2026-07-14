@@ -75,8 +75,9 @@ static const char GSM_VERBOSE_2[] TINY_GSM_PROGMEM = AT_VERBOSE_2;
  * @class TinyGsmModem
  * @brief The CRTP parent class for basic modem functions.
  * @tparam modemType The derived modem class
+ * @tparam regStatusType The modem-specific registration status type
  */
-template <class modemType>
+template <class modemType, typename regStatusType = int8_t>
 class TinyGsmModem {
   /* =========================================== */
   /* =========================================== */
@@ -605,7 +606,13 @@ class TinyGsmModem {
    */
   /**@{*/
 
-  // RegStatus getRegistrationStatus() {}
+  /**
+   * @brief Get the modem registration status on the network.
+   * @return The modem-specific registration status value.
+   */
+  regStatusType getRegistrationStatus() {
+    return thisModem().getRegistrationStatusImpl();
+  }
 
   /**
    * @brief Confirm whether the module is currently connected to the
@@ -1079,6 +1086,8 @@ class TinyGsmModem {
    * Generic network functions
    */
  protected:
+  regStatusType getRegistrationStatusImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
   // Gets the modem's registration status via CREG/CGREG/CEREG
   // CREG = Generic network registration
   // CGREG = GPRS service registration

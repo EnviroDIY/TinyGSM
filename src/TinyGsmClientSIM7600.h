@@ -108,7 +108,7 @@ enum SIM7600RegStatus {
 
 /// Class for the SIMCOM SIM7600, SIM7500, and SIM7800
 class TinyGsmSim7600
-    : public TinyGsmModem<TinyGsmSim7600>,
+    : public TinyGsmModem<TinyGsmSim7600, SIM7600RegStatus>,
       public TinyGsmGPRS<TinyGsmSim7600>,
       public TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
       public TinyGsmSSL<TinyGsmSim7600>,
@@ -120,7 +120,7 @@ class TinyGsmSim7600
       public TinyGsmBattery<TinyGsmSim7600>,
       public TinyGsmTemperature<TinyGsmSim7600>,
       public TinyGsmCalling<TinyGsmSim7600> {
-  friend class TinyGsmModem<TinyGsmSim7600>;
+  friend class TinyGsmModem<TinyGsmSim7600, SIM7600RegStatus>;
   friend class TinyGsmGPRS<TinyGsmSim7600>;
   friend class TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;
@@ -374,18 +374,13 @@ class TinyGsmSim7600
   /*
    * Generic network functions
    */
- public:
-  /**
-   * @brief Get the registration status of the modem on the network.
-   * @return The registration status as a SIM7600RegStatus enum value.
-   */
-  SIM7600RegStatus getRegistrationStatus() {
+ protected:
+  SIM7600RegStatus getRegistrationStatusImpl() {
     return (SIM7600RegStatus)getRegistrationStatusXREG("CGREG");
   }
 
- protected:
   bool isNetworkConnectedImpl() {
-    SIM7600RegStatus s = getRegistrationStatus();
+    SIM7600RegStatus s = this->getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

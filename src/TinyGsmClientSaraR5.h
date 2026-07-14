@@ -126,7 +126,7 @@ enum SaraR5RegStatus {
 
 /// Class for the u-blox SARA-R5
 class TinyGsmSaraR5
-    : public TinyGsmModem<TinyGsmSaraR5>,
+    : public TinyGsmModem<TinyGsmSaraR5, SaraR5RegStatus>,
       public TinyGsmGPRS<TinyGsmSaraR5>,
       public TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
       public TinyGsmCalling<TinyGsmSaraR5>,
@@ -135,7 +135,7 @@ class TinyGsmSaraR5
       public TinyGsmGPS<TinyGsmSaraR5>,
       public TinyGsmTime<TinyGsmSaraR5>,
       public TinyGsmBattery<TinyGsmSaraR5> {
-  friend class TinyGsmModem<TinyGsmSaraR5>;
+  friend class TinyGsmModem<TinyGsmSaraR5, SaraR5RegStatus>;
   friend class TinyGsmGPRS<TinyGsmSaraR5>;
   friend class TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;
@@ -413,20 +413,6 @@ class TinyGsmSaraR5
    * Generic network functions
    */
  public:
-  SaraR5RegStatus getRegistrationStatus() {
-    // Check first for EPS registration
-    SaraR5RegStatus epsStatus =
-        (SaraR5RegStatus)getRegistrationStatusXREG("CEREG");
-
-    // If we're connected on EPS, great!
-    if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
-      return epsStatus;
-    } else {
-      // Otherwise, check generic network status
-      return (SaraR5RegStatus)getRegistrationStatusXREG("CREG");
-    }
-  }
-
   /**
    * @brief Set the radio access technology (RAT) for the modem.
    *
@@ -465,8 +451,22 @@ class TinyGsmSaraR5
   }
 
  protected:
+  SaraR5RegStatus getRegistrationStatusImpl() {
+    // Check first for EPS registration
+    SaraR5RegStatus epsStatus =
+        (SaraR5RegStatus)getRegistrationStatusXREG("CEREG");
+
+    // If we're connected on EPS, great!
+    if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
+      return epsStatus;
+    } else {
+      // Otherwise, check generic network status
+      return (SaraR5RegStatus)getRegistrationStatusXREG("CREG");
+    }
+  }
+
   bool isNetworkConnectedImpl() {
-    SaraR5RegStatus s = getRegistrationStatus();
+    SaraR5RegStatus s = this->getRegistrationStatus();
     if (s == REG_OK_HOME || s == REG_OK_ROAMING || s == REG_SMS_ONLY_ROAMING ||
         s == REG_SMS_ONLY_HOME)
       return true;

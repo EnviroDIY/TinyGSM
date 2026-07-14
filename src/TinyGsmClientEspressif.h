@@ -74,10 +74,11 @@
  *
  * @tparam EspressifType The derived class type (ESP8266 or ESP32)
  */
-template <class EspressifType>
-class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
-                         public TinyGsmWifi<EspressifType> {
-  friend class TinyGsmModem<EspressifType>;
+template <class EspressifType, typename EspressifRegStatusType>
+class TinyGsmEspressif
+    : public TinyGsmModem<EspressifType, EspressifRegStatusType>,
+      public TinyGsmWifi<EspressifType> {
+  friend class TinyGsmModem<EspressifType, EspressifRegStatusType>;
   friend class TinyGsmWifi<EspressifType>;
 
   /*

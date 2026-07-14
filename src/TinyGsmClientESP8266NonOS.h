@@ -69,11 +69,11 @@ enum ESP8266NonOSRegStatus {
  * please update your module.  It's quite outdated.
  */
 class TinyGsmESP8266NonOS
-    : public TinyGsmEspressif<TinyGsmESP8266NonOS>,
+    : public TinyGsmEspressif<TinyGsmESP8266NonOS, ESP8266NonOSRegStatus>,
       public TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT,
                         TINY_GSM_RX_BUFFER> {
-  friend class TinyGsmEspressif<TinyGsmESP8266NonOS>;
-  friend class TinyGsmModem<TinyGsmESP8266NonOS>;
+  friend class TinyGsmEspressif<TinyGsmESP8266NonOS, ESP8266NonOSRegStatus>;
+  friend class TinyGsmModem<TinyGsmESP8266NonOS, ESP8266NonOSRegStatus>;
   friend class TinyGsmWifi<TinyGsmESP8266NonOS>;
   friend class TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;
@@ -221,7 +221,7 @@ class TinyGsmESP8266NonOS
    * @param stream Stream used to communicate with the modem.
    */
   explicit TinyGsmESP8266NonOS(Stream& stream)
-      : TinyGsmEspressif<TinyGsmESP8266NonOS>(stream) {
+      : TinyGsmEspressif<TinyGsmESP8266NonOS, ESP8266NonOSRegStatus>(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -240,8 +240,8 @@ class TinyGsmESP8266NonOS
   /*
    * Generic network functions
    */
- public:
-  ESP8266NonOSRegStatus getRegistrationStatus() {
+ protected:
+  ESP8266NonOSRegStatus getRegistrationStatusImpl() {
     sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
     // after "STATUS:" it should return the status number (0,1,2,3,4,5),
@@ -255,9 +255,8 @@ class TinyGsmESP8266NonOS
     return (ESP8266NonOSRegStatus)status;
   }
 
- protected:
   bool isNetworkConnectedImpl() {
-    ESP8266NonOSRegStatus s = getRegistrationStatus();
+    ESP8266NonOSRegStatus s = this->getRegistrationStatus();
     if (s == REG_OK_IP || s == REG_OK_TCP) {
       // with these, we're definitely connected
       return true;

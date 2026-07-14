@@ -110,7 +110,7 @@ enum BG96RegStatus {
 
 /// Class for the Quectel BG96 and BG95
 class TinyGsmBG96
-    : public TinyGsmModem<TinyGsmBG96>,
+    : public TinyGsmModem<TinyGsmBG96, BG96RegStatus>,
       public TinyGsmGPRS<TinyGsmBG96>,
       public TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
       public TinyGsmSSL<TinyGsmBG96>,
@@ -121,7 +121,7 @@ class TinyGsmBG96
       public TinyGsmNTP<TinyGsmBG96>,
       public TinyGsmBattery<TinyGsmBG96>,
       public TinyGsmTemperature<TinyGsmBG96> {
-  friend class TinyGsmModem<TinyGsmBG96>;
+  friend class TinyGsmModem<TinyGsmBG96, BG96RegStatus>;
   friend class TinyGsmGPRS<TinyGsmBG96>;
   friend class TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
   friend class TinyGsmSSL<TinyGsmBG96>;
@@ -429,8 +429,8 @@ class TinyGsmBG96
   /*
    * Generic network functions
    */
- public:
-  BG96RegStatus getRegistrationStatus() {
+ protected:
+  BG96RegStatus getRegistrationStatusImpl() {
     // Check first for EPS registration
     BG96RegStatus epsStatus = (BG96RegStatus)getRegistrationStatusXREG("CEREG");
 
@@ -443,9 +443,8 @@ class TinyGsmBG96
     }
   }
 
- protected:
   bool isNetworkConnectedImpl() {
-    BG96RegStatus s = getRegistrationStatus();
+    BG96RegStatus s = this->getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

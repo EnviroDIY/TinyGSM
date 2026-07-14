@@ -108,7 +108,7 @@ enum A7672xRegStatus {
  * modem with GPS and SSL support.
  */
 class TinyGsmA7672X
-    : public TinyGsmModem<TinyGsmA7672X>,
+    : public TinyGsmModem<TinyGsmA7672X, A7672xRegStatus>,
       public TinyGsmGPRS<TinyGsmA7672X>,
       public TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
       public TinyGsmSSL<TinyGsmA7672X>,
@@ -119,7 +119,7 @@ class TinyGsmA7672X
       public TinyGsmNTP<TinyGsmA7672X>,
       public TinyGsmBattery<TinyGsmA7672X>,
       public TinyGsmTemperature<TinyGsmA7672X> {
-  friend class TinyGsmModem<TinyGsmA7672X>;
+  friend class TinyGsmModem<TinyGsmA7672X, A7672xRegStatus>;
   friend class TinyGsmGPRS<TinyGsmA7672X>;
   friend class TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>;
@@ -387,10 +387,6 @@ class TinyGsmA7672X
    * Generic network functions
    */
  public:
-  A7672xRegStatus getRegistrationStatus() {
-    return (A7672xRegStatus)getRegistrationStatusXREG("CREG");
-  }
-
   /**
    * @brief Get the local IP address of the modem when using a secure
    * connection.
@@ -410,8 +406,12 @@ class TinyGsmA7672X
   }
 
  protected:
+  A7672xRegStatus getRegistrationStatusImpl() {
+    return (A7672xRegStatus)getRegistrationStatusXREG("CREG");
+  }
+
   bool isNetworkConnectedImpl() {
-    A7672xRegStatus s = getRegistrationStatus();
+    A7672xRegStatus s = this->getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

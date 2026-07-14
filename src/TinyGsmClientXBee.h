@@ -135,14 +135,14 @@ enum XBeeType {
 
 /// Class for the Digi XBee family of modems
 class TinyGsmXBee
-    : public TinyGsmModem<TinyGsmXBee>,
+    : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
       public TinyGsmGPRS<TinyGsmXBee>,
       public TinyGsmWifi<TinyGsmXBee>,
       public TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
       public TinyGsmSMS<TinyGsmXBee>,
       public TinyGsmBattery<TinyGsmXBee>,
       public TinyGsmTemperature<TinyGsmXBee> {
-  friend class TinyGsmModem<TinyGsmXBee>;
+  friend class TinyGsmModem<TinyGsmXBee, XBeeRegStatus>;
   friend class TinyGsmGPRS<TinyGsmXBee>;
   friend class TinyGsmWifi<TinyGsmXBee>;
   friend class TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
@@ -733,8 +733,8 @@ class TinyGsmXBee
   /*
    * Generic network functions
    */
- public:
-  XBeeRegStatus getRegistrationStatus() {
+ protected:
+  XBeeRegStatus getRegistrationStatusImpl() {
     XBEE_COMMAND_START_DECORATOR(5, REG_UNKNOWN)
 
     if (!inCommandMode) return REG_UNKNOWN;  // Return immediately
@@ -823,7 +823,6 @@ class TinyGsmXBee
     return stat;
   }
 
- protected:
   int8_t getSignalQualityImpl() {
     XBEE_COMMAND_START_DECORATOR(5, 0);
 
@@ -854,7 +853,7 @@ class TinyGsmXBee
 
   bool isNetworkConnectedImpl() {
     // first check for association indicator
-    XBeeRegStatus s = getRegistrationStatus();
+    XBeeRegStatus s = this->getRegistrationStatus();
     if (s == REG_OK) {
       if (beeType == XBEE_S6B_WIFI) {
         // For wifi bees, if the association indicator is ok, check that a both
@@ -1528,7 +1527,7 @@ class TinyGsmXBee
     switch (beeType) {
       // The wifi be can only say if it's connected to the netowrk
       case XBEE_S6B_WIFI: {
-        XBeeRegStatus s = getRegistrationStatus();
+        XBeeRegStatus s = this->getRegistrationStatus();
         XBEE_COMMAND_END_DECORATOR
         if (s != REG_OK) {
           sockets[0]->sock_connected = false;  // no multiplex
