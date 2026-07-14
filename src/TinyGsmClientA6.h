@@ -23,6 +23,11 @@
 #define TINY_GSM_RX_BUFFER 64
 #endif
 
+#ifdef TINY_GSM_STOP_TIMEOUT
+#undef TINY_GSM_STOP_TIMEOUT
+#endif
+#define TINY_GSM_STOP_TIMEOUT 1
+
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
