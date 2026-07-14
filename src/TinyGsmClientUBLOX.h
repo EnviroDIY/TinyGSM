@@ -153,18 +153,19 @@ class TinyGsmUBLOX
      * connects to a server.  Use the getMux() function to get the assigned
      * multiplexing channel number after a successful connection.
      */
-    explicit GsmClientUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 0) {
-      init(&modem, mux);
+    explicit GsmClientUBLOX(TinyGsmUBLOX& modem, uint8_t /*mux*/ = 0) {
+      init(&modem, -1);
       is_secure = false;
     }
 
-    bool init(TinyGsmUBLOX* modem, uint8_t mux = 0) {
+    bool init(TinyGsmUBLOX* modem, uint8_t /*mux*/ = 0) {
       this->at       = modem;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
       is_mid_send    = false;
+      uint8_t mux    = 0;  // only a placeholder!
 
       // These ublox modules do NOT allow you to choose the mux number; this is
       // an initial place holder for before connection. We need to assign a mux
