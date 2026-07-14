@@ -184,7 +184,7 @@ class TinyGsmSim7080
     // availability.
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop();
+      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       if (!sslCtxConfigured) {
