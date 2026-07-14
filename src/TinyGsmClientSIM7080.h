@@ -1270,7 +1270,7 @@ class TinyGsmSim7080
   /*
    * Utilities
    */
- public:
+ protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+CARECV:"))) {
       int8_t  mux = streamGetIntBefore(',');

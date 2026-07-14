@@ -949,7 +949,7 @@ class TinyGsmSaraR5
   /*
    * Utilities
    */
- public:
+ protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+UUSORD:"))) {
       int8_t  mux = streamGetIntBefore(',');
@@ -974,9 +974,10 @@ class TinyGsmSaraR5
     return false;
   }
 
- private:  // basically the same as waitResponse but without preemptive exiting
-           // (except when time runs out) this is used for +CGDCONT? as it can
-           // return multiple cid/apn configurations each terminated with OK\r\n
+ private:
+  // basically the same as waitResponse but without preemptive exiting (except
+  // when time runs out) this is used for +CGDCONT? as it can return multiple
+  // cid/apn configurations each terminated with OK\r\n
   int8_t waitResponseUntilEndStream(uint32_t timeout_ms, String& data) {
     data.reserve(1024);  // buffer of the same size as in the SparkFun lib
     uint8_t  index       = 0;

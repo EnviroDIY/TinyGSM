@@ -613,7 +613,7 @@ class TinyGsmMC60
   /*
    * Utilities
    */
- public:
+ protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF(AT_NL "+QIRDI:"))) {  // TODO(?):
                                                // QIRD? or QIRDI?

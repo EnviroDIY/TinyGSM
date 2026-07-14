@@ -384,7 +384,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   /*
    * Utilities
    */
- public:
+ protected:
   bool handleURCs(String& data) {
     return thisModem().handleURCs(data);
   }

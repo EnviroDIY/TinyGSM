@@ -484,7 +484,7 @@ class TinyGsmSim7000
   /*
    * Utilities
    */
- public:
+ protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');

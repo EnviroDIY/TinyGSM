@@ -743,7 +743,7 @@ class TinyGsmESP8266
   /*
    * Utilities
    */
- public:
+ protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF(AT_NL "+IPD,"))) {
       int8_t  mux          = streamGetIntBefore(',');
