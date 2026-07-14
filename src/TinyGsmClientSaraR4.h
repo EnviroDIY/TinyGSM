@@ -23,6 +23,16 @@
 #define TINY_GSM_RX_BUFFER 64
 #endif
 
+#ifdef TINY_GSM_CONNECT_TIMEOUT
+#undef TINY_GSM_CONNECT_TIMEOUT
+#endif
+#define TINY_GSM_CONNECT_TIMEOUT 120
+
+#ifdef TINY_GSM_STOP_TIMEOUT
+#undef TINY_GSM_STOP_TIMEOUT
+#endif
+#define TINY_GSM_STOP_TIMEOUT 135
+
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
@@ -43,13 +53,6 @@
 #define TINY_GSM_SEND_MAX_SIZE 1024
 // USOWR accepts up to 1024 bytes in "normal" and "binary extended" modes and up
 // to 512 bytes in "HEX" mode.
-
-#if !defined(TINY_GSM_CONNECT_TIMEOUT)
-#ifdef TINY_GSM_CONNECT_TIMEOUT
-#undef TINY_GSM_CONNECT_TIMEOUT
-#endif
-#define TINY_GSM_CONNECT_TIMEOUT 120
-#endif
 
 #ifdef TINY_GSM_NO_MODEM_BUFFER
 #undef TINY_GSM_NO_MODEM_BUFFER

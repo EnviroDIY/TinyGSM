@@ -26,6 +26,10 @@
 #define TINY_GSM_CONNECT_TIMEOUT 75
 #endif
 
+#if !defined(TINY_GSM_STOP_TIMEOUT)
+#define TINY_GSM_STOP_TIMEOUT 15
+#endif
+
 #if !defined(TINY_GSM_SEND_MAX_SIZE)
 // This **should** be defined for each modem, but if it's not, we'll assume it's
 // the TCP MTU.

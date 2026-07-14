@@ -24,6 +24,11 @@
 #define TINY_GSM_RX_BUFFER 64
 #endif
 
+#ifdef TINY_GSM_STOP_TIMEOUT
+#undef TINY_GSM_STOP_TIMEOUT
+#endif
+#define TINY_GSM_STOP_TIMEOUT 5
+
 // XBee's do not support multiplexing in transparent/command mode
 // The much more complicated API mode is needed for multiplexing
 #ifdef TINY_GSM_MUX_COUNT

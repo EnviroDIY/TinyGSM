@@ -23,6 +23,11 @@
 #define TINY_GSM_RX_BUFFER 64
 #endif
 
+#ifdef TINY_GSM_CONNECT_TIMEOUT
+#undef TINY_GSM_CONNECT_TIMEOUT
+#endif
+#define TINY_GSM_CONNECT_TIMEOUT 150
+
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
@@ -40,12 +45,6 @@
 #endif
 // QISEND and QSSLSEND both accept up to 1460 bytes of input
 #define TINY_GSM_SEND_MAX_SIZE 1460
-
-
-#ifdef TINY_GSM_CONNECT_TIMEOUT
-#undef TINY_GSM_CONNECT_TIMEOUT
-#endif
-#define TINY_GSM_CONNECT_TIMEOUT 150
 
 // Also supports 6 SSL contexts (0-5)
 // The SSL context is collection of SSL settings, not the connection identifier.

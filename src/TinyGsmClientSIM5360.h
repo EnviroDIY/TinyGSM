@@ -23,6 +23,11 @@
 #define TINY_GSM_RX_BUFFER 64
 #endif
 
+#ifdef TINY_GSM_CONNECT_TIMEOUT
+#undef TINY_GSM_CONNECT_TIMEOUT
+#endif
+#define TINY_GSM_CONNECT_TIMEOUT 15
+
 #ifdef TINY_GSM_MUX_COUNT
 #undef TINY_GSM_MUX_COUNT
 #endif
@@ -33,11 +38,6 @@
 #endif
 #define TINY_GSM_SEND_MAX_SIZE 1500
 // The SIM5360 can send up to 1500 bytes at a time with AT+CIPSEND
-
-#ifdef TINY_GSM_CONNECT_TIMEOUT
-#undef TINY_GSM_CONNECT_TIMEOUT
-#endif
-#define TINY_GSM_CONNECT_TIMEOUT 15
 
 #ifdef TINY_GSM_NO_MODEM_BUFFER
 #undef TINY_GSM_NO_MODEM_BUFFER
