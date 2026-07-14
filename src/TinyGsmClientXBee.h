@@ -1647,6 +1647,16 @@ class TinyGsmXBee
   /*
    * Utilities
    */
+ protected:
+  /**
+   * @brief Handle unsolicited responses (URCs) from the XBee module.
+   * @return Always false, as the XBee does not have unsolicited responses in
+   * command mode.
+   */
+  bool handleURCs(String&) {
+    return false;
+  }
+
  public:
   /// Clear out the stream buffer
   void streamClear(void) {
@@ -1654,10 +1664,6 @@ class TinyGsmXBee
       stream.read();
       TINY_GSM_YIELD();
     }
-  }
-  // The XBee has no unsoliliced responses (URC's) when in command mode.
-  bool handleURCs(String&) {
-    return false;
   }
 
   /**

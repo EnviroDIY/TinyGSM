@@ -1114,7 +1114,7 @@ class TinyGsmSim7000SSL
   /*
    * Utilities
    */
- public:
+ protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+CARECV:"))) {
       int8_t  mux = streamGetIntBefore(',');

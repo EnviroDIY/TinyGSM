@@ -587,7 +587,7 @@ class TinyGsmM590
   /*
    * Utilities
    */
- public:
+ protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+TCPRECV:"))) {
       int8_t  mux          = streamGetIntBefore(',');

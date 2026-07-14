@@ -409,6 +409,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
   /*
    * Utilities
    */
+ protected:
   bool handleURCs(String& data) {
     return thisModem().handleURCs(data);
   }

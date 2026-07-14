@@ -631,7 +631,7 @@ class TinyGsmM95
   /*
    * Utilities
    */
- public:
+ protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF(AT_NL "+QIRDI:"))) {
       streamSkipUntil(',');  // Skip the context
