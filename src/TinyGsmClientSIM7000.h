@@ -50,6 +50,7 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
+/// Class for the SIMCOM SIM7000 using the TCP-IP toolkit
 class TinyGsmSim7000
     : public TinyGsmSim70xx<TinyGsmSim7000>,
       public TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
@@ -74,15 +75,31 @@ class TinyGsmSim7000
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientSim7000 : public TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT,
                                              TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSim7000;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientSim7000() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux Multiplexing channel to use.
+     *
+     * @note The SIM7000 allows you choose the multiplexing channel number, but
+     * if the input mux channel number is already in use and other mux channels
+     * are available, this library will select the next available one.  Use the
+     * getMux() function to get the assigned multiplexing channel number after a
+     * successful connection.
+     */
     explicit GsmClientSim7000(TinyGsmSim7000& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
@@ -152,6 +169,10 @@ class TinyGsmSim7000
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmSim7000(Stream& stream)
       : TinyGsmSim70xx<TinyGsmSim7000>(stream) {
     memset(sockets, 0, sizeof(sockets));

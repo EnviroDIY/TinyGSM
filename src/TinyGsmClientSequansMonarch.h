@@ -80,6 +80,7 @@
 // management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
 // so as not to waste space.
 #ifndef TINY_GSM_MODEM_HAS_SSL
+/// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
@@ -89,26 +90,29 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmTemperature.tpp"
 
+/// Registration status
 enum MonarchRegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+  REG_NO_RESULT    = -1,  ///< No registration result
+  REG_UNREGISTERED = 0,   ///< Not registered on the network
+  REG_SEARCHING    = 2,   ///< Searching for network
+  REG_DENIED       = 3,   ///< Registration denied
+  REG_OK_HOME      = 1,   ///< Registered on the home network
+  REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
+  REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/// Socket status
 enum SocketStatus {
-  SOCK_CLOSED                 = 0,
-  SOCK_ACTIVE_DATA            = 1,
-  SOCK_SUSPENDED              = 2,
-  SOCK_SUSPENDED_PENDING_DATA = 3,
-  SOCK_LISTENING              = 4,
-  SOCK_INCOMING               = 5,
-  SOCK_OPENING                = 6,
+  SOCK_CLOSED                 = 0,  ///< Socket is closed
+  SOCK_ACTIVE_DATA            = 1,  ///< Socket is active and has data
+  SOCK_SUSPENDED              = 2,  ///< Socket is suspended
+  SOCK_SUSPENDED_PENDING_DATA = 3,  ///< Socket is suspended with pending data
+  SOCK_LISTENING = 4,  ///< Socket is listening for incoming connections
+  SOCK_INCOMING  = 5,  ///< Socket has an incoming connection
+  SOCK_OPENING   = 6,  ///< Socket is in the process of opening
 };
 
+/// Class for the Sequans Monarch
 class TinyGsmSequansMonarch
     : public TinyGsmModem<TinyGsmSequansMonarch>,
       public TinyGsmGPRS<TinyGsmSequansMonarch>,
@@ -131,16 +135,32 @@ class TinyGsmSequansMonarch
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientSequansMonarch
       : public TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSequansMonarch;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientSequansMonarch() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux Multiplexing channel to use.
+     *
+     * @note The Monarch allows you choose the multiplexing channel number, but
+     * if the input mux channel number is already in use and other mux channels
+     * are available, this library will select the next available one.  Use the
+     * getMux() function to get the assigned multiplexing channel number after a
+     * successful connection.
+     */
     explicit GsmClientSequansMonarch(TinyGsmSequansMonarch& modem,
                                      uint8_t                mux = 1) {
       init(&modem, mux);
@@ -200,14 +220,25 @@ class TinyGsmSequansMonarch
    * Inner Secure Client
    */
  public:
+  /// Inner secure client
   class GsmClientSecureSequansMonarch : public GsmClientSequansMonarch {
     friend class TinyGsmSequansMonarch;
 
    public:
+    /**
+     * @brief Create a new secured TCP (SSL) client.  This must be initialized
+     * with a modem before it can be used.
+     */
     GsmClientSecureSequansMonarch() {
       is_secure = true;
     }
-
+    /**
+     * @brief Create a new secured TCP (SSL) client and bind it to a modem and
+     * optionally a multiplexing channel.
+     * @copydetails
+     * GsmClientESP8266NonOS::GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem,
+     * uint8_t mux)
+     */
     explicit GsmClientSecureSequansMonarch(TinyGsmSequansMonarch& modem,
                                            uint8_t                mux = 1)
         : GsmClientSequansMonarch(modem, mux) {
@@ -246,6 +277,10 @@ class TinyGsmSequansMonarch
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
+    /**
+     * @brief Require minimum of TLS 1.2
+     * @param strict True to require TLS 1.2, false to allow lower versions.
+     */
     void setStrictSSL(bool strict) {
       strictSSL = strict;
     }
@@ -255,6 +290,10 @@ class TinyGsmSequansMonarch
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmSequansMonarch(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -789,6 +828,7 @@ class TinyGsmSequansMonarch
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 
  protected:

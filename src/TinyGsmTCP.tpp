@@ -220,6 +220,12 @@ class TinyGsmTCP {
     // }
 
     /// convert a IPAddress to a String for use in connect()
+
+    /**
+     * @brief Convert an IPAddress to a String for use in connect()
+     * @param ip The IPAddress to convert
+     * @return A String representation of the IPAddress
+     */
     static inline String TinyGsmStringFromIp(IPAddress ip) {
       String host;
       host.reserve(16);
@@ -239,6 +245,13 @@ class TinyGsmTCP {
     // }
 
     /// Writes data out on the client using the modem send functionality
+
+    /**
+     * @brief Writes data out on the client using the modem send functionality
+     * @param buf The buffer of data to send
+     * @param size The size of the buffer
+     * @return The number of bytes written
+     */
     size_t write(const uint8_t* buf, size_t size) override {
       if (is_mid_send) {
         // if we're in the middle of a write, pass directly to the stream
@@ -259,10 +272,24 @@ class TinyGsmTCP {
       return at->modemSend(buf, size, mux);
     }
 
+    /**
+     * @brief Writes a single byte of data to the modem for sending
+     * @param c The byte of data to send
+     * @return The number of bytes written
+     *
+     * @warning This function is not efficient for sending large amounts of
+     * data. Use the write(const uint8_t* buf, size_t size) or write(const
+     * char* str) function instead.
+     */
     size_t write(uint8_t c) override {
       return write(&c, 1);
     }
 
+    /**
+     * @brief Writes a null-terminated string of data to the modem for sending
+     * @param str The null-terminated string to send
+     * @return The number of bytes written
+     */
     size_t write(const char* str) {
       if (str == nullptr) return 0;
       return write(reinterpret_cast<const uint8_t*>(str), strlen(str));
@@ -470,9 +497,11 @@ class TinyGsmTCP {
       }
     }
 
-    /*
-     * Extended API
+    /**
+     * @anchor extended_client_api
+     * @name Extended Client API
      */
+    /**@{*/
 
     /**
      * @brief Get the remote IP address of the connected client
@@ -525,6 +554,7 @@ class TinyGsmTCP {
       if (expected_size) { return sent_size == expected_size; }
       return true;
     }
+    /**@}*/
 
    protected:
     // Read and dump anything remaining in the modem's internal buffer.

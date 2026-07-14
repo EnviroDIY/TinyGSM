@@ -47,16 +47,22 @@
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmGPS.tpp"
 
+/// Registration status
 enum SIM70xxRegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+  REG_NO_RESULT    = -1,  ///< No registration result
+  REG_UNREGISTERED = 0,   ///< Not registered on the network
+  REG_SEARCHING    = 2,   ///< Searching for network
+  REG_DENIED       = 3,   ///< Registration denied
+  REG_OK_HOME      = 1,   ///< Registered on the home network
+  REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
+  REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/**
+ * @brief Parent class for the SIMCom SIM70xx family of modems
+ *
+ * @tparam SIM70xxType The derived class type
+ */
 template <class SIM70xxType>
 class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
                        public TinyGsmGPRS<SIM70xxType>,
@@ -81,6 +87,10 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmSim70xx(Stream& stream) : stream(stream) {}
 
   /*
@@ -147,6 +157,10 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
   }
 
  public:
+  /**
+   * @brief Get the available network modes of the modem.
+   * @return A string representing the available network modes.
+   */
   String getNetworkModes() {
     // Get the help string, not the setting value
     thisModem().sendAT(GF("+CNMP=?"));
@@ -156,6 +170,10 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
     return res;
   }
 
+  /**
+   * @brief Get the current network mode of the modem.
+   * @return The current network mode as an integer.
+   */
   int16_t getNetworkMode() {
     thisModem().sendAT(GF("+CNMP?"));
     if (thisModem().waitResponse(GF(AT_NL "+CNMP:")) != 1) { return false; }
@@ -164,6 +182,11 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
     return mode;
   }
 
+  /**
+   * @brief Set the network mode of the modem.
+   * @param mode The network mode to set.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool setNetworkMode(uint8_t mode) {
     // 2 Automatic
     // 13 GSM only
@@ -173,6 +196,10 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
     return thisModem().waitResponse() == 1;
   }
 
+  /**
+   * @brief Get the available preferred network modes of the modem.
+   * @return A string representing the available preferred network modes.
+   */
   String getPreferredModes() {
     // Get the help string, not the setting value
     thisModem().sendAT(GF("+CMNB=?"));
@@ -182,6 +209,10 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
     return res;
   }
 
+  /**
+   * @brief Get the current preferred network mode of the modem.
+   * @return The current preferred network mode as an integer.
+   */
   int16_t getPreferredMode() {
     thisModem().sendAT(GF("+CMNB?"));
     if (thisModem().waitResponse(GF(AT_NL "+CMNB:")) != 1) { return false; }
@@ -190,14 +221,27 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
     return mode;
   }
 
+  /**
+   * @brief Set the preferred network mode of the modem.
+   * @param mode The preferred network mode to set.
+   *  - 1 CAT-M
+   *  - 2 NB-IoT
+   *  - 3 CAT-M and NB-IoT
+   * @return True if the operation was successful, false otherwise.
+   */
   bool setPreferredMode(uint8_t mode) {
-    // 1 CAT-M
-    // 2 NB-IoT
-    // 3 CAT-M and NB-IoT
     thisModem().sendAT(GF("+CMNB="), mode);
     return thisModem().waitResponse() == 1;
   }
 
+  /**
+   * @brief Get the network system mode of the modem.
+   * @param n A reference to a boolean that will be set to true if the modem is
+   * in automatic reporting mode, false otherwise.
+   * @param stat A reference to an integer that will be set to the current
+   * service status. 0 if not connected.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool getNetworkSystemMode(bool& n, int16_t& stat) {
     // n: whether to automatically report the system mode info
     // stat: the current service. 0 if it not connected
@@ -209,6 +253,12 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
     return true;
   }
 
+  /**
+   * @brief Set the network system mode of the modem.
+   * @param n A boolean indicating whether to enable automatic reporting of the
+   * system mode info.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool setNetworkSystemMode(bool n) {
     // n: whether to automatically report the system mode info
     thisModem().sendAT(GF("+CNSMOD="), int8_t(n));
@@ -364,6 +414,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 };
 

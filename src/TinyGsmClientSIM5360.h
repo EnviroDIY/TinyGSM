@@ -125,15 +125,31 @@ class TinyGsmSim5360
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientSim5360 : public TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT,
                                              TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSim5360;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientSim5360() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux Multiplexing channel to use.
+     *
+     * @note The SIM5360 and similar variants allow you choose the multiplexing
+     * channel number, but if the input mux channel number is already in use and
+     * other mux channels are available, this library will select the next
+     * available one.  Use the getMux() function to get the assigned
+     * multiplexing channel number after a successful connection.
+     */
     explicit GsmClientSim5360(TinyGsmSim5360& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
@@ -203,6 +219,10 @@ class TinyGsmSim5360
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmSim5360(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -305,6 +325,10 @@ class TinyGsmSim5360
   }
 
  public:
+  /**
+   * @brief Get the available network modes of the modem.
+   * @return A string representing the available network modes.
+   */
   String getNetworkModes() {
     sendAT(GF("+CNMP=?"));
     if (waitResponse(GF(AT_NL "+CNMP:")) != 1) { return ""; }
@@ -313,6 +337,10 @@ class TinyGsmSim5360
     return res;
   }
 
+  /**
+   * @brief Get the current network mode of the modem.
+   * @return The current network mode as an integer.
+   */
   int16_t getNetworkMode() {
     sendAT(GF("+CNMP?"));
     if (waitResponse(GF(AT_NL "+CNMP:")) != 1) { return false; }
@@ -321,6 +349,11 @@ class TinyGsmSim5360
     return mode;
   }
 
+  /**
+   * @brief Set the network mode of the modem.
+   * @param mode The network mode to set.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool setNetworkMode(uint8_t mode) {
     sendAT(GF("+CNMP="), mode);
     return waitResponse() == 1;
@@ -806,6 +839,7 @@ class TinyGsmSim5360
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 
  protected:

@@ -14,6 +14,10 @@
 #include "TinyGsmGPS.tpp"
 #include "TinyGsmBluetooth.tpp"
 
+/**
+ * @brief Class for the SIMCOM SIM808 and SIM868, which extends the SIM800 with
+ * GPS and Bluetooth support
+ */
 class TinyGsmSim808 : public TinyGsmSim800,
                       public TinyGsmGPS<TinyGsmSim808>,
                       public TinyGsmBluetooth<TinyGsmSim808> {
@@ -21,6 +25,10 @@ class TinyGsmSim808 : public TinyGsmSim800,
   friend class TinyGsmBluetooth<TinyGsmSim808>;
 
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmSim808(Stream& stream) : TinyGsmSim800(stream) {}
 
 

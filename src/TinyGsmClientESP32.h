@@ -41,22 +41,28 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
 
-// <state>: current Wi-Fi state.
-//   0: ESP32 station has not started any Wi-Fi connection.
-//   1: ESP32 station has connected to an AP, but does not get an IPv4 address
-//   yet.
-//   2: ESP32 station has connected to an AP, and got an IPv4 address.
-//   3: ESP32 station is in Wi-Fi connecting or reconnecting state.
-//   4: ESP32 station is in Wi-Fi disconnected state.
+/// State: current Wi-Fi state.
 enum ESP32RegStatus {
-  REG_UNINITIALIZED = 0,
-  REG_UNREGISTERED  = 1,
-  REG_OK            = 2,
-  REG_CONNECTING    = 3,
-  REG_DISCONNECTING = 4,
-  REG_UNKNOWN       = 5,
+  REG_UNINITIALIZED =
+      0,  ///< ESP32 station has not started any Wi-Fi connection.
+  REG_UNREGISTERED = 1,  ///< ESP32 station has connected to an AP, but does not
+                         ///< get an IPv4 address yet.
+  REG_OK =
+      2,  ///< ESP32 station has connected to an AP, and got an IPv4 address.
+  REG_CONNECTING =
+      3,  ///< ESP32 station is in Wi-Fi connecting or reconnecting state.
+  REG_DISCONNECTING = 4,  ///< ESP32 station is in Wi-Fi disconnected state.
+  REG_UNKNOWN       = 5,  ///< ESP32 station is in an unknown state.
+
 };
 
+/**
+ * @brief Class for the Espressif ESP32 modem, which is a Wi-Fi module with SSL
+ * support.
+ *
+ * @warning This class is used to communicate with a module that has been
+ * programmed with the AT command firmware.
+ */
 class TinyGsmESP32
     : public TinyGsmEspressif<TinyGsmESP32>,
       public TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
@@ -75,15 +81,31 @@ class TinyGsmESP32
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientESP32 : public TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT,
                                            TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmESP32;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientESP32() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux Multiplexing channel to use.
+     *
+     * @note The ESP32 allows you choose the multiplexing channel number, but if
+     * the input mux channel number is already in use and other mux channels are
+     * available, this library will select the next available one.  Use the
+     * getMux() function to get the assigned multiplexing channel number after a
+     * successful connection.
+     */
     explicit GsmClientESP32(TinyGsmESP32& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
@@ -193,6 +215,7 @@ class TinyGsmESP32
    * Inner Secure Client
    */
  public:
+  /// Inner secure client
   class GsmClientSecureESP32 : public GsmClientESP32, public GsmSecureClient {
     friend class TinyGsmESP32;
 
@@ -275,6 +298,10 @@ class TinyGsmESP32
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmESP32(Stream& stream)
       : TinyGsmEspressif<TinyGsmESP32>(stream) {
     memset(sockets, 0, sizeof(sockets));
@@ -371,7 +398,7 @@ class TinyGsmESP32
   ESP32RegStatus getRegistrationStatus() {
     sendAT(GF("+CWSTATE?"));
     if (waitResponse(3000, GF("+CWSTATE:")) != 1) return REG_UNKNOWN;
-    // +CWSTATE:<state>,<"ssid">
+    // +CWSTATE:{state},{"ssid"}
     // followed by an OK
     int8_t status = streamGetIntBefore(',');
     streamSkipUntil('\n');  // throw away the ssid
@@ -405,22 +432,59 @@ class TinyGsmESP32
   // This adds the server's CA certificate that the client connects to, used
   // in auth mode 2 and 3
   // This is the value client_ca_0x.crt in the AT firmware
+  /**
+   * @brief Load a CA certificate into the modem's flash memory for SSL
+   * connections.
+   *
+   * @param certNumber The certificate number to load.
+   * @param cert The certificate data.
+   * @param len The length of the certificate data.
+   * @return True if the certificate was successfully loaded, false otherwise.
+   */
   bool loadCACert(uint8_t certNumber, const char* cert, const uint16_t len) {
     return loadCertificateByNumber(CertificateType::CA_CERTIFICATE, certNumber,
                                    cert, len);
   }
 
+  /**
+   * @brief Load a client certificate into the modem's flash memory for SSL
+   * connections.
+   *
+   * @param certNumber The certificate number to load.
+   * @param cert The certificate data.
+   * @param len The length of the certificate data.
+   * @return True if the certificate was successfully loaded, false otherwise.
+   */
   bool loadClientCert(uint8_t certNumber, const char* cert,
                       const uint16_t len) {
     return loadCertificateByNumber(CertificateType::CLIENT_CERTIFICATE,
                                    certNumber, cert, len);
   }
 
+  /**
+   * @brief Load a private key into the modem's flash memory for SSL
+   * connections.
+   *
+   * @param keyNumber The key number to load.
+   * @param key The key data.
+   * @param len The length of the key data.
+   * @return True if the key was successfully loaded, false otherwise.
+   */
   bool loadPrivateKey(uint8_t keyNumber, const char* key, const uint16_t len) {
     return loadCertificateByNumber(CertificateType::CLIENT_KEY, keyNumber, key,
                                    len);
   }
 
+  /**
+   * @brief Load a certificate into the modem's flash memory for SSL connections
+   * by its number.
+   *
+   * @param cert_type The type of certificate to load.
+   * @param certNumber The certificate number to load.
+   * @param cert The certificate data.
+   * @param len The length of the certificate data.
+   * @return True if the certificate was successfully loaded, false otherwise.
+   */
   bool loadCertificateByNumber(CertificateType cert_type, uint8_t certNumber,
                                const char* cert, const uint16_t len) {
     if (cert_type == CertificateType::CLIENT_PSK ||
@@ -436,6 +500,14 @@ class TinyGsmESP32
     return loadCertificateWithNamespace(cert_namespace, cert_name, cert, len);
   }
 
+  /**
+   * @brief Delete a certificate from the modem's flash memory for SSL
+   * connections by its number.
+   *
+   * @param cert_type The type of certificate to delete.
+   * @param certNumber The certificate number to delete.
+   * @return True if the certificate was successfully deleted, false otherwise.
+   */
   bool deleteCertificateByNumber(CertificateType cert_type,
                                  uint8_t         certNumber) {
     if (cert_type == CertificateType::CLIENT_PSK ||
@@ -451,7 +523,15 @@ class TinyGsmESP32
     return deleteCertificateWithNamespace(cert_namespace, cert_name);
   }
 
-
+  /**
+   * @brief Print a certificate from the modem's flash memory for SSL
+   * connections by its number to a stream.
+   *
+   * @param cert_type The type of certificate to print.
+   * @param certNumber The certificate number to print.
+   * @param print_stream The stream to print the certificate to.
+   * @return True if the certificate was successfully printed, false otherwise.
+   */
   bool printCertificateByNumber(CertificateType cert_type, uint8_t certNumber,
                                 Stream& print_stream) {
     if (cert_type == CertificateType::CLIENT_PSK ||
@@ -690,12 +770,24 @@ class TinyGsmESP32
    * Time functions
    */
  public:
+  /**
+   * @brief Set the time zone for the modem and optionally enable SNTP time
+   * synchronization.
+   * @param timezone The time zone offset in hours from UTC (e.g., -5 for EST, 1
+   * for CET).e
+   * @param enable_sync Optional parameter to enable or disable SNTP time
+   * synchronization. Defaults to true (enabled).
+   */
   void setTimeZone(int8_t timezone, bool enable_sync = true) {
     // configure the NTP settings for the modem
     sendAT(GF("+CIPSNTPCFG="), enable_sync ? 1 : 0, ',', timezone);
     waitResponse();
   }
 
+  /**
+   * @brief Set the time synchronization interval for the modem.
+   * @param seconds The number of seconds between time synchronization attempts.
+   */
   void setTimeSyncInterval(uint16_t seconds) {
     // configure the NTP settings for the modem
     sendAT(GF("+CIPSNTPINTV="), seconds);
@@ -904,10 +996,10 @@ class TinyGsmESP32
       }
 
       // configure SSL authentication type and in-use certificates
-      // AT+CIPSSLCCONF=<link ID>,<auth_mode>[,<pki_number>][,<ca_number>]
+      // AT+CIPSSLCCONF=<link ID>,{auth_mode}[,{pki_number}][,{ca_number}]
       // <link ID>: ID of the connection (0 ~ max). For multiple connections, if
       // the value is max, it means all connections. By default, max is 5.
-      // <auth_mode>:
+      // auth_mode:
       //     0: no authentication. In this case <pki_number> and <ca_number> are
       //     not required.
       //     1: the client provides the client certificate for the server to
@@ -915,13 +1007,13 @@ class TinyGsmESP32
       //     2: the client loads CA certificate to verify the server’s
       //     certificate.
       //     3: mutual authentication.
-      // <pki_number>: the index of certificate and private key. If there is
+      // pki_number: the index of certificate and private key. If there is
       // only one certificate and private key, the value should be 0.
       //    PKI - A public key infrastructure (PKI) is a set of roles, policies,
       //    hardware, software and procedures needed to create, manage,
       //    distribute, use, store and revoke digital certificates and manage
       //    public-key encryption.
-      // <ca_number>: the index of CA (certificate authority certificate =
+      // ca_number: the index of CA (certificate authority certificate =
       // server's certificate). If there is only one CA, the value should be 0.
       // The PKI number and CA number to use are based on what certificates were
       // (or were not) put into the customized certificate partitions.

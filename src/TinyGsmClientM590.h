@@ -75,16 +75,18 @@
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
 
+/// Registration status
 enum M590RegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 3,
-  REG_DENIED       = 2,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+  REG_NO_RESULT    = -1,  ///< No result yet
+  REG_UNREGISTERED = 0,   ///< Not registered
+  REG_SEARCHING    = 3,   ///< Searching for network
+  REG_DENIED       = 2,   ///< Registration denied
+  REG_OK_HOME      = 1,   ///< Registered, home network
+  REG_OK_ROAMING   = 5,   ///< Registered, roaming
+  REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/// Class for the Neoway M590
 class TinyGsmM590
     : public TinyGsmModem<TinyGsmM590>,
       public TinyGsmGPRS<TinyGsmM590>,
@@ -101,15 +103,31 @@ class TinyGsmM590
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientM590 : public TinyGsmTCP<TinyGsmM590, TINY_GSM_MUX_COUNT,
                                           TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmM590;
 
    public:
+    /**
+     * @brief Create a new GsmClientM590 object.  This must be initialized with
+     * a TinyGsmM590 modem before it can be used.
+     */
     GsmClientM590() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux Multiplexing channel to use.
+     *
+     * @note The M590 allows you choose the multiplexing channel number, but if
+     * the input mux channel number is already in use and other mux channels are
+     * available, this library will select the next available one.  Use the
+     * getMux() function to get the assigned multiplexing channel number after a
+     * successful connection.
+     */
     explicit GsmClientM590(TinyGsmM590& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
@@ -180,6 +198,11 @@ class TinyGsmM590
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   *
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmM590(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -594,6 +617,7 @@ class TinyGsmM590
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 
  protected:

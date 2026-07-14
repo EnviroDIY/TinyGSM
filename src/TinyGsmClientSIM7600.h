@@ -95,17 +95,18 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
-
+/// Registration status
 enum SIM7600RegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+  REG_NO_RESULT    = -1,  ///< No registration result
+  REG_UNREGISTERED = 0,   ///< Not registered on the network
+  REG_SEARCHING    = 2,   ///< Searching for network
+  REG_DENIED       = 3,   ///< Registration denied
+  REG_OK_HOME      = 1,   ///< Registered on the home network
+  REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
+  REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/// Class for the SIMCOM SIM7600, SIM7500, and SIM7800
 class TinyGsmSim7600
     : public TinyGsmModem<TinyGsmSim7600>,
       public TinyGsmGPRS<TinyGsmSim7600>,
@@ -137,15 +138,31 @@ class TinyGsmSim7600
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientSim7600 : public TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT,
                                              TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSim7600;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientSim7600() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux Multiplexing channel to use.
+     *
+     * @note The SIM7600 and similar variants allow you choose the multiplexing
+     * channel number, but if the input mux channel number is already in use and
+     * other mux channels are available, this library will select the next
+     * available one.  Use the getMux() function to get the assigned
+     * multiplexing channel number after a successful connection.
+     */
     explicit GsmClientSim7600(TinyGsmSim7600& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
@@ -215,6 +232,7 @@ class TinyGsmSim7600
    * Inner Secure Client
    */
  public:
+  /// Inner secure client
   class GsmClientSecureSim7600 : public GsmClientSim7600,
                                  public GsmSecureClient {
     friend class TinyGsmSim7600;
@@ -257,6 +275,10 @@ class TinyGsmSim7600
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmSim7600(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -344,6 +366,10 @@ class TinyGsmSim7600
    * Generic network functions
    */
  public:
+  /**
+   * @brief Get the registration status of the modem on the network.
+   * @return The registration status as a SIM7600RegStatus enum value.
+   */
   SIM7600RegStatus getRegistrationStatus() {
     return (SIM7600RegStatus)getRegistrationStatusXREG("CGREG");
   }
@@ -355,6 +381,10 @@ class TinyGsmSim7600
   }
 
  public:
+  /**
+   * @brief Get the available network modes of the modem.
+   * @return A string representing the available network modes.
+   */
   String getNetworkModes() {
     // Get the help string, not the setting value
     sendAT(GF("+CNMP=?"));
@@ -364,6 +394,10 @@ class TinyGsmSim7600
     return res;
   }
 
+  /**
+   * @brief Get the current network mode of the modem.
+   * @return The current network mode as an integer.
+   */
   int16_t getNetworkMode() {
     sendAT(GF("+CNMP?"));
     if (waitResponse(GF(AT_NL "+CNMP:")) != 1) { return false; }
@@ -372,11 +406,24 @@ class TinyGsmSim7600
     return mode;
   }
 
+  /**
+   * @brief Set the network mode of the modem.
+   * @param mode The network mode to set.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool setNetworkMode(uint8_t mode) {
     sendAT(GF("+CNMP="), mode);
     return waitResponse() == 1;
   }
 
+  /**
+   * @brief Get the network system mode of the modem.
+   * @param n A reference to a boolean that will be set to true if the modem is
+   * in automatic reporting mode, false otherwise.
+   * @param stat A reference to an integer that will be set to the current
+   * service status. 0 if not connected.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool getNetworkSystemMode(bool& n, int16_t& stat) {
     // n: whether to automatically report the system mode info
     // stat: the current service. 0 if it not connected
@@ -714,9 +761,9 @@ class TinyGsmSim7600
     return false;
   }
 
-  /**
+  /*
    *  CGNSSMODE: <gnss_mode>,<dpo_mode>
-   *  This command is used to configure GPS, GLONASS, BEIDOU and QZSS support
+   * This command is used to configure GPS, GLONASS, BEIDOU and QZSS support
    * mode. 0 : GLONASS 1 : BEIDOU 2 : GALILEO 3 : QZSS dpo_mode: 1 enable , 0
    * disable
    */
@@ -800,6 +847,16 @@ class TinyGsmSim7600
    * Client related functions
    */
  public:
+  /**
+   * @brief Configure the SSL context for the modem.
+   * @param context_id The SSL context ID.
+   * @param sslAuthMode The SSL authentication mode.
+   * @param sslVersion The SSL version.
+   * @param CAcertName The CA certificate name.
+   * @param clientCertName The client certificate name.
+   * @param clientKeyName The client key name.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool configureSSLContext(uint8_t context_id, SSLAuthMode sslAuthMode,
                            SSLVersion sslVersion, const char* CAcertName,
                            const char* clientCertName,
@@ -888,6 +945,12 @@ class TinyGsmSim7600
     return success;
   }
 
+  /**
+   * @brief Link the SSL context to a specific connection (mux).
+   * @param mux The connection identifier (mux).
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool linkSSLContext(uint8_t mux, uint8_t context_id) {
     // set the configured SSL context for the session
     // AT+CCHSSLCFG=<session_id>,<ssl_ctx_index>
@@ -1153,6 +1216,7 @@ class TinyGsmSim7600
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 
  protected:
