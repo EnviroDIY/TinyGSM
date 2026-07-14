@@ -142,19 +142,19 @@ class TinyGsmSaraR4
     GsmClientSaraR4() {
       is_secure = false;
     }
-
-    explicit GsmClientSaraR4(TinyGsmSaraR4& modem, uint8_t mux = 0) {
-      init(&modem, mux);
+    explicit GsmClientSaraR4(TinyGsmSaraR4& modem, uint8_t /*mux*/ = 0) {
+      init(&modem, -1);
       is_secure = false;
     }
 
-    bool init(TinyGsmSaraR4* modem, uint8_t mux = 0) {
+    bool init(TinyGsmSaraR4* modem, uint8_t /*mux*/ = 0) {
       this->at       = modem;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
       is_mid_send    = false;
+      uint8_t mux    = 0;  // only a placeholder!
 
       // The SARA R4 does NOT allow you to choose the mux number; this is an
       // initial place holder for before connection. We need to assign a mux
@@ -291,9 +291,8 @@ class TinyGsmSaraR4
     GsmClientSecureSaraR4() {
       is_secure = true;
     }
-
-    explicit GsmClientSecureSaraR4(TinyGsmSaraR4& modem, uint8_t mux = 0)
-        : GsmClientSaraR4(modem, mux) {
+    explicit GsmClientSecureSaraR4(TinyGsmSaraR4& modem, uint8_t /*mux*/ = 0)
+        : GsmClientSaraR4(modem) {
       is_secure = true;
     }
   };

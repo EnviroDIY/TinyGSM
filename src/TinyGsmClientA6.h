@@ -112,13 +112,12 @@ class TinyGsmA6
     GsmClientA6() {
       is_secure = false;
     }
-
-    explicit GsmClientA6(TinyGsmA6& modem, uint8_t = 0) {
+    explicit GsmClientA6(TinyGsmA6& modem, uint8_t /*mux*/ = 0) {
       init(&modem, -1);
       is_secure = false;
     }
 
-    bool init(TinyGsmA6* modem, uint8_t = 0) {
+    bool init(TinyGsmA6* modem, uint8_t /*mux*/ = 0) {
       this->at       = modem;
       this->mux      = -1;
       sock_connected = false;

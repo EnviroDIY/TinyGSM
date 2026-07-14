@@ -272,9 +272,8 @@ class TinyGsmSaraR5
     GsmClientSecureSaraR5() {
       is_secure = true;
     }
-
-    explicit GsmClientSecureSaraR5(TinyGsmSaraR5& modem, uint8_t mux = 0)
-        : GsmClientSaraR5(modem, mux) {
+    explicit GsmClientSecureSaraR5(TinyGsmSaraR5& modem, uint8_t /*mux*/ = 0)
+        : GsmClientSaraR5(modem) {
       is_secure = true;
     }
   };
