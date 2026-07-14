@@ -88,16 +88,18 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
+/// Registration status
 enum SIM5360RegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+  REG_NO_RESULT    = -1,  ///< No registration result
+  REG_UNREGISTERED = 0,   ///< Not registered on the network
+  REG_SEARCHING    = 2,   ///< Searching for network
+  REG_DENIED       = 3,   ///< Registration denied
+  REG_OK_HOME      = 1,   ///< Registered on the home network
+  REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
+  REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/// Class for the SIMCOM SIM5360, SIM5300, SIM5320, and SIM7100
 class TinyGsmSim5360
     : public TinyGsmModem<TinyGsmSim5360>,
       public TinyGsmGPRS<TinyGsmSim5360>,
