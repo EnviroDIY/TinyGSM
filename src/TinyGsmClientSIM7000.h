@@ -82,9 +82,9 @@ class TinyGsmSim7000
 
    public:
     using TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
     using TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -165,7 +165,9 @@ class TinyGsmSim7000
      * Extended API
      */
 
-    String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+    String remoteIP() override TINY_GSM_ATTR_NOT_IMPLEMENTED {
+      return "0.0.0.0";
+    }
   };
 
   /*

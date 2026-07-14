@@ -554,7 +554,7 @@ class TinyGsmTCP {
      * @brief Get the remote IP address of the connected client
      * @return The remote IP address as a String
      */
-    String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+    virtual String remoteIP() = 0;
 
     /**
      * @brief Get the socket number of the connected client
