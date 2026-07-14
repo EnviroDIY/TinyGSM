@@ -172,18 +172,19 @@ class TinyGsmSaraR5
      * a server.  Use the getMux() function to get the assigned multiplexing
      * channel number after a successful connection.
      */
-    explicit GsmClientSaraR5(TinyGsmSaraR5& modem, uint8_t mux = 0) {
-      init(&modem, mux);
+    explicit GsmClientSaraR5(TinyGsmSaraR5& modem, uint8_t /*mux*/ = 0) {
+      init(&modem, -1);
       is_secure = false;
     }
 
-    bool init(TinyGsmSaraR5* modem, uint8_t mux = 0) {
+    bool init(TinyGsmSaraR5* modem, uint8_t /*mux*/ = 0) {
       this->at       = modem;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
       is_mid_send    = false;
+      uint8_t mux    = 0;  // only a placeholder!
 
       // The SARA R5 does NOT allow you to choose the mux number; this is an
       // initial place holder for before connection. We need to assign a mux
