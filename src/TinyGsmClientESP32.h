@@ -274,6 +274,10 @@ class TinyGsmESP32
       setPrivateKeyName(clientKeyName.c_str());
     }
 
+    /**
+     * @brief Set the CA certificate number to use for this connection
+     * @param certNumber The CA certificate number
+     */
     void setCACertificateNumber(uint8_t certNumber) {
       ca_number = certNumber;
       // convert the certificate number and type into the proper certificate
@@ -284,6 +288,10 @@ class TinyGsmESP32
                              cert_name, cert_namespace);
       CAcertName = cert_name;
     }
+    /**
+     * @brief Set the client certificate number to use for this connection
+     * @param certNumber The client certificate number
+     */
     void setClientCertificateNumber(uint8_t certNumber) {
       pki_number           = certNumber;
       char* cert_name      = new char[16]();
@@ -292,6 +300,10 @@ class TinyGsmESP32
                              cert_name, cert_namespace);
       CAcertName = cert_name;
     }
+    /**
+     * @brief Set the client private key number to use for this connection
+     * @param keyNumber The client private key number
+     */
     void setPrivateKeyNumber(uint8_t keyNumber) {
       pki_number           = keyNumber;
       char* cert_name      = new char[16]();
