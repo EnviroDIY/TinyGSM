@@ -123,9 +123,9 @@ class TinyGsmMC60
 
    public:
     using TinyGsmTCP<TinyGsmMC60, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
     using TinyGsmTCP<TinyGsmMC60, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -151,6 +151,12 @@ class TinyGsmMC60
       is_secure = false;
     }
 
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientMC60::GsmClientMC60(TinyGsmMC60&, uint8_t)
+     */
     bool init(TinyGsmMC60* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_available = 0;

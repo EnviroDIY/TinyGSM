@@ -110,9 +110,9 @@ class TinyGsmM590
 
    public:
     using TinyGsmTCP<TinyGsmM590, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
     using TinyGsmTCP<TinyGsmM590, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
 
     /**
      * @brief Create a new GsmClientM590 object.  This must be initialized with
@@ -138,6 +138,12 @@ class TinyGsmM590
       is_secure = false;
     }
 
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientM590::GsmClientM590(TinyGsmM590&, uint8_t)
+     */
     bool init(TinyGsmM590* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_connected = false;

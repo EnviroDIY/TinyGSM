@@ -172,6 +172,13 @@ class TinyGsmSequansMonarch
       is_secure = false;
     }
 
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientSequansMonarch::GsmClientSequansMonarch(
+     * TinyGsmSequansMonarch&, uint8_t)
+     */
     bool init(TinyGsmSequansMonarch* modem, uint8_t mux = 1) {
       this->at       = modem;
       sock_available = 0;
@@ -240,9 +247,8 @@ class TinyGsmSequansMonarch
     /**
      * @brief Create a new secured TCP (SSL) client and bind it to a modem and
      * optionally a multiplexing channel.
-     * @copydetails
-     * GsmClientESP8266NonOS::GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem,
-     * uint8_t mux)
+     * @copydetails GsmClientSequansMonarch::GsmClientSequansMonarch(
+     * TinyGsmSequansMonarch&, uint8_t)
      */
     explicit GsmClientSecureSequansMonarch(TinyGsmSequansMonarch& modem,
                                            uint8_t                mux = 1)

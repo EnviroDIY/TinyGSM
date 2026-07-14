@@ -248,9 +248,7 @@ class TinyGsmSim800
     /**
      * @brief Create a new secured TCP (SSL) client and bind it to a modem and
      * optionally a multiplexing channel.
-     * @copydetails
-     * GsmClientESP8266NonOS::GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem,
-     * uint8_t mux)
+     * @copydetails GsmClientSim800::GsmClientSim800(TinyGsmSim800&, uint8_t)
      */
     explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 0)
         : GsmClientSim800(modem, mux) {

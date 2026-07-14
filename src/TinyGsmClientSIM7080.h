@@ -103,9 +103,9 @@ class TinyGsmSim7080
 
    public:
     using TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
     using TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -131,6 +131,12 @@ class TinyGsmSim7080
       is_secure = false;
     }
 
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientSim7080::GsmClientSim7080(TinyGsmSim7080&, uint8_t)
+     */
     bool init(TinyGsmSim7080* modem, uint8_t mux = 0) {
       this->at        = modem;
       sock_available  = 0;
