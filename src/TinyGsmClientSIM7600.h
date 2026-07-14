@@ -435,6 +435,7 @@ class TinyGsmSim7600
     return true;
   }
 
+ protected:
   String getLocalIPImpl() {
     sendAT(GF("+IPADDR"));  // Inquire Socket PDP address
     // sendAT(GF("+CGPADDR=1"));  // Show PDP address
@@ -448,7 +449,7 @@ class TinyGsmSim7600
   /*
    * Secure socket layer (SSL) certificate management functions
    */
- public:
+ protected:
   bool loadCertificateImpl(const char* certificateName, const char* cert,
                            const uint16_t len) {
     sendAT(GF("+CCERTDOWN=\""), certificateName, GF("\","), len);
