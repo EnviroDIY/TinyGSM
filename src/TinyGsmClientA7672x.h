@@ -143,9 +143,9 @@ class TinyGsmA7672X
 
    public:
     using TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
     using TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -171,6 +171,12 @@ class TinyGsmA7672X
       is_secure = false;
     }
 
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientA7672X::GsmClientA7672X(TinyGsmA7672X&, uint8_t)
+     */
     bool init(TinyGsmA7672X* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_available = 0;

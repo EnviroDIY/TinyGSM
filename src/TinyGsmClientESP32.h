@@ -88,9 +88,9 @@ class TinyGsmESP32
 
    public:
     using TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
     using TinyGsmTCP<TinyGsmESP32, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -116,6 +116,12 @@ class TinyGsmESP32
       is_secure = false;
     }
 
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientESP32::GsmClientESP32(TinyGsmESP32&, uint8_t)
+     */
     bool init(TinyGsmESP32* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_connected = false;

@@ -162,6 +162,12 @@ class TinyGsmSim5360
       is_secure = false;
     }
 
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientSim5360::GsmClientSim5360(TinyGsmSim5360&, uint8_t)
+     */
     bool init(TinyGsmSim5360* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_available = 0;

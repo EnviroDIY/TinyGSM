@@ -147,9 +147,9 @@ class TinyGsmSaraR4
 
    public:
     using TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
     using TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -172,6 +172,11 @@ class TinyGsmSaraR4
       is_secure = false;
     }
 
+    /**
+     * @brief Initialize the TCP client with a modem.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientSaraR4::GsmClientSaraR4(TinyGsmSaraR4&, uint8_t)
+     */
     bool init(TinyGsmSaraR4* modem, uint8_t /*mux*/ = 0) {
       this->at       = modem;
       sock_available = 0;
@@ -322,11 +327,8 @@ class TinyGsmSaraR4
       is_secure = true;
     }
     /**
-     * @brief Create a new secured TCP (SSL) client and bind it to a modem and
-     * optionally a multiplexing channel.
-     * @copydetails
-     * GsmClientESP8266NonOS::GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem,
-     * uint8_t)
+     * @brief Create a new secured TCP (SSL) client and bind it to a modem.
+     * @copydetails GsmClientSaraR4::GsmClientSaraR4(TinyGsmSaraR4&, uint8_t)
      */
     explicit GsmClientSecureSaraR4(TinyGsmSaraR4& modem, uint8_t /*mux*/ = 0)
         : GsmClientSaraR4(modem) {

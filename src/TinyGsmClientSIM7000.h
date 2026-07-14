@@ -110,6 +110,12 @@ class TinyGsmSim7000
       is_secure = false;
     }
 
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientSim7000::GsmClientSim7000(TinyGsmSim7000&, uint8_t)
+     */
     bool init(TinyGsmSim7000* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_available = 0;

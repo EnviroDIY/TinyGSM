@@ -94,9 +94,9 @@ class TinyGsmSim7000SSL
 
    public:
     using TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
     using TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -122,6 +122,13 @@ class TinyGsmSim7000SSL
       is_secure = false;
     }
 
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientSim7000SSL::GsmClientSim7000SSL(TinyGsmSim7000SSL&,
+     * uint8_t)
+     */
     bool init(TinyGsmSim7000SSL* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_available = 0;

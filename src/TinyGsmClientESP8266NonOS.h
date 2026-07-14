@@ -90,9 +90,9 @@ class TinyGsmESP8266NonOS
 
    public:
     using TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::connect;
+                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
     using TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT,
-             TINY_GSM_RX_BUFFER>::GsmClient::stop;
+                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -119,6 +119,13 @@ class TinyGsmESP8266NonOS
       is_secure = false;
     }
 
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientESP8266NonOS::GsmClientESP8266NonOS(
+     * TinyGsmESP8266NonOS&, uint8_t)
+     */
     bool init(TinyGsmESP8266NonOS* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_connected = false;
@@ -193,9 +200,8 @@ class TinyGsmESP8266NonOS
     /**
      * @brief Create a new secured TCP (SSL) client and bind it to a modem and
      * optionally a multiplexing channel.
-     * @copydetails
-     * GsmClientESP8266NonOS::GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem,
-     * uint8_t mux)
+     * @copydetails GsmClientESP8266NonOS::GsmClientESP8266NonOS(
+     * TinyGsmESP8266NonOS&, uint8_t)
      */
     explicit GsmClientSecureESP8266NonOS(TinyGsmESP8266NonOS& modem,
                                          uint8_t              mux = 0)
