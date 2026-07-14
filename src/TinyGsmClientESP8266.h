@@ -417,6 +417,7 @@ class TinyGsmESP8266
     waitResponse();
   }
 
+ protected:
   bool waitForTimeSyncImpl(int timeout_s) {
     // if we're not connected, we'll never get the time
     if (!isNetworkConnected()) { return false; }
@@ -439,7 +440,6 @@ class TinyGsmESP8266
     return false;
   }
 
- protected:
   // NOTE: Only returning full date time in Espressif's format
   String getGSMDateTimeImpl(TinyGSMDateTimeFormat) {
     sendAT(GF("+CIPSNTPTIME?"));

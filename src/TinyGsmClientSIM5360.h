@@ -359,6 +359,7 @@ class TinyGsmSim5360
     return waitResponse() == 1;
   }
 
+ protected:
   String getLocalIPImpl() {
     sendAT(GF("+IPADDR"));  // Inquire Socket PDP address
     // sendAT(GF("+CGPADDR=1"));  // Show PDP address
