@@ -38,6 +38,7 @@ enum class CertificateType : int8_t {
 };
 
 /**
+ * @enum SSLAuthMode
  * @brief Enum for different SSL/TLS authentication modes (auth_mode).
  *
  * @var SSLAuthMode::NO_VALIDATION

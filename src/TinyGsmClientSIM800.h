@@ -88,6 +88,7 @@
 // example of how to manage the certificates
 #if !defined(TINY_GSM_MODEM_SIM900)
 #ifndef TINY_GSM_MODEM_HAS_SSL
+/// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 #endif
@@ -100,15 +101,18 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
+/// Registration status
 enum SIM800RegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+  REG_NO_RESULT    = -1,  ///< No registration result
+  REG_UNREGISTERED = 0,   ///< Not registered on the network
+  REG_SEARCHING    = 2,   ///< Searching for network
+  REG_DENIED       = 3,   ///< Registration denied
+  REG_OK_HOME      = 1,   ///< Registered on the home network
+  REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
+  REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
+
+/// Class for the SIMCOM SIM800 and SIM900 (with some limitations)
 class TinyGsmSim800
     : public TinyGsmModem<TinyGsmSim800>,
       public TinyGsmGPRS<TinyGsmSim800>,
@@ -134,15 +138,31 @@ class TinyGsmSim800
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientSim800 : public TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT,
                                             TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSim800;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientSim800() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux Multiplexing channel to use.
+     *
+     * @note The SIM800 variants allow you choose the multiplexing channel
+     * number, but if the input mux channel number is already in use and other
+     * mux channels are available, this library will select the next available
+     * one.  Use the getMux() function to get the assigned multiplexing channel
+     * number after a successful connection.
+     */
     explicit GsmClientSim800(TinyGsmSim800& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
@@ -208,14 +228,25 @@ class TinyGsmSim800
    * Inner Secure Client
    */
  public:
+  /// Inner secure client
   class GsmClientSecureSim800 : public GsmClientSim800 {
     friend class TinyGsmSim800;
 
    public:
+    /**
+     * @brief Create a new secured TCP (SSL) client.  This must be initialized
+     * with a modem before it can be used.
+     */
     GsmClientSecureSim800() {
       is_secure = true;
     }
-
+    /**
+     * @brief Create a new secured TCP (SSL) client and bind it to a modem and
+     * optionally a multiplexing channel.
+     * @copydetails
+     * GsmClientESP8266NonOS::GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem,
+     * uint8_t mux)
+     */
     explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 0)
         : GsmClientSim800(modem, mux) {
       is_secure = true;
@@ -231,6 +262,10 @@ class TinyGsmSim800
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmSim800(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -504,6 +539,11 @@ class TinyGsmSim800
    * Phone Call functions
    */
  public:
+  /**
+   * @brief Set the busy status of the modem for calling.
+   * @param busy True to set the modem as busy, false to set it as not busy.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool setGsmBusy(bool busy = true) {
     sendAT(GF("+GSMBUSY="), busy ? 1 : 0);
     return waitResponse() == 1;
@@ -513,12 +553,21 @@ class TinyGsmSim800
    * Audio functions
    */
  public:
+  /**
+   * @brief Set the speaker volume of the modem.
+   * @param volume The desired volume level (0-100).
+   * @return True if the operation was successful, false otherwise.
+   */
   bool setVolume(uint8_t volume = 50) {
     // Set speaker volume
     sendAT(GF("+CLVL="), volume);
     return waitResponse() == 1;
   }
 
+  /**
+   * @brief Get the current speaker volume of the modem.
+   * @return The current volume level (0-100).
+   */
   uint8_t getVolume() {
     // Get speaker volume
     sendAT(GF("+CLVL?"));
@@ -530,17 +579,34 @@ class TinyGsmSim800
     return res.toInt();
   }
 
+  /**
+   * @brief Set the microphone volume of the modem.
+   * @param channel The microphone channel (0-4).
+   * @param level The desired volume level (0-100).
+   * @return True if the operation was successful, false otherwise.
+   */
   bool setMicVolume(uint8_t channel, uint8_t level) {
     if (channel > 4) { return 0; }
     sendAT(GF("+CMIC="), level);
     return waitResponse() == 1;
   }
 
+  /**
+   * @brief Set the audio channel of the modem.
+   * @param channel The desired audio channel.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool setAudioChannel(uint8_t channel) {
     sendAT(GF("+CHFA="), channel);
     return waitResponse() == 1;
   }
 
+  /**
+   * @brief Play a toolkit tone on the modem.
+   * @param tone The tone to play.
+   * @param duration The duration of the tone in milliseconds.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool playToolkitTone(uint8_t tone, uint32_t duration) {
     sendAT(GF("STTONE="), 1, tone);
     delay(duration);
@@ -758,6 +824,7 @@ class TinyGsmSim800
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 
  protected:

@@ -86,6 +86,7 @@
 // management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
 // so as not to waste space.
 #ifndef TINY_GSM_MODEM_HAS_SSL
+/// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
@@ -97,31 +98,33 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmBattery.tpp"
 
+/// Registration status
 enum SaraR5RegStatus {
-  REG_NO_RESULT        = -1,
-  REG_UNREGISTERED     = 0,
-  REG_SEARCHING        = 2,
-  REG_DENIED           = 3,
-  REG_OK_HOME          = 1,
-  REG_OK_ROAMING       = 5,
-  REG_UNKNOWN          = 4,
-  REG_SMS_ONLY_HOME    = 6,
-  REG_SMS_ONLY_ROAMING = 7,
+  REG_NO_RESULT        = -1,  ///< No registration result
+  REG_UNREGISTERED     = 0,   ///< Not registered on the network
+  REG_SEARCHING        = 2,   ///< Searching for network
+  REG_DENIED           = 3,   ///< Registration denied
+  REG_OK_HOME          = 1,   ///< Registered on the home network
+  REG_OK_ROAMING       = 5,   ///< Registered on a roaming network
+  REG_UNKNOWN          = 4,   ///< Unknown registration status
+  REG_SMS_ONLY_HOME    = 6,   ///< Registered on the home network for SMS only
+  REG_SMS_ONLY_ROAMING = 7,   ///< Registered on a roaming network for SMS only
   REG_EMERGENCY_ONLY =
-      8,  // ublox AT command manual states: attached for emergency bearer
-          // services only (see 3GPP TS 24.008 [85] and 3GPP TS 24.301 [120]
-          // that specify the condition when the MS is considered as attached
-          // for emergency bearer services)
+      8,  ///< ublox AT command manual states: attached for emergency bearer
+          ///< services only (see 3GPP TS 24.008 [85] and 3GPP TS 24.301 [120]
+          ///< that specify the condition when the MS is considered as attached
+          ///< for emergency bearer services)
   REG_NO_FALLBACK_LTE_HOME =
-      9,  // not 100% certain, ublox AT command manual states: registered for
-          // "CSFB not preferred", home network (applicable only when
-          // <AcTStatus> indicates E-UTRAN)
+      9,  ///< not 100% certain, ublox AT command manual states: registered for
+          ///< "CSFB not preferred", home network (applicable only when
+          ///< AcTStatus indicates E-UTRAN)
   REG_NO_FALLBACK_LTE_ROAMING =
-      10  // not 100% certain, ublox AT command manual states: registered for
-          // "CSFB not preferred", roaming (applicable only when <AcTStatus>
-          // indicates E-UTRAN)
+      10  ///< not 100% certain, ublox AT command manual states: registered for
+          ///< "CSFB not preferred", roaming (applicable only when AcTStatus
+          ///< indicates E-UTRAN)
 };
 
+/// Class for the u-blox SARA-R5
 class TinyGsmSaraR5
     : public TinyGsmModem<TinyGsmSaraR5>,
       public TinyGsmGPRS<TinyGsmSaraR5>,
@@ -147,15 +150,28 @@ class TinyGsmSaraR5
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientSaraR5 : public TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT,
                                             TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSaraR5;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientSaraR5() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem.
+     * @param modem Modem instance used by this client.
+     *
+     * @note The SARA-R5 does not allow you to specify the multiplexing channel.
+     * The modem will automatically assign a channel when the client connects to
+     * a server.  Use the getMux() function to get the assigned multiplexing
+     * channel number after a successful connection.
+     */
     explicit GsmClientSaraR5(TinyGsmSaraR5& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
@@ -263,13 +279,24 @@ class TinyGsmSaraR5
    * Inner Secure Client
    */
  public:
+  /// Inner secure client
   class GsmClientSecureSaraR5 : public GsmClientSaraR5 {
     friend class TinyGsmSaraR5;
 
    public:
+    /**
+     * @brief Create a new secured TCP (SSL) client.  This must be initialized
+     * with a modem before it can be used.
+     */
     GsmClientSecureSaraR5() {
       is_secure = true;
     }
+    /**
+     * @brief Create a new secured TCP (SSL) client.
+     * @copydetails
+     * GsmClientESP8266NonOS::GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem,
+     * uint8_t)
+     */
     explicit GsmClientSecureSaraR5(TinyGsmSaraR5& modem, uint8_t /*mux*/ = 0)
         : GsmClientSaraR5(modem) {
       is_secure = true;
@@ -280,6 +307,10 @@ class TinyGsmSaraR5
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmSaraR5(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -385,24 +416,35 @@ class TinyGsmSaraR5
     }
   }
 
+  /**
+   * @brief Set the radio access technology (RAT) for the modem.
+   *
+   * Possible values for selected and preferred are:
+   * - 3: LTE
+   * - 7: LTE Cat M1
+   * - 8: LTE Cat NB1
+   * - 9: GPRS / eGPRS
+   *
+   * @param selected The selected RAT mode.
+   * @param preferred The preferred RAT mode.
+   * @return True if the command was successful, false otherwise.
+   */
   bool setRadioAccessTechnology(int selected, int preferred) {
-    // selected:
-    // 0: GSM / GPRS / eGPRS (single mode)
-    // 1: GSM / UMTS (dual mode)
-    // 2: UMTS (single mode)
-    // 3: LTE (single mode)
-    // 4: GSM / UMTS / LTE (tri mode)
-    // 5: GSM / LTE (dual mode)
-    // 6: UMTS / LTE (dual mode)
-    // preferred:
-    // 0: GSM / GPRS / eGPRS
-    // 2: UTRAN
-    // 3: LTE
     sendAT(GF("+URAT="), selected, ',', preferred);
     if (waitResponse() != 1) { return false; }
     return true;
   }
 
+  /**
+   * @brief Get the current radio access technology (RAT) of the modem.
+   * @param rat An integer reference to store the current RAT value. Possible
+   * values are:
+   * - 3: LTE
+   * - 7: LTE Cat M1
+   * - 8: LTE Cat NB1
+   * - 9: GPRS / eGPRS
+   * @return True if the command was successful, false otherwise.
+   */
   bool getCurrentRadioAccessTechnology(int& rat) {
     sendAT(GF("+URAT?"));
     if (waitResponse(10000L, GF("+URAT:")) != 1) { return false; }
@@ -947,6 +989,7 @@ class TinyGsmSaraR5
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 
  protected:

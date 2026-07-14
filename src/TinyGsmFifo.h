@@ -1,3 +1,11 @@
+/**
+ * @file TinyGsmFifo.h
+ * @author     Volodymyr Shymanskyy
+ * @license    LGPL-3.0
+ * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
+ * @date       Nov 2016
+ */
+
 #ifndef TinyGsmFifo_h
 #define TinyGsmFifo_h
 
@@ -25,9 +33,7 @@ class TinyGsmFifo {
 
   /**
    * @brief Check if the buffer is writable - that is if it has any space left
-   *
-   * @return *true* The buffer has free space.
-   * @return *false* There is no space left in the buffer.
+   * @return True if the buffer has free space, false otherwise.
    */
   bool writeable(void) {
     return free() > 0;
@@ -35,7 +41,6 @@ class TinyGsmFifo {
 
   /**
    * @brief Check the number of free positions in the buffer.
-   *
    * @return *int*  The number number of free positions in the buffer
    */
   int free(void) {
@@ -48,8 +53,8 @@ class TinyGsmFifo {
    * @brief Add a single item to the buffer. This is non-blocking.
    *
    * @param c Reference of the item of type 'T' to add to the buffer
-   * @return *true* The item was successfully added to the buffer
-   * @return *false* Nothing was added to the buffer
+   * @return True if the item was successfully added to the buffer, false
+   * otherwise.
    */
   bool put(const T& c) {
     int i = _w;       // check the write position

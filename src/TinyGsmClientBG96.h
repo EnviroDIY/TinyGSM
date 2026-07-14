@@ -97,16 +97,18 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
+/// Registration status
 enum BG96RegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+  REG_NO_RESULT    = -1,  ///< No registration result
+  REG_UNREGISTERED = 0,   ///< Not registered on the network
+  REG_SEARCHING    = 2,   ///< Searching for network
+  REG_DENIED       = 3,   ///< Registration denied
+  REG_OK_HOME      = 1,   ///< Registered on the home network
+  REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
+  REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/// Class for the Quectel BG96 and BG95
 class TinyGsmBG96
     : public TinyGsmModem<TinyGsmBG96>,
       public TinyGsmGPRS<TinyGsmBG96>,
@@ -135,15 +137,31 @@ class TinyGsmBG96
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientBG96 : public TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT,
                                           TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmBG96;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientBG96() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux Multiplexing channel to use.
+     *
+     * @note The BG96 allows you choose the multiplexing channel number, but if
+     * the input mux channel number is already in use and other mux channels are
+     * available, this library will select the next available one.  Use the
+     * getMux() function to get the assigned multiplexing channel number after a
+     * successful connection.
+     */
     explicit GsmClientBG96(TinyGsmBG96& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
@@ -212,6 +230,7 @@ class TinyGsmBG96
    * Inner Secure Client
    */
  public:
+  /// Inner secure client
   class GsmClientSecureBG96 : public GsmClientBG96, public GsmSecureClient {
     friend class TinyGsmBG96;
 
@@ -315,6 +334,10 @@ class TinyGsmBG96
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmBG96(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -938,6 +961,16 @@ class TinyGsmBG96
    * Client related functions
    */
  public:
+  /**
+   * @brief Configure the SSL context for the modem.
+   * @param context_id The SSL context ID.
+   * @param sslAuthMode The SSL authentication mode.
+   * @param sslVersion The SSL version.
+   * @param CAcertName The CA certificate name.
+   * @param clientCertName The client certificate name.
+   * @param clientKeyName The client key name.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool configureSSLContext(uint8_t context_id, SSLAuthMode sslAuthMode,
                            SSLVersion sslVersion, const char* CAcertName,
                            const char* clientCertName,
@@ -1284,6 +1317,7 @@ class TinyGsmBG96
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 
  protected:

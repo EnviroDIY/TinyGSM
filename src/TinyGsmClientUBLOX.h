@@ -83,6 +83,7 @@
 // management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
 // so as not to waste space.
 #ifndef TINY_GSM_MODEM_HAS_SSL
+/// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
@@ -94,16 +95,18 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmBattery.tpp"
 
+/// Registration status
 enum UBLOXRegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+  REG_NO_RESULT    = -1,  ///< No registration result
+  REG_UNREGISTERED = 0,   ///< Not registered on the network
+  REG_SEARCHING    = 2,   ///< Searching for network
+  REG_DENIED       = 3,   ///< Registration denied
+  REG_OK_HOME      = 1,   ///< Registered on the home network
+  REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
+  REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/// Class for the u-blox family of modems
 class TinyGsmUBLOX
     : public TinyGsmModem<TinyGsmUBLOX>,
       public TinyGsmGPRS<TinyGsmUBLOX>,
@@ -128,15 +131,28 @@ class TinyGsmUBLOX
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientUBLOX : public TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT,
                                            TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmUBLOX;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientUBLOX() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem.
+     * @param modem Modem instance used by this client.
+     *
+     * @note The u-blox modules do not allow you to specify the multiplexing
+     * channel.  The modem will automatically assign a channel when the client
+     * connects to a server.  Use the getMux() function to get the assigned
+     * multiplexing channel number after a successful connection.
+     */
     explicit GsmClientUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
@@ -239,16 +255,27 @@ class TinyGsmUBLOX
    * Inner Secure Client
    */
  public:
+  /// Inner secure client
   class GsmClientSecureUBLOX : public GsmClientUBLOX {
     friend class TinyGsmUBLOX;
 
    public:
+    /**
+     * @brief Create a new secured TCP (SSL) client.  This must be initialized
+     * with a modem before it can be used.
+     */
     GsmClientSecureUBLOX() {
       is_secure = true;
     }
-
-    explicit GsmClientSecureUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 0)
-        : GsmClientUBLOX(modem, mux) {
+    /**
+     * @brief Create a new secured TCP (SSL) client and bind it to a modem and
+     * optionally a multiplexing channel.
+     * @copydetails
+     * GsmClientESP8266NonOS::GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem,
+     * uint8_t)
+     */
+    explicit GsmClientSecureUBLOX(TinyGsmUBLOX& modem, uint8_t /*mux*/ = 0)
+        : GsmClientUBLOX(modem) {
       is_secure = true;
     }
 
@@ -274,6 +301,10 @@ class TinyGsmUBLOX
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmUBLOX(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -368,26 +399,39 @@ class TinyGsmUBLOX
   UBLOXRegStatus getRegistrationStatus() {
     return (UBLOXRegStatus)getRegistrationStatusXREG("CGREG");
   }
-
+  /**
+   * @brief Set the radio access technology (RAT) for the modem.
+   *
+   * Possible values for selected are:
+   * - 0: GSM / GPRS / eGPRS (single mode)
+   * - 1: GSM / UMTS (dual mode)
+   * - 2: UMTS (single mode)
+   * - 3: LTE (single mode)
+   * - 4: GSM / UMTS / LTE (tri mode)
+   * - 5: GSM / LTE (dual mode)
+   * - 6: UMTS / LTE (dual mode)
+   *
+   * Possible values for preferred are:
+   * - 0: GSM / GPRS / eGPRS
+   * - 2: UTRAN
+   * - 3: LTE
+   *
+   * @param selected The selected RAT mode.
+   * @param preferred The preferred RAT mode.
+   * @return True if the command was successful, false otherwise.
+   */
   bool setRadioAccessTechnology(int selected, int preferred) {
-    // selected:
-    // 0: GSM / GPRS / eGPRS (single mode)
-    // 1: GSM / UMTS (dual mode)
-    // 2: UMTS (single mode)
-    // 3: LTE (single mode)
-    // 4: GSM / UMTS / LTE (tri mode)
-    // 5: GSM / LTE (dual mode)
-    // 6: UMTS / LTE (dual mode)
-    // preferred:
-    // 0: GSM / GPRS / eGPRS
-    // 2: UTRAN
-    // 3: LTE
     sendAT(GF("+URAT="), selected, ',', preferred);
     if (waitResponse() != 1) { return false; }
     return true;
   }
 
-  bool getCurrentRadioAccessTechnology(int&) {
+  /**
+   * @brief Get the current radio access technology (RAT) of the modem.
+   * @param rat A reference to an integer to store the current RAT mode.
+   * @return True if the command was successful, false otherwise.
+   */
+  bool getCurrentRadioAccessTechnology(int& rat) {
     // @TODO
     return false;
   }
@@ -899,6 +943,7 @@ class TinyGsmUBLOX
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 
  protected:

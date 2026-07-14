@@ -5,7 +5,7 @@
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  *
- * @MC60 support added by Tamas Dajka 2017.10.15 - with fixes by Sara Damiano
+ * MC60 support added by Tamas Dajka 2017.10.15 - with fixes by Sara Damiano
  *
  */
 
@@ -84,16 +84,18 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmBattery.tpp"
 
+/// Registration status
 enum MC60RegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+  REG_NO_RESULT    = -1,  ///< No registration result
+  REG_UNREGISTERED = 0,   ///< Not registered on the network
+  REG_SEARCHING    = 2,   ///< Searching for network
+  REG_DENIED       = 3,   ///< Registration denied
+  REG_OK_HOME      = 1,   ///< Registered on the home network
+  REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
+  REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/// Class for the Quectel MC60
 class TinyGsmMC60
     : public TinyGsmModem<TinyGsmMC60>,
       public TinyGsmGPRS<TinyGsmMC60>,
@@ -114,15 +116,31 @@ class TinyGsmMC60
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientMC60 : public TinyGsmTCP<TinyGsmMC60, TINY_GSM_MUX_COUNT,
                                           TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmMC60;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientMC60() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux Multiplexing channel to use.
+     *
+     * @note The MC60 allows you choose the multiplexing channel number, but if
+     * the input mux channel number is already in use and other mux channels are
+     * available, this library will select the next available one.  Use the
+     * getMux() function to get the assigned multiplexing channel number after a
+     * successful connection.
+     */
     explicit GsmClientMC60(TinyGsmMC60& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
@@ -195,6 +213,10 @@ class TinyGsmMC60
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmMC60(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -416,7 +438,10 @@ class TinyGsmMC60
   // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
 
  public:
-  /** Delete all SMS */
+  /**
+   * @brief Delete all SMS messages from the modem's memory.
+   * @return True if the deletion was successful, false otherwise.
+   */
   bool deleteAllSMS() {
     sendAT(GF("+QMGDA=6"));
     if (waitResponse(waitResponse(60000L, GF("OK"), GF("ERROR")) == 1)) {
@@ -630,6 +655,7 @@ class TinyGsmMC60
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 
  protected:

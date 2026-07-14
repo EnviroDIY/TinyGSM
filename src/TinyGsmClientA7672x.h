@@ -92,15 +92,21 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
+/// Registration status
 enum A7672xRegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+  REG_NO_RESULT    = -1,  ///< No registration result
+  REG_UNREGISTERED = 0,   ///< Not registered on the network
+  REG_SEARCHING    = 2,   ///< Searching for network
+  REG_DENIED       = 3,   ///< Registration denied
+  REG_OK_HOME      = 1,   ///< Registered on the home network
+  REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
+  REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
+
+/**
+ * @brief Class for the SIMCom A7672x modem, which is a 4G LTE Cat-M1/NB-IoT
+ * modem with GPS and SSL support.
+ */
 class TinyGsmA7672X
     : public TinyGsmModem<TinyGsmA7672X>,
       public TinyGsmGPRS<TinyGsmA7672X>,
@@ -130,15 +136,31 @@ class TinyGsmA7672X
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientA7672X : public TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT,
                                             TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmA7672X;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientA7672X() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux Multiplexing channel to use.
+     *
+     * @note The A7672x allows you choose the multiplexing channel number, but
+     * if the input mux channel number is already in use and other mux channels
+     * are available, this library will select the next available one.  Use the
+     * getMux() function to get the assigned multiplexing channel number after a
+     * successful connection.
+     */
     explicit GsmClientA7672X(TinyGsmA7672X& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
@@ -208,6 +230,7 @@ class TinyGsmA7672X
    * Inner Secure Client
    */
  public:
+  /// Inner secure client
   class GsmClientSecureA7672X : public GsmClientA7672X, public GsmSecureClient {
     friend class TinyGsmA7672X;
 
@@ -249,6 +272,10 @@ class TinyGsmA7672X
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmA7672X(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -355,6 +382,11 @@ class TinyGsmA7672X
     return (A7672xRegStatus)getRegistrationStatusXREG("CREG");
   }
 
+  /**
+   * @brief Get the local IP address of the modem when using a secure
+   * connection.
+   * @return The local IP address as a String.
+   */
   String getLocalIPSecure() {
     // TODO: figure out when to use each command properly
     // AT+CCHADDR is used to get the IPv4 address after calling AT+CCHSTART (ie,
@@ -513,6 +545,11 @@ class TinyGsmA7672X
    * Phone Call functions
    */
  public:
+  /**
+   * @brief Set the busy status of the modem for calling.
+   * @param busy True to set the modem as busy, false to set it as not busy.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool setGsmBusy(bool busy = true) {
     sendAT(GF("+CCFC=1,"), busy ? 1 : 0);
     return waitResponse() == 1;
@@ -575,6 +612,16 @@ class TinyGsmA7672X
    * Client related functions
    */
  public:
+  /**
+   * @brief Configure the SSL context for the modem.
+   * @param context_id The SSL context ID.
+   * @param sslAuthMode The SSL authentication mode.
+   * @param sslVersion The SSL version.
+   * @param CAcertName The CA certificate name.
+   * @param clientCertName The client certificate name.
+   * @param clientKeyName The client key name.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool configureSSLContext(uint8_t     context_id, const char*,
                            SSLAuthMode sslAuthMode, SSLVersion sslVersion,
                            const char* CAcertName, const char* clientCertName,
@@ -649,6 +696,12 @@ class TinyGsmA7672X
     return success;
   }
 
+  /**
+   * @brief Link the SSL context to a specific connection (mux).
+   * @param mux The connection identifier (mux).
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool linkSSLContext(uint8_t mux, uint8_t context_id) {
     // set the connection identifier that the above SSL context settings
     // apply to (ie, tie connection mux to SSL context)
@@ -986,6 +1039,7 @@ class TinyGsmA7672X
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 
  protected:

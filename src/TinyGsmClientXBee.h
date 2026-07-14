@@ -52,11 +52,16 @@
 #define TINY_GSM_MUX_STATIC
 #endif
 
-// XBee's have a default guard time of 1 second (1000ms, 10 extra for safety
-// here)
+
 #ifdef TINY_GSM_XBEE_GUARD_TIME
 #undef TINY_GSM_XBEE_GUARD_TIME
 #endif
+/**
+ * @brief "Guard time" for XBee modules, in milliseconds.
+ * This is the required wait time before and after sending the '+++' to the
+ * module to enter command mode.  XBee's have a default guard time of 1 second
+ * (1000ms, 10 extra for safety here)
+ */
 #define TINY_GSM_XBEE_GUARD_TIME 1010
 
 #ifdef AT_NL
@@ -83,9 +88,16 @@
 #include "TinyGsmTemperature.tpp"
 #include "TinyGsmBattery.tpp"
 
-// Use this to avoid too many entrances and exits from command mode.
-// The cellular Bee's often freeze up and won't respond when attempting
-// to enter command mode too many times.
+/**
+ * @brief function decorator to enter command mode for XBee modules, if not
+ * already in command mode, and exit command mode after the function call if it
+ * was not already in command mode.
+ *
+ * Use this to avoid too many entrances and exits from command mode.  The
+ * cellular Bee's often freeze up and won't respond when attempting to enter
+ * command mode too many times.
+ *
+ */
 #define XBEE_COMMAND_START_DECORATOR(nAttempts, failureReturn)                \
   bool wasInCommandMode = inCommandMode &&                                    \
       millis() - lastCommandModeMillis <=                                     \
@@ -94,30 +106,34 @@
     if (!commandMode(nAttempts))                                              \
       return failureReturn; /* Return immediately if fails */                 \
   }
+/// Function decorator to exit command mode for XBee modules, if not already in
+/// command mode, after the function call if it was not already in command mode.
 #define XBEE_COMMAND_END_DECORATOR                                       \
   if (!wasInCommandMode) { /* only exit if we weren't in command mode */ \
     exitCommand();                                                       \
   }
 
+/// Registration status
 enum XBeeRegStatus {
-  REG_OK           = 0,
-  REG_UNREGISTERED = 1,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_UNKNOWN      = 4,
+  REG_OK           = 0,  ///< Registered on the network
+  REG_UNREGISTERED = 1,  ///< Not registered on the network
+  REG_SEARCHING    = 2,  ///< Searching for network
+  REG_DENIED       = 3,  ///< Registration denied
+  REG_UNKNOWN      = 4,  ///< Unknown registration status
 };
 
-// These are responses to the HS command to get "hardware series"
+/// These are responses to the HS command to get "hardware series"
 enum XBeeType {
-  XBEE_UNKNOWN   = 0,
-  XBEE_S6B_WIFI  = 0x601,  // Digi XBee Wi-Fi
-  XBEE_LTE1_VZN  = 0xB01,  // Digi XBee Cellular LTE Cat 1
-  XBEE_3G        = 0xB02,  // Digi XBee Cellular 3G
-  XBEE3_LTE1_ATT = 0xB06,  // Digi XBee3 Cellular LTE CAT 1
-  XBEE3_LTEM_ATT = 0xB08,  // Digi XBee3 Cellular LTE-M
-  XBEE3_LTEM3    = 0xB0E,  // Digi XBee3 Cellular LTE-M3
+  XBEE_UNKNOWN   = 0,      ///< Unknown XBee type
+  XBEE_S6B_WIFI  = 0x601,  ///< Digi XBee Wi-Fi
+  XBEE_LTE1_VZN  = 0xB01,  ///< Digi XBee Cellular LTE Cat 1
+  XBEE_3G        = 0xB02,  ///< Digi XBee Cellular 3G
+  XBEE3_LTE1_ATT = 0xB06,  ///< Digi XBee3 Cellular LTE CAT 1
+  XBEE3_LTEM_ATT = 0xB08,  ///< Digi XBee3 Cellular LTE-M
+  XBEE3_LTEM3    = 0xB0E,  ///< Digi XBee3 Cellular LTE-M3
 };
 
+/// Class for the Digi XBee family of modems
 class TinyGsmXBee
     : public TinyGsmModem<TinyGsmXBee>,
       public TinyGsmGPRS<TinyGsmXBee>,
@@ -138,19 +154,30 @@ class TinyGsmXBee
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientXBee : public TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT,
                                           TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmXBee;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientXBee() {
       is_secure = false;
     }
+    /**
+     * @brief Create a new TCP client and bind it to a modem.
+     * @param modem Modem instance used by this client.
+     *
+     * @note The XBee does not support multiplexing in transparent/command mode.
+     * The much more complicated API mode is needed for multiplexing.
+     */
     explicit GsmClientXBee(TinyGsmXBee& modem, uint8_t /*mux*/ = 0) {
       init(&modem);
       is_secure = false;
     }
-
 
     bool init(TinyGsmXBee* modem, uint8_t /*mux*/ = 0) {
       this->at       = modem;
@@ -309,6 +336,7 @@ class TinyGsmXBee
    * Inner Secure Client
    */
  public:
+  /// Inner secure client
   class GsmClientSecureXBee : public GsmClientXBee, public GsmSecureClient {
     friend class TinyGsmXBee;
 
@@ -320,6 +348,10 @@ class TinyGsmXBee
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmXBee(Stream& stream)
       : stream(stream),
         guardTime(TINY_GSM_XBEE_GUARD_TIME),
@@ -552,10 +584,18 @@ class TinyGsmXBee
   */
 
  public:
+  /**
+   * @brief Get the type of XBee module currently in use.
+   * @return The current Bee Type.
+   */
   XBeeType getBeeType() {
     return beeType;
   }
 
+  /**
+   * @brief Get the name of the XBee module currently in use.
+   * @return The name of the current XBee module.
+   */
   String getBeeName() {
     switch (beeType) {
       case XBEE_S6B_WIFI: return "Digi XBee Wi-Fi";
@@ -1603,6 +1643,7 @@ class TinyGsmXBee
    * Utilities
    */
  public:
+  /// Clear out the stream buffer
   void streamClear(void) {
     while (stream.available()) {
       stream.read();
@@ -1614,6 +1655,15 @@ class TinyGsmXBee
     return false;
   }
 
+  /**
+   * @brief Put the XBee into command mode.
+   *
+   * If it is already in command mode, this function will return true.  If it is
+   * not in command mode, it will attempt to enter command mode.
+   *
+   * @param retries The number of times to retry entering command mode.
+   * @return True if the XBee is in command mode, false otherwise.
+   */
   bool commandMode(uint8_t retries = 5) {
     // If we're already in command mode, move on
     if (inCommandMode && (millis() - lastCommandModeMillis) < 10000L)
@@ -1664,6 +1714,11 @@ class TinyGsmXBee
     return success;
   }
 
+  /**
+   * @brief Write changes to flash and apply them.
+   * @return True if the changes were written and applied successfully, false
+   * otherwise.
+   */
   bool writeChanges(void) {
     sendAT(GF("WR"));  // Write changes to flash
     if (1 != waitResponse()) { return false; }
@@ -1672,6 +1727,7 @@ class TinyGsmXBee
     return true;
   }
 
+  /// Exit command mode
   void exitCommand(void) {
     // NOTE:  Here we explicitely try to exit command mode
     // even if the internal flag inCommandMode was already false
@@ -1680,11 +1736,20 @@ class TinyGsmXBee
     inCommandMode = false;
   }
 
+  /**
+   * @brief Exit command mode and return false.
+   *
+   * This is a convenience function for use in functions that need to exit
+   * command mode and return false on failure.
+   *
+   * @return False, always.
+   */
   bool exitAndFail(void) {
     exitCommand();  // Exit command mode
     return false;
   }
 
+  /// Get the series of the XBee module and store it internally
   void getSeries(void) {
     sendAT(GF("HS"));  // Get the "Hardware Series";
     int16_t intRes = readResponseInt();
@@ -1701,6 +1766,13 @@ class TinyGsmXBee
     DBG(GF("### Modem: "), getModemName(), beeType);
   }
 
+  /**
+   * @brief Reads a response from the XBee module as a string, waiting up to
+   * timeout_ms milliseconds for data to become available.
+   *
+   * @param timeout_ms The maximum time to wait for a response, in milliseconds.
+   * @return The response from the XBee module as a string.
+   */
   String readResponseString(uint32_t timeout_ms = 1000) {
     TINY_GSM_YIELD();
     uint32_t startMillis = millis();
@@ -1711,6 +1783,13 @@ class TinyGsmXBee
     return res;
   }
 
+  /**
+   * @brief Reads a response from the XBee module as an integer, waiting up to
+   * timeout_ms milliseconds for data to become available.
+   *
+   * @param timeout_ms The maximum time to wait for a response, in milliseconds.
+   * @return The response from the XBee module as an integer.
+   */
   int16_t readResponseInt(uint32_t timeout_ms = 1000) {
     String res = readResponseString(
         timeout_ms);  // it just works better reading a string first
@@ -1723,6 +1802,13 @@ class TinyGsmXBee
     return intRes;
   }
 
+  /**
+   * @brief Send an AT command to the XBee module and read the response as a
+   * string.
+   *
+   * @param cmd The AT command to send.
+   * @return The response from the XBee module as a string.
+   */
   String sendATGetString(GsmConstStr cmd) {
     XBEE_COMMAND_START_DECORATOR(5, "")
     sendAT(cmd);
@@ -1731,6 +1817,15 @@ class TinyGsmXBee
     return res;
   }
 
+  /**
+   * @brief Sends an AT command to the XBee module and changes the setting if
+   * needed.
+   *
+   * @param cmd The AT command to send.
+   * @param newValue The new value to set.
+   * @param timeout_ms The maximum time to wait for a response, in milliseconds.
+   * @return True if the setting was changed successfully, false otherwise.
+   */
   bool changeSettingIfNeeded(GsmConstStr cmd, int16_t newValue,
                              uint32_t timeout_ms = 1000L) {
     sendAT(cmd);
@@ -1751,6 +1846,7 @@ class TinyGsmXBee
     return false;
   }
 
+  /// @copydoc changeSettingIfNeeded(GsmConstStr, int16_t, uint32_t)
   bool changeSettingIfNeeded(GsmConstStr cmd, String newValue,
                              uint32_t timeout_ms = 1000L) {
     sendAT(cmd);
@@ -1770,6 +1866,10 @@ class TinyGsmXBee
     return false;
   }
 
+  /**
+   * @brief Verifies if the saved host has a valid IP address.
+   * @return True if the saved host has a valid IP address, false otherwise.
+   */
   bool gotIPforSavedHost() {
     if (savedHost != "" && savedHostIP != IPAddress(0, 0, 0, 0))
       return true;
@@ -1778,6 +1878,7 @@ class TinyGsmXBee
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 
  protected:

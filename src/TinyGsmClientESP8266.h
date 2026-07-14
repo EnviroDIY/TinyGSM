@@ -41,22 +41,27 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
 
-// <state>: current Wi-Fi state.
-//   0: ESP8266 station has not started any Wi-Fi connection.
-//   1: ESP8266 station has connected to an AP, but does not get an IPv4 address
-//   yet.
-//   2: ESP8266 station has connected to an AP, and got an IPv4 address.
-//   3: ESP8266 station is in Wi-Fi connecting or reconnecting state.
-//   4: ESP8266 station is in Wi-Fi disconnected state.
+/// State: current Wi-Fi state.
 enum ESP8266RegStatus {
-  REG_UNINITIALIZED = 0,
-  REG_UNREGISTERED  = 1,
-  REG_OK            = 2,
-  REG_CONNECTING    = 3,
-  REG_DISCONNECTING = 4,
-  REG_UNKNOWN       = 5,
+  REG_UNINITIALIZED =
+      0,  ///< ESP8266 station has not started any Wi-Fi connection.
+  REG_UNREGISTERED = 1,  ///< ESP8266 station has connected to an AP, but does
+                         ///< not get an IPv4 address yet.
+  REG_OK =
+      2,  ///< ESP8266 station has connected to an AP, and got an IPv4 address.
+  REG_CONNECTING =
+      3,  ///< ESP8266 station is in Wi-Fi connecting or reconnecting state.
+  REG_DISCONNECTING = 4,  ///< ESP8266 station is in Wi-Fi disconnected state.
+  REG_UNKNOWN       = 5,  ///< ESP8266 station is in an unknown state.
 };
 
+/**
+ * @brief Class for the Espressif ESP8266 modem, which is a Wi-Fi module with
+ * SSL support.
+ *
+ * @warning This class is used to communicate with a module that has been
+ * programmed with the AT command firmware.
+ */
 class TinyGsmESP8266
     : public TinyGsmEspressif<TinyGsmESP8266>,
       public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
@@ -76,15 +81,31 @@ class TinyGsmESP8266
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientESP8266 : public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT,
                                              TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmESP8266;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientESP8266() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux Multiplexing channel to use.
+     *
+     * @note The ESP8266 allows you choose the multiplexing channel number, but
+     * if the input mux channel number is already in use and other mux channels
+     * are available, this library will select the next available one.  Use the
+     * getMux() function to get the assigned multiplexing channel number after a
+     * successful connection.
+     */
     explicit GsmClientESP8266(TinyGsmESP8266& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
@@ -151,6 +172,7 @@ class TinyGsmESP8266
    * Inner Secure Client
    */
  public:
+  /// Inner secure client
   class GsmClientSecureESP8266 : public GsmClientESP8266,
                                  public GsmSecureClient {
     friend class TinyGsmESP8266;
@@ -234,6 +256,10 @@ class TinyGsmESP8266
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmESP8266(Stream& stream)
       : TinyGsmEspressif<TinyGsmESP8266>(stream) {
     memset(sockets, 0, sizeof(sockets));
@@ -258,7 +284,7 @@ class TinyGsmESP8266
   ESP8266RegStatus getRegistrationStatus() {
     sendAT(GF("+CWSTATE?"));
     if (waitResponse(3000, GF("+CWSTATE:")) != 1) return REG_UNKNOWN;
-    // +CWSTATE:<state>,<"ssid">
+    // +CWSTATE:{state},{"ssid"}
     // followed by an OK
     int8_t status = streamGetIntBefore(',');
     streamSkipUntil('\n');  // throw away the ssid
@@ -377,6 +403,14 @@ class TinyGsmESP8266
    * Time functions
    */
  public:
+  /**
+   * @brief Set the time zone for the modem and optionally enable SNTP time
+   * synchronization.
+   * @param timezone The time zone offset in hours from UTC (e.g., -5 for EST, 1
+   * for CET).e
+   * @param enable_sync Optional parameter to enable or disable SNTP time
+   * synchronization. Defaults to true (enabled).
+   */
   void setTimeZone(int8_t timezone, bool enable_sync = true) {
     // configure the NTP settings for the modem
     sendAT(GF("+CIPSNTPCFG="), enable_sync ? 1 : 0, ',', timezone);
@@ -575,10 +609,10 @@ class TinyGsmESP8266
       }
 
       // configure SSL authentication type and in-use certificates
-      // AT+CIPSSLCCONF=<link ID>,<auth_mode>[,<pki_number>][,<ca_number>]
+      // AT+CIPSSLCCONF=<link ID>,{auth_mode}[,{pki_number}][,{ca_number}]
       // <link ID>: ID of the connection (0 ~ max). For multiple connections, if
       // the value is max, it means all connections. By default, max is 5.
-      // <auth_mode>:
+      // auth_mode:
       //     0: no authentication. In this case <pki_number> and <ca_number> are
       //     not required.
       //     1: the client provides the client certificate for the server to
@@ -586,13 +620,13 @@ class TinyGsmESP8266
       //     2: the client loads CA certificate to verify the server’s
       //     certificate.
       //     3: mutual authentication.
-      // <pki_number>: the index of certificate and private key. If there is
+      // pki_number: the index of certificate and private key. If there is
       // only one certificate and private key, the value should be 0.
       //    PKI - A public key infrastructure (PKI) is a set of roles, policies,
       //    hardware, software and procedures needed to create, manage,
       //    distribute, use, store and revoke digital certificates and manage
       //    public-key encryption.
-      // <ca_number>: the index of CA (certificate authority certificate =
+      // ca_number: the index of CA (certificate authority certificate =
       // server's certificate). If there is only one CA, the value should be 0.
       // The PKI number and CA number to use are based on what certificates were
       // (or were not) put into the customized certificate partitions.

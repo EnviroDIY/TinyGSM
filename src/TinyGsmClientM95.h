@@ -79,16 +79,18 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
+/// Registration status
 enum M95RegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+  REG_NO_RESULT    = -1,  ///< No registration result
+  REG_UNREGISTERED = 0,   ///< Not registered on the network
+  REG_SEARCHING    = 2,   ///< Searching for network
+  REG_DENIED       = 3,   ///< Registration denied
+  REG_OK_HOME      = 1,   ///< Registered on the home network
+  REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
+  REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/// Class for the Quectel M95
 class TinyGsmM95
     : public TinyGsmModem<TinyGsmM95>,
       public TinyGsmGPRS<TinyGsmM95>,
@@ -111,15 +113,31 @@ class TinyGsmM95
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientM95 : public TinyGsmTCP<TinyGsmM95, TINY_GSM_MUX_COUNT,
                                          TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmM95;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientM95() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux Multiplexing channel to use.
+     *
+     * @note The M95 allows you choose the multiplexing channel number, but if
+     * the input mux channel number is already in use and other mux channels are
+     * available, this library will select the next available one.  Use the
+     * getMux() function to get the assigned multiplexing channel number after a
+     * successful connection.
+     */
     explicit GsmClientM95(TinyGsmM95& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
@@ -192,6 +210,10 @@ class TinyGsmM95
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmM95(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -429,7 +451,10 @@ class TinyGsmM95
   // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
 
  public:
-  /** Delete all SMS */
+  /**
+   * @brief Delete all SMS messages from the modem's memory.
+   * @return True if the deletion was successful, false otherwise.
+   */
   bool deleteAllSMS() {
     sendAT(GF("+QMGDA=6"));
     if (waitResponse(waitResponse(60000L, GF("OK"), GF("ERROR")) == 1)) {
@@ -639,6 +664,7 @@ class TinyGsmM95
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 
  protected:

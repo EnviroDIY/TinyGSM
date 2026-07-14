@@ -91,6 +91,7 @@
 // management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
 // so as not to waste space.
 #ifndef TINY_GSM_MODEM_HAS_SSL
+/// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
@@ -102,16 +103,18 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
+/// Registration status
 enum SaraR4RegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+  REG_NO_RESULT    = -1,  ///< No registration result
+  REG_UNREGISTERED = 0,   ///< Not registered on the network
+  REG_SEARCHING    = 2,   ///< Searching for network
+  REG_DENIED       = 3,   ///< Registration denied
+  REG_OK_HOME      = 1,   ///< Registered on the home network
+  REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
+  REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/// Class for the u-blox SARA-R4
 class TinyGsmSaraR4
     : public TinyGsmModem<TinyGsmSaraR4>,
       public TinyGsmGPRS<TinyGsmSaraR4>,
@@ -137,14 +140,28 @@ class TinyGsmSaraR4
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientSaraR4 : public TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT,
                                             TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSaraR4;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientSaraR4() {
       is_secure = false;
     }
+    /**
+     * @brief Create a new TCP client and bind it to a modem.
+     * @param modem Modem instance used by this client.
+     *
+     * @note The SARA-R4 does not allow you to specify the multiplexing channel.
+     * The modem will automatically assign a channel when the client connects to
+     * a server.  Use the getMux() function to get the assigned multiplexing
+     * channel number after a successful connection.
+     */
     explicit GsmClientSaraR4(TinyGsmSaraR4& modem, uint8_t /*mux*/ = 0) {
       init(&modem, -1);
       is_secure = false;
@@ -287,13 +304,25 @@ class TinyGsmSaraR4
    * Inner Secure Client
    */
  public:
+  /// Inner secure client
   class GsmClientSecureSaraR4 : public GsmClientSaraR4 {
     friend class TinyGsmSaraR4;
 
    public:
+    /**
+     * @brief Create a new secured TCP (SSL) client.  This must be initialized
+     * with a modem before it can be used.
+     */
     GsmClientSecureSaraR4() {
       is_secure = true;
     }
+    /**
+     * @brief Create a new secured TCP (SSL) client and bind it to a modem and
+     * optionally a multiplexing channel.
+     * @copydetails
+     * GsmClientESP8266NonOS::GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem,
+     * uint8_t)
+     */
     explicit GsmClientSecureSaraR4(TinyGsmSaraR4& modem, uint8_t /*mux*/ = 0)
         : GsmClientSaraR4(modem) {
       is_secure = true;
@@ -304,6 +333,10 @@ class TinyGsmSaraR4
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmSaraR4(Stream& stream)
       : stream(stream),
         has2GFallback(false),
@@ -428,6 +461,16 @@ class TinyGsmSaraR4
   }
 
  public:
+  /**
+   * @brief Set the radio access technology (RAT) for the modem.
+   *
+   * @param urat The selected RAT mode.
+   * - 3: LTE
+   * - 7: LTE Cat M1
+   * - 8: LTE Cat NB1
+   * - 9: GPRS / eGPRS
+   * @return True if the command was successful, false otherwise.
+   */
   bool setRadioAccessTechnology(uint8_t urat) {
     // AT+URAT=<SelectedAcT>[,<PreferredAct>[,<2ndPreferredAct>]]
 
@@ -943,6 +986,7 @@ class TinyGsmSaraR4
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 
  protected:

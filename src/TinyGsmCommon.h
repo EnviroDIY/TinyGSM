@@ -60,11 +60,25 @@ typedef const char* GsmConstStr;
 
 #ifdef TINY_GSM_DEBUG
 namespace {
+/**
+ * @brief Debug print function for a single argument
+ *
+ * @tparam T The type of the argument
+ * @param last The argument to print
+ */
 template <typename T>
 static void DBG_PLAIN(T last) {
   TINY_GSM_DEBUG.println(last);
 }
 
+/**
+ * @brief Debug print function for multiple arguments
+ *
+ * @tparam T The type of the first argument
+ * @tparam Args The types of the remaining arguments
+ * @param head The first argument to print
+ * @param tail The remaining arguments to print
+ */
 template <typename T, typename... Args>
 static void DBG_PLAIN(T head, Args... tail) {
   TINY_GSM_DEBUG.print(head);
@@ -72,6 +86,12 @@ static void DBG_PLAIN(T head, Args... tail) {
   DBG_PLAIN(tail...);
 }
 
+/**
+ * @brief Debug print function for multiple arguments with timestamp
+ *
+ * @tparam Args The types of the arguments
+ * @param args The arguments to print
+ */
 template <typename... Args>
 static void DBG(Args... args) {
   TINY_GSM_DEBUG.print('[');
@@ -109,15 +129,20 @@ template <class T>
 const T& TinyGsmMin(const T& a, const T& b) {
   return (b < a) ? b : a;
 }
-
 template <class T>
 const T& TinyGsmMax(const T& a, const T& b) {
   return (b < a) ? a : b;
 }
 
-/*
- * Automatically find baud rate
- * NOTE: This DOES NOT work with the XBee module
+/**
+ * @brief Attempts to automatically find the baud rate for the modem.
+ * @note This DOES NOT work with the XBee module
+ *
+ * @param at_serial The serial port connected to the modem
+ * @param minimum The minimum baud rate to try (default: 9600)
+ * @param maximum The maximum baud rate to try (default: 921600)
+ * @return The baud rate that the modem responded to, or 0 if no response was
+ * received
  */
 template <class T>
 uint32_t TinyGsmAutoBaud(T& at_serial, uint32_t minimum = 9600,

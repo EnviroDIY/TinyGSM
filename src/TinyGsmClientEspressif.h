@@ -69,6 +69,11 @@
 #include "TinyGsmModem.tpp"
 #include "TinyGsmWifi.tpp"
 
+/**
+ * @brief Parent class for the Espressif ESP8266 and ESP32 modules
+ *
+ * @tparam EspressifType The derived class type (ESP8266 or ESP32)
+ */
 template <class EspressifType>
 class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
                          public TinyGsmWifi<EspressifType> {
@@ -91,6 +96,10 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmEspressif(Stream& stream) : stream(stream) {}
 
   /*
@@ -135,6 +144,14 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   }
 
  public:
+  /**
+   * @brief Set the default baud rate for the modem, ie, the baud rate that the
+   * modem will use after a reset or power cycle.
+   *
+   * @param baud The baud rate to set the modem to use after a reset or power
+   * cycle.
+   * @return True if the command was successful, false otherwise.
+   */
   bool setDefaultBaud(uint32_t baud) {
     thisModem().sendAT(GF("+UART_DEF="), baud, ",8,1,0,0");
     return thisModem().waitResponse() == 1;
@@ -373,6 +390,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 };
 

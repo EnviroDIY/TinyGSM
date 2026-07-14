@@ -69,6 +69,7 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
+/// Class for the SIMCOM SIM7070, SIM7080, and SIM7090
 class TinyGsmSim7080
     : public TinyGsmSim70xx<TinyGsmSim7080>,
       public TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
@@ -95,15 +96,31 @@ class TinyGsmSim7080
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientSim7080 : public TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT,
                                              TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmSim7080;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientSim7080() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux Multiplexing channel to use.
+     *
+     * @note The SIM7080 and similar variants allow you choose the multiplexing
+     * channel number, but if the input mux channel number is already in use and
+     * other mux channels are available, this library will select the next
+     * available one.  Use the getMux() function to get the assigned
+     * multiplexing channel number after a successful connection.
+     */
     explicit GsmClientSim7080(TinyGsmSim7080& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
@@ -172,6 +189,7 @@ class TinyGsmSim7080
    * Inner Secure Client
    */
  public:
+  /// Inner secure client
   class GsmClientSecureSim7080 : public GsmClientSim7080,
                                  public GsmSecureClient {
     friend class TinyGsmSim7080;
@@ -179,7 +197,7 @@ class TinyGsmSim7080
    public:
     TINY_GSM_SECURE_CLIENT_CTORS(Sim7080)
 
-    // Because we have the same potetial range of mux numbers for secure and
+    // Because we have the same potential range of mux numbers for secure and
     // insecure connections, we don't need to re-check for mux number
     // availability.
 
@@ -201,6 +219,10 @@ class TinyGsmSim7080
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmSim7080(Stream& stream)
       : TinyGsmSim70xx<TinyGsmSim7080>(stream) {
     memset(sockets, 0, sizeof(sockets));
@@ -536,7 +558,7 @@ class TinyGsmSim7080
     waitResponse();
 
     // Attach to GPRS
-    // AT+CGATT=<state>
+    // AT+CGATT={state}
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1) { return false; }
 
@@ -713,6 +735,14 @@ class TinyGsmSim7080
    * Client related functions
    */
  public:
+  /**
+   * @brief Configure the SSL context for the modem.
+   * @param context_id The SSL context ID.
+   * @param sni The Server Name Indication (SNI) for the SSL connection.
+   * @param sslAuthMode The SSL authentication mode.
+   * @param sslVersion The SSL version.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool configureSSLContext(uint8_t context_id, const char* sni,
                            SSLAuthMode sslAuthMode, SSLVersion sslVersion) {
     bool success = true;
@@ -862,7 +892,15 @@ class TinyGsmSim7080
 
     return success;
   }
-
+  /**
+   * @brief Apply SSL certificates to the specified connection.
+   * @param mux The connection ID (mux).
+   * @param sslAuthMode The SSL authentication mode.
+   * @param CAcertName The CA certificate name.
+   * @param clientCertName The client certificate name.
+   * @param clientKeyName The client key name.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool applySSLCertificates(uint8_t mux, SSLAuthMode sslAuthMode,
                             const char* CAcertName, const char* clientCertName,
                             const char* clientKeyName) {
@@ -899,6 +937,12 @@ class TinyGsmSim7080
     return success;
   }
 
+  /**
+   * @brief Apply SSL pre-shared key (PSK) to the specified connection.
+   * @param mux The connection ID (mux).
+   * @param pskTableName The PSK table name.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool applySSLPSK(uint8_t mux, const char* pskTableName) {
     bool success = true;
 
@@ -919,6 +963,12 @@ class TinyGsmSim7080
     return success;
   }
 
+  /**
+   * @brief Link the SSL context to a specific connection (mux).
+   * @param mux The connection identifier (mux).
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
   bool linkSSLContext(uint8_t mux, uint8_t context_id) {
     // set the connection identifier that the above SSL context settings apply
     // to (ie, tie connection mux to SSL context)

@@ -43,26 +43,31 @@
 // TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module so as not to
 // waste space.
 #ifndef TINY_GSM_MODEM_HAS_SSL
+/// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
-// <stat> status of ESP8266 station interface
-// 0: ESP8266 station is not initialized.
-// 1: ESP8266 station is initialized, but not started a Wi-Fi connection yet.
-// 2 : ESP8266 station connected to an AP and has obtained IP
-// 3 : ESP8266 station created a TCP or UDP transmission
-// 4 : the TCP or UDP transmission of ESP8266 station disconnected
-// 5 : ESP8266 station did NOT connect to an AP
+/// Status of ESP8266 station interface
 enum ESP8266NonOSRegStatus {
-  REG_UNINITIALIZED = 0,
-  REG_UNREGISTERED  = 1,
-  REG_OK_IP         = 2,
-  REG_OK_TCP        = 3,
-  REG_OK_NO_TCP     = 4,
-  REG_DENIED        = 5,
-  REG_UNKNOWN       = 6,
+  REG_UNINITIALIZED = 0,  ///< ESP8266 station is not initialized.
+  REG_UNREGISTERED  = 1,  ///< ESP8266 station is initialized, but not started a
+                          ///< Wi-Fi connection yet.
+  REG_OK_IP  = 2,  ///< ESP8266 station connected to an AP and has obtained IP
+  REG_OK_TCP = 3,  ///< ESP8266 station created a TCP or UDP transmission
+  REG_OK_NO_TCP =
+      4,  ///< the TCP or UDP transmission of ESP8266 station disconnected
+  REG_DENIED  = 5,  ///< ESP8266 station did NOT connect to an AP
+  REG_UNKNOWN = 6,  ///< ESP8266 station is in an unknown state
 };
 
+/**
+ * @brief Class for the Espressif ESP8266 modem, which is a Wi-Fi module with
+ * SSL support.
+ *
+ * @warning This class is used to communicate with a module that has been
+ * programmed with the non-OS based AT command firmware.  If you're using this,
+ * please update your module.  It's quite outdated.
+ */
 class TinyGsmESP8266NonOS
     : public TinyGsmEspressif<TinyGsmESP8266NonOS>,
       public TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT,
@@ -77,16 +82,32 @@ class TinyGsmESP8266NonOS
    * Inner Client
    */
  public:
+  /// Inner client
   class GsmClientESP8266NonOS
       : public TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT,
                           TINY_GSM_RX_BUFFER>::GsmClient {
     friend class TinyGsmESP8266NonOS;
 
    public:
+    /**
+     * @brief Create a new TCP client.  This must be initialized with a modem
+     * before it can be used.
+     */
     GsmClientESP8266NonOS() {
       is_secure = false;
     }
-
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux Multiplexing channel to use.
+     *
+     * @note The ESP8266 allows you choose the multiplexing channel number, but
+     * if the input mux channel number is already in use and other mux channels
+     * are available, this library will select the next available one.  Use the
+     * getMux() function to get the assigned multiplexing channel number after a
+     * successful connection.
+     */
     explicit GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem,
                                    uint8_t              mux = 0) {
       init(&modem, mux);
@@ -153,14 +174,25 @@ class TinyGsmESP8266NonOS
    * Inner Secure Client
    */
  public:
+  /// Inner secure client
   class GsmClientSecureESP8266NonOS : public GsmClientESP8266NonOS {
     friend class TinyGsmESP8266NonOS;
 
    public:
+    /**
+     * @brief Create a new secured TCP (SSL) client.  This must be initialized
+     * with a modem before it can be used.
+     */
     GsmClientSecureESP8266NonOS() {
       is_secure = true;
     }
-
+    /**
+     * @brief Create a new secured TCP (SSL) client and bind it to a modem and
+     * optionally a multiplexing channel.
+     * @copydetails
+     * GsmClientESP8266NonOS::GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem,
+     * uint8_t mux)
+     */
     explicit GsmClientSecureESP8266NonOS(TinyGsmESP8266NonOS& modem,
                                          uint8_t              mux = 0)
         : GsmClientESP8266NonOS(modem, mux) {
@@ -172,6 +204,10 @@ class TinyGsmESP8266NonOS
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmESP8266NonOS(Stream& stream)
       : TinyGsmEspressif<TinyGsmESP8266NonOS>(stream) {
     memset(sockets, 0, sizeof(sockets));
