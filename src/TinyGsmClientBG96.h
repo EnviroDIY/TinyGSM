@@ -255,6 +255,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, BG96RegStatus>,
     // for an SSL socket. This means we have to overwrite all of the
     // buffer-checking versions of functions with the read-without-size-check
     // versions.
+    /// @copydoc TinyGsmTCP::GsmClient::available()
     int available() override {
       is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                             // send to fail
@@ -265,6 +266,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, BG96RegStatus>,
       return static_cast<uint16_t>(rx.size()) + sock_available;
     }
 
+    /// @copydoc TinyGsmTCP::GsmClient::read(uint8_t*, size_t)
     int read(uint8_t* buf, size_t size) override {
       is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                             // send to fail
@@ -294,12 +296,14 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, BG96RegStatus>,
       return cnt;
     }
 
+    /// @copydoc TinyGsmTCP::GsmClient::read()
     int read() override {
       uint8_t c;
       if (read(&c, 1) == 1) { return c; }
       return -1;
     }
 
+    /// @copydoc TinyGsmTCP::GsmClient::connected()
     uint8_t connected() override {
       if (is_mid_send) { return true; }  // Don't interrupt a send
       if (available()) { return true; }
