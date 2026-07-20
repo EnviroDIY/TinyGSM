@@ -808,7 +808,7 @@ class TinyGsmSequansMonarch
     if (data.endsWith(GF(AT_NL "+SQNSRING:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSequansMonarchTcpConfig::kMuxCount &&
+      if (mux > 0 && mux <= TinyGsmSequansMonarchTcpConfig::kMuxCount &&
           sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount]) {
         sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount]->got_data =
             true;
@@ -820,7 +820,7 @@ class TinyGsmSequansMonarch
       return true;
     } else if (data.endsWith(GF("SQNSH: "))) {
       int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSequansMonarchTcpConfig::kMuxCount &&
+      if (mux > 0 && mux <= TinyGsmSequansMonarchTcpConfig::kMuxCount &&
           sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount]) {
         sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount]
             ->sock_connected = false;
