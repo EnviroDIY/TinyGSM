@@ -10,31 +10,6 @@
 #define SRC_TINYGSMCLIENTESP8266NONOS_H_
 #pragma message("TinyGSM:  TinyGsmClientESP8266NonOS")
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_STOP_TIMEOUT
-#undef TINY_GSM_STOP_TIMEOUT
-#endif
-#define TINY_GSM_STOP_TIMEOUT 5
-
-#ifdef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#undef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_NO_MODEM_BUFFER
-#define TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_MUX_DYNAMIC
-#undef TINY_GSM_MUX_DYNAMIC
-#endif
-#ifndef TINY_GSM_MUX_STATIC
-#define TINY_GSM_MUX_STATIC
-#endif
-
 #include "TinyGsmClientEspressif.h"
 #include "TinyGsmTCP.tpp"
 
@@ -61,6 +36,28 @@ enum ESP8266NonOSRegStatus {
 };
 
 /**
+ * @brief TCP behavior and limits for the ESP8266 (non OS AT version) family.
+ *
+ * NOTE: There's a total limit of 5 sockets, any of them can be SSL. BUT the
+ * manual warns that module may not be able to handle more than 1 SSL socket at
+ * a time.
+ *
+ * These modules don't have "SSL Contexts" per-say, but they only support 2
+ * certificate sets.  The certificates are loaded and referenced by number.
+ *
+ * The ESP8266 devices can receive 2048 bytes and send 1460 bytes at most in a
+ * single transmission.
+ */
+struct TinyGsmESP8266NonOSTcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::NoModemBuffer,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 5,
+          /*sendMaxSize*/ 1460,
+          /*connectTimeoutS*/ 75,  // default
+          /*stopTimeoutS*/ 5> {};
+
+/**
  * @brief Class for the Espressif ESP8266 modem, which is a Wi-Fi module with
  * SSL support.
  *
@@ -70,13 +67,11 @@ enum ESP8266NonOSRegStatus {
  */
 class TinyGsmESP8266NonOS
     : public TinyGsmEspressif<TinyGsmESP8266NonOS, ESP8266NonOSRegStatus>,
-      public TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT,
-                        TINY_GSM_RX_BUFFER> {
+      public TinyGsmTCP<TinyGsmESP8266NonOS, TinyGsmESP8266NonOSTcpConfig> {
   friend class TinyGsmEspressif<TinyGsmESP8266NonOS, ESP8266NonOSRegStatus>;
   friend class TinyGsmModem<TinyGsmESP8266NonOS, ESP8266NonOSRegStatus>;
   friend class TinyGsmWifi<TinyGsmESP8266NonOS>;
-  friend class TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT,
-                          TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmESP8266NonOS, TinyGsmESP8266NonOSTcpConfig>;
 
   /*
    * Inner Client
@@ -84,15 +79,15 @@ class TinyGsmESP8266NonOS
  public:
   /// Inner client
   class GsmClientESP8266NonOS
-      : public TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT,
-                          TINY_GSM_RX_BUFFER>::GsmClient {
+      : public TinyGsmTCP<TinyGsmESP8266NonOS,
+                          TinyGsmESP8266NonOSTcpConfig>::GsmClient {
     friend class TinyGsmESP8266NonOS;
 
    public:
-    using TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmESP8266NonOS, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmESP8266NonOS,
+                     TinyGsmESP8266NonOSTcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmESP8266NonOS,
+                     TinyGsmESP8266NonOSTcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -136,7 +131,7 @@ class TinyGsmESP8266NonOS
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT &&
+      if (mux < TinyGsmESP8266NonOSTcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -146,7 +141,7 @@ class TinyGsmESP8266NonOS
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        this->mux = (mux % TinyGsmESP8266NonOSTcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -155,7 +150,7 @@ class TinyGsmESP8266NonOS
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmESP8266NonOSTcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -379,13 +374,16 @@ class TinyGsmESP8266NonOS
     int8_t status = waitResponse(GF("3"), GFP(GSM_OK), GFP(GSM_ERROR));
     // if the status is anything but 3, there are no connections open
     if (status != 1) {
-      for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+      for (int muxNo = 0; muxNo < TinyGsmESP8266NonOSTcpConfig::kMuxCount;
+           muxNo++) {
         if (sockets[muxNo]) { sockets[muxNo]->sock_connected = false; }
       }
       return false;
     }
-    bool verified_connections[TINY_GSM_MUX_COUNT] = {0, 0, 0, 0, 0};
-    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+    bool verified_connections[TinyGsmESP8266NonOSTcpConfig::kMuxCount] = {
+        0, 0, 0, 0, 0};
+    for (int muxNo = 0; muxNo < TinyGsmESP8266NonOSTcpConfig::kMuxCount;
+         muxNo++) {
       uint8_t has_status = waitResponse(GF("+CIPSTATUS:"), GFP(GSM_OK),
                                         GFP(GSM_ERROR));
       if (has_status == 1) {
@@ -400,7 +398,8 @@ class TinyGsmESP8266NonOS
       }
       if (has_status == 2) break;  // once we get to the ok, stop
     }
-    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+    for (int muxNo = 0; muxNo < TinyGsmESP8266NonOSTcpConfig::kMuxCount;
+         muxNo++) {
       if (sockets[muxNo]) {
         sockets[muxNo]->sock_connected = verified_connections[muxNo];
       }
@@ -429,7 +428,8 @@ class TinyGsmESP8266NonOS
       int8_t  mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(':');
       int16_t len          = len_reported;
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmESP8266NonOSTcpConfig::kMuxCount &&
+          sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           // reset the len to read to the amount free
@@ -445,7 +445,8 @@ class TinyGsmESP8266NonOS
                                    data.lastIndexOf(AT_NL, data.length() - 8));
       int8_t coma     = data.indexOf(',', muxStart);
       int8_t mux      = data.substring(muxStart, coma).toInt();
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmESP8266NonOSTcpConfig::kMuxCount &&
+          sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       streamSkipUntil('\n');  // throw away the new line
@@ -482,7 +483,7 @@ class TinyGsmESP8266NonOS
   }
 
  protected:
-  GsmClientESP8266NonOS* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientESP8266NonOS* sockets[TinyGsmESP8266NonOSTcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTESP8266NONOS_H_

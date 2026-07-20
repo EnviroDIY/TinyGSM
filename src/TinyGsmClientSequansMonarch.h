@@ -19,45 +19,11 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 6
 #ifdef TINY_GSM_SECURE_MUX_COUNT
 #undef TINY_GSM_SECURE_MUX_COUNT
 #endif
 #define TINY_GSM_SECURE_MUX_COUNT 6
-// NOTE: Unlike most modules, the sockets are numbered starting at 1, not 0.
-// Also supports 6 "security profiles" (1-6)
-// The security profiles is collection of SSL settings, not the connection
-// identifier.
 
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 750
-// SQNSSENDEXT accepts up to 1500 bytes of input, but this is configured to send
-// HEX, so only 1/2 of that is available.
-
-#ifdef TINY_GSM_NO_MODEM_BUFFER
-#undef TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_MUX_DYNAMIC
-#undef TINY_GSM_MUX_DYNAMIC
-#endif
-#ifndef TINY_GSM_MUX_STATIC
-#define TINY_GSM_MUX_STATIC
-#endif
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -101,6 +67,25 @@ enum MonarchRegStatus {
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/**
+ * @brief TCP behavior and limits for the Sequans Monarch modem family.
+ *
+ * @note Unlike most modules, the sockets are numbered starting at 1, not 0.
+ *
+ * Also supports 6 "security profiles" (1-6)
+ * The security profiles is collection of SSL settings, not the connection
+ * identifier.
+ *
+ * The send data command, SQNSSENDEXT, accepts up to 1500 bytes of input, but
+ * this is configured to send HEX, so only 1/2 of that is available.
+ */
+struct TinyGsmSequansMonarchTcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 6,
+          /*sendMaxSize*/ 750> {};
+
 /// Socket status
 enum SocketStatus {
   SOCK_CLOSED                 = 0,  ///< Socket is closed
@@ -116,16 +101,15 @@ enum SocketStatus {
 class TinyGsmSequansMonarch
     : public TinyGsmModem<TinyGsmSequansMonarch, MonarchRegStatus>,
       public TinyGsmGPRS<TinyGsmSequansMonarch>,
-      public TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT,
-                        TINY_GSM_RX_BUFFER>,
+      public TinyGsmTCP<TinyGsmSequansMonarch, TinyGsmSequansMonarchTcpConfig>,
       public TinyGsmCalling<TinyGsmSequansMonarch>,
       public TinyGsmSMS<TinyGsmSequansMonarch>,
       public TinyGsmTime<TinyGsmSequansMonarch>,
       public TinyGsmTemperature<TinyGsmSequansMonarch> {
   friend class TinyGsmModem<TinyGsmSequansMonarch, MonarchRegStatus>;
   friend class TinyGsmGPRS<TinyGsmSequansMonarch>;
-  friend class TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT,
-                          TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmSequansMonarch,
+                          TinyGsmSequansMonarchTcpConfig>;
   friend class TinyGsmCalling<TinyGsmSequansMonarch>;
   friend class TinyGsmSMS<TinyGsmSequansMonarch>;
   friend class TinyGsmTime<TinyGsmSequansMonarch>;
@@ -137,15 +121,15 @@ class TinyGsmSequansMonarch
  public:
   /// Inner client
   class GsmClientSequansMonarch
-      : public TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT,
-                          TINY_GSM_RX_BUFFER>::GsmClient {
+      : public TinyGsmTCP<TinyGsmSequansMonarch,
+                          TinyGsmSequansMonarchTcpConfig>::GsmClient {
     friend class TinyGsmSequansMonarch;
 
    public:
-    using TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmSequansMonarch,
+                     TinyGsmSequansMonarchTcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmSequansMonarch,
+                     TinyGsmSequansMonarchTcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -189,12 +173,12 @@ class TinyGsmSequansMonarch
 
       // adjust for zero indexed socket array vs Sequans' 1 indexed mux numbers
       // using modulus will force 6 back to 0
-      if (mux >= 1 && mux <= TINY_GSM_MUX_COUNT) {
+      if (mux >= 1 && mux <= TinyGsmSequansMonarchTcpConfig::kMuxCount) {
         this->mux = mux;
       } else {
-        this->mux = (mux % TINY_GSM_MUX_COUNT) + 1;
+        this->mux = (mux % TinyGsmSequansMonarchTcpConfig::kMuxCount) + 1;
       }
-      at->sockets[this->mux % TINY_GSM_MUX_COUNT] = this;
+      at->sockets[this->mux % TinyGsmSequansMonarchTcpConfig::kMuxCount] = this;
 
       return true;
     }
@@ -263,7 +247,7 @@ class TinyGsmSequansMonarch
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmSequansMonarchTcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
 
@@ -370,8 +354,9 @@ class TinyGsmSequansMonarch
   }
 
   void maintainImpl() {
-    for (int mux = 1; mux <= TINY_GSM_MUX_COUNT; mux++) {
-      GsmClientSequansMonarch* sock = sockets[mux % TINY_GSM_MUX_COUNT];
+    for (int mux = 1; mux <= TinyGsmSequansMonarchTcpConfig::kMuxCount; mux++) {
+      GsmClientSequansMonarch* sock =
+          sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount];
       if (sock && sock->got_data) {
         sock->got_data       = false;
         sock->sock_available = modemGetAvailable(mux);
@@ -454,7 +439,7 @@ class TinyGsmSequansMonarch
   //  - Add `public TinyGsmSSL<TinyGsmSequansMonarch>,` to
   //    the constructor's initializer list
   //  - Add `friend class TinyGsmSSL<TinyGsmSequansMonarch,
-  //    TINY_GSM_MUX_COUNT>;` to the friend list.
+  //    TinyGsmSequansMonarchTcpConfig::kMuxCount>;` to the friend list.
   //  - Make the secure client inherit from the secure client class in the SSL
   //  template.
 
@@ -664,7 +649,8 @@ class TinyGsmSequansMonarch
   }
 
   size_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
-    if (sockets[mux % TINY_GSM_MUX_COUNT]->sock_connected == false) {
+    if (sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount]
+            ->sock_connected == false) {
       DBG("### Sock closed, cannot send data!");
       return 0;
     }
@@ -680,9 +666,10 @@ class TinyGsmSequansMonarch
       bool   send_success  = false;
       while (send_attempts < 3 && !send_success) {
         // Number of bytes to send from buffer in this command
-        size_t sendLength = TINY_GSM_SEND_MAX_SIZE;
+        size_t sendLength = TinyGsmSequansMonarchTcpConfig::kSendMaxSize;
         // Ensure the program doesn't read past the allocated memory
-        if (txPtr + TINY_GSM_SEND_MAX_SIZE > const_cast<uint8_t*>(buff) + len) {
+        if (txPtr + TinyGsmSequansMonarchTcpConfig::kSendMaxSize >
+            const_cast<uint8_t*>(buff) + len) {
           sendLength = const_cast<uint8_t*>(buff) + len - txPtr;
         }
 
@@ -754,10 +741,11 @@ class TinyGsmSequansMonarch
     streamSkipUntil(',');  // Skip mux
     // TODO: validate mux
     int16_t len_reported = streamGetIntBefore('\n');
-    size_t  len_read     = moveCharsFromStreamToFifo(mux % TINY_GSM_MUX_COUNT,
-                                                     len_reported);
+    size_t  len_read     = moveCharsFromStreamToFifo(
+        mux % TinyGsmSequansMonarchTcpConfig::kMuxCount, len_reported);
     waitResponse();
-    sockets[mux % TINY_GSM_MUX_COUNT]->sock_available = modemGetAvailable(mux);
+    sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount]->sock_available =
+        modemGetAvailable(mux);
     return len_read;
   }
 
@@ -780,7 +768,8 @@ class TinyGsmSequansMonarch
     // This single command always returns the connection status of all
     // six possible sockets.
     sendAT(GF("+SQNSS"));
-    for (int muxNo = 1; muxNo <= TINY_GSM_MUX_COUNT; muxNo++) {
+    for (int muxNo = 1; muxNo <= TinyGsmSequansMonarchTcpConfig::kMuxCount;
+         muxNo++) {
       if (waitResponse(GFP(GSM_OK), GF(AT_NL "+SQNSS: ")) != 2) { break; }
       uint8_t status = 0;
       // if (streamGetIntBefore(',') != muxNo) { // check the mux no
@@ -798,7 +787,8 @@ class TinyGsmSequansMonarch
       // SOCK_LISTENING              = 4,
       // SOCK_INCOMING               = 5,
       // SOCK_OPENING                = 6,
-      GsmClientSequansMonarch* sock = sockets[muxNo % TINY_GSM_MUX_COUNT];
+      GsmClientSequansMonarch* sock =
+          sockets[muxNo % TinyGsmSequansMonarchTcpConfig::kMuxCount];
       if (sock) {
         sock->sock_connected = ((status != SOCK_CLOSED) &&
                                 (status != SOCK_INCOMING) &&
@@ -806,7 +796,8 @@ class TinyGsmSequansMonarch
       }
     }
     waitResponse();  // Should be an OK at the end
-    return sockets[mux % TINY_GSM_MUX_COUNT]->sock_connected;
+    return sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount]
+        ->sock_connected;
   }
 
   /*
@@ -817,19 +808,22 @@ class TinyGsmSequansMonarch
     if (data.endsWith(GF(AT_NL "+SQNSRING:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT &&
-          sockets[mux % TINY_GSM_MUX_COUNT]) {
-        sockets[mux % TINY_GSM_MUX_COUNT]->got_data       = true;
-        sockets[mux % TINY_GSM_MUX_COUNT]->sock_available = len;
+      if (mux >= 0 && mux < TinyGsmSequansMonarchTcpConfig::kMuxCount &&
+          sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount]) {
+        sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount]->got_data =
+            true;
+        sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount]
+            ->sock_available = len;
       }
       data = "";
       DBG("### URC Data Received:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("SQNSH: "))) {
       int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT &&
-          sockets[mux % TINY_GSM_MUX_COUNT]) {
-        sockets[mux % TINY_GSM_MUX_COUNT]->sock_connected = false;
+      if (mux >= 0 && mux < TinyGsmSequansMonarchTcpConfig::kMuxCount &&
+          sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount]) {
+        sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount]
+            ->sock_connected = false;
       }
       data = "";
       DBG("### URC Sock Closed: ", mux);
@@ -843,7 +837,7 @@ class TinyGsmSequansMonarch
   Stream& stream;
 
  protected:
-  GsmClientSequansMonarch* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientSequansMonarch* sockets[TinyGsmSequansMonarchTcpConfig::kMuxCount];
   // AT_NL (\r\n) is not accepted with SQNSSENDEXT in data mode so use \n
   const char* gsmNL = "\n";
 };

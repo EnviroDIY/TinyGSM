@@ -22,41 +22,6 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 6
 #endif
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_STOP_TIMEOUT
-#undef TINY_GSM_STOP_TIMEOUT
-#endif
-#define TINY_GSM_STOP_TIMEOUT 75
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 6
-#ifdef TINY_GSM_NO_MODEM_BUFFER
-#undef TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#undef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifndef TINY_GSM_BUFFER_READ_NO_CHECK
-#define TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifdef TINY_GSM_MUX_DYNAMIC
-#undef TINY_GSM_MUX_DYNAMIC
-#endif
-#ifndef TINY_GSM_MUX_STATIC
-#define TINY_GSM_MUX_STATIC
-#endif
-
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 1460
-// QISEND and QSSLSEND both accept up to 1460 bytes of input
-
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -95,18 +60,32 @@ enum MC60RegStatus {
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/**
+ * @brief TCP behavior and limits for the MC60 modem family.
+ *
+ * The send data commands, QISEND and QSSLSEND, both accept up to 1460 bytes of
+ * input.
+ */
+struct TinyGsmMC60TcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadNoCheck,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 6,
+          /*sendMaxSize*/ 1460,
+          /*connectTimeoutS*/ 75,  // default
+          /*stopTimeoutS*/ 75> {};
+
 /// Class for the Quectel MC60
-class TinyGsmMC60
-    : public TinyGsmModem<TinyGsmMC60, MC60RegStatus>,
-      public TinyGsmGPRS<TinyGsmMC60>,
-      public TinyGsmTCP<TinyGsmMC60, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmCalling<TinyGsmMC60>,
-      public TinyGsmSMS<TinyGsmMC60>,
-      public TinyGsmTime<TinyGsmMC60>,
-      public TinyGsmBattery<TinyGsmMC60> {
+class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, MC60RegStatus>,
+                    public TinyGsmGPRS<TinyGsmMC60>,
+                    public TinyGsmTCP<TinyGsmMC60, TinyGsmMC60TcpConfig>,
+                    public TinyGsmCalling<TinyGsmMC60>,
+                    public TinyGsmSMS<TinyGsmMC60>,
+                    public TinyGsmTime<TinyGsmMC60>,
+                    public TinyGsmBattery<TinyGsmMC60> {
   friend class TinyGsmModem<TinyGsmMC60, MC60RegStatus>;
   friend class TinyGsmGPRS<TinyGsmMC60>;
-  friend class TinyGsmTCP<TinyGsmMC60, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmMC60, TinyGsmMC60TcpConfig>;
   friend class TinyGsmCalling<TinyGsmMC60>;
   friend class TinyGsmSMS<TinyGsmMC60>;
   friend class TinyGsmTime<TinyGsmMC60>;
@@ -117,15 +96,13 @@ class TinyGsmMC60
    */
  public:
   /// Inner client
-  class GsmClientMC60 : public TinyGsmTCP<TinyGsmMC60, TINY_GSM_MUX_COUNT,
-                                          TINY_GSM_RX_BUFFER>::GsmClient {
+  class GsmClientMC60
+      : public TinyGsmTCP<TinyGsmMC60, TinyGsmMC60TcpConfig>::GsmClient {
     friend class TinyGsmMC60;
 
    public:
-    using TinyGsmTCP<TinyGsmMC60, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmMC60, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmMC60, TinyGsmMC60TcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmMC60, TinyGsmMC60TcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -168,7 +145,7 @@ class TinyGsmMC60
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT &&
+      if (mux < TinyGsmMC60TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -178,7 +155,7 @@ class TinyGsmMC60
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        this->mux = (mux % TinyGsmMC60TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -187,7 +164,7 @@ class TinyGsmMC60
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmMC60TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -636,7 +613,7 @@ class TinyGsmMC60
           ',');  // Skip the length of the current package in the buffer
       int16_t len_total =
           streamGetIntBefore('\n');  // Total length of all packages
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux] &&
+      if (mux >= 0 && mux < TinyGsmMC60TcpConfig::kMuxCount && sockets[mux] &&
           num_packets >= 0 && len_total >= 0) {
         sockets[mux]->sock_available = len_total;
       }
@@ -647,7 +624,7 @@ class TinyGsmMC60
       int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmMC60TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -667,7 +644,7 @@ class TinyGsmMC60
   Stream& stream;
 
  protected:
-  GsmClientMC60* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientMC60* sockets[TinyGsmMC60TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTMC60_H_

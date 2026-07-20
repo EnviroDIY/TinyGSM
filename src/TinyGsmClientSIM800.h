@@ -19,41 +19,10 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 5
 #ifdef TINY_GSM_SECURE_MUX_COUNT
 #undef TINY_GSM_SECURE_MUX_COUNT
 #endif
 #define TINY_GSM_SECURE_MUX_COUNT 5
-
-#ifdef TINY_GSM_NO_MODEM_BUFFER
-#undef TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_MUX_DYNAMIC
-#undef TINY_GSM_MUX_DYNAMIC
-#endif
-#ifndef TINY_GSM_MUX_STATIC
-#define TINY_GSM_MUX_STATIC
-#endif
-
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 1500
-// To get the true max size, send the command AT+CIPSEND?
-// I'm choosing to fake it here with 1500
 
 #ifdef AT_NL
 #undef AT_NL
@@ -112,21 +81,28 @@ enum SIM800RegStatus {
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/**
+ * @brief TCP behavior and limits for the SIM800 modem family.
+ */
+struct TinyGsmSIM800TcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 8> {};
+
 /// Class for the SIMCOM SIM800 and SIM900 (with some limitations)
-class TinyGsmSim800
-    : public TinyGsmModem<TinyGsmSim800, SIM800RegStatus>,
-      public TinyGsmGPRS<TinyGsmSim800>,
-      public TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmCalling<TinyGsmSim800>,
-      public TinyGsmSMS<TinyGsmSim800>,
-      public TinyGsmGSMLocation<TinyGsmSim800>,
-      public TinyGsmTime<TinyGsmSim800>,
-      public TinyGsmNTP<TinyGsmSim800>,
-      public TinyGsmBattery<TinyGsmSim800> {
+class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800, SIM800RegStatus>,
+                      public TinyGsmGPRS<TinyGsmSim800>,
+                      public TinyGsmTCP<TinyGsmSim800, TinyGsmSIM800TcpConfig>,
+                      public TinyGsmCalling<TinyGsmSim800>,
+                      public TinyGsmSMS<TinyGsmSim800>,
+                      public TinyGsmGSMLocation<TinyGsmSim800>,
+                      public TinyGsmTime<TinyGsmSim800>,
+                      public TinyGsmNTP<TinyGsmSim800>,
+                      public TinyGsmBattery<TinyGsmSim800> {
   friend class TinyGsmModem<TinyGsmSim800, SIM800RegStatus>;
   friend class TinyGsmGPRS<TinyGsmSim800>;
-  friend class TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT,
-                          TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmSim800, TinyGsmSIM800TcpConfig>;
   friend class TinyGsmCalling<TinyGsmSim800>;
   friend class TinyGsmSMS<TinyGsmSim800>;
   friend class TinyGsmGSMLocation<TinyGsmSim800>;
@@ -139,15 +115,13 @@ class TinyGsmSim800
    */
  public:
   /// Inner client
-  class GsmClientSim800 : public TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT,
-                                            TINY_GSM_RX_BUFFER>::GsmClient {
+  class GsmClientSim800
+      : public TinyGsmTCP<TinyGsmSim800, TinyGsmSIM800TcpConfig>::GsmClient {
     friend class TinyGsmSim800;
 
    public:
-    using TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmSim800, TinyGsmSIM800TcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmSim800, TinyGsmSIM800TcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -189,7 +163,7 @@ class TinyGsmSim800
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT &&
+      if (mux < TinyGsmSIM800TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -199,7 +173,7 @@ class TinyGsmSim800
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        this->mux = (mux % TinyGsmSIM800TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -208,7 +182,7 @@ class TinyGsmSim800
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmSIM800TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -779,7 +753,8 @@ class TinyGsmSim800
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
-        if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        if (mux >= 0 && mux < TinyGsmSIM800TcpConfig::kMuxCount &&
+            sockets[mux]) {
           sockets[mux]->got_data = true;
         }
         data = "";
@@ -792,7 +767,7 @@ class TinyGsmSim800
     } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmSIM800TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
@@ -803,7 +778,7 @@ class TinyGsmSim800
       int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmSIM800TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -838,7 +813,7 @@ class TinyGsmSim800
   Stream& stream;
 
  protected:
-  GsmClientSim800* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientSim800* sockets[TinyGsmSIM800TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTSIM800_H_

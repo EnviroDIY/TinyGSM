@@ -54,8 +54,6 @@
 #define MODEM_MODEL "unknown"
 #endif
 
-/// @include{doc} defines.dox
-
 /// The AT string
 static const char GSM_AT[] TINY_GSM_PROGMEM = "AT";
 

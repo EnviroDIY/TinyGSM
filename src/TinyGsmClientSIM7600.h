@@ -19,48 +19,11 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 10
 #ifdef TINY_GSM_SECURE_MUX_COUNT
 #undef TINY_GSM_SECURE_MUX_COUNT
 #endif
 #define TINY_GSM_SECURE_MUX_COUNT 2
-// SRGD Note: I think these two numbers are independent of each other and
-// managed completely differently.  That is, I think there can be two connection
-// 0's, one using the SSL application on the module and the other using the TCP
-// application on the module.
-// TODO(?) Could someone who has this module test this?
 
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 1500
-// CCHSEND can handle up to 2048 bytes of input, but CIPSEND will only accept
-// 1500, so we'll take the smaller number
-
-// #define TINY_GSM_DEFAULT_SSL_CTX 0
-
-#ifdef TINY_GSM_NO_MODEM_BUFFER
-#undef TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_MUX_DYNAMIC
-#undef TINY_GSM_MUX_DYNAMIC
-#endif
-#ifndef TINY_GSM_MUX_STATIC
-#define TINY_GSM_MUX_STATIC
-#endif
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -106,11 +69,33 @@ enum SIM7600RegStatus {
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/**
+ * @brief TCP behavior and limits for the SIM7600 modem family.
+ *
+ * The module supports 10 TCP sockets or 2 SSL
+ *
+ * @todo I think the number of TCP and SSL sockets are independent of each other
+ * and managed completely differently.  That is, I think there can be two
+ * connection 0's, one using the SSL application on the module and the other
+ * using the TCP application on the module.  Could someone who has a SIM7600
+ * module test the real number of TCP and SSL connections that can be made at
+ * once?
+ *
+ * The secure send data command, CCHSEND, can handle up to 2048 bytes of input,
+ * but the unsecured CIPSEND command will only accept 1500, so we'll take the
+ * smaller number as the maximum send size.
+ */
+struct TinyGsmSIM7600TcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 10> {};
+
 /// Class for the SIMCOM SIM7600, SIM7500, and SIM7800
 class TinyGsmSim7600
     : public TinyGsmModem<TinyGsmSim7600, SIM7600RegStatus>,
       public TinyGsmGPRS<TinyGsmSim7600>,
-      public TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmTCP<TinyGsmSim7600, TinyGsmSIM7600TcpConfig>,
       public TinyGsmSSL<TinyGsmSim7600>,
       public TinyGsmSMS<TinyGsmSim7600>,
       public TinyGsmGSMLocation<TinyGsmSim7600>,
@@ -122,8 +107,7 @@ class TinyGsmSim7600
       public TinyGsmCalling<TinyGsmSim7600> {
   friend class TinyGsmModem<TinyGsmSim7600, SIM7600RegStatus>;
   friend class TinyGsmGPRS<TinyGsmSim7600>;
-  friend class TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT,
-                          TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmSim7600, TinyGsmSIM7600TcpConfig>;
   friend class TinyGsmSSL<TinyGsmSim7600>;
   friend class TinyGsmSMS<TinyGsmSim7600>;
   friend class TinyGsmGPS<TinyGsmSim7600>;
@@ -139,15 +123,14 @@ class TinyGsmSim7600
    */
  public:
   /// Inner client
-  class GsmClientSim7600 : public TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT,
-                                             TINY_GSM_RX_BUFFER>::GsmClient {
+  class GsmClientSim7600
+      : public TinyGsmTCP<TinyGsmSim7600, TinyGsmSIM7600TcpConfig>::GsmClient {
     friend class TinyGsmSim7600;
 
    public:
-    using TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmSim7600,
+                     TinyGsmSIM7600TcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmSim7600, TinyGsmSIM7600TcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -194,7 +177,7 @@ class TinyGsmSim7600
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT &&
+      if (mux < TinyGsmSIM7600TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -204,7 +187,7 @@ class TinyGsmSim7600
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        this->mux = (mux % TinyGsmSIM7600TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -213,7 +196,7 @@ class TinyGsmSim7600
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmSIM7600TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -254,7 +237,7 @@ class TinyGsmSim7600
     TINY_GSM_SECURE_CLIENT_CTORS(Sim7600)
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmSIM7600TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       if (!sslCtxConfigured) {
@@ -1161,7 +1144,7 @@ class TinyGsmSim7600
     // Read the status of all sockets at once
     sendAT(GF("+CIPOPEN?"));
     if (waitResponse(GF("+CIPOPEN:")) != 1) { return false; }
-    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+    for (int muxNo = 0; muxNo < TinyGsmSIM7600TcpConfig::kMuxCount; muxNo++) {
       // +CIPOPEN:<mux>,<State or blank...>
       String state = stream.readStringUntil('\n');
       if (state.indexOf(',') > 0) { sockets[muxNo]->sock_connected = true; }
@@ -1180,7 +1163,8 @@ class TinyGsmSim7600
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
-        if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        if (mux >= 0 && mux < TinyGsmSIM7600TcpConfig::kMuxCount &&
+            sockets[mux]) {
           sockets[mux]->got_data = true;
         }
         data = "";
@@ -1193,7 +1177,8 @@ class TinyGsmSim7600
     } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmSIM7600TcpConfig::kMuxCount &&
+          sockets[mux]) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
@@ -1203,7 +1188,8 @@ class TinyGsmSim7600
     } else if (data.endsWith(GF("+IPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
       streamSkipUntil('\n');  // Skip the reason code
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmSIM7600TcpConfig::kMuxCount &&
+          sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -1225,7 +1211,7 @@ class TinyGsmSim7600
   Stream& stream;
 
  protected:
-  GsmClientSim7600* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientSim7600* sockets[TinyGsmSIM7600TcpConfig::kMuxCount];
   // TODO(SRGD): I suspect we need to have two separate socket arrays, a secure
   // and not secure one
 };

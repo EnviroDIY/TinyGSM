@@ -41,6 +41,49 @@
   { delay(TINY_GSM_YIELD_MS); }
 #endif
 
+/**
+ * @def TINY_GSM_RX_BUFFER
+ * @brief The size of the receive buffer for the modem.
+ *
+ * This is used in the TinyGsm class to store incoming data from the modem. This
+ * buffer is used to store incoming data from the modem before it is read by the
+ * user.  If this buffer is too small, data may be lost if the user does not
+ * read it quickly enough - especially for modems that do not internally buffer
+ * data.  If this buffer is too large, it may use more memory than necessary.
+ *
+ * @note This is *not* the size of the modem's internal buffer!
+ *
+ * @important This is a library-wide setting.  It applies to all modems and all
+ * clients.  If you need different buffer sizes for different modems, you will
+ * need to modify the library.
+ */
+#if !defined(TINY_GSM_RX_BUFFER)
+// Fallback log buffer size based on processor type
+#if defined(__SAMD51__)
+#define TINY_GSM_RX_BUFFER 1024
+#elif defined(ARDUINO_ARCH_SAMD)
+#define TINY_GSM_RX_BUFFER 256
+#else
+#define TINY_GSM_RX_BUFFER 64  // Conservative default
+#endif
+#endif
+
+/**
+ * @def TINY_GSM_UNREAD_CHECK_MS
+ * @brief The time in milliseconds to wait before checking for unread data from
+ * the modem.
+ *
+ * This is used to ask the modem if there is any unread data available because
+ * they don't always issue a URC to notify the host that data is available.
+ *
+ * @important This is a library-wide setting.  It applies to all modems and all
+ * clients.  If you need different buffer sizes for different modems, you will
+ * need to modify the library.
+ */
+#if !defined(TINY_GSM_UNREAD_CHECK_MS)
+#define TINY_GSM_UNREAD_CHECK_MS 500
+#endif
+
 #define TINY_GSM_ATTR_NOT_AVAILABLE \
   __attribute__((error("Not available on this modem type")))
 #define TINY_GSM_ATTR_NOT_IMPLEMENTED __attribute__((error("Not implemented")))

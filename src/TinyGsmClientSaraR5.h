@@ -19,51 +19,11 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_CONNECT_TIMEOUT
-#undef TINY_GSM_CONNECT_TIMEOUT
-#endif
-#define TINY_GSM_CONNECT_TIMEOUT 120
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 7
 #ifdef TINY_GSM_SECURE_MUX_COUNT
 #undef TINY_GSM_SECURE_MUX_COUNT
 #endif
 #define TINY_GSM_SECURE_MUX_COUNT 7
-// I **think** all sockets can be SSL, but the manual is not clear (to me).
-// Also supports 5 SSL contexts (0-4)
-// The SSL context is collection of SSL settings, not the connection identifier.
-// WARNING: You cannot control the socket mux number on this module! The module
-// opens the connection and returns the connection number it opened.
 
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 1024
-// USOWR accepts up to 1024 bytes in "normal" and "binary extended" modes and up
-// to 512 bytes in "HEX" mode.
-
-#ifdef TINY_GSM_NO_MODEM_BUFFER
-#undef TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_MUX_STATIC
-#undef TINY_GSM_MUX_STATIC
-#endif
-#ifndef TINY_GSM_MUX_DYNAMIC
-#define TINY_GSM_MUX_DYNAMIC
-#endif
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -124,21 +84,41 @@ enum SaraR5RegStatus {
           ///< indicates E-UTRAN)
 };
 
+/**
+ * @brief TCP behavior and limits for the SARA R5 modem family.
+ *
+ * Per the manual, 7 standard sockets can be managed.  I **think** all sockets
+ * can be SSL, but the manual is not clear (to me). Also supports 5 SSL contexts
+ * (0-4), but this library hard-codes to 0. The SSL context is collection of SSL
+ * settings, not the connection identifier.
+ *
+ * @warning You cannot control the socket mux number on this module! The module
+ * opens the connection and returns the connection number it opened.
+ *
+ * The send data command, USOWR, accepts up to 1024 bytes in "normal" and
+ * "binary extended" modes and up to 512 bytes in "HEX" mode.
+ */
+struct TinyGsmSaraR5TcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
+          /*muxMode*/ TinyGsmTcpMuxMode::Dynamic,
+          /*muxCount*/ 7,
+          /*sendMaxSize*/ 1024,
+          /*connectTimeoutS*/ 120> {};
+
 /// Class for the u-blox SARA-R5
-class TinyGsmSaraR5
-    : public TinyGsmModem<TinyGsmSaraR5, SaraR5RegStatus>,
-      public TinyGsmGPRS<TinyGsmSaraR5>,
-      public TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmCalling<TinyGsmSaraR5>,
-      public TinyGsmSMS<TinyGsmSaraR5>,
-      public TinyGsmGSMLocation<TinyGsmSaraR5>,
-      public TinyGsmGPS<TinyGsmSaraR5>,
-      public TinyGsmTime<TinyGsmSaraR5>,
-      public TinyGsmBattery<TinyGsmSaraR5> {
+class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5, SaraR5RegStatus>,
+                      public TinyGsmGPRS<TinyGsmSaraR5>,
+                      public TinyGsmTCP<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>,
+                      public TinyGsmCalling<TinyGsmSaraR5>,
+                      public TinyGsmSMS<TinyGsmSaraR5>,
+                      public TinyGsmGSMLocation<TinyGsmSaraR5>,
+                      public TinyGsmGPS<TinyGsmSaraR5>,
+                      public TinyGsmTime<TinyGsmSaraR5>,
+                      public TinyGsmBattery<TinyGsmSaraR5> {
   friend class TinyGsmModem<TinyGsmSaraR5, SaraR5RegStatus>;
   friend class TinyGsmGPRS<TinyGsmSaraR5>;
-  friend class TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT,
-                          TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>;
   friend class TinyGsmCalling<TinyGsmSaraR5>;
   friend class TinyGsmSMS<TinyGsmSaraR5>;
   friend class TinyGsmGSMLocation<TinyGsmSaraR5>;
@@ -151,15 +131,13 @@ class TinyGsmSaraR5
    */
  public:
   /// Inner client
-  class GsmClientSaraR5 : public TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT,
-                                            TINY_GSM_RX_BUFFER>::GsmClient {
+  class GsmClientSaraR5
+      : public TinyGsmTCP<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>::GsmClient {
     friend class TinyGsmSaraR5;
 
    public:
-    using TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -213,7 +191,7 @@ class TinyGsmSaraR5
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT &&
+      if (mux < TinyGsmSaraR5TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -223,7 +201,7 @@ class TinyGsmSaraR5
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        this->mux = (mux % TinyGsmSaraR5TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -241,7 +219,7 @@ class TinyGsmSaraR5
       sock_connected = at->modemConnect(host, port, &mux, timeout_s);
       if (mux != oldMux) {
         DBG(GF("###  Mux number changed from"), oldMux, GF("to"), mux);
-        if (!(mux < TINY_GSM_MUX_COUNT &&
+        if (!(mux < TinyGsmSaraR5TcpConfig::kMuxCount &&
               (at->sockets[mux] == nullptr || at->sockets[mux] == this))) {
           DBG(GF("WARNING: This new mux number had already been assigned to a "
                  "different client, attempting to move it!"));
@@ -270,7 +248,7 @@ class TinyGsmSaraR5
       sock_connected = false;
     }
 
-
+    /// destructor
     virtual ~GsmClientSaraR5() {
       // remove self from the socket array
       at->sockets[this->mux] = nullptr;
@@ -959,7 +937,7 @@ class TinyGsmSaraR5
     if (data.endsWith(GF("+UUSORD:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmSaraR5TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->got_data = true;
         // max size is 1024
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
@@ -969,7 +947,7 @@ class TinyGsmSaraR5
       return true;
     } else if (data.endsWith(GF("+UUSOCL:"))) {
       int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmSaraR5TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -1005,7 +983,7 @@ class TinyGsmSaraR5
   Stream& stream;
 
  protected:
-  GsmClientSaraR5* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientSaraR5* sockets[TinyGsmSaraR5TcpConfig::kMuxCount];
 };
 
 // cspell:words USOWR CSFB UTRAN

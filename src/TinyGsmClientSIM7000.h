@@ -10,38 +10,6 @@
 #define SRC_TINYGSMCLIENTSIM7000_H_
 #pragma message("TinyGSM:  TinyGsmClientSIM7000")
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 8
-#ifdef TINY_GSM_NO_MODEM_BUFFER
-#undef TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_MUX_DYNAMIC
-#undef TINY_GSM_MUX_DYNAMIC
-#endif
-#ifndef TINY_GSM_MUX_STATIC
-#define TINY_GSM_MUX_STATIC
-#endif
-
-
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 1500
-// To get the true max size, send the command AT+CIPSEND?
-// I'm choosing to fake it here with 1500
-
 #include "TinyGsmClientSIM70xx.h"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSMS.tpp"
@@ -50,10 +18,19 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
+/***
+ * @brief TCP behavior and limits for the SIM7000 modem family.
+ */
+struct TinyGsmSIM7000TcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 8> {};
+
 /// Class for the SIMCOM SIM7000 using the TCP-IP toolkit
 class TinyGsmSim7000
     : public TinyGsmSim70xx<TinyGsmSim7000>,
-      public TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmTCP<TinyGsmSim7000, TinyGsmSIM7000TcpConfig>,
       public TinyGsmSMS<TinyGsmSim7000>,
       public TinyGsmTime<TinyGsmSim7000>,
       public TinyGsmNTP<TinyGsmSim7000>,
@@ -62,8 +39,7 @@ class TinyGsmSim7000
   friend class TinyGsmSim70xx<TinyGsmSim7000>;
   friend class TinyGsmModem<TinyGsmSim7000, SIM70xxRegStatus>;
   friend class TinyGsmGPRS<TinyGsmSim7000>;
-  friend class TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT,
-                          TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmSim7000, TinyGsmSIM7000TcpConfig>;
   friend class TinyGsmSMS<TinyGsmSim7000>;
   friend class TinyGsmGSMLocation<TinyGsmSim7000>;
   friend class TinyGsmGPS<TinyGsmSim7000>;
@@ -76,15 +52,14 @@ class TinyGsmSim7000
    */
  public:
   /// Inner client
-  class GsmClientSim7000 : public TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT,
-                                             TINY_GSM_RX_BUFFER>::GsmClient {
+  class GsmClientSim7000
+      : public TinyGsmTCP<TinyGsmSim7000, TinyGsmSIM7000TcpConfig>::GsmClient {
     friend class TinyGsmSim7000;
 
    public:
-    using TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmSim7000,
+                     TinyGsmSIM7000TcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmSim7000, TinyGsmSIM7000TcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -126,7 +101,7 @@ class TinyGsmSim7000
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT &&
+      if (mux < TinyGsmSIM7000TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -136,7 +111,7 @@ class TinyGsmSim7000
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        this->mux = (mux % TinyGsmSIM7000TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -145,7 +120,7 @@ class TinyGsmSim7000
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmSIM7000TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -498,7 +473,8 @@ class TinyGsmSim7000
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
-        if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        if (mux >= 0 && mux < TinyGsmSIM7000TcpConfig::kMuxCount &&
+            sockets[mux]) {
           sockets[mux]->got_data = true;
         }
         data = "";
@@ -511,7 +487,8 @@ class TinyGsmSim7000
     } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmSIM7000TcpConfig::kMuxCount &&
+          sockets[mux]) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
@@ -522,7 +499,8 @@ class TinyGsmSim7000
       int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmSIM7000TcpConfig::kMuxCount &&
+          sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -558,7 +536,7 @@ class TinyGsmSim7000
   }
 
  protected:
-  GsmClientSim7000* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientSim7000* sockets[TinyGsmSIM7000TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTSIM7000_H_

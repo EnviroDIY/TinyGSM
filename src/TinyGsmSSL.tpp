@@ -25,6 +25,16 @@
 #endif
 
 #ifndef TINY_GSM_DEFAULT_SSL_CTX
+/**
+ * @brief The default SSL context to use for SSL connections.
+ *
+ * This applies to **all** modems using the GsmSecureClient class.  The SSL
+ * context is a collection of SSL settings, not the connection identifier.  This
+ * library always uses SSL context 0 by default.  At this time, all modems that
+ * support SSL via contexts show using context 0 in their documentation.  If you
+ * find a modem that uses a different context, please let us know and we will
+ * add it to the list of modems that use a different default context.
+ */
 #define TINY_GSM_DEFAULT_SSL_CTX 0
 #endif
 

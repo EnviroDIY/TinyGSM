@@ -19,41 +19,6 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_CONNECT_TIMEOUT
-#undef TINY_GSM_CONNECT_TIMEOUT
-#endif
-#define TINY_GSM_CONNECT_TIMEOUT 15
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 10
-
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 1500
-// The SIM5360 can send up to 1500 bytes at a time with AT+CIPSEND
-
-#ifdef TINY_GSM_NO_MODEM_BUFFER
-#undef TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_MUX_DYNAMIC
-#undef TINY_GSM_MUX_DYNAMIC
-#endif
-#ifndef TINY_GSM_MUX_STATIC
-#define TINY_GSM_MUX_STATIC
-#endif
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -99,11 +64,24 @@ enum SIM5360RegStatus {
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/**
+ * @brief TCP behavior and limits for the SIM5360 modem family.
+ *
+ * The SIM5360 can send up to 1500 bytes at a time with AT+CIPSEND
+ */
+struct TinyGsmSIM5360TcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 10,
+          /*sendMaxSize*/ 1500,  // default
+          /*connectTimeoutS*/ 15> {};
+
 /// Class for the SIMCOM SIM5360, SIM5300, SIM5320, and SIM7100
 class TinyGsmSim5360
     : public TinyGsmModem<TinyGsmSim5360, SIM5360RegStatus>,
       public TinyGsmGPRS<TinyGsmSim5360>,
-      public TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmTCP<TinyGsmSim5360, TinyGsmSIM5360TcpConfig>,
       public TinyGsmSMS<TinyGsmSim5360>,
       public TinyGsmGSMLocation<TinyGsmSim5360>,
       public TinyGsmGPS<TinyGsmSim5360>,
@@ -113,8 +91,7 @@ class TinyGsmSim5360
       public TinyGsmTemperature<TinyGsmSim5360> {
   friend class TinyGsmModem<TinyGsmSim5360, SIM5360RegStatus>;
   friend class TinyGsmGPRS<TinyGsmSim5360>;
-  friend class TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT,
-                          TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmSim5360, TinyGsmSIM5360TcpConfig>;
   friend class TinyGsmSMS<TinyGsmSim5360>;
   friend class TinyGsmGSMLocation<TinyGsmSim5360>;
   friend class TinyGsmGPS<TinyGsmSim5360>;
@@ -128,15 +105,14 @@ class TinyGsmSim5360
    */
  public:
   /// Inner client
-  class GsmClientSim5360 : public TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT,
-                                             TINY_GSM_RX_BUFFER>::GsmClient {
+  class GsmClientSim5360
+      : public TinyGsmTCP<TinyGsmSim5360, TinyGsmSIM5360TcpConfig>::GsmClient {
     friend class TinyGsmSim5360;
 
    public:
-    using TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmSim5360,
+                     TinyGsmSIM5360TcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmSim5360, TinyGsmSIM5360TcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -178,7 +154,7 @@ class TinyGsmSim5360
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT &&
+      if (mux < TinyGsmSIM5360TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -188,7 +164,7 @@ class TinyGsmSim5360
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        this->mux = (mux % TinyGsmSIM5360TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -197,7 +173,7 @@ class TinyGsmSim5360
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmSIM5360TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -476,7 +452,7 @@ class TinyGsmSim5360
 
   bool gprsDisconnectImpl() {
     // Close any open sockets
-    for (int mux = 0; mux < TINY_GSM_MUX_COUNT; mux++) {
+    for (int mux = 0; mux < TinyGsmSIM5360TcpConfig::kMuxCount; mux++) {
       GsmClientSim5360* sock = sockets[mux];
       if (sock) { sock->stop(); }
     }
@@ -791,7 +767,7 @@ class TinyGsmSim5360
     // Read the status of all sockets at once
     sendAT(GF("+CIPCLOSE?"));
     if (waitResponse(GF("+CIPCLOSE:")) != 1) { return false; }
-    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+    for (int muxNo = 0; muxNo < TinyGsmSIM5360TcpConfig::kMuxCount; muxNo++) {
       // +CIPCLOSE:<link0_state>,<link1_state>,...,<link9_state>
       bool muxState = stream.parseInt();
       if (sockets[muxNo]) { sockets[muxNo]->sock_connected = muxState; }
@@ -810,7 +786,8 @@ class TinyGsmSim5360
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
-        if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        if (mux >= 0 && mux < TinyGsmSIM5360TcpConfig::kMuxCount &&
+            sockets[mux]) {
           sockets[mux]->got_data = true;
         }
         data = "";
@@ -823,7 +800,8 @@ class TinyGsmSim5360
     } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmSIM5360TcpConfig::kMuxCount &&
+          sockets[mux]) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
@@ -833,7 +811,8 @@ class TinyGsmSim5360
     } else if (data.endsWith(GF("+IPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
       streamSkipUntil('\n');  // Skip the reason code
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmSIM5360TcpConfig::kMuxCount &&
+          sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -855,7 +834,7 @@ class TinyGsmSim5360
   Stream& stream;
 
  protected:
-  GsmClientSim5360* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientSim5360* sockets[TinyGsmSIM5360TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTSIM5360_H_

@@ -10,31 +10,6 @@
 #define SRC_TINYGSMCLIENTESP8266_H_
 #pragma message("TinyGSM:  TinyGsmClientESP8266")
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_STOP_TIMEOUT
-#undef TINY_GSM_STOP_TIMEOUT
-#endif
-#define TINY_GSM_STOP_TIMEOUT 5
-
-#ifdef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#undef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_NO_MODEM_BUFFER
-#define TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_MUX_DYNAMIC
-#undef TINY_GSM_MUX_DYNAMIC
-#endif
-#ifndef TINY_GSM_MUX_STATIC
-#define TINY_GSM_MUX_STATIC
-#endif
-
 #include "TinyGsmClientEspressif.h"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
@@ -56,6 +31,28 @@ enum ESP8266RegStatus {
 };
 
 /**
+ * @brief TCP behavior and limits for the ESP8266 family.
+ *
+ * NOTE: There's a total limit of 5 sockets, any of them can be SSL. BUT the
+ * manual warns that module may not be able to handle more than 1 SSL socket at
+ * a time.
+ *
+ * These modules don't have "SSL Contexts" per-say, but they only support 2
+ * certificate sets.  The certificates are loaded and referenced by number.
+ *
+ * The ESP8266 devices can receive 2048 bytes and send 1460 bytes at most in a
+ * single transmission.
+ */
+struct TinyGsmESP8266TcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::NoModemBuffer,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 5,
+          /*sendMaxSize*/ 1460,
+          /*connectTimeoutS*/ 75,  // default
+          /*stopTimeoutS*/ 5> {};
+
+/**
  * @brief Class for the Espressif ESP8266 modem, which is a Wi-Fi module with
  * SSL support.
  *
@@ -64,15 +61,14 @@ enum ESP8266RegStatus {
  */
 class TinyGsmESP8266
     : public TinyGsmEspressif<TinyGsmESP8266, ESP8266RegStatus>,
-      public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+      public TinyGsmTCP<TinyGsmESP8266, TinyGsmESP8266TcpConfig>,
       public TinyGsmSSL<TinyGsmESP8266>,
       public TinyGsmTime<TinyGsmESP8266>,
       public TinyGsmNTP<TinyGsmESP8266> {
   friend class TinyGsmEspressif<TinyGsmESP8266, ESP8266RegStatus>;
   friend class TinyGsmModem<TinyGsmESP8266, ESP8266RegStatus>;
   friend class TinyGsmWifi<TinyGsmESP8266>;
-  friend class TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT,
-                          TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmESP8266, TinyGsmESP8266TcpConfig>;
   friend class TinyGsmSSL<TinyGsmESP8266>;
   friend class TinyGsmTime<TinyGsmESP8266>;
   friend class TinyGsmNTP<TinyGsmESP8266>;
@@ -82,15 +78,14 @@ class TinyGsmESP8266
    */
  public:
   /// Inner client
-  class GsmClientESP8266 : public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT,
-                                             TINY_GSM_RX_BUFFER>::GsmClient {
+  class GsmClientESP8266
+      : public TinyGsmTCP<TinyGsmESP8266, TinyGsmESP8266TcpConfig>::GsmClient {
     friend class TinyGsmESP8266;
 
    public:
-    using TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmESP8266,
+                     TinyGsmESP8266TcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmESP8266, TinyGsmESP8266TcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -132,7 +127,7 @@ class TinyGsmESP8266
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT &&
+      if (mux < TinyGsmESP8266TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -142,7 +137,7 @@ class TinyGsmESP8266
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        this->mux = (mux % TinyGsmESP8266TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -152,7 +147,10 @@ class TinyGsmESP8266
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       is_mid_send = false;
-      if (mux < TINY_GSM_MUX_COUNT && at->sockets[mux] != nullptr) { stop(); }
+      if (mux < TinyGsmESP8266TcpConfig::kMuxCount &&
+          at->sockets[mux] != nullptr) {
+        stop();
+      }
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -196,6 +194,9 @@ class TinyGsmESP8266
     // insecure connections, we don't need to re-check for mux number
     // availability.
 
+    /// @copydoc GsmSecureClient::setCACertName(const char*)
+    /// @warning The CA certificate name must be either "client_ca.0" or
+    /// "client_ca.1".
     void setCACertName(const char* CAcertName) override {
       this->CAcertName = CAcertName;
       // parse the certificate name into a number and namespace
@@ -204,10 +205,14 @@ class TinyGsmESP8266
       at->parseCertificateName(CAcertName, cert_namespace, certNumber);
       ca_number = certNumber;
     }
+    /// @copydoc GsmClientSecureESP8266::setCACertName(const char*)
     virtual void setCACertName(String CAcertName) {
       setCACertName(CAcertName.c_str());
     }
 
+    /// @copydoc GsmSecureClient::setClientCertName(const char*)
+    /// @warning The client certificate name must be either "client_cert.0" or
+    /// "client_cert.1".
     void setClientCertName(const char* clientCertName) override {
       this->clientCertName = clientCertName;
       // parse the certificate name into a number and namespace
@@ -216,10 +221,14 @@ class TinyGsmESP8266
       at->parseCertificateName(clientCertName, cert_namespace, certNumber);
       pki_number = certNumber;
     }
+    /// @copydoc GsmClientSecureESP8266::setClientCertName(const char*)
     virtual void setClientCertName(String clientCertName) {
       setClientCertName(clientCertName.c_str());
     }
 
+    /// @copydoc GsmSecureClient::setPrivateKeyName(const char*)
+    /// @warning The private key name must be either "client_key.0" or
+    /// "client_key.1".
     void setPrivateKeyName(const char* clientKeyName) override {
       this->clientKeyName = clientKeyName;
       // parse the certificate name into a number and namespace
@@ -228,13 +237,14 @@ class TinyGsmESP8266
       at->parseCertificateName(clientKeyName, cert_namespace, certNumber);
       pki_number = certNumber;
     }
+    /// @copydoc GsmClientSecureESP8266::setPrivateKeyName(const char*)
     virtual void setPrivateKeyName(String clientKeyName) {
       setPrivateKeyName(clientKeyName.c_str());
     }
 
     /**
      * @brief Set the CA certificate number to use for this connection
-     * @param certNumber The CA certificate number
+     * @param certNumber The CA certificate number, must be 0 or 1.
      */
     void setCACertificateNumber(uint8_t certNumber) {
       ca_number = certNumber;
@@ -248,7 +258,7 @@ class TinyGsmESP8266
     }
     /**
      * @brief Set the client certificate number to use for this connection
-     * @param certNumber The client certificate number
+     * @param certNumber The client certificate number, must be 0 or 1.
      */
     void setClientCertificateNumber(uint8_t certNumber) {
       pki_number           = certNumber;
@@ -260,7 +270,7 @@ class TinyGsmESP8266
     }
     /**
      * @brief Set the private key number to use for this connection
-     * @param keyNumber The private key number
+     * @param keyNumber The private key number, must be 0 or 1.
      */
     void setPrivateKeyNumber(uint8_t keyNumber) {
       pki_number           = keyNumber;
@@ -735,8 +745,9 @@ class TinyGsmESP8266
 
   bool modemGetConnectedImpl(uint8_t mux) {
     sendAT(GF("+CIPSTATE?"));
-    bool verified_connections[TINY_GSM_MUX_COUNT] = {0, 0, 0, 0, 0};
-    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+    bool verified_connections[TinyGsmESP8266TcpConfig::kMuxCount] = {0, 0, 0, 0,
+                                                                     0};
+    for (int muxNo = 0; muxNo < TinyGsmESP8266TcpConfig::kMuxCount; muxNo++) {
       uint8_t has_status = waitResponse(GF("+CIPSTATE:"), GFP(GSM_OK),
                                         GFP(GSM_ERROR));
       if (has_status == 1) {
@@ -751,7 +762,7 @@ class TinyGsmESP8266
         break;
       };  // once we get to the ok or error, stop
     }
-    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+    for (int muxNo = 0; muxNo < TinyGsmESP8266TcpConfig::kMuxCount; muxNo++) {
       if (sockets[muxNo]) {
         sockets[muxNo]->sock_connected = verified_connections[muxNo];
       }
@@ -768,7 +779,8 @@ class TinyGsmESP8266
       int8_t  mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(':');
       int16_t len          = len_reported;
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmESP8266TcpConfig::kMuxCount &&
+          sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           // reset the len to read to the amount free
@@ -784,7 +796,8 @@ class TinyGsmESP8266
                                    data.lastIndexOf(AT_NL, data.length() - 8));
       int8_t coma     = data.indexOf(',', muxStart);
       int8_t mux      = data.substring(muxStart, coma).toInt();
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmESP8266TcpConfig::kMuxCount &&
+          sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       streamSkipUntil('\n');  // throw away the new line
@@ -826,7 +839,7 @@ class TinyGsmESP8266
   }
 
  protected:
-  GsmClientESP8266* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientESP8266* sockets[TinyGsmESP8266TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTESP8266_H_

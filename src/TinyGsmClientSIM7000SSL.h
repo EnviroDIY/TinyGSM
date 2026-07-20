@@ -10,44 +10,10 @@
 #define SRC_TINYGSMCLIENTSIM7000SSL_H_
 #pragma message("TinyGSM:  TinyGsmClientSim7000SSL")
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 2
 #ifdef TINY_GSM_SECURE_MUX_COUNT
 #undef TINY_GSM_SECURE_MUX_COUNT
 #endif
 #define TINY_GSM_SECURE_MUX_COUNT 2
-// #define TINY_GSM_DEFAULT_SSL_CTX 0
-// Also supports 6 SSL contexts (0-5)
-// The SSL context is collection of SSL settings, not the connection identifier.
-
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 1460
-// The SIM7000 manual doesn't specify the max size for CASEND, but the SIM7080
-// takes up to 1460, so we'll use that.
-
-#ifdef TINY_GSM_NO_MODEM_BUFFER
-#undef TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_MUX_DYNAMIC
-#undef TINY_GSM_MUX_DYNAMIC
-#endif
-#ifndef TINY_GSM_MUX_STATIC
-#define TINY_GSM_MUX_STATIC
-#endif
 
 #include "TinyGsmClientSIM70xx.h"
 #include "TinyGsmTCP.tpp"
@@ -58,11 +24,26 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
+/***
+ * @brief TCP behavior and limits for the SIM7000 modem family using the SSL
+ * application toolkit.
+ *
+ * Also supports 6 SSL contexts (0-5)
+ * The SSL context is collection of SSL settings, not the connection identifier.
+ *
+ * The SIM7000 manual doesn't specify the max size for CASEND, but the SIM7080
+ * takes up to 1460, so we'll use that.
+ */
+struct TinyGsmSIM7000SSLTcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 8> {};
+
 /// Class for the SIMCOM SIM7000 with SSL support using the SSL application
 class TinyGsmSim7000SSL
     : public TinyGsmSim70xx<TinyGsmSim7000SSL>,
-      public TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT,
-                        TINY_GSM_RX_BUFFER>,
+      public TinyGsmTCP<TinyGsmSim7000SSL, TinyGsmSIM7000SSLTcpConfig>,
       public TinyGsmSSL<TinyGsmSim7000SSL>,
       public TinyGsmSMS<TinyGsmSim7000SSL>,
       public TinyGsmGSMLocation<TinyGsmSim7000SSL>,
@@ -72,8 +53,7 @@ class TinyGsmSim7000SSL
   friend class TinyGsmSim70xx<TinyGsmSim7000SSL>;
   friend class TinyGsmModem<TinyGsmSim7000SSL, SIM70xxRegStatus>;
   friend class TinyGsmGPRS<TinyGsmSim7000SSL>;
-  friend class TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT,
-                          TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmSim7000SSL, TinyGsmSIM7000SSLTcpConfig>;
   friend class TinyGsmSSL<TinyGsmSim7000SSL>;
   friend class TinyGsmSMS<TinyGsmSim7000SSL>;
   friend class TinyGsmGSMLocation<TinyGsmSim7000SSL>;
@@ -88,15 +68,15 @@ class TinyGsmSim7000SSL
  public:
   /// Inner client
   class GsmClientSim7000SSL
-      : public TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT,
-                          TINY_GSM_RX_BUFFER>::GsmClient {
+      : public TinyGsmTCP<TinyGsmSim7000SSL,
+                          TinyGsmSIM7000SSLTcpConfig>::GsmClient {
     friend class TinyGsmSim7000SSL;
 
    public:
-    using TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmSim7000SSL,
+                     TinyGsmSIM7000SSLTcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmSim7000SSL,
+                     TinyGsmSIM7000SSLTcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -139,7 +119,7 @@ class TinyGsmSim7000SSL
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT &&
+      if (mux < TinyGsmSIM7000SSLTcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -149,7 +129,7 @@ class TinyGsmSim7000SSL
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        this->mux = (mux % TinyGsmSIM7000SSLTcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -158,7 +138,7 @@ class TinyGsmSim7000SSL
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmSIM7000SSLTcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -203,7 +183,7 @@ class TinyGsmSim7000SSL
     // availability.
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmSIM7000SSLTcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       if (!sslCtxConfigured) {
@@ -274,7 +254,7 @@ class TinyGsmSim7000SSL
     // Keep listening for modem URC's and proactively iterate through
     // sockets asking if any data is available
     bool check_socks = false;
-    for (int mux = 0; mux < TINY_GSM_MUX_COUNT; mux++) {
+    for (int mux = 0; mux < TinyGsmSIM7000SSLTcpConfig::kMuxCount; mux++) {
       GsmClientSim7000SSL* sock = sockets[mux];
       if (sock && sock->got_data) {
         sock->got_data = false;
@@ -1030,7 +1010,8 @@ class TinyGsmSim7000SSL
     // NOTE: This gets how many characters are available on all connections that
     // have data.  It does not return all the connections, just those with data.
     sendAT(GF("+CARECV?"));
-    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+    for (int muxNo = 0; muxNo < TinyGsmSIM7000SSLTcpConfig::kMuxCount;
+         muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
       int res = waitResponse(3000, GF("+CARECV:"), GFP(GSM_OK), GFP(GSM_ERROR));
       // if we get the +CARECV: response, read the mux number and the number of
@@ -1052,8 +1033,8 @@ class TinyGsmSim7000SSL
       } else if (res == 2) {
         // if we get an OK, we've reached the last socket with available data
         // so we set any we haven't gotten to yet to 0
-        for (int extra_mux = muxNo; extra_mux < TINY_GSM_MUX_COUNT;
-             extra_mux++) {
+        for (int extra_mux = muxNo;
+             extra_mux < TinyGsmSIM7000SSLTcpConfig::kMuxCount; extra_mux++) {
           GsmClientSim7000SSL* isock = sockets[extra_mux];
           if (isock) { isock->sock_available = 0; }
         }
@@ -1065,7 +1046,9 @@ class TinyGsmSim7000SSL
       // Should be a final OK at the end.
       // If every connection was returned, catch the OK here.
       // If only a portion were returned, catch it above.
-      if (muxNo == TINY_GSM_MUX_COUNT - 1) { waitResponse(); }
+      if (muxNo == TinyGsmSIM7000SSLTcpConfig::kMuxCount - 1) {
+        waitResponse();
+      }
     }
     modemGetConnected(mux);  // check the state of all connections
     if (!sockets[mux]) { return 0; }
@@ -1077,7 +1060,8 @@ class TinyGsmSim7000SSL
     // since the last connection
     sendAT(GF("+CASTATE?"));
 
-    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+    for (int muxNo = 0; muxNo < TinyGsmSIM7000SSLTcpConfig::kMuxCount;
+         muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
       int res = waitResponse(3000, GF("+CASTATE:"), GFP(GSM_OK),
                              GFP(GSM_ERROR));
@@ -1102,8 +1086,8 @@ class TinyGsmSim7000SSL
       } else if (res == 2) {
         // if we get an OK, we've reached the last socket with available data
         // so we set any we haven't gotten to yet to 0
-        for (int extra_mux = muxNo; extra_mux < TINY_GSM_MUX_COUNT;
-             extra_mux++) {
+        for (int extra_mux = muxNo;
+             extra_mux < TinyGsmSIM7000SSLTcpConfig::kMuxCount; extra_mux++) {
           GsmClientSim7000SSL* isock = sockets[extra_mux];
           if (isock) { isock->sock_connected = false; }
         }
@@ -1115,7 +1099,9 @@ class TinyGsmSim7000SSL
       // Should be a final OK at the end.
       // If every connection was returned, catch the OK here.
       // If only a portion were returned, catch it above.
-      if (muxNo == TINY_GSM_MUX_COUNT - 1) { waitResponse(); }
+      if (muxNo == TinyGsmSIM7000SSLTcpConfig::kMuxCount - 1) {
+        waitResponse();
+      }
     }
     return sockets[mux]->sock_connected;
   }
@@ -1128,7 +1114,8 @@ class TinyGsmSim7000SSL
     if (data.endsWith(GF("+CARECV:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmSIM7000SSLTcpConfig::kMuxCount &&
+          sockets[mux]) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
@@ -1137,7 +1124,8 @@ class TinyGsmSim7000SSL
       return true;
     } else if (data.endsWith(GF("+CADATAIND:"))) {
       int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmSIM7000SSLTcpConfig::kMuxCount &&
+          sockets[mux]) {
         sockets[mux]->got_data = true;
       }
       data = "";
@@ -1146,7 +1134,8 @@ class TinyGsmSim7000SSL
     } else if (data.endsWith(GF("+CASTATE:"))) {
       int8_t mux   = streamGetIntBefore(',');
       int8_t state = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmSIM7000SSLTcpConfig::kMuxCount &&
+          sockets[mux]) {
         if (state != 1) {
           sockets[mux]->sock_connected = false;
           DBG("### Closed: ", mux);
@@ -1185,7 +1174,7 @@ class TinyGsmSim7000SSL
   }
 
  protected:
-  GsmClientSim7000SSL* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientSim7000SSL* sockets[TinyGsmSIM7000SSLTcpConfig::kMuxCount];
 };
 
 // cspell:words CASEND

@@ -19,41 +19,6 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_STOP_TIMEOUT
-#undef TINY_GSM_STOP_TIMEOUT
-#endif
-#define TINY_GSM_STOP_TIMEOUT 1
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 2
-#ifdef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#undef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_NO_MODEM_BUFFER
-#define TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_MUX_DYNAMIC
-#undef TINY_GSM_MUX_DYNAMIC
-#endif
-#ifndef TINY_GSM_MUX_STATIC
-#define TINY_GSM_MUX_STATIC
-#endif
-
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 2000
-// The M590 can send up to 2000 bytes at a time with TCPSEND
-
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -86,16 +51,29 @@ enum M590RegStatus {
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/**
+ * @brief TCP behavior and limits for the M590 modem family.
+ *
+ * The M590 can send up to 2000 bytes at a time with TCPSEND
+ */
+struct TinyGsmM590TcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::NoModemBuffer,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 2,
+          /*sendMaxSize*/ 2000,
+          /*connectTimeoutS*/ 75,  // default
+          /*stopTimeoutS*/ 1> {};
+
 /// Class for the Neoway M590
-class TinyGsmM590
-    : public TinyGsmModem<TinyGsmM590, M590RegStatus>,
-      public TinyGsmGPRS<TinyGsmM590>,
-      public TinyGsmTCP<TinyGsmM590, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmSMS<TinyGsmM590>,
-      public TinyGsmTime<TinyGsmM590> {
+class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, M590RegStatus>,
+                    public TinyGsmGPRS<TinyGsmM590>,
+                    public TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>,
+                    public TinyGsmSMS<TinyGsmM590>,
+                    public TinyGsmTime<TinyGsmM590> {
   friend class TinyGsmModem<TinyGsmM590, M590RegStatus>;
   friend class TinyGsmGPRS<TinyGsmM590>;
-  friend class TinyGsmTCP<TinyGsmM590, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>;
   friend class TinyGsmSMS<TinyGsmM590>;
   friend class TinyGsmTime<TinyGsmM590>;
 
@@ -104,15 +82,13 @@ class TinyGsmM590
    */
  public:
   /// Inner client
-  class GsmClientM590 : public TinyGsmTCP<TinyGsmM590, TINY_GSM_MUX_COUNT,
-                                          TINY_GSM_RX_BUFFER>::GsmClient {
+  class GsmClientM590
+      : public TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>::GsmClient {
     friend class TinyGsmM590;
 
    public:
-    using TinyGsmTCP<TinyGsmM590, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmM590, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new GsmClientM590 object.  This must be initialized with
@@ -154,7 +130,7 @@ class TinyGsmM590
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT &&
+      if (mux < TinyGsmM590TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -164,7 +140,7 @@ class TinyGsmM590
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        this->mux = (mux % TinyGsmM590TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -173,7 +149,7 @@ class TinyGsmM590
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmM590TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -531,9 +507,10 @@ class TinyGsmM590
       bool   send_success  = false;
       while (send_attempts < 3 && !send_success) {
         // Number of bytes to send from buffer in this command
-        size_t sendLength = TINY_GSM_SEND_MAX_SIZE;
+        size_t sendLength = TinyGsmM590TcpConfig::kSendMaxSize;
         // Ensure the program doesn't read past the allocated memory
-        if (txPtr + TINY_GSM_SEND_MAX_SIZE > const_cast<uint8_t*>(buff) + len) {
+        if (txPtr + TinyGsmM590TcpConfig::kSendMaxSize >
+            const_cast<uint8_t*>(buff) + len) {
           sendLength = const_cast<uint8_t*>(buff) + len - txPtr;
         }
         // start up a send command
@@ -600,7 +577,7 @@ class TinyGsmM590
       int8_t  mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(',');
       int16_t len          = len_reported;
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmM590TcpConfig::kMuxCount && sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           // reset the len to read to the amount free
@@ -614,7 +591,7 @@ class TinyGsmM590
     } else if (data.endsWith(GF("+TCPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
       streamSkipUntil('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmM590TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -629,7 +606,7 @@ class TinyGsmM590
   Stream& stream;
 
  protected:
-  GsmClientM590* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientM590* sockets[TinyGsmM590TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTM590_H_

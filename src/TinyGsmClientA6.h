@@ -19,39 +19,6 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_STOP_TIMEOUT
-#undef TINY_GSM_STOP_TIMEOUT
-#endif
-#define TINY_GSM_STOP_TIMEOUT 1
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 8
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 1024
-// CIPSEND accepts up to 1024 bytes of input
-#ifdef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#undef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_NO_MODEM_BUFFER
-#define TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_MUX_STATIC
-#undef TINY_GSM_MUX_STATIC
-#endif
-#ifndef TINY_GSM_MUX_DYNAMIC
-#define TINY_GSM_MUX_DYNAMIC
-#endif
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -91,20 +58,31 @@ enum A6RegStatus {
 };
 
 /**
+ * @brief TCP behavior and limits for this modem family.
+ */
+struct TinyGsmA6TcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::NoModemBuffer,
+          /*muxMode*/ TinyGsmTcpMuxMode::Dynamic,
+          /*muxCount*/ 8,
+          /*sendMaxSize*/ 1024,
+          /*connectTimeoutS*/ 75,  // default
+          /*stopTimeoutS*/ 1> {};
+
+/**
  * @brief TinyGsmA6 is a class for controlling the Ai-Thinker A6 and A7 GSM/GPRS
  * module.
  */
-class TinyGsmA6
-    : public TinyGsmModem<TinyGsmA6, A6RegStatus>,
-      public TinyGsmGPRS<TinyGsmA6>,
-      public TinyGsmTCP<TinyGsmA6, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmCalling<TinyGsmA6>,
-      public TinyGsmSMS<TinyGsmA6>,
-      public TinyGsmTime<TinyGsmA6>,
-      public TinyGsmBattery<TinyGsmA6> {
+class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, A6RegStatus>,
+                  public TinyGsmGPRS<TinyGsmA6>,
+                  public TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>,
+                  public TinyGsmCalling<TinyGsmA6>,
+                  public TinyGsmSMS<TinyGsmA6>,
+                  public TinyGsmTime<TinyGsmA6>,
+                  public TinyGsmBattery<TinyGsmA6> {
   friend class TinyGsmModem<TinyGsmA6, A6RegStatus>;
   friend class TinyGsmGPRS<TinyGsmA6>;
-  friend class TinyGsmTCP<TinyGsmA6, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>;
   friend class TinyGsmCalling<TinyGsmA6>;
   friend class TinyGsmSMS<TinyGsmA6>;
   friend class TinyGsmTime<TinyGsmA6>;
@@ -115,15 +93,13 @@ class TinyGsmA6
    */
  public:
   /// Inner client
-  class GsmClientA6 : public TinyGsmTCP<TinyGsmA6, TINY_GSM_MUX_COUNT,
-                                        TINY_GSM_RX_BUFFER>::GsmClient {
+  class GsmClientA6
+      : public TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>::GsmClient {
     friend class TinyGsmA6;
 
    public:
-    using TinyGsmTCP<TinyGsmA6, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmA6, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -162,7 +138,7 @@ class TinyGsmA6
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmA6TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       uint8_t newMux = -1;
@@ -602,7 +578,7 @@ class TinyGsmA6
       int8_t  mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(',');
       int16_t len          = len_reported;
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmA6TcpConfig::kMuxCount && sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len_reported, "->",
               sockets[mux]->rx.free());
@@ -616,7 +592,7 @@ class TinyGsmA6
       return true;
     } else if (data.endsWith(GF("+TCPCLOSED:"))) {
       int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmA6TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -631,7 +607,7 @@ class TinyGsmA6
   Stream& stream;
 
  protected:
-  GsmClientA6* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientA6* sockets[TinyGsmA6TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTA6_H_
