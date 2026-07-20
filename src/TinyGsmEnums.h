@@ -54,10 +54,10 @@ enum class CertificateType : int8_t {
  * @var SSLAuthMode::CA_VALIDATION
  * 2: the client loads CA certificate to verify the server’s
  * certificate.
- *    - SRGD Note: This is a common authentication type sed by
+ *    - SRGD Note: This is a common authentication type used by
  *    browsers, where the browser verifies the server's certificate.
- *    For this to work, you must load either the server's
- *    intermediate or parent CA certificate onto your device.
+ *    For this to work, you must load either the server's intermediate or parent
+ *    CA certificate onto your device.
  * @var SSLAuthMode::MUTUAL_AUTHENTICATION
  * 3: mutual authentication.
  *    - SRGD Note: This is used by AWS IoT Core and other IoT

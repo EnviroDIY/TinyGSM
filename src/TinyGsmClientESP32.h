@@ -805,7 +805,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32, ESP32RegStatus>,
    * @brief Set the time zone for the modem and optionally enable SNTP time
    * synchronization.
    * @param timezone The time zone offset in hours from UTC (e.g., -5 for EST, 1
-   * for CET).e
+   * for CET).
    * @param enable_sync Optional parameter to enable or disable SNTP time
    * synchronization. Defaults to true (enabled).
    */
