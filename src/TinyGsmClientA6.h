@@ -58,7 +58,7 @@ enum A6RegStatus {
 };
 
 /**
- * @brief TCP behavior and limits for this modem family.
+ * @brief TCP behavior and limits for the A6 modem family.
  */
 struct TinyGsmA6TcpConfig
     : public TinyGsmTcpConfigPreset<
