@@ -416,8 +416,14 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, UBLOXRegStatus>,
    * @return True if the command was successful, false otherwise.
    */
   bool getCurrentRadioAccessTechnology(int& rat) {
-    // @TODO
-    return false;
+    sendAT(GF("+URAT?"));
+    if (waitResponse(10000L, GF("+URAT:")) != 1) { return false; }
+
+    int16_t parsedRat = streamGetIntBefore('\n');
+    if (waitResponse() != 1 || parsedRat == -9999) { return false; }
+
+    rat = parsedRat;
+    return true;
   }
 
  protected:
