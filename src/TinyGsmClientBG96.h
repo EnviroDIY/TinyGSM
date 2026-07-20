@@ -19,53 +19,6 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_CONNECT_TIMEOUT
-#undef TINY_GSM_CONNECT_TIMEOUT
-#endif
-#define TINY_GSM_CONNECT_TIMEOUT 150
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-// supports 12 sockets (0-11); any of them can be SSL
-#define TINY_GSM_MUX_COUNT 12
-
-#ifdef TINY_GSM_SECURE_MUX_COUNT
-#undef TINY_GSM_SECURE_MUX_COUNT
-#endif
-// supports 12 sockets (0-11); any of them can be SSL
-#define TINY_GSM_SECURE_MUX_COUNT 12
-
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-// QISEND and QSSLSEND both accept up to 1460 bytes of input
-#define TINY_GSM_SEND_MAX_SIZE 1460
-
-// Also supports 6 SSL contexts (0-5)
-// The SSL context is collection of SSL settings, not the connection identifier.
-// This library always uses SSL context 0.
-// #define TINY_GSM_DEFAULT_SSL_CTX 0
-
-#ifdef TINY_GSM_NO_MODEM_BUFFER
-#undef TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_MUX_DYNAMIC
-#undef TINY_GSM_MUX_DYNAMIC
-#endif
-#ifndef TINY_GSM_MUX_STATIC
-#define TINY_GSM_MUX_STATIC
-#endif
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -108,22 +61,41 @@ enum BG96RegStatus {
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/**
+ * @brief TCP behavior and limits for the BG95/BG96 modem family.
+ *
+ * The BG95/BG96 supports 12 sockets (0-11); any of them can be SSL
+ *
+ * The BG95/BG96 also supports 6 SSL contexts (0-5)
+ * The SSL context is a collection of SSL settings, not the connection
+ * identifier. This library always uses SSL context 0.
+ *
+ * When sending  data QISEND and QSSLSEND both accept up to 1460 bytes of input.
+ *
+ */
+struct TinyGsmBG96TcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 12,
+          /*sendMaxSize*/ 1460,
+          /*connectTimeoutS*/ 150> {};
+
 /// Class for the Quectel BG96 and BG95
-class TinyGsmBG96
-    : public TinyGsmModem<TinyGsmBG96, BG96RegStatus>,
-      public TinyGsmGPRS<TinyGsmBG96>,
-      public TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmSSL<TinyGsmBG96>,
-      public TinyGsmCalling<TinyGsmBG96>,
-      public TinyGsmSMS<TinyGsmBG96>,
-      public TinyGsmGPS<TinyGsmBG96>,
-      public TinyGsmTime<TinyGsmBG96>,
-      public TinyGsmNTP<TinyGsmBG96>,
-      public TinyGsmBattery<TinyGsmBG96>,
-      public TinyGsmTemperature<TinyGsmBG96> {
+class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, BG96RegStatus>,
+                    public TinyGsmGPRS<TinyGsmBG96>,
+                    public TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>,
+                    public TinyGsmSSL<TinyGsmBG96>,
+                    public TinyGsmCalling<TinyGsmBG96>,
+                    public TinyGsmSMS<TinyGsmBG96>,
+                    public TinyGsmGPS<TinyGsmBG96>,
+                    public TinyGsmTime<TinyGsmBG96>,
+                    public TinyGsmNTP<TinyGsmBG96>,
+                    public TinyGsmBattery<TinyGsmBG96>,
+                    public TinyGsmTemperature<TinyGsmBG96> {
   friend class TinyGsmModem<TinyGsmBG96, BG96RegStatus>;
   friend class TinyGsmGPRS<TinyGsmBG96>;
-  friend class TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>;
   friend class TinyGsmSSL<TinyGsmBG96>;
   friend class TinyGsmCalling<TinyGsmBG96>;
   friend class TinyGsmSMS<TinyGsmBG96>;
@@ -138,15 +110,13 @@ class TinyGsmBG96
    */
  public:
   /// Inner client
-  class GsmClientBG96 : public TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT,
-                                          TINY_GSM_RX_BUFFER>::GsmClient {
+  class GsmClientBG96
+      : public TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>::GsmClient {
     friend class TinyGsmBG96;
 
    public:
-    using TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -191,7 +161,7 @@ class TinyGsmBG96
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT &&
+      if (mux < TinyGsmBG96TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -201,7 +171,7 @@ class TinyGsmBG96
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        this->mux = (mux % TinyGsmBG96TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -210,7 +180,7 @@ class TinyGsmBG96
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmBG96TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -254,7 +224,7 @@ class TinyGsmBG96
     // insecure connections, we don't need to re-check for mux number
     // availability.
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmBG96TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       if (!sslCtxConfigured) {
@@ -283,8 +253,8 @@ class TinyGsmBG96
 
     // NOTE: Unlike the unsecured client, we can't check the size of the buffer
     // for an SSL socket. This means we have to overwrite all of the
-    // `TINY_GSM_BUFFER_READ_AND_CHECK_SIZE` versions of functions with the
-    // `TINY_GSM_BUFFER_READ_NO_CHECK` versions.
+    // buffer-checking versions of functions with the read-without-size-check
+    // versions.
     int available() override {
       is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                             // send to fail
@@ -1283,13 +1253,13 @@ class TinyGsmBG96
       if (urc == "recv") {
         int8_t mux = streamGetIntBefore('\n');
         DBG("### URC RECV:", mux);
-        if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        if (mux >= 0 && mux < TinyGsmBG96TcpConfig::kMuxCount && sockets[mux]) {
           sockets[mux]->got_data = true;
         }
       } else if (urc == "closed") {
         int8_t mux = streamGetIntBefore('\n');
         DBG("### URC CLOSE:", mux);
-        if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        if (mux >= 0 && mux < TinyGsmBG96TcpConfig::kMuxCount && sockets[mux]) {
           sockets[mux]->sock_connected = false;
         }
       } else {
@@ -1305,7 +1275,7 @@ class TinyGsmBG96
       if (urc == "recv") {
         int8_t mux = streamGetIntBefore('\n');
         DBG("### URC SSL RECV:", mux);
-        if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        if (mux >= 0 && mux < TinyGsmBG96TcpConfig::kMuxCount && sockets[mux]) {
           // We have no way of knowing how much data actually came in, so
           // we set the value to 1500, the maximum transmission unit for TCP.
           sockets[mux]->sock_available = 1500;
@@ -1313,7 +1283,7 @@ class TinyGsmBG96
       } else if (urc == "closed") {
         int8_t mux = streamGetIntBefore('\n');
         DBG("### URC CLOSE:", mux);
-        if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        if (mux >= 0 && mux < TinyGsmBG96TcpConfig::kMuxCount && sockets[mux]) {
           sockets[mux]->sock_connected = false;
         }
       } else {
@@ -1330,7 +1300,7 @@ class TinyGsmBG96
   Stream& stream;
 
  protected:
-  GsmClientBG96* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientBG96* sockets[TinyGsmBG96TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTBG96_H_

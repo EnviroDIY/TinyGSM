@@ -19,48 +19,6 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_CONNECT_TIMEOUT
-#undef TINY_GSM_CONNECT_TIMEOUT
-#endif
-#define TINY_GSM_CONNECT_TIMEOUT 120
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 7
-// Most modules using this protocol support 7 sockets, the LEON-G1 supports 16.
-// I **think** all sockets can be SSL, but the manual is not clear (to me).
-// Also supports 5 SSL contexts (0-4)
-// The SSL context is collection of SSL settings, not the connection identifier.
-// WARNING: You cannot control the socket mux number on this module! The module
-// opens the connection and returns the connection number it opened.
-
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 1024
-// USOWR accepts up to 1024 bytes in "normal" and "binary extended" modes and up
-// to 512 bytes in "HEX" mode.
-
-#ifdef TINY_GSM_NO_MODEM_BUFFER
-#undef TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_MUX_STATIC
-#undef TINY_GSM_MUX_STATIC
-#endif
-#ifndef TINY_GSM_MUX_DYNAMIC
-#define TINY_GSM_MUX_DYNAMIC
-#endif
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -106,20 +64,42 @@ enum UBLOXRegStatus {
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/**
+ * @brief TCP behavior and limits for the u-blox family.
+ *
+ * Most modules using this protocol support 7 sockets, the LEON-G1 supports 16.
+ * I **think** all sockets can be SSL, but the manual is not clear (to me).
+ *
+ * Also supports 5 SSL contexts (0-4).
+ * The SSL context is collection of SSL settings, not the connection identifier.
+ *
+ * @warning You cannot control the socket mux number on this module! The module
+ * opens the connection and returns the connection number it opened.
+ *
+ * The send data command, USOWR, accepts up to 1024 bytes in "normal" and
+ * "binary extended" modes and up to 512 bytes in "HEX" mode.
+ */
+struct TinyGsmUBLOXTcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
+          /*muxMode*/ TinyGsmTcpMuxMode::Dynamic,
+          /*muxCount*/ 7,
+          /*sendMaxSize*/ 1024,
+          /*connectTimeoutS*/ 120> {};
+
 /// Class for the u-blox family of modems
-class TinyGsmUBLOX
-    : public TinyGsmModem<TinyGsmUBLOX, UBLOXRegStatus>,
-      public TinyGsmGPRS<TinyGsmUBLOX>,
-      public TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmCalling<TinyGsmUBLOX>,
-      public TinyGsmSMS<TinyGsmUBLOX>,
-      public TinyGsmGSMLocation<TinyGsmUBLOX>,
-      public TinyGsmGPS<TinyGsmUBLOX>,
-      public TinyGsmTime<TinyGsmUBLOX>,
-      public TinyGsmBattery<TinyGsmUBLOX> {
+class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, UBLOXRegStatus>,
+                     public TinyGsmGPRS<TinyGsmUBLOX>,
+                     public TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>,
+                     public TinyGsmCalling<TinyGsmUBLOX>,
+                     public TinyGsmSMS<TinyGsmUBLOX>,
+                     public TinyGsmGSMLocation<TinyGsmUBLOX>,
+                     public TinyGsmGPS<TinyGsmUBLOX>,
+                     public TinyGsmTime<TinyGsmUBLOX>,
+                     public TinyGsmBattery<TinyGsmUBLOX> {
   friend class TinyGsmModem<TinyGsmUBLOX, UBLOXRegStatus>;
   friend class TinyGsmGPRS<TinyGsmUBLOX>;
-  friend class TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>;
   friend class TinyGsmCalling<TinyGsmUBLOX>;
   friend class TinyGsmSMS<TinyGsmUBLOX>;
   friend class TinyGsmGSMLocation<TinyGsmUBLOX>;
@@ -132,15 +112,13 @@ class TinyGsmUBLOX
    */
  public:
   /// Inner client
-  class GsmClientUBLOX : public TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT,
-                                           TINY_GSM_RX_BUFFER>::GsmClient {
+  class GsmClientUBLOX
+      : public TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>::GsmClient {
     friend class TinyGsmUBLOX;
 
    public:
-    using TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -194,7 +172,7 @@ class TinyGsmUBLOX
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT &&
+      if (mux < TinyGsmUBLOXTcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -204,7 +182,7 @@ class TinyGsmUBLOX
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        this->mux = (mux % TinyGsmUBLOXTcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -222,7 +200,7 @@ class TinyGsmUBLOX
       sock_connected = at->modemConnect(host, port, &mux, timeout_s);
       if (mux != oldMux) {
         DBG(GF("###  Mux number changed from"), oldMux, GF("to"), mux);
-        if (!(mux < TINY_GSM_MUX_COUNT &&
+        if (!(mux < TinyGsmUBLOXTcpConfig::kMuxCount &&
               (at->sockets[mux] == nullptr || at->sockets[mux] == this))) {
           DBG(GF("WARNING: This new mux number had already been assigned to a "
                  "different client, attempting to move it!"));
@@ -932,7 +910,7 @@ class TinyGsmUBLOX
     if (data.endsWith(GF("+UUSORD:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmUBLOXTcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->got_data = true;
         // max size is 1024
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
@@ -942,7 +920,7 @@ class TinyGsmUBLOX
       return true;
     } else if (data.endsWith(GF("+UUSOCL:"))) {
       int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmUBLOXTcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -957,7 +935,7 @@ class TinyGsmUBLOX
   Stream& stream;
 
  protected:
-  GsmClientUBLOX* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientUBLOX* sockets[TinyGsmUBLOXTcpConfig::kMuxCount];
 };
 // cspell:words USOWR
 

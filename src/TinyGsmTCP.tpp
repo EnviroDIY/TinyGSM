@@ -18,69 +18,67 @@
 
 #include "TinyGsmFifo.h"
 
-#if !defined(TINY_GSM_UNREAD_CHECK_MS)
-#define TINY_GSM_UNREAD_CHECK_MS 500
-#endif
+/// Supported receive buffer handling modes for TCP clients.
+enum class TinyGsmTcpBufferMode {
+  NoModemBuffer,      ///< the modem does not have a buffer for incoming data
+  BufferReadNoCheck,  ///< the modem does have a buffer for incoming data but
+                      ///< there is no way to check how much data is in the
+                      ///< buffer
+  BufferReadAndCheckSize,  ///< he modem does have a buffer for incoming data
+                           ///< and there is a way to check how much data is in
+                           ///< the buffer
+};
 
-#if !defined(TINY_GSM_CONNECT_TIMEOUT)
-#define TINY_GSM_CONNECT_TIMEOUT 75
-#endif
+/// Supported socket multiplexing assignment modes.
+enum class TinyGsmTcpMuxMode {
+  Static,   ///< the modem can and will dynamically assign MUX channels for TCP
+            ///< connections
+  Dynamic,  ///< the modem will always use the user-specified MUX channel
+            ///< numbers for TCP connections
+};
 
-#if !defined(TINY_GSM_STOP_TIMEOUT)
-#define TINY_GSM_STOP_TIMEOUT 15
-#endif
+/**
+ * @brief Template class for modem TCP config traits.
+ */
+template <TinyGsmTcpBufferMode bufferMode, TinyGsmTcpMuxMode muxMode,
+          uint8_t muxCount, size_t sendMaxSize = 1500, int connectTimeoutS = 75,
+          int stopTimeoutS = 15, size_t minFreeTxBuffer = 1>
+struct TinyGsmTcpConfigPreset {
+  /// The buffer mode for the modem's TCP receive buffer.
+  static const TinyGsmTcpBufferMode kBufferMode = bufferMode;
+  /// The multiplexing mode for the modem's TCP connections.
+  static const TinyGsmTcpMuxMode kMuxMode = muxMode;
 
-#if !defined(TINY_GSM_SEND_MAX_SIZE)
-// This **should** be defined for each modem, but if it's not, we'll assume it's
-// the TCP MTU.
-#define TINY_GSM_SEND_MAX_SIZE 1500
-#endif
-
-#if !defined(TINY_GSM_MIN_SEND_BUFFER)
-// This is the minimum amount of free send buffer space the modem must report
-// before attempting a send. If the minimum send buffer size is not defined,
-// we'll assume it's 1 byte. Some modules (SIM7080G) will freeze or crash if you
-// pummel it with data when the send buffer isn't empty.
-#define TINY_GSM_MIN_SEND_BUFFER 1
-#endif
-
-// Because of the ordering of resolution of overrides in templates, these need
-// to be written out every time.  This macro is to shorten that.
-#define TINY_GSM_CLIENT_CONNECT_OVERRIDES                             \
-  virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {   \
-    return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s); \
-  }                                                                   \
-  int connect(const char* host, uint16_t port) override {             \
-    return connect(host, port, TINY_GSM_CONNECT_TIMEOUT);             \
-  }                                                                   \
-  int connect(IPAddress ip, uint16_t port) override {                 \
-    return connect(ip, port, TINY_GSM_CONNECT_TIMEOUT);               \
-  }
-
-// // For modules that do not store incoming data in any sort of buffer
-// #define TINY_GSM_NO_MODEM_BUFFER
-// // Data is stored in a buffer, but we can only read from the buffer,
-// // not check how much data is stored in it
-// #define TINY_GSM_BUFFER_READ_NO_CHECK
-// // Data is stored in a buffer and we can both read and check the size
-// // of the buffer
-// #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-
-// // For modules that can and will change the mux number on connection
-// #define TINY_GSM_MUX_DYNAMIC
-// // For modules that always use the mux you assign them
-// #define TINY_GSM_MUX_STATIC
-
+  /// The number of simultaneous TCP channels supported by the modem.
+  static const uint8_t kMuxCount = muxCount;
+  /// The timeout in seconds to wait for a connection to be established.
+  static const int kConnectTimeoutS = connectTimeoutS;
+  /// The timeout in seconds to wait for a connection to disconnect cleanly.
+  static const int kStopTimeoutS = stopTimeoutS;
+  /// The maximum size of data that can be sent in a single transmission.
+  static const size_t kSendMaxSize = sendMaxSize;
+  /**
+   * @brief This is the minimum amount of free send buffer space the modem must
+   * report before attempting a send.
+   *
+   * If the minimum amount of free space in the Tx is not defined, we assume
+   * it's 1 byte - ie, there only needs to be a non-zero amount of space.
+   *
+   * Some modules (SIM7080G) will freeze or crash if you pummel them with data
+   * when the send buffer isn't empty.
+   */
+  static const size_t kMinFreeTxBuffer = minFreeTxBuffer;
+};
 
 /**
  * @brief The CRTP parent class for TCP functions of the modem.
  * @tparam modemType The derived modem class
- * @tparam muxCount The number of simultaneous TCP connections the modem can
- * handle
- * @tparam bufferSize The size of the buffer used for incoming data
+ * @tparam tcpConfig Trait type controlling TCP behavior and limits.
  */
-template <class modemType, uint8_t muxCount, unsigned bufferSize>
+template <class modemType, class tcpConfig>
 class TinyGsmTCP {
+  using TcpConfig = tcpConfig;
+
   /* =========================================== */
   /* =========================================== */
   /*
@@ -105,7 +103,7 @@ class TinyGsmTCP {
   uint8_t findFirstUnassignedMux() {
     // Try to iterate through the assigned client sockets to find the next spot
     // in the array of client pointers that has not been linked to an object.
-    for (int next_mux = 0; next_mux < muxCount; next_mux++) {
+    for (int next_mux = 0; next_mux < TcpConfig::kMuxCount; next_mux++) {
       if (thisModem().sockets[next_mux] == nullptr) { return next_mux; }
     }
     DBG("### WARNING: No empty mux sockets found!");
@@ -113,27 +111,23 @@ class TinyGsmTCP {
   }
 
  protected:
-#if defined(TINY_GSM_MUX_STATIC)
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    int timeout_s = TINY_GSM_CONNECT_TIMEOUT) {
+                    int timeout_s = TcpConfig::kConnectTimeoutS) {
     return thisModem().modemConnectImpl(host, port, mux, timeout_s);
   }
-#elif defined(TINY_GSM_MUX_DYNAMIC)
+
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
-                    int timeout_s = TINY_GSM_CONNECT_TIMEOUT) {
+                    int timeout_s = TcpConfig::kConnectTimeoutS) {
     return thisModem().modemConnectImpl(host, port, mux, timeout_s);
   }
-#else
-#error Modem client has been incorrectly created
-#endif
 
   /**
    * @brief Sends a buffer of data to the modem
    *
-   * By default this breaks the data into chunks of size TINY_GSM_SEND_MAX_SIZE.
-   * Then for each chunk it calls modemWaitForSend (which calls
-   * modemGetSendLength), then modemBeginSend, then writes the buffer content,
-   * then calls modemEndSend.
+   * By default this breaks the data into chunks of size
+   * TcpConfig::kSendMaxSize. Then for each chunk it calls modemWaitForSend
+   * (which calls modemGetSendLength), then modemBeginSend, then writes the
+   * buffer content, then calls modemEndSend.
    *
    * @param buff The buffer of data to send
    * @param len The length of the buffer
@@ -164,17 +158,13 @@ class TinyGsmTCP {
   size_t modemWaitForSend(uint8_t mux, uint32_t timeout_ms = 15000L) {
     return thisModem().modemWaitForSendImpl(mux, timeout_ms);
   }
-#if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE || \
-    defined TINY_GSM_BUFFER_READ_NO_CHECK
   size_t modemRead(size_t size, uint8_t mux) {
     return thisModem().modemReadImpl(size, mux);
   }
-#endif
-#if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+
   size_t modemGetAvailable(uint8_t mux) {
     return thisModem().modemGetAvailableImpl(mux);
   }
-#endif
   bool modemGetConnected(uint8_t mux) {
     return thisModem().modemGetConnectedImpl(mux);
   }
@@ -200,7 +190,7 @@ class TinyGsmTCP {
   /// Inner client
   class GsmClient : public Client {
     // Make all classes created from the modem template friends
-    friend class TinyGsmTCP<modemType, muxCount, bufferSize>;
+    friend class TinyGsmTCP<modemType, tcpConfig>;
 
    public:
     /**
@@ -247,7 +237,7 @@ class TinyGsmTCP {
      * @return 1 if the connection was successful, 0 otherwise.
      */
     int connect(const char* host, uint16_t port) override {
-      return connect(host, port, TINY_GSM_CONNECT_TIMEOUT);
+      return connect(host, port, TcpConfig::kConnectTimeoutS);
     }
     /**
      * @fn int connect(IPAddress ip, uint16_t port) override
@@ -257,7 +247,7 @@ class TinyGsmTCP {
      * @return 1 if the connection was successful, 0 otherwise.
      */
     int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, TINY_GSM_CONNECT_TIMEOUT);
+      return connect(ip, port, TcpConfig::kConnectTimeoutS);
     }
 
     /**
@@ -290,7 +280,7 @@ class TinyGsmTCP {
      * @brief Close the client connection, with a default maximum wait time
      */
     void stop() override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
     }
 
     /**
@@ -306,7 +296,6 @@ class TinyGsmTCP {
       }
       TINY_GSM_YIELD();
       at->maintain();
-#if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
       // If the modem is one where we can read and check the size of the buffer,
       // then the 'available()' function will call a check of the current size
       // of the buffer and state of the connection. [available calls maintain,
@@ -314,8 +303,11 @@ class TinyGsmTCP {
       // modemGetConnected]  This cascade means that the sock_connected value
       // should be correct and we can trust it if it says we're not connected to
       // send.
-      if (!sock_connected) { return 0; }
-#endif
+      if (TcpConfig::kBufferMode ==
+              TinyGsmTcpBufferMode::BufferReadAndCheckSize &&
+          !sock_connected) {
+        return 0;
+      }
       return at->modemSend(buf, size, mux);
     }
 
@@ -353,18 +345,19 @@ class TinyGsmTCP {
       is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                             // send to fail
       TINY_GSM_YIELD();
-#if defined TINY_GSM_NO_MODEM_BUFFER
       // Returns the number of characters available in the TinyGSM fifo
-      if (!rx.size() && sock_connected) { at->maintain(); }
-      return rx.size();
+      if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
+        if (!rx.size() && sock_connected) { at->maintain(); }
+        return rx.size();
+      }
 
-#elif defined TINY_GSM_BUFFER_READ_NO_CHECK
       // Returns the combined number of characters available in the TinyGSM
       // fifo and the modem chips internal fifo.
-      if (!rx.size()) { at->maintain(); }
-      return static_cast<uint16_t>(rx.size()) + sock_available;
+      if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::BufferReadNoCheck) {
+        if (!rx.size()) { at->maintain(); }
+        return static_cast<uint16_t>(rx.size()) + sock_available;
+      }
 
-#elif defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
       // Returns the combined number of characters available in the TinyGSM
       // fifo and the modem chips internal fifo, doing an extra check-in
       // with the modem to see if anything has arrived without a URC.
@@ -378,10 +371,6 @@ class TinyGsmTCP {
         at->maintain();
       }
       return static_cast<uint16_t>(rx.size()) + sock_available;
-
-#else
-#error Modem client has been incorrectly created
-#endif
     }
 
     /**
@@ -398,50 +387,51 @@ class TinyGsmTCP {
                             // send to fail
       size_t cnt = 0;
 
-#if defined TINY_GSM_NO_MODEM_BUFFER
-      // Reads characters out of the TinyGSM fifo, waiting for any URC's
-      // from the modem for new data if there's nothing in the fifo.
-      uint32_t _startMillis = millis();
-      while (cnt < size && millis() - _startMillis < _timeout) {
-        // Read out of the TinyGSM fifo
-        size_t chunk = TinyGsmMin(size - cnt, rx.size());
-        if (chunk > 0) {
-          rx.get(buf, chunk);
-          buf += chunk;
-          cnt += chunk;
-          continue;
+      if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
+        // Reads characters out of the TinyGSM fifo, waiting for any URC's
+        // from the modem for new data if there's nothing in the fifo.
+        uint32_t _startMillis = millis();
+        while (cnt < size && millis() - _startMillis < _timeout) {
+          // Read out of the TinyGSM fifo
+          size_t chunk = TinyGsmMin(size - cnt, rx.size());
+          if (chunk > 0) {
+            rx.get(buf, chunk);
+            buf += chunk;
+            cnt += chunk;
+            continue;
+          }
+          // continue to parse URCs from the modem stream until the timeout
+          if (!rx.size() && sock_connected) { at->maintain(); }
         }
-        // continue to parse URCs from the modem stream until the timeout
-        if (!rx.size() && sock_connected) { at->maintain(); }
+        return cnt;
       }
-      return cnt;
 
-#elif defined TINY_GSM_BUFFER_READ_NO_CHECK
-      // Reads characters out of the TinyGSM fifo, and from the modem chip's
-      // internal fifo if available.
-      while (cnt < size) {
-        // Read out of the TinyGSM fifo
-        size_t chunk = TinyGsmMin(size - cnt, rx.size());
-        if (chunk > 0) {
-          rx.get(buf, chunk);
-          buf += chunk;
-          cnt += chunk;
-          continue;
+      if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::BufferReadNoCheck) {
+        // Reads characters out of the TinyGSM fifo, and from the modem chip's
+        // internal fifo if available.
+        while (cnt < size) {
+          // Read out of the TinyGSM fifo
+          size_t chunk = TinyGsmMin(size - cnt, rx.size());
+          if (chunk > 0) {
+            rx.get(buf, chunk);
+            buf += chunk;
+            cnt += chunk;
+            continue;
+          }
+          at->maintain();  // clear the modem stream/parse URCs
+          // Refill the TinyGSM fifo from the modem's internal buffer
+          // TODO: Read directly from modem into user buffer, skipping FIFO
+          if (sock_available > 0) {
+            int n = at->modemRead(
+                TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+            if (n == 0) break;
+          } else {
+            break;
+          }
         }
-        at->maintain();  // clear the modem stream/parse URCs
-        // Refill the TinyGSM fifo from the modem's internal buffer
-        // TODO: Read directly from modem into user buffer, skipping FIFO
-        if (sock_available > 0) {
-          int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
-                                mux);
-          if (n == 0) break;
-        } else {
-          break;
-        }
+        return cnt;
       }
-      return cnt;
 
-#elif defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
       // Reads characters out of the TinyGSM fifo, and from the modem chips
       // internal fifo if available, also double checking with the modem if
       // data has arrived without issuing a URC.
@@ -474,10 +464,6 @@ class TinyGsmTCP {
         }
       }
       return cnt;
-
-#else
-#error Modem client has been incorrectly created
-#endif
     }
 
     /**
@@ -515,22 +501,20 @@ class TinyGsmTCP {
     uint8_t connected() override {
       if (is_mid_send) { return true; }  // Don't interrupt a send
       if (available()) { return true; }
-#if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
       // If the modem is one where we can read and check the size of the buffer,
       // then the 'available()' function will call a check of the current size
       // of the buffer and state of the connection. [available calls maintain,
       // maintain calls modemGetAvailable, modemGetAvailable calls
       // modemGetConnected]  This cascade means that the sock_connected value
       // should be correct and all we need
-      return sock_connected;
-#elif defined TINY_GSM_NO_MODEM_BUFFER || defined TINY_GSM_BUFFER_READ_NO_CHECK
+      if (TcpConfig::kBufferMode ==
+          TinyGsmTcpBufferMode::BufferReadAndCheckSize) {
+        return sock_connected;
+      }
       // If the modem doesn't have an internal buffer, or if we can't check how
       // many characters are in the buffer then the cascade won't happen.
       // We need to call modemGetConnected to check the sock state.
       return at->modemGetConnected(mux);
-#else
-#error Modem client has been incorrectly created
-#endif
     }
     /// Check if the client is connected (overrides operator bool)
     operator bool() override {
@@ -539,7 +523,7 @@ class TinyGsmTCP {
 
     /// destructor - need to remove self from the socket pointer array
     virtual ~GsmClient() {
-      if (mux < muxCount) {
+      if (mux < TcpConfig::kMuxCount) {
         if (at->sockets[mux] == this) { at->sockets[mux] = nullptr; }
       }
     }
@@ -577,9 +561,9 @@ class TinyGsmTCP {
      * connection.
      */
     bool beginWrite(uint16_t size) {
-      if (size > TINY_GSM_SEND_MAX_SIZE) {
+      if (size > TcpConfig::kSendMaxSize) {
         DBG(GF("### ERROR: You are attempting send"), size,
-            GF("bytes, which is more than the"), TINY_GSM_SEND_MAX_SIZE,
+            GF("bytes, which is more than the"), TcpConfig::kSendMaxSize,
             GF("that can be sent at once by this modem!"));
         return false;
       }
@@ -611,35 +595,30 @@ class TinyGsmTCP {
     // Doing it this way allows the external mcu to find and get all of the
     // data that it wants from the socket even if it was closed externally.
     inline void dumpModemBuffer(uint32_t maxWaitMs) {
-#if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE || \
-    defined TINY_GSM_BUFFER_READ_NO_CHECK
-      TINY_GSM_YIELD();
-      uint32_t startMillis = millis();
-      while (sock_available > 0 && (millis() - startMillis < maxWaitMs)) {
+      if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
         rx.clear();
-        at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+        at->streamClear();
+      } else {
+        TINY_GSM_YIELD();
+        uint32_t startMillis = millis();
+        while (sock_available > 0 && (millis() - startMillis < maxWaitMs)) {
+          rx.clear();
+          at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+        }
+        rx.clear();
+        at->streamClear();
       }
-      rx.clear();
-      at->streamClear();
-
-#elif defined TINY_GSM_NO_MODEM_BUFFER
-      rx.clear();
-      at->streamClear();
-
-#else
-#error Modem client has been incorrectly created
-#endif
     }
 
-    modemType*                       at             = nullptr;
-    uint8_t                          mux            = 0;
-    uint16_t                         sock_available = 0;
-    uint32_t                         prev_check     = 0;
-    bool                             sock_connected = false;
-    bool                             got_data       = false;
-    bool                             is_secure      = false;
-    bool                             is_mid_send    = false;
-    TinyGsmFifo<uint8_t, bufferSize> rx;
+    modemType*                               at             = nullptr;
+    uint8_t                                  mux            = 0;
+    uint16_t                                 sock_available = 0;
+    uint32_t                                 prev_check     = 0;
+    bool                                     sock_connected = false;
+    bool                                     got_data       = false;
+    bool                                     is_secure      = false;
+    bool                                     is_mid_send    = false;
+    TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> rx;
   };
 
   /* =========================================== */
@@ -653,27 +632,24 @@ class TinyGsmTCP {
    */
  protected:
   void maintainImpl() {
-#if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-    // Keep listening for modem URC's and proactively iterate through
-    // sockets asking if any data is available
-    for (int mux = 0; mux < muxCount; mux++) {
-      GsmClient* sock = thisModem().sockets[mux];
-      if (sock && sock->got_data && sock->sock_available == 0) {
-        sock->got_data       = false;
-        sock->sock_available = thisModem().modemGetAvailable(mux);
+    if (TcpConfig::kBufferMode ==
+        TinyGsmTcpBufferMode::BufferReadAndCheckSize) {
+      // Keep listening for modem URC's and proactively iterate through
+      // sockets asking if any data is available
+      for (int mux = 0; mux < TcpConfig::kMuxCount; mux++) {
+        GsmClient* sock = thisModem().sockets[mux];
+        if (sock && sock->got_data && sock->sock_available == 0) {
+          sock->got_data       = false;
+          sock->sock_available = thisModem().modemGetAvailable(mux);
+        }
       }
+      while (thisModem().stream.available()) {
+        thisModem().waitResponse(15, nullptr, nullptr);
+      }
+    } else {
+      // Just listen for any URC's
+      thisModem().waitResponse(100, nullptr, nullptr);
     }
-    while (thisModem().stream.available()) {
-      thisModem().waitResponse(15, nullptr, nullptr);
-    }
-
-#elif defined TINY_GSM_NO_MODEM_BUFFER || defined TINY_GSM_BUFFER_READ_NO_CHECK
-    // Just listen for any URC's
-    thisModem().waitResponse(100, nullptr, nullptr);
-
-#else
-#error Modem client has been incorrectly created
-#endif
   }
 
   // Yields up to a time-out period and then reads a single character from the
@@ -754,16 +730,11 @@ class TinyGsmTCP {
     return len_read;
   }
 
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
+                        int timeout_s) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-#if defined(TINY_GSM_MUX_STATIC)
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t* mux,
                         int timeout_s) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-#elif defined(TINY_GSM_MUX_DYNAMIC)
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* mux,
-                        int timeout_s) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-#else
-#error Modem client has been incorrectly created
-#endif
 
   size_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
     // Pointer to where in the buffer we're up to
@@ -829,29 +800,29 @@ class TinyGsmTCP {
 
   size_t modemGetSendLengthImpl(uint8_t) {
     // by default, assume the whole space is available
-    return TINY_GSM_SEND_MAX_SIZE;
+    return TcpConfig::kSendMaxSize;
   }
 
   size_t modemWaitForSendImpl(uint8_t mux, uint32_t timeout_ms) {
     size_t sendLength = thisModem().modemGetSendLength(mux);
 #if defined(TINY_GSM_DEBUG)
-    if (sendLength != TINY_GSM_SEND_MAX_SIZE) {
+    if (sendLength != TcpConfig::kSendMaxSize) {
       DBG(GF("### Full send buffer not available! Expected it to have"),
-          TINY_GSM_SEND_MAX_SIZE, GF("bytes, but it has"), sendLength);
+          TcpConfig::kSendMaxSize, GF("bytes, but it has"), sendLength);
     }
-    if (sendLength < TINY_GSM_MIN_SEND_BUFFER) {
+    if (sendLength < TcpConfig::kMinFreeTxBuffer) {
       DBG(GF(
           "### Waiting up to 15s for sufficient available send buffer space"));
     }
 #endif
     uint32_t start = millis();
-    while (sendLength < TINY_GSM_MIN_SEND_BUFFER &&
+    while (sendLength < TcpConfig::kMinFreeTxBuffer &&
            millis() - start < timeout_ms &&
            thisModem().sockets[mux]->sock_connected) {
       delay(250);
       sendLength = thisModem().modemGetSendLength(mux);
 #if defined(TINY_GSM_DEBUG)
-      if (sendLength >= TINY_GSM_MIN_SEND_BUFFER) {
+      if (sendLength >= TcpConfig::kMinFreeTxBuffer) {
         DBG(GF("### Send buffer has"), sendLength, GF("available after"),
             millis() - start, GF("ms"));
       }
@@ -863,13 +834,10 @@ class TinyGsmTCP {
     return sendLength;
   }
 
-#if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE || \
-    defined TINY_GSM_BUFFER_READ_NO_CHECK
   size_t modemReadImpl(size_t size, uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-#endif
-#if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+
   size_t modemGetAvailableImpl(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-#endif
+
   bool modemGetConnectedImpl(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 

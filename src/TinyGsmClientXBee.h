@@ -20,38 +20,6 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 2
 #endif
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_STOP_TIMEOUT
-#undef TINY_GSM_STOP_TIMEOUT
-#endif
-#define TINY_GSM_STOP_TIMEOUT 5
-
-// XBee's do not support multiplexing in transparent/command mode
-// The much more complicated API mode is needed for multiplexing
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 1
-
-#ifdef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#undef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_NO_MODEM_BUFFER
-#define TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_MUX_DYNAMIC
-#undef TINY_GSM_MUX_DYNAMIC
-#endif
-#ifndef TINY_GSM_MUX_STATIC
-#define TINY_GSM_MUX_STATIC
-#endif
-
 
 #ifdef TINY_GSM_XBEE_GUARD_TIME
 #undef TINY_GSM_XBEE_GUARD_TIME
@@ -122,6 +90,21 @@ enum XBeeRegStatus {
   REG_UNKNOWN      = 4,  ///< Unknown registration status
 };
 
+/**
+ * @brief TCP behavior and limits for the XBee modem family.
+ *
+ * Bee's do not support multiplexing in transparent/command mode.  The much more
+ * complicated API mode is needed for multiplexing.
+ */
+struct TinyGsmXBeeTcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::NoModemBuffer,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 1,
+          /*sendMaxSize*/ 1500,    // default
+          /*connectTimeoutS*/ 75,  // default
+          /*stopTimeoutS*/ 5> {};
+
 /// These are responses to the HS command to get "hardware series"
 enum XBeeType {
   XBEE_UNKNOWN   = 0,      ///< Unknown XBee type
@@ -134,18 +117,17 @@ enum XBeeType {
 };
 
 /// Class for the Digi XBee family of modems
-class TinyGsmXBee
-    : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
-      public TinyGsmGPRS<TinyGsmXBee>,
-      public TinyGsmWifi<TinyGsmXBee>,
-      public TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmSMS<TinyGsmXBee>,
-      public TinyGsmBattery<TinyGsmXBee>,
-      public TinyGsmTemperature<TinyGsmXBee> {
+class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
+                    public TinyGsmGPRS<TinyGsmXBee>,
+                    public TinyGsmWifi<TinyGsmXBee>,
+                    public TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>,
+                    public TinyGsmSMS<TinyGsmXBee>,
+                    public TinyGsmBattery<TinyGsmXBee>,
+                    public TinyGsmTemperature<TinyGsmXBee> {
   friend class TinyGsmModem<TinyGsmXBee, XBeeRegStatus>;
   friend class TinyGsmGPRS<TinyGsmXBee>;
   friend class TinyGsmWifi<TinyGsmXBee>;
-  friend class TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>;
   friend class TinyGsmSMS<TinyGsmXBee>;
   friend class TinyGsmBattery<TinyGsmXBee>;
   friend class TinyGsmTemperature<TinyGsmXBee>;
@@ -155,15 +137,13 @@ class TinyGsmXBee
    */
  public:
   /// Inner client
-  class GsmClientXBee : public TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT,
-                                          TINY_GSM_RX_BUFFER>::GsmClient {
+  class GsmClientXBee
+      : public TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>::GsmClient {
     friend class TinyGsmXBee;
 
    public:
-    using TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -1342,7 +1322,7 @@ class TinyGsmXBee
   }
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0,
-                    int timeout_s = TINY_GSM_CONNECT_TIMEOUT) {
+                    int timeout_s = TinyGsmXBeeTcpConfig::kConnectTimeoutS) {
     // check if the host is an IP address already - if so, we can skip the DNS
     // lookup and just connect
     IPAddress hostIP          = IPAddress(0, 0, 0, 0);
@@ -1897,7 +1877,7 @@ class TinyGsmXBee
   Stream& stream;
 
  protected:
-  GsmClientXBee* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientXBee* sockets[TinyGsmXBeeTcpConfig::kMuxCount];
   int16_t        guardTime;
   /// The type of XBee we're working with
   XBeeType beeType;

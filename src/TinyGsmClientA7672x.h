@@ -19,52 +19,11 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 10
 #ifdef TINY_GSM_SECURE_MUX_COUNT
 #undef TINY_GSM_SECURE_MUX_COUNT
 #endif
 #define TINY_GSM_SECURE_MUX_COUNT 2
-// supports 10 TCP sockets or 2 SSL
-// SRGD Note: I think these two numbers are independent of each other and
-// managed completely differently.  That is, I think there can be two connection
-// 0's, one using the SSL application on the module and the other using the TCP
-// application on the module.
-// TODO(?) Could someone who has this module test this?
 
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 1500
-// CCHSEND can handle up to 2048 bytes of input, but CIPSEND will only accept
-// 1500, so we'll take the smaller number
-
-// #define TINY_GSM_DEFAULT_SSL_CTX 0
-// also supports 10 SSL contexts,
-// The SSL context is collection of SSL settings, not the connection identifier.
-// This library always uses SSL context 0.
-
-#ifdef TINY_GSM_NO_MODEM_BUFFER
-#undef TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_MUX_DYNAMIC
-#undef TINY_GSM_MUX_DYNAMIC
-#endif
-#ifndef TINY_GSM_MUX_STATIC
-#define TINY_GSM_MUX_STATIC
-#endif
 #ifdef AT_NL
 #undef AT_NL
 #endif
@@ -104,25 +63,49 @@ enum A7672xRegStatus {
 };
 
 /**
+ * @brief TCP behavior and limits for the A7672x modem family.
+ *
+ * The module supports 10 TCP sockets or 2 SSL
+ *
+ * @todo I think the number of TCP and SSL sockets are independent of each other
+ * and managed completely differently.  That is, I think there can be two
+ * connection 0's, one using the SSL application on the module and the other
+ * using the TCP application on the module.  Could someone who has a A7672x
+ * module test the real number of TCP and SSL connections that can be made at
+ * once?
+ *
+ * The module also supports 10 SSL contexts.
+ * The SSL context is a collection of SSL settings, not the connection
+ * identifier. This library always uses SSL context 0.
+ *
+ * The secure send data command, CCHSEND, can handle up to 2048 bytes of input,
+ * but the unsecured CIPSEND command will only accept 1500, so we'll take the
+ * smaller number as the maximum send size.
+ */
+struct TinyGsmA7672xTcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 10> {};
+
+/**
  * @brief Class for the SIMCom A7672x modem, which is a 4G LTE Cat-M1/NB-IoT
  * modem with GPS and SSL support.
  */
-class TinyGsmA7672X
-    : public TinyGsmModem<TinyGsmA7672X, A7672xRegStatus>,
-      public TinyGsmGPRS<TinyGsmA7672X>,
-      public TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmSSL<TinyGsmA7672X>,
-      public TinyGsmCalling<TinyGsmA7672X>,
-      public TinyGsmSMS<TinyGsmA7672X>,
-      public TinyGsmGSMLocation<TinyGsmA7672X>,
-      public TinyGsmTime<TinyGsmA7672X>,
-      public TinyGsmNTP<TinyGsmA7672X>,
-      public TinyGsmBattery<TinyGsmA7672X>,
-      public TinyGsmTemperature<TinyGsmA7672X> {
+class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X, A7672xRegStatus>,
+                      public TinyGsmGPRS<TinyGsmA7672X>,
+                      public TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>,
+                      public TinyGsmSSL<TinyGsmA7672X>,
+                      public TinyGsmCalling<TinyGsmA7672X>,
+                      public TinyGsmSMS<TinyGsmA7672X>,
+                      public TinyGsmGSMLocation<TinyGsmA7672X>,
+                      public TinyGsmTime<TinyGsmA7672X>,
+                      public TinyGsmNTP<TinyGsmA7672X>,
+                      public TinyGsmBattery<TinyGsmA7672X>,
+                      public TinyGsmTemperature<TinyGsmA7672X> {
   friend class TinyGsmModem<TinyGsmA7672X, A7672xRegStatus>;
   friend class TinyGsmGPRS<TinyGsmA7672X>;
-  friend class TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT,
-                          TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>;
   friend class TinyGsmSSL<TinyGsmA7672X>;
   friend class TinyGsmCalling<TinyGsmA7672X>;
   friend class TinyGsmSMS<TinyGsmA7672X>;
@@ -137,15 +120,13 @@ class TinyGsmA7672X
    */
  public:
   /// Inner client
-  class GsmClientA7672X : public TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT,
-                                            TINY_GSM_RX_BUFFER>::GsmClient {
+  class GsmClientA7672X
+      : public TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>::GsmClient {
     friend class TinyGsmA7672X;
 
    public:
-    using TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT,
-                     TINY_GSM_RX_BUFFER>::GsmClient::stop;
+    using TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -192,7 +173,7 @@ class TinyGsmA7672X
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT &&
+      if (mux < TinyGsmA7672xTcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -202,7 +183,7 @@ class TinyGsmA7672X
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        this->mux = (mux % TinyGsmA7672xTcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -211,7 +192,7 @@ class TinyGsmA7672X
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmA7672xTcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -251,7 +232,7 @@ class TinyGsmA7672X
     TINY_GSM_SECURE_CLIENT_CTORS(A7672X)
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TINY_GSM_STOP_TIMEOUT * 1000L);
+      stop(TinyGsmA7672xTcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       if (!sslCtxConfigured) {
@@ -960,7 +941,8 @@ class TinyGsmA7672X
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
-        if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        if (mux >= 0 && mux < TinyGsmA7672xTcpConfig::kMuxCount &&
+            sockets[mux]) {
           sockets[mux]->got_data = true;
         }
         data = "";
@@ -982,7 +964,7 @@ class TinyGsmA7672X
       int8_t  mux = res.substring(res.lastIndexOf(',') + 1).toInt();
       int16_t len =
           res.substring(res.indexOf(',') + 1, res.lastIndexOf(',')).toInt();
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmA7672xTcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
@@ -991,7 +973,7 @@ class TinyGsmA7672X
       return true;
     } else if (data.endsWith(GF("+CCHRECV: 0,0" AT_NL))) {
       int8_t mux = data.substring(data.lastIndexOf(',') + 1).toInt();
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmA7672xTcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = true;
       }
       data = "";
@@ -999,7 +981,7 @@ class TinyGsmA7672X
       return true;
     } else if (data.endsWith(GF("+IPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmA7672xTcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -1008,7 +990,7 @@ class TinyGsmA7672X
       return true;
     } else if (data.endsWith(GF("+CCHCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmA7672xTcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -1017,7 +999,7 @@ class TinyGsmA7672X
       return true;
     } else if (data.endsWith(GF("+CCH_PEER_CLOSED:"))) {
       int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (mux >= 0 && mux < TinyGsmA7672xTcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -1052,7 +1034,7 @@ class TinyGsmA7672X
   Stream& stream;
 
  protected:
-  GsmClientA7672X* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientA7672X* sockets[TinyGsmA7672xTcpConfig::kMuxCount];
   // TODO(SRGD): I suspect we need to have two separate socket arrays, a secure
   // and not secure one
 };
