@@ -181,22 +181,28 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
     }
 
    public:
-    // NOTE:  The XBee saves all connection information (ssid/pwd etc) except
-    // IP address and port number, in flash (NVM).
-    // The NVM is be updated only when it is initialized.
-    // The TCP connection itself is not opened until you attempt to send data.
-    // Because all settings are saved to flash, it is possible (or likely) that
-    // you could send data even if you haven't "made" any connection.
+    /**
+     * @copydoc TinyGsmTCP::GsmClient::connect(const char*, uint16_t, int)
+     *
+     * @note The XBee saves all connection information (ssid/pwd etc) except IP
+     * address and port number, in flash (NVM). The NVM is be updated only when
+     * it is initialized. The TCP connection itself is not opened until you
+     * attempt to send data. Because all settings are saved to flash, it is
+     * possible (or likely) that you could send data even if you haven't "made"
+     * any connection.
+     */
     int connect(const char* host, uint16_t port, int timeout_s) override {
       // NOTE:  Not calling stop() or yield() here
       at->streamClear();  // Empty anything in the buffer before starting
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
+    /// @copydoc TinyGsmTCP::GsmClient::connect(const char*, uint16_t)
     virtual int connect(const char* host, uint16_t port) override {
       return connect(host, port, 75);
     }
 
+    /// @copydoc TinyGsmTCP::GsmClient::connect(IPAddress, uint16_t, int)
     virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
       if (timeout_s != 0) {
         DBG("Timeout [", timeout_s, "] doesn't apply here.");
@@ -206,10 +212,20 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
       sock_connected = at->modemConnect(ip, port, mux);
       return sock_connected;
     }
+    /// @copydoc TinyGsmTCP::GsmClient::connect(IPAddress, uint16_t)
     int connect(IPAddress ip, uint16_t port) override {
       return connect(ip, port, 0);
     }
 
+    /**
+     * @copydoc TinyGsmTCP::GsmClient::stop(uint32_t)
+     *
+     * @note Because settings are saved in flash, the XBEE will attempt to
+     * reconnect to the previous socket if it receives any outgoing data.
+     * Setting sock_connected to false after the stop ensures that connected()
+     * will return false after a stop has been ordered.  This makes it play much
+     * more nicely with libraries like PubSubClient.
+     */
     void stop(uint32_t maxWaitMs) override {
       at->streamClear();  // Empty anything in the buffer
       // empty the saved currently-in-use destination address
@@ -217,28 +233,26 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
       at->streamClear();  // Empty anything in the buffer
       is_mid_send    = false;
       sock_connected = false;
-
-      // Note:  because settings are saved in flash, the XBEE will attempt to
-      // reconnect to the previous socket if it receives any outgoing data.
-      // Setting sock_connected to false after the stop ensures that connected()
-      // will return false after a stop has been ordered.  This makes it play
-      // much more nicely with libraries like PubSubClient.
     }
 
+    /// @copydoc TinyGsmTCP::GsmClient::write(const uint8_t*, size_t)
     size_t write(const uint8_t* buf, size_t size) override {
       TINY_GSM_YIELD();
       return at->modemSend(buf, size, mux);
     }
 
+    /// @copydoc TinyGsmTCP::GsmClient::write(uint8_t)
     size_t write(uint8_t c) override {
       return write(&c, 1);
     }
 
+    /// @copydoc TinyGsmTCP::GsmClient::write(const char*)
     size_t write(const char* str) {
       if (str == nullptr) return 0;
       return write((const uint8_t*)str, strlen(str));
     }
 
+    /// @copydoc TinyGsmTCP::GsmClient::available()
     int available() override {
       TINY_GSM_YIELD();
       return at->stream.available();
@@ -250,6 +264,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
       */
     }
 
+    /// @copydoc TinyGsmTCP::GsmClient::read(uint8_t*, size_t)
     int read(uint8_t* buf, size_t size) override {
       TINY_GSM_YIELD();
       return at->stream.readBytes(reinterpret_cast<char*>(buf), size);
@@ -273,6 +288,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
       */
     }
 
+    /// @copydoc TinyGsmTCP::GsmClient::read()
     int read() override {
       TINY_GSM_YIELD();
       return at->stream.read();
@@ -285,13 +301,16 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
       */
     }
 
+    /// @copydoc TinyGsmTCP::GsmClient::peek()
     int peek() override {
       return at->stream.peek();
     }
+    /// @copydoc TinyGsmTCP::GsmClient::flush()
     void flush() override {
       at->stream.flush();
     }
 
+    /// @copydoc TinyGsmTCP::GsmClient::connected()
     uint8_t connected() override {
       if (available()) {
         return true;
@@ -305,6 +324,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
       // want to go into command mode.
       // return at->modemGetConnected();
     }
+    /// @copydoc TinyGsmTCP::GsmClient::bool()
     operator bool() override {
       return connected();
     }
@@ -313,6 +333,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
      * Extended API
      */
 
+    /// @copydoc TinyGsmTCP::GsmClient::remoteIP()
     String remoteIP() {
       IPAddress atLastIP = at->savedIP;
       return TinyGsmStringFromIp(atLastIP);
@@ -359,6 +380,12 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
     memset(sockets, 0, sizeof(sockets));
   }
 
+  /**
+   * @brief Construct a modem wrapper around a stream transport and a reset pin.
+   * @param stream Stream used to communicate with the modem.
+   * @param resetPin Physical pin on the MCU that is connected to the XBee reset
+   * pin .
+   */
   TinyGsmXBee(Stream& stream, int8_t resetPin)
       : stream(stream),
         guardTime(TINY_GSM_XBEE_GUARD_TIME),
