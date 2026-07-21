@@ -18,34 +18,15 @@
 #if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "SIMCom"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#if defined(TINY_GSM_MODEM_SIM7070)
-#define MODEM_MODEL "SIM7070"
-#elif defined(TINY_GSM_MODEM_SIM7080)
-#define MODEM_MODEL "SIM7080"
-#elif defined(TINY_GSM_MODEM_SIM7090)
-#define MODEM_MODEL "SIM7090"
-#elif defined(TINY_GSM_MODEM_SIM7000) || defined(TINY_GSM_MODEM_SIM7000SSL)
-#define MODEM_MODEL "SIM7000"
-#else
-#define MODEM_MODEL "SIM70xx"
-#endif
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmGPS.tpp"
+
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
 
 /// Registration status
 enum SIM70xxRegStatus {
@@ -63,11 +44,11 @@ enum SIM70xxRegStatus {
  *
  * @tparam SIM70xxType The derived class type
  */
-template <class SIM70xxType>
-class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxRegStatus>,
+template <class SIM70xxType, class SIM70xxModemConfig>
+class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
                        public TinyGsmGPRS<SIM70xxType>,
                        public TinyGsmGPS<SIM70xxType> {
-  friend class TinyGsmModem<SIM70xxType, SIM70xxRegStatus>;
+  friend class TinyGsmModem<SIM70xxType, SIM70xxModemConfig>;
   friend class TinyGsmGPRS<SIM70xxType>;
   friend class TinyGsmGPS<SIM70xxType>;
 
@@ -417,5 +398,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxRegStatus>,
   /// Stream used to communicate with the modem.
   Stream& stream;
 };
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM70XX_H_

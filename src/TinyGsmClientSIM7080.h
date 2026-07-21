@@ -25,6 +25,11 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
+
 /***
  * @brief TCP behavior and limits for the SIM7080 modem family.
  *
@@ -53,9 +58,25 @@ struct TinyGsmSIM7080TcpConfig
           /*stopTimeoutS*/ 15,
           /*minFreeTxBuffer*/ 1360> {};
 
+/// Basic modem configurations for the SIM7080 modem family
+struct TinyGsmSim7080ModemConfig
+    : public TinyGsmModemConfigPreset<SIM70xxRegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
+#if defined(TINY_GSM_MODEM_SIM7070)
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7070";
+#elif defined(TINY_GSM_MODEM_SIM7090)
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7090";
+#else
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7080";
+#endif
+};
+
+constexpr char TinyGsmSim7080ModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmSim7080ModemConfig::MODEM_MODEL[];
+
 /// Class for the SIMCOM SIM7070, SIM7080, and SIM7090
 class TinyGsmSim7080
-    : public TinyGsmSim70xx<TinyGsmSim7080>,
+    : public TinyGsmSim70xx<TinyGsmSim7080, TinyGsmSim7080ModemConfig>,
       public TinyGsmTCP<TinyGsmSim7080, TinyGsmSIM7080TcpConfig>,
       public TinyGsmSSL<TinyGsmSim7080>,
       public TinyGsmSMS<TinyGsmSim7080>,
@@ -63,8 +84,8 @@ class TinyGsmSim7080
       public TinyGsmTime<TinyGsmSim7080>,
       public TinyGsmNTP<TinyGsmSim7080>,
       public TinyGsmBattery<TinyGsmSim7080> {
-  friend class TinyGsmSim70xx<TinyGsmSim7080>;
-  friend class TinyGsmModem<TinyGsmSim7080, SIM70xxRegStatus>;
+  friend class TinyGsmSim70xx<TinyGsmSim7080, TinyGsmSim7080ModemConfig>;
+  friend class TinyGsmModem<TinyGsmSim7080, TinyGsmSim7080ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSim7080>;
   friend class TinyGsmTCP<TinyGsmSim7080, TinyGsmSIM7080TcpConfig>;
   friend class TinyGsmSSL<TinyGsmSim7080>;
@@ -74,6 +95,8 @@ class TinyGsmSim7080
   friend class TinyGsmTime<TinyGsmSim7080>;
   friend class TinyGsmNTP<TinyGsmSim7080>;
   friend class TinyGsmBattery<TinyGsmSim7080>;
+
+  using ModemConfig = TinyGsmSim7080ModemConfig;
 
   /*
    * Inner Client
@@ -218,7 +241,7 @@ class TinyGsmSim7080
    * @param stream Stream used to communicate with the modem.
    */
   explicit TinyGsmSim7080(Stream& stream)
-      : TinyGsmSim70xx<TinyGsmSim7080>(stream) {
+      : TinyGsmSim70xx<TinyGsmSim7080, TinyGsmSim7080ModemConfig>(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -229,8 +252,9 @@ class TinyGsmSim7080
   bool testATImpl(uint32_t timeout_ms) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
       sendAT(GF(""));
-      int8_t resp = waitResponse(200L, GFP(GSM_OK), GFP(GSM_ERROR),
-                                 GFP(GSM_AT));
+      int8_t resp = waitResponse(200L, GFP(ModemConfig::GSM_OK),
+                                 GFP(ModemConfig::GSM_ERROR),
+                                 GFP(ModemConfig::GSM_AT));
       if (resp == 1) {
         return true;
       } else if (resp == 3) {
@@ -365,8 +389,8 @@ class TinyGsmSim7080
     // we don't write the file. If we don't write something within 10 seconds
     // (the <input time>), the terminal will timeout and send back an 'OK' at
     // the 10s mark.
-    success &= waitResponse(10500L, GF("DOWNLOAD"), GFP(GSM_OK),
-                            GFP(GSM_ERROR)) == 1;
+    success &= waitResponse(10500L, GF("DOWNLOAD"), GFP(ModemConfig::GSM_OK),
+                            GFP(ModemConfig::GSM_ERROR)) == 1;
 
     if (success) {
       stream.write(cert, len);
@@ -1171,7 +1195,8 @@ class TinyGsmSim7080
     sendAT(GF("+CARECV?"));
     for (int muxNo = 0; muxNo < TinyGsmSIM7080TcpConfig::kMuxCount; muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
-      int res = waitResponse(3000, GF("+CARECV:"), GFP(GSM_OK), GFP(GSM_ERROR));
+      int res = waitResponse(3000, GF("+CARECV:"), GFP(ModemConfig::GSM_OK),
+                             GFP(ModemConfig::GSM_ERROR));
       // if we get the +CARECV: response, read the mux number and the number of
       // characters available
       if (res == 1) {
@@ -1218,8 +1243,8 @@ class TinyGsmSim7080
 
     for (int muxNo = 0; muxNo < TinyGsmSIM7080TcpConfig::kMuxCount; muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
-      int res = waitResponse(3000, GF("+CASTATE:"), GFP(GSM_OK),
-                             GFP(GSM_ERROR));
+      int res = waitResponse(3000, GF("+CASTATE:"), GFP(ModemConfig::GSM_OK),
+                             GFP(ModemConfig::GSM_ERROR));
       // if we get the +CASTATE: response, read the mux number and the status
       if (res == 1) {
         int    ret_mux = streamGetIntBefore(',');
@@ -1331,5 +1356,7 @@ class TinyGsmSim7080
 };
 
 // cspell:words CASEND gotATOK
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM7080_H_

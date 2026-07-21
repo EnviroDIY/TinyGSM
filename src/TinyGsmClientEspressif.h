@@ -19,41 +19,27 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 4
 #endif
 
+#include "TinyGsmModem.tpp"
+#include "TinyGsmWifi.tpp"
+
 #ifdef AT_NL
 #undef AT_NL
 #endif
 #define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "Espressif"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#if defined(TINY_GSM_MODEM_ESP8266) || defined(TINY_GSM_MODEM_ESP8266_NONOS)
-#define MODEM_MODEL "ESP8266"
-#elif defined(TINY_GSM_MODEM_ESP32)
-#define MODEM_MODEL "ESP32"
-#else
-#define MODEM_MODEL "Espressif AT"
-#endif
-
-#include "TinyGsmModem.tpp"
-#include "TinyGsmWifi.tpp"
 
 /**
  * @brief Parent class for the Espressif ESP8266 and ESP32 modules
  *
  * @tparam EspressifType The derived class type (ESP8266 or ESP32)
  */
-template <class EspressifType, typename EspressifRegStatusType>
+template <class EspressifType, class EspressifModemConfig>
 class TinyGsmEspressif
-    : public TinyGsmModem<EspressifType, EspressifRegStatusType>,
+    : public TinyGsmModem<EspressifType, EspressifModemConfig>,
       public TinyGsmWifi<EspressifType> {
-  friend class TinyGsmModem<EspressifType, EspressifRegStatusType>;
+  friend class TinyGsmModem<EspressifType, EspressifModemConfig>;
   friend class TinyGsmWifi<EspressifType>;
+
+  using ModemConfig = EspressifModemConfig;
 
   /*
    * CRTP Helper
@@ -158,12 +144,12 @@ class TinyGsmEspressif
 
   // Gets the modem hardware version
   String getModemManufacturerImpl() {
-    return MODEM_MANUFACTURER;
+    return ModemConfig::MODEM_MANUFACTURER;
   }
 
   // Gets the modem hardware version
   String getModemModelImpl() {
-    String model = MODEM_MODEL;
+    String model = ModemConfig::MODEM_MODEL;
     thisModem().sendAT(GF("+GMR"));
     thisModem().streamSkipUntil('\n');  // skip the AT version
     thisModem().streamSkipUntil('\n');  // skip the SDK version
@@ -231,13 +217,15 @@ class TinyGsmEspressif
   int8_t getSignalQualityImpl() {
     thisModem().sendAT(GF("+CWJAP?"));
     int8_t res1 = thisModem().waitResponse(GF("No AP"), GF("+CWJAP:"),
-                                           GFP(GSM_OK), GFP(GSM_ERROR));
+                                           GFP(ModemConfig::GSM_OK),
+                                           GFP(ModemConfig::GSM_ERROR));
     if (res1 != 2) {
       thisModem().waitResponse();
       thisModem().sendAT(GF("+CWJAP_CUR?"));  // attempt "current" as used by
                                               // some Non-OS firmware versions
       int8_t res1 = thisModem().waitResponse(GF("No AP"), GF("+CWJAP_CUR:"),
-                                             GFP(GSM_OK), GFP(GSM_ERROR));
+                                             GFP(ModemConfig::GSM_OK),
+                                             GFP(ModemConfig::GSM_ERROR));
       if (res1 != 2) {
         thisModem().waitResponse();
         return 0;
@@ -277,10 +265,10 @@ class TinyGsmEspressif
     // attempt first without than with the 'current' flag used in some firmware
     // versions
     thisModem().sendAT(GF("+CWJAP=\""), ssid, GF("\",\""), pwd, '"');
-    if (thisModem().waitResponse(30000L, GFP(GSM_OK), GF(AT_NL "FAIL" AT_NL)) !=
-        1) {
+    if (thisModem().waitResponse(30000L, GFP(ModemConfig::GSM_OK),
+                                 GF(AT_NL "FAIL" AT_NL)) != 1) {
       thisModem().sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, '"');
-      if (thisModem().waitResponse(30000L, GFP(GSM_OK),
+      if (thisModem().waitResponse(30000L, GFP(ModemConfig::GSM_OK),
                                    GF(AT_NL "FAIL" AT_NL)) != 1) {
         return false;
       }
@@ -368,5 +356,7 @@ class TinyGsmEspressif
   /// Stream used to communicate with the modem.
   Stream& stream;
 };
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTESPRESSIF_H_

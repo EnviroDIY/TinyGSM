@@ -24,31 +24,13 @@
 #endif
 #define TINY_GSM_SECURE_MUX_COUNT 5
 
+#include "TinyGsmModem.tpp"
+#include "TinyGsmTCP.tpp"
+
 #ifdef AT_NL
 #undef AT_NL
 #endif
 #define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "unknown"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#if defined(TINY_GSM_MODEM_SIM808)
-#define MODEM_MODEL "SIM808"
-#elif defined(TINY_GSM_MODEM_SIM868)
-#define MODEM_MODEL "SIM868"
-#elif defined(TINY_GSM_MODEM_SIM900)
-#define MODEM_MODEL "SIM900"
-#else
-#define MODEM_MODEL "SIM800"
-#endif
-
-#include "TinyGsmModem.tpp"
-#include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
 // management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
@@ -81,6 +63,24 @@ enum SIM800RegStatus {
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/// Basic modem configurations for the SIM800 modem family
+struct TinyGsmSim800ModemConfig
+    : public TinyGsmModemConfigPreset<SIM800RegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "unknown";
+#if defined(TINY_GSM_MODEM_SIM808)
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM808";
+#elif defined(TINY_GSM_MODEM_SIM868)
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM868";
+#elif defined(TINY_GSM_MODEM_SIM900)
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM900";
+#else
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM800";
+#endif
+};
+
+constexpr char TinyGsmSim800ModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmSim800ModemConfig::MODEM_MODEL[];
+
 /**
  * @brief TCP behavior and limits for the SIM800 modem family.
  */
@@ -91,16 +91,17 @@ struct TinyGsmSIM800TcpConfig
           /*muxCount*/ 8> {};
 
 /// Class for the SIMCOM SIM800 and SIM900 (with some limitations)
-class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800, SIM800RegStatus>,
-                      public TinyGsmGPRS<TinyGsmSim800>,
-                      public TinyGsmTCP<TinyGsmSim800, TinyGsmSIM800TcpConfig>,
-                      public TinyGsmCalling<TinyGsmSim800>,
-                      public TinyGsmSMS<TinyGsmSim800>,
-                      public TinyGsmGSMLocation<TinyGsmSim800>,
-                      public TinyGsmTime<TinyGsmSim800>,
-                      public TinyGsmNTP<TinyGsmSim800>,
-                      public TinyGsmBattery<TinyGsmSim800> {
-  friend class TinyGsmModem<TinyGsmSim800, SIM800RegStatus>;
+class TinyGsmSim800
+    : public TinyGsmModem<TinyGsmSim800, TinyGsmSim800ModemConfig>,
+      public TinyGsmGPRS<TinyGsmSim800>,
+      public TinyGsmTCP<TinyGsmSim800, TinyGsmSIM800TcpConfig>,
+      public TinyGsmCalling<TinyGsmSim800>,
+      public TinyGsmSMS<TinyGsmSim800>,
+      public TinyGsmGSMLocation<TinyGsmSim800>,
+      public TinyGsmTime<TinyGsmSim800>,
+      public TinyGsmNTP<TinyGsmSim800>,
+      public TinyGsmBattery<TinyGsmSim800> {
+  friend class TinyGsmModem<TinyGsmSim800, TinyGsmSim800ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSim800>;
   friend class TinyGsmTCP<TinyGsmSim800, TinyGsmSIM800TcpConfig>;
   friend class TinyGsmCalling<TinyGsmSim800>;
@@ -109,6 +110,8 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800, SIM800RegStatus>,
   friend class TinyGsmTime<TinyGsmSim800>;
   friend class TinyGsmNTP<TinyGsmSim800>;
   friend class TinyGsmBattery<TinyGsmSim800>;
+
+  using ModemConfig = TinyGsmSim800ModemConfig;
 
   /*
    * Inner Client
@@ -815,5 +818,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800, SIM800RegStatus>,
  protected:
   GsmClientSim800* sockets[TinyGsmSIM800TcpConfig::kMuxCount];
 };
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM800_H_

@@ -24,23 +24,13 @@
 #endif
 #define TINY_GSM_SECURE_MUX_COUNT 4
 
+#include "TinyGsmModem.tpp"
+#include "TinyGsmTCP.tpp"
+
 #ifdef AT_NL
 #undef AT_NL
 #endif
 #define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "u-blox"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#define MODEM_MODEL "SARA-R4"
-
-#include "TinyGsmModem.tpp"
-#include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
 // management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
@@ -69,6 +59,16 @@ enum SaraR4RegStatus {
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/// Basic modem configurations for the SaraR4 modem family
+struct TinyGsmSaraR4ModemConfig
+    : public TinyGsmModemConfigPreset<SaraR4RegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "u-blox";
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "SARA-R4";
+};
+
+constexpr char TinyGsmSaraR4ModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmSaraR4ModemConfig::MODEM_MODEL[];
+
 /**
  * @brief TCP behavior and limits for the SARA R4 modem family.
  *
@@ -93,16 +93,17 @@ struct TinyGsmSaraR4TcpConfig
           /*stopTimeoutS*/ 135> {};
 
 /// Class for the u-blox SARA-R4
-class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, SaraR4RegStatus>,
-                      public TinyGsmGPRS<TinyGsmSaraR4>,
-                      public TinyGsmTCP<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>,
-                      public TinyGsmSMS<TinyGsmSaraR4>,
-                      public TinyGsmGSMLocation<TinyGsmSaraR4>,
-                      public TinyGsmGPS<TinyGsmSaraR4>,
-                      public TinyGsmTime<TinyGsmSaraR4>,
-                      public TinyGsmBattery<TinyGsmSaraR4>,
-                      public TinyGsmTemperature<TinyGsmSaraR4> {
-  friend class TinyGsmModem<TinyGsmSaraR4, SaraR4RegStatus>;
+class TinyGsmSaraR4
+    : public TinyGsmModem<TinyGsmSaraR4, TinyGsmSaraR4ModemConfig>,
+      public TinyGsmGPRS<TinyGsmSaraR4>,
+      public TinyGsmTCP<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>,
+      public TinyGsmSMS<TinyGsmSaraR4>,
+      public TinyGsmGSMLocation<TinyGsmSaraR4>,
+      public TinyGsmGPS<TinyGsmSaraR4>,
+      public TinyGsmTime<TinyGsmSaraR4>,
+      public TinyGsmBattery<TinyGsmSaraR4>,
+      public TinyGsmTemperature<TinyGsmSaraR4> {
+  friend class TinyGsmModem<TinyGsmSaraR4, TinyGsmSaraR4ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSaraR4>;
   friend class TinyGsmTCP<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>;
   friend class TinyGsmSMS<TinyGsmSaraR4>;
@@ -111,6 +112,8 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, SaraR4RegStatus>,
   friend class TinyGsmTime<TinyGsmSaraR4>;
   friend class TinyGsmTemperature<TinyGsmSaraR4>;
   friend class TinyGsmBattery<TinyGsmSaraR4>;
+
+  using ModemConfig = TinyGsmSaraR4ModemConfig;
 
   /*
    * Inner Client
@@ -969,5 +972,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, SaraR4RegStatus>,
 };
 
 // cspell:words USOWR
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSARAR4_H_

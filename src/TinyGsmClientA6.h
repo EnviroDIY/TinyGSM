@@ -19,25 +19,6 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "Ai-Thinker"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#if defined(TINY_GSM_MODEM_A7)
-#define MODEM_MODEL "A7"
-#else
-#define MODEM_MODEL "A6"
-#endif
-
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmGPRS.tpp"
@@ -45,6 +26,11 @@
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
 #include "TinyGsmBattery.tpp"
+
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
 
 /// Registration status
 enum A6RegStatus {
@@ -56,6 +42,19 @@ enum A6RegStatus {
   REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
+
+/// Basic modem configurations for the A6 modem family
+struct TinyGsmA6ModemConfig : public TinyGsmModemConfigPreset<A6RegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Ai-Thinker";
+#if defined(TINY_GSM_MODEM_A7)
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "A7";
+#else
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "A6";
+#endif
+};
+
+constexpr char TinyGsmA6ModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmA6ModemConfig::MODEM_MODEL[];
 
 /**
  * @brief TCP behavior and limits for the A6 modem family.
@@ -73,20 +72,22 @@ struct TinyGsmA6TcpConfig
  * @brief TinyGsmA6 is a class for controlling the Ai-Thinker A6 and A7 GSM/GPRS
  * module.
  */
-class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, A6RegStatus>,
+class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
                   public TinyGsmGPRS<TinyGsmA6>,
                   public TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>,
                   public TinyGsmCalling<TinyGsmA6>,
                   public TinyGsmSMS<TinyGsmA6>,
                   public TinyGsmTime<TinyGsmA6>,
                   public TinyGsmBattery<TinyGsmA6> {
-  friend class TinyGsmModem<TinyGsmA6, A6RegStatus>;
+  friend class TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmA6>;
   friend class TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>;
   friend class TinyGsmCalling<TinyGsmA6>;
   friend class TinyGsmSMS<TinyGsmA6>;
   friend class TinyGsmTime<TinyGsmA6>;
   friend class TinyGsmBattery<TinyGsmA6>;
+
+  using ModemConfig = TinyGsmA6ModemConfig;
 
   /*
    * Inner Client
@@ -378,7 +379,8 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, A6RegStatus>,
     if (waitResponse(5000L) != 1) { return false; }
 
     if (waitResponse(60000L, GF(AT_NL "+CIEV: \"CALL\",1"),
-                     GF(AT_NL "+CIEV: \"CALL\",0"), GFP(GSM_ERROR)) != 1) {
+                     GF(AT_NL "+CIEV: \"CALL\",0"),
+                     GFP(ModemConfig::GSM_ERROR)) != 1) {
       return false;
     }
 
@@ -557,7 +559,9 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, A6RegStatus>,
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t) {
-    if (waitResponse(10000L, GFP(GSM_OK), GF(AT_NL "FAIL")) != 1) { return 0; }
+    if (waitResponse(10000L, GFP(ModemConfig::GSM_OK), GF(AT_NL "FAIL")) != 1) {
+      return 0;
+    }
     return len;
   }
 
@@ -609,5 +613,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, A6RegStatus>,
  protected:
   GsmClientA6* sockets[TinyGsmA6TcpConfig::kMuxCount];
 };
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTA6_H_

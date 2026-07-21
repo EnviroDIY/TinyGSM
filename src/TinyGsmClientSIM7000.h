@@ -18,6 +18,11 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
+
 /***
  * @brief TCP behavior and limits for the SIM7000 modem family.
  */
@@ -27,17 +32,27 @@ struct TinyGsmSIM7000TcpConfig
           /*muxMode*/ TinyGsmTcpMuxMode::Static,
           /*muxCount*/ 8> {};
 
+/// Basic modem configurations for the SIM7000 modem family
+struct TinyGsmSim7000ModemConfig
+    : public TinyGsmModemConfigPreset<SIM70xxRegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "SIM7000";
+};
+
+constexpr char TinyGsmSim7000ModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmSim7000ModemConfig::MODEM_MODEL[];
+
 /// Class for the SIMCOM SIM7000 using the TCP-IP toolkit
 class TinyGsmSim7000
-    : public TinyGsmSim70xx<TinyGsmSim7000>,
+    : public TinyGsmSim70xx<TinyGsmSim7000, TinyGsmSim7000ModemConfig>,
       public TinyGsmTCP<TinyGsmSim7000, TinyGsmSIM7000TcpConfig>,
       public TinyGsmSMS<TinyGsmSim7000>,
       public TinyGsmTime<TinyGsmSim7000>,
       public TinyGsmNTP<TinyGsmSim7000>,
       public TinyGsmGSMLocation<TinyGsmSim7000>,
       public TinyGsmBattery<TinyGsmSim7000> {
-  friend class TinyGsmSim70xx<TinyGsmSim7000>;
-  friend class TinyGsmModem<TinyGsmSim7000, SIM70xxRegStatus>;
+  friend class TinyGsmSim70xx<TinyGsmSim7000, TinyGsmSim7000ModemConfig>;
+  friend class TinyGsmModem<TinyGsmSim7000, TinyGsmSim7000ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSim7000>;
   friend class TinyGsmTCP<TinyGsmSim7000, TinyGsmSIM7000TcpConfig>;
   friend class TinyGsmSMS<TinyGsmSim7000>;
@@ -46,6 +61,8 @@ class TinyGsmSim7000
   friend class TinyGsmTime<TinyGsmSim7000>;
   friend class TinyGsmNTP<TinyGsmSim7000>;
   friend class TinyGsmBattery<TinyGsmSim7000>;
+
+  using ModemConfig = TinyGsmSim7000ModemConfig;
 
   /*
    * Inner Client
@@ -159,7 +176,7 @@ class TinyGsmSim7000
    * @param stream Stream used to communicate with the modem.
    */
   explicit TinyGsmSim7000(Stream& stream)
-      : TinyGsmSim70xx<TinyGsmSim7000>(stream) {
+      : TinyGsmSim70xx<TinyGsmSim7000, TinyGsmSim7000ModemConfig>(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -538,5 +555,7 @@ class TinyGsmSim7000
  protected:
   GsmClientSim7000* sockets[TinyGsmSIM7000TcpConfig::kMuxCount];
 };
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM7000_H_

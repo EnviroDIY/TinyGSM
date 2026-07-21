@@ -18,22 +18,6 @@
 #endif
 #if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
-#endif
-
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "Quectel"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#define MODEM_MODEL "M95"
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
@@ -43,6 +27,12 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
+#endif
+
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
 
 /// Registration status
 enum M95RegStatus {
@@ -54,6 +44,15 @@ enum M95RegStatus {
   REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
+
+/// Basic modem configurations for the M95 modem family
+struct TinyGsmM95ModemConfig : public TinyGsmModemConfigPreset<M95RegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Quectel";
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "M95";
+};
+
+constexpr char TinyGsmM95ModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmM95ModemConfig::MODEM_MODEL[];
 
 /**
  * @brief TCP behavior and limits for the M95 modem family.
@@ -71,7 +70,7 @@ struct TinyGsmM95TcpConfig
           /*stopTimeoutS*/ 75> {};
 
 /// Class for the Quectel M95
-class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, M95RegStatus>,
+class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
                    public TinyGsmGPRS<TinyGsmM95>,
                    public TinyGsmTCP<TinyGsmM95, TinyGsmM95TcpConfig>,
                    public TinyGsmCalling<TinyGsmM95>,
@@ -79,7 +78,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, M95RegStatus>,
                    public TinyGsmTime<TinyGsmM95>,
                    public TinyGsmBattery<TinyGsmM95>,
                    public TinyGsmTemperature<TinyGsmM95> {
-  friend class TinyGsmModem<TinyGsmM95, M95RegStatus>;
+  friend class TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmM95>;
   friend class TinyGsmTCP<TinyGsmM95, TinyGsmM95TcpConfig>;
   friend class TinyGsmCalling<TinyGsmM95>;
@@ -87,6 +86,8 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, M95RegStatus>,
   friend class TinyGsmTime<TinyGsmM95>;
   friend class TinyGsmBattery<TinyGsmM95>;
   friend class TinyGsmTemperature<TinyGsmM95>;
+
+  using ModemConfig = TinyGsmM95ModemConfig;
 
   /*
    * Inner Client
@@ -562,7 +563,8 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, M95RegStatus>,
     sendAT(GF("+QIRD=0,1,"), mux, ',', (uint16_t)size);
     // If it replies only OK for the write command, it means there is no
     // received data in the buffer of the connection.
-    int8_t res = waitResponse(GF("+QIRD:"), GFP(GSM_OK), GFP(GSM_ERROR));
+    int8_t res = waitResponse(GF("+QIRD:"), GFP(ModemConfig::GSM_OK),
+                              GFP(ModemConfig::GSM_ERROR));
     if (res == 1) {
       streamSkipUntil(':');  // skip IP address
       streamSkipUntil(',');  // skip port
@@ -655,5 +657,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, M95RegStatus>,
  protected:
   GsmClientM95* sockets[TinyGsmM95TcpConfig::kMuxCount];
 };
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTM95_H_

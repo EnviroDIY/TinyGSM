@@ -19,29 +19,6 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "SIMCom"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#if defined(TINY_GSM_MODEM_SIM5320)
-#define MODEM_MODEL "SIM5320"
-#elif defined(TINY_GSM_MODEM_SIM5300)
-#define MODEM_MODEL "SIM5300"
-#elif defined(TINY_GSM_MODEM_SIM7100)
-#define MODEM_MODEL "SIM7100"
-#else
-#define MODEM_MODEL "SIM5360"
-#endif
-
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmGPRS.tpp"
@@ -53,6 +30,11 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
+
 /// Registration status
 enum SIM5360RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
@@ -63,6 +45,24 @@ enum SIM5360RegStatus {
   REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
+
+/// Basic modem configurations for the SIM5360 modem family
+struct TinyGsmSim5360ModemConfig
+    : public TinyGsmModemConfigPreset<SIM5360RegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
+#if defined(TINY_GSM_MODEM_SIM5320)
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM5320";
+#elif defined(TINY_GSM_MODEM_SIM5300)
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM5300";
+#elif defined(TINY_GSM_MODEM_SIM7100)
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7100";
+#else
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM5360";
+#endif
+};
+
+constexpr char TinyGsmSim5360ModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmSim5360ModemConfig::MODEM_MODEL[];
 
 /**
  * @brief TCP behavior and limits for the SIM5360 modem family.
@@ -79,7 +79,7 @@ struct TinyGsmSIM5360TcpConfig
 
 /// Class for the SIMCOM SIM5360, SIM5300, SIM5320, and SIM7100
 class TinyGsmSim5360
-    : public TinyGsmModem<TinyGsmSim5360, SIM5360RegStatus>,
+    : public TinyGsmModem<TinyGsmSim5360, TinyGsmSim5360ModemConfig>,
       public TinyGsmGPRS<TinyGsmSim5360>,
       public TinyGsmTCP<TinyGsmSim5360, TinyGsmSIM5360TcpConfig>,
       public TinyGsmSMS<TinyGsmSim5360>,
@@ -89,7 +89,7 @@ class TinyGsmSim5360
       public TinyGsmNTP<TinyGsmSim5360>,
       public TinyGsmBattery<TinyGsmSim5360>,
       public TinyGsmTemperature<TinyGsmSim5360> {
-  friend class TinyGsmModem<TinyGsmSim5360, SIM5360RegStatus>;
+  friend class TinyGsmModem<TinyGsmSim5360, TinyGsmSim5360ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSim5360>;
   friend class TinyGsmTCP<TinyGsmSim5360, TinyGsmSIM5360TcpConfig>;
   friend class TinyGsmSMS<TinyGsmSim5360>;
@@ -99,6 +99,8 @@ class TinyGsmSim5360
   friend class TinyGsmNTP<TinyGsmSim5360>;
   friend class TinyGsmBattery<TinyGsmSim5360>;
   friend class TinyGsmTemperature<TinyGsmSim5360>;
+
+  using ModemConfig = TinyGsmSim5360ModemConfig;
 
   /*
    * Inner Client
@@ -836,5 +838,7 @@ class TinyGsmSim5360
  protected:
   GsmClientSim5360* sockets[TinyGsmSIM5360TcpConfig::kMuxCount];
 };
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM5360_H_

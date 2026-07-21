@@ -24,6 +24,11 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
+
 /***
  * @brief TCP behavior and limits for the SIM7000 modem family using the SSL
  * application toolkit.
@@ -40,9 +45,19 @@ struct TinyGsmSIM7000SSLTcpConfig
           /*muxMode*/ TinyGsmTcpMuxMode::Static,
           /*muxCount*/ 8> {};
 
+/// Basic modem configurations for the SIM7000SSL modem family
+struct TinyGsmSim7000SSLModemConfig
+    : public TinyGsmModemConfigPreset<SIM70xxRegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "SIM7000";
+};
+
+constexpr char TinyGsmSim7000SSLModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmSim7000SSLModemConfig::MODEM_MODEL[];
+
 /// Class for the SIMCOM SIM7000 with SSL support using the SSL application
 class TinyGsmSim7000SSL
-    : public TinyGsmSim70xx<TinyGsmSim7000SSL>,
+    : public TinyGsmSim70xx<TinyGsmSim7000SSL, TinyGsmSim7000SSLModemConfig>,
       public TinyGsmTCP<TinyGsmSim7000SSL, TinyGsmSIM7000SSLTcpConfig>,
       public TinyGsmSSL<TinyGsmSim7000SSL>,
       public TinyGsmSMS<TinyGsmSim7000SSL>,
@@ -50,8 +65,8 @@ class TinyGsmSim7000SSL
       public TinyGsmTime<TinyGsmSim7000SSL>,
       public TinyGsmNTP<TinyGsmSim7000SSL>,
       public TinyGsmBattery<TinyGsmSim7000SSL> {
-  friend class TinyGsmSim70xx<TinyGsmSim7000SSL>;
-  friend class TinyGsmModem<TinyGsmSim7000SSL, SIM70xxRegStatus>;
+  friend class TinyGsmSim70xx<TinyGsmSim7000SSL, TinyGsmSim7000SSLModemConfig>;
+  friend class TinyGsmModem<TinyGsmSim7000SSL, TinyGsmSim7000SSLModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSim7000SSL>;
   friend class TinyGsmTCP<TinyGsmSim7000SSL, TinyGsmSIM7000SSLTcpConfig>;
   friend class TinyGsmSSL<TinyGsmSim7000SSL>;
@@ -61,6 +76,8 @@ class TinyGsmSim7000SSL
   friend class TinyGsmTime<TinyGsmSim7000SSL>;
   friend class TinyGsmNTP<TinyGsmSim7000SSL>;
   friend class TinyGsmBattery<TinyGsmSim7000SSL>;
+
+  using ModemConfig = TinyGsmSim7000SSLModemConfig;
 
   /*
    * Inner Client
@@ -204,7 +221,8 @@ class TinyGsmSim7000SSL
    * @param stream Stream used to communicate with the modem.
    */
   explicit TinyGsmSim7000SSL(Stream& stream)
-      : TinyGsmSim70xx<TinyGsmSim7000SSL>(stream) {
+      : TinyGsmSim70xx<TinyGsmSim7000SSL, TinyGsmSim7000SSLModemConfig>(
+            stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -328,8 +346,8 @@ class TinyGsmSim7000SSL
     // we don't write the file. If we don't write something within 10 seconds
     // (the <input time>), the terminal will timeout and send back an 'OK' at
     // the 10s mark.
-    success &= waitResponse(10500L, GF("DOWNLOAD"), GFP(GSM_OK),
-                            GFP(GSM_ERROR)) == 1;
+    success &= waitResponse(10500L, GF("DOWNLOAD"), GFP(ModemConfig::GSM_OK),
+                            GFP(ModemConfig::GSM_ERROR)) == 1;
 
     if (success) {
       stream.write(cert, len);
@@ -1013,7 +1031,8 @@ class TinyGsmSim7000SSL
     for (int muxNo = 0; muxNo < TinyGsmSIM7000SSLTcpConfig::kMuxCount;
          muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
-      int res = waitResponse(3000, GF("+CARECV:"), GFP(GSM_OK), GFP(GSM_ERROR));
+      int res = waitResponse(3000, GF("+CARECV:"), GFP(ModemConfig::GSM_OK),
+                             GFP(ModemConfig::GSM_ERROR));
       // if we get the +CARECV: response, read the mux number and the number of
       // characters available
       if (res == 1) {
@@ -1063,8 +1082,8 @@ class TinyGsmSim7000SSL
     for (int muxNo = 0; muxNo < TinyGsmSIM7000SSLTcpConfig::kMuxCount;
          muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
-      int res = waitResponse(3000, GF("+CASTATE:"), GFP(GSM_OK),
-                             GFP(GSM_ERROR));
+      int res = waitResponse(3000, GF("+CASTATE:"), GFP(ModemConfig::GSM_OK),
+                             GFP(ModemConfig::GSM_ERROR));
       // if we get the +CASTATE: response, read the mux number and the status
       if (res == 1) {
         int    ret_mux = streamGetIntBefore(',');
@@ -1178,5 +1197,7 @@ class TinyGsmSim7000SSL
 };
 
 // cspell:words CASEND
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM7000SSL_H_

@@ -24,27 +24,6 @@
 #endif
 #define TINY_GSM_SECURE_MUX_COUNT 2
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "SIMCom"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#if defined(TINY_GSM_MODEM_SIM7500)
-#define MODEM_MODEL "SIM7500"
-#elif defined(TINY_GSM_MODEM_SIM7800)
-#define MODEM_MODEL "SIM7800"
-#else
-#define MODEM_MODEL "SIM7600"
-#endif
-
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
@@ -58,6 +37,11 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
+
 /// Registration status
 enum SIM7600RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
@@ -68,6 +52,22 @@ enum SIM7600RegStatus {
   REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
+
+/// Basic modem configurations for the SIM7600 modem family
+struct TinyGsmSim7600ModemConfig
+    : public TinyGsmModemConfigPreset<SIM7600RegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
+#if defined(TINY_GSM_MODEM_SIM7500)
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7500";
+#elif defined(TINY_GSM_MODEM_SIM7800)
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7800";
+#else
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7600";
+#endif
+};
+
+constexpr char TinyGsmSim7600ModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmSim7600ModemConfig::MODEM_MODEL[];
 
 /**
  * @brief TCP behavior and limits for the SIM7600 modem family.
@@ -93,7 +93,7 @@ struct TinyGsmSIM7600TcpConfig
 
 /// Class for the SIMCOM SIM7600, SIM7500, and SIM7800
 class TinyGsmSim7600
-    : public TinyGsmModem<TinyGsmSim7600, SIM7600RegStatus>,
+    : public TinyGsmModem<TinyGsmSim7600, TinyGsmSim7600ModemConfig>,
       public TinyGsmGPRS<TinyGsmSim7600>,
       public TinyGsmTCP<TinyGsmSim7600, TinyGsmSIM7600TcpConfig>,
       public TinyGsmSSL<TinyGsmSim7600>,
@@ -105,7 +105,7 @@ class TinyGsmSim7600
       public TinyGsmBattery<TinyGsmSim7600>,
       public TinyGsmTemperature<TinyGsmSim7600>,
       public TinyGsmCalling<TinyGsmSim7600> {
-  friend class TinyGsmModem<TinyGsmSim7600, SIM7600RegStatus>;
+  friend class TinyGsmModem<TinyGsmSim7600, TinyGsmSim7600ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSim7600>;
   friend class TinyGsmTCP<TinyGsmSim7600, TinyGsmSIM7600TcpConfig>;
   friend class TinyGsmSSL<TinyGsmSim7600>;
@@ -117,6 +117,8 @@ class TinyGsmSim7600
   friend class TinyGsmBattery<TinyGsmSim7600>;
   friend class TinyGsmTemperature<TinyGsmSim7600>;
   friend class TinyGsmCalling<TinyGsmSim7600>;
+
+  using ModemConfig = TinyGsmSIM7600TcpConfig;
 
   /*
    * Inner Client
@@ -1217,5 +1219,7 @@ class TinyGsmSim7600
 };
 
 // cspell:words CCHSEND
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM7600_H_

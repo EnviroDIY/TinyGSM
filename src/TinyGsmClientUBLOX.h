@@ -19,23 +19,13 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
+#include "TinyGsmModem.tpp"
+#include "TinyGsmTCP.tpp"
+
 #ifdef AT_NL
 #undef AT_NL
 #endif
 #define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "u-blox"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#define MODEM_MODEL "unknown"
-
-#include "TinyGsmModem.tpp"
-#include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
 // management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
@@ -64,6 +54,16 @@ enum UBLOXRegStatus {
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
+/// Basic modem configurations for the UBLOX modem family
+struct TinyGsmUBLOXModemConfig
+    : public TinyGsmModemConfigPreset<UBLOXRegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "u-blox";
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "unknown";
+};
+
+constexpr char TinyGsmUBLOXModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmUBLOXModemConfig::MODEM_MODEL[];
+
 /**
  * @brief TCP behavior and limits for the u-blox family.
  *
@@ -88,7 +88,7 @@ struct TinyGsmUBLOXTcpConfig
           /*connectTimeoutS*/ 120> {};
 
 /// Class for the u-blox family of modems
-class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, UBLOXRegStatus>,
+class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
                      public TinyGsmGPRS<TinyGsmUBLOX>,
                      public TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>,
                      public TinyGsmCalling<TinyGsmUBLOX>,
@@ -97,7 +97,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, UBLOXRegStatus>,
                      public TinyGsmGPS<TinyGsmUBLOX>,
                      public TinyGsmTime<TinyGsmUBLOX>,
                      public TinyGsmBattery<TinyGsmUBLOX> {
-  friend class TinyGsmModem<TinyGsmUBLOX, UBLOXRegStatus>;
+  friend class TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>;
   friend class TinyGsmGPRS<TinyGsmUBLOX>;
   friend class TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>;
   friend class TinyGsmCalling<TinyGsmUBLOX>;
@@ -106,6 +106,8 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, UBLOXRegStatus>,
   friend class TinyGsmGPS<TinyGsmUBLOX>;
   friend class TinyGsmTime<TinyGsmUBLOX>;
   friend class TinyGsmBattery<TinyGsmUBLOX>;
+
+  using ModemConfig = TinyGsmUBLOXModemConfig;
 
   /*
    * Inner Client
