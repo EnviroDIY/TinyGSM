@@ -497,7 +497,7 @@ class TinyGsmSequansMonarch
  protected:
   String getSimCCIDImpl() {
     sendAT(GF("+SQNCCID"));
-    if (waitResponse(GF(AT_NL "+SQNCCID:")) != 1) { return ""; }
+    if (waitResponse(GF("+SQNCCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -679,7 +679,7 @@ class TinyGsmSequansMonarch
         }
 
         sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
-        send_success &= waitResponse(10000L, GF(AT_NL "> ")) == 1;
+        send_success &= waitResponse(10000L, GF("\r\n> ")) == 1;
         if (!send_success) {
           send_attempts++;
           continue;
@@ -708,7 +708,7 @@ class TinyGsmSequansMonarch
     // bool gotPrompt = false;
     // while (nAttempts > 0 && !gotPrompt) {
     //   sendAT(GF("+SQNSSEND="), mux);
-    //   if (waitResponse(5000, GF(AT_NL "> ")) == 1) {
+    //   if (waitResponse(5000, GF("\r\n> ")) == 1) {
     //     gotPrompt = true;
     //   }
     //   nAttempts--;
@@ -729,7 +729,7 @@ class TinyGsmSequansMonarch
 #if 0
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
     sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
-    return waitResponse(10000L, GF(AT_NL "> ")) == 1;
+    return waitResponse(10000L, GF("\r\n> ")) == 1;
   }
   size_t modemEndSendImpl(size_t len, uint8_t) {
     if (waitResponse() != 1) {
@@ -775,7 +775,7 @@ class TinyGsmSequansMonarch
     sendAT(GF("+SQNSS"));
     for (int muxNo = 1; muxNo <= TinyGsmSequansMonarchTcpConfig::kMuxCount;
          muxNo++) {
-      if (waitResponse(GFP(ModemConfig::GSM_OK), GF(AT_NL "+SQNSS: ")) != 2) {
+      if (waitResponse(GFP(ModemConfig::GSM_OK), GF("+SQNSS: ")) != 2) {
         break;
       }
       uint8_t status = 0;
@@ -812,7 +812,7 @@ class TinyGsmSequansMonarch
    */
  protected:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(AT_NL "+SQNSRING:"))) {
+    if (data.endsWith(GF("+SQNSRING:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux > 0 && mux <= TinyGsmSequansMonarchTcpConfig::kMuxCount &&
@@ -845,7 +845,8 @@ class TinyGsmSequansMonarch
 
  protected:
   GsmClientSequansMonarch* sockets[TinyGsmSequansMonarchTcpConfig::kMuxCount];
-  // AT_NL (\r\n) is not accepted with SQNSSENDEXT in data mode so use \n
+  // The modem's NL is \r\n (ModemConfig::GSM_NL) but that is not accepted
+  // with SQNSSENDEXT in data mode so use \n
   const char* gsmNL = "\n";
 };
 

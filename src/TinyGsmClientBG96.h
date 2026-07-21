@@ -31,11 +31,6 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /// Registration status
 enum BG96RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
@@ -641,7 +636,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
  protected:
   String getSimCCIDImpl() {
     sendAT(GF("+QCCID"));
-    if (waitResponse(GF(AT_NL "+QCCID:")) != 1) { return ""; }
+    if (waitResponse(GF("+QCCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -692,7 +687,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   // get the RAW GPS output
   String getGPSrawImpl() {
     sendAT(GF("+QGPSLOC=2"));
-    if (waitResponse(10000L, GF(AT_NL "+QGPSLOC: ")) != 1) { return ""; }
+    if (waitResponse(10000L, GF("+QGPSLOC: ")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -704,7 +699,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
                   int* usat, float* accuracy, int* year, int* month, int* day,
                   int* hour, int* minute, int* second) {
     sendAT(GF("+QGPSLOC=2"));
-    if (waitResponse(10000L, GF(AT_NL "+QGPSLOC: ")) != 1) {
+    if (waitResponse(10000L, GF("+QGPSLOC: ")) != 1) {
       // NOTE:  Will return an error if the position isn't fixed
       return false;
     }
@@ -930,7 +925,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   // get temperature in degree celsius
   uint16_t getTemperatureImpl() {
     sendAT(GF("+QTEMP"));
-    if (waitResponse(GF(AT_NL "+QTEMP:")) != 1) { return 0; }
+    if (waitResponse(GF("+QTEMP:")) != 1) { return 0; }
     // return temperature in C
     uint16_t res =
         streamGetIntBefore(',');  // read PMIC (primary ic) temperature
@@ -1099,7 +1094,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
              GF("\","), port, GF(",0"));
       if (waitResponse() != 1) return false;
 
-      if (waitResponse(timeout_ms, GF(AT_NL "+QSSLOPEN:")) != 1) {
+      if (waitResponse(timeout_ms, GF("+QSSLOPEN:")) != 1) {
         return false;
       }
       // 20230629 -> +QSSLOPEN: <clientID>,<err>
@@ -1117,7 +1112,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
              GF("\","), port, GF(",0,0"));
       waitResponse();
 
-      if (waitResponse(timeout_ms, GF(AT_NL "+QIOPEN:")) != 1) { return false; }
+      if (waitResponse(timeout_ms, GF("+QIOPEN:")) != 1) { return false; }
 
       if (streamGetIntBefore(',') != mux) { return false; }
     }
@@ -1138,7 +1133,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t) {
-    if (waitResponse(GF(AT_NL "SEND OK")) != 1) { return 0; }
+    if (waitResponse(GF("SEND OK")) != 1) { return 0; }
     // TODO(?): Wait for ACK? (AT+QISEND=id,0 or AT+QSSLSEND=id,0)
     return len;
   }
@@ -1251,7 +1246,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
    */
  protected:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(AT_NL "+QIURC:"))) {
+    if (data.endsWith(GF("+QIURC:"))) {
       streamSkipUntil('\"');
       String urc = stream.readStringUntil('\"');
       streamSkipUntil(',');
@@ -1273,7 +1268,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       data = "";
       return true;
     }
-    if (data.endsWith(GF(AT_NL "+QSSLURC:"))) {
+    if (data.endsWith(GF("+QSSLURC:"))) {
       streamSkipUntil('\"');
       String urc = stream.readStringUntil('\"');
       streamSkipUntil(',');
@@ -1307,7 +1302,5 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
  protected:
   GsmClientBG96* sockets[TinyGsmBG96TcpConfig::kMuxCount];
 };
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTBG96_H_

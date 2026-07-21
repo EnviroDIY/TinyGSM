@@ -14,11 +14,6 @@
 #include "TinyGsmGPS.tpp"
 #include "TinyGsmBluetooth.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /**
  * @brief Class for the SIMCOM SIM808 and SIM868, which extends the SIM800 with
  * GPS and Bluetooth support
@@ -58,7 +53,7 @@ class TinyGsmSim808 : public TinyGsmSim800,
   // works only with ans SIM808 V2
   String getGPSrawImpl() {
     sendAT(GF("+CGNSINF"));
-    if (waitResponse(10000L, GF(AT_NL "+CGNSINF:")) != 1) { return ""; }
+    if (waitResponse(10000L, GF("+CGNSINF:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -71,7 +66,7 @@ class TinyGsmSim808 : public TinyGsmSim800,
                   int* usat, float* accuracy, int* year, int* month, int* day,
                   int* hour, int* minute, int* second) {
     sendAT(GF("+CGNSINF"));
-    if (waitResponse(10000L, GF(AT_NL "+CGNSINF:")) != 1) { return false; }
+    if (waitResponse(10000L, GF("+CGNSINF:")) != 1) { return false; }
 
     streamSkipUntil(',');                // GNSS run status
     if (streamGetIntBefore(',') == 1) {  // fix status
@@ -174,7 +169,5 @@ class TinyGsmSim808 : public TinyGsmSim800,
     return true;
   }
 };
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM808_H_

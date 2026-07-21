@@ -32,11 +32,6 @@
  */
 #define TINY_GSM_XBEE_GUARD_TIME 1010
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r"
-
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
@@ -1926,7 +1921,5 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 };
 
 // cspell:words LTEM
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTXBEE_H_

@@ -64,14 +64,15 @@ void setup() {
     modem.stream.write(c);
   }
 
-  modem.stream.write(AT_NL);
+  // SIM8xx modules use "\r\n" as their line ending
+  modem.stream.write("\r\n");
   modem.stream.flush();
 
   if (modem.waitResponse(2000) != 1) return;
 
   modem.sendAT(GF("+SSLSETCERT=\"" CERT_FILE "\""));
   if (modem.waitResponse() != 1) return;
-  if (modem.waitResponse(5000L, GF(AT_NL "+SSLSETCERT:")) != 1) return;
+  if (modem.waitResponse(5000L, GF("+SSLSETCERT:")) != 1) return;
   const int retCode = modem.stream.readStringUntil('\n').toInt();
 
 

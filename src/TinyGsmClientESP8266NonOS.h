@@ -439,7 +439,7 @@ class TinyGsmESP8266NonOS
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t) {
-    if (waitResponse(30000L, GF(AT_NL "SEND OK" AT_NL)) != 1) { return 0; }
+    if (waitResponse(30000L, GF("SEND OK" AT_NL)) != 1) { return 0; }
     return len;
   }
 
@@ -465,10 +465,12 @@ class TinyGsmESP8266NonOS
       data = "";
       return true;
     } else if (data.endsWith(GF("CLOSED"))) {
-      int8_t muxStart = TinyGsmMax(0,
-                                   data.lastIndexOf(AT_NL, data.length() - 8));
-      int8_t coma     = data.indexOf(',', muxStart);
-      int8_t mux      = data.substring(muxStart, coma).toInt();
+      int8_t muxStart =
+          TinyGsmMax(0,
+                     data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
+                                      data.length() - 8));
+      int8_t coma = data.indexOf(',', muxStart);
+      int8_t mux  = data.substring(muxStart, coma).toInt();
       if (mux >= 0 && mux < TinyGsmESP8266NonOSTcpConfig::kMuxCount &&
           sockets[mux]) {
         sockets[mux]->sock_connected = false;
@@ -482,7 +484,7 @@ class TinyGsmESP8266NonOS
       data = "";
       // DBG("### Busy, please wait");
       return true;
-    } else if (data.endsWith(GF(AT_NL "ready" AT_NL))) {
+    } else if (data.endsWith(GF("ready" AT_NL))) {
       streamSkipUntil('\n');
       data = "";
       // DBG("### Module ready!");

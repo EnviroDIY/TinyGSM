@@ -417,7 +417,7 @@ class TinyGsmSim7000
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
-    if (waitResponse(GF(AT_NL "DATA ACCEPT:"), GF("SEND FAIL")) != 1) {
+    if (waitResponse(GF("DATA ACCEPT:"), GF("SEND FAIL")) != 1) {
       return 0;
     }
     uint8_t  ret_mux = streamGetIntBefore(',');   // check mux
@@ -486,7 +486,7 @@ class TinyGsmSim7000
    */
  protected:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
+    if (data.endsWith(GF("+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
@@ -501,7 +501,7 @@ class TinyGsmSim7000
         data += mode;
         return false;
       }
-    } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
+    } else if (data.endsWith(GF("+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TinyGsmSim7000TcpConfig::kMuxCount &&
@@ -543,7 +543,7 @@ class TinyGsmSim7000
       data = "";
       DBG("### Daylight savings time state updated.");
       return true;
-    } else if (data.endsWith(GF(AT_NL "SMS Ready" AT_NL))) {
+    } else if (data.endsWith(GF("SMS Ready" AT_NL))) {
       data = "";
       DBG("### Unexpected module reset!");
       init();

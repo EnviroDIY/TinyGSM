@@ -344,7 +344,7 @@ class TinyGsmSim7080
  protected:
   String getLocalIPImpl() {
     sendAT(GF("+CNACT?"));
-    if (waitResponse(GF(AT_NL "+CNACT:")) != 1) { return ""; }
+    if (waitResponse(GF("+CNACT:")) != 1) { return ""; }
     streamSkipUntil('\"');
     String res = stream.readStringUntil('\"');
     waitResponse();
@@ -626,8 +626,8 @@ class TinyGsmSim7080
     int  ntries = 0;
     while (!res && ntries < 5) {
       sendAT(GF("+CNACT=0,1"));
-      res = waitResponse(60000L, GF(AT_NL "+APP PDP: 0,ACTIVE"),
-                         GF(AT_NL "+APP PDP: 0,DEACTIVE"));
+      res = waitResponse(60000L, GF("+APP PDP: 0,ACTIVE"),
+                         GF("+APP PDP: 0,DEACTIVE"));
       waitResponse();
       ntries++;
     }
@@ -1064,7 +1064,7 @@ class TinyGsmSim7080
     //                "recv",<id>,<length>,<remoteIP>,<remote_port><CR><LF><data>
     // NOTE:  including the <recv_mode> fails
     sendAT(GF("+CAOPEN="), mux, GF(",0,\"TCP\",\""), host, GF("\","), port);
-    if (waitResponse(timeout_ms, GF(AT_NL "+CAOPEN:")) != 1) { return 0; }
+    if (waitResponse(timeout_ms, GF("+CAOPEN:")) != 1) { return 0; }
     // returns OK/r/n/r/n+CAOPEN: <cid>,<result>
     // <result> 0: Success
     //          1: Socket error
@@ -1341,7 +1341,7 @@ class TinyGsmSim7080
       data = "";
       DBG("### Daylight savings time state updated.");
       return true;
-    } else if (data.endsWith(GF(AT_NL "SMS Ready" AT_NL))) {
+    } else if (data.endsWith(GF("SMS Ready" AT_NL))) {
       data = "";
       DBG("### Unexpected module reset!");
       init();
