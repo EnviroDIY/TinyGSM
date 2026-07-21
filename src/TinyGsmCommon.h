@@ -84,10 +84,29 @@
 #define TINY_GSM_UNREAD_CHECK_MS 500
 #endif
 
+/**
+ * @def TINY_GSM_ATTR_NOT_AVAILABLE
+ * @brief Helper macro to mark a function as not available on this modem type
+ * @def TINY_GSM_ATTR_NOT_IMPLEMENTED
+ * @brief Helper macro to mark a function as not implemented on this modem type
+ */
 #define TINY_GSM_ATTR_NOT_AVAILABLE \
   __attribute__((error("Not available on this modem type")))
 #define TINY_GSM_ATTR_NOT_IMPLEMENTED __attribute__((error("Not implemented")))
 
+/**
+ * @def TINY_GSM_PROGMEM
+ * @brief Helper macro for memory storage location
+ * @typedef GsmConstStr
+ * @brief Helper typedef for a constant string stored in program memory
+ * (PROGMEM) on AVR platforms and in standard memory on other systems.
+ * @def GFP
+ * @brief Helper macro to cast data as a constant string in program memory
+ * (PROGMEM) on AVR platforms and in standard memory on other systems.
+ * @def GF
+ * @brief Helper macro to store data in program memory (PROGMEM) on AVR
+ * platforms and in standard memory on other systems.
+ */
 #if defined(PROGMEM) && (defined(__AVR__) || defined(ARDUINO_ARCH_AVR)) && \
     !defined(__AVR_ATmega4809__) && !defined(GFP) && !defined(GF)
 #define TINY_GSM_PROGMEM PROGMEM

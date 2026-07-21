@@ -343,7 +343,7 @@ The module shutdown and restart may also be quite slow.
 
 This library _does not_ support any sort of "hardware" or pin level controls for the modules.
 If you need to turn your module on or reset it using some sort of High/Low/High pin sequence, you must write those functions yourself.
-If you're interested in pin controls for your module, there's documentation of the wake/sleep protocols for most of the modules supported by this library in the modems compnents of the [ModularSensors library](https://github.com/EnviroDIY/ModularSensors/).
+If you're interested in pin controls for your module, there's documentation of the wake/sleep protocols for most of the modules supported by this library in the modems components of the [ModularSensors library](https://github.com/EnviroDIY/ModularSensors/).
 
 ## API Reference
 
@@ -427,7 +427,7 @@ In the diagnostics example, simply uncomment the line:
 In custom code, you can add this snippet:
 
 ```cpp
-#ifdef DUMP_AT_COMMANDS
+#if defined(DUMP_AT_COMMANDS)
   #include <StreamDebugger.h>
   StreamDebugger debugger(SerialAT, SerialMon);
   TinyGsm modem(debugger);
@@ -455,7 +455,7 @@ Here are some tips for writing layer 7 (particularly HTTP request) manually:
 use this:
 
 ```cpp
-char buffer 128;
+char buffer[128] = "";
 strcat(buffer, "GET ");
 strcat(buffer, your_url_host);
 strcat(buffer, " HTTP/1.1\r\n");
@@ -501,7 +501,7 @@ You will not be able to compile the HttpClient or HttpsClient examples with ESP3
 
 ### SAMD21
 
-When using SAMD21-based boards, you may need to use a sercom uart port instead of `Serial1`.
+When using SAMD21-based boards, you may need to use a SERCOM UART port instead of `Serial1`.
 Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/102#issuecomment-345548941).
 
 ### Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion
