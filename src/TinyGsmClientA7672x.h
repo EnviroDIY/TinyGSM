@@ -24,21 +24,6 @@
 #endif
 #define TINY_GSM_SECURE_MUX_COUNT 2
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "SIMCom"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#define MODEM_MODEL "A7672x"
-
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
@@ -51,6 +36,11 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
+
 /// Registration status
 enum A7672xRegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
@@ -61,6 +51,16 @@ enum A7672xRegStatus {
   REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
+
+/// Basic modem configurations for the A7672x modem family
+struct TinyGsmA7672XModemConfig
+    : public TinyGsmModemConfigPreset<A7672xRegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "A7672x";
+};
+
+constexpr char TinyGsmA7672XModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmA7672XModemConfig::MODEM_MODEL[];
 
 /**
  * @brief TCP behavior and limits for the A7672x modem family.
@@ -92,18 +92,19 @@ struct TinyGsmA7672xTcpConfig
  * @brief Class for the SIMCom A7672x modem, which is a 4G LTE Cat-M1/NB-IoT
  * modem with GPS and SSL support.
  */
-class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X, A7672xRegStatus>,
-                      public TinyGsmGPRS<TinyGsmA7672X>,
-                      public TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>,
-                      public TinyGsmSSL<TinyGsmA7672X>,
-                      public TinyGsmCalling<TinyGsmA7672X>,
-                      public TinyGsmSMS<TinyGsmA7672X>,
-                      public TinyGsmGSMLocation<TinyGsmA7672X>,
-                      public TinyGsmTime<TinyGsmA7672X>,
-                      public TinyGsmNTP<TinyGsmA7672X>,
-                      public TinyGsmBattery<TinyGsmA7672X>,
-                      public TinyGsmTemperature<TinyGsmA7672X> {
-  friend class TinyGsmModem<TinyGsmA7672X, A7672xRegStatus>;
+class TinyGsmA7672X
+    : public TinyGsmModem<TinyGsmA7672X, TinyGsmA7672XModemConfig>,
+      public TinyGsmGPRS<TinyGsmA7672X>,
+      public TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>,
+      public TinyGsmSSL<TinyGsmA7672X>,
+      public TinyGsmCalling<TinyGsmA7672X>,
+      public TinyGsmSMS<TinyGsmA7672X>,
+      public TinyGsmGSMLocation<TinyGsmA7672X>,
+      public TinyGsmTime<TinyGsmA7672X>,
+      public TinyGsmNTP<TinyGsmA7672X>,
+      public TinyGsmBattery<TinyGsmA7672X>,
+      public TinyGsmTemperature<TinyGsmA7672X> {
+  friend class TinyGsmModem<TinyGsmA7672X, TinyGsmA7672XModemConfig>;
   friend class TinyGsmGPRS<TinyGsmA7672X>;
   friend class TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>;
   friend class TinyGsmSSL<TinyGsmA7672X>;
@@ -114,6 +115,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X, A7672xRegStatus>,
   friend class TinyGsmNTP<TinyGsmA7672X>;
   friend class TinyGsmBattery<TinyGsmA7672X>;
   friend class TinyGsmTemperature<TinyGsmA7672X>;
+
+  using ModemConfig = TinyGsmA7672XModemConfig;
 
   /*
    * Inner Client
@@ -1040,5 +1043,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X, A7672xRegStatus>,
 };
 
 // cspell:words CCHSEND
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTA7672X_H_

@@ -19,25 +19,6 @@
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
 #endif
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "Quectel"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#if defined(TINY_GSM_MODEM_BG95) || defined(TINY_GSM_MODEM_BG95SSL)
-#define MODEM_MODEL "BG95"
-#else
-#define MODEM_MODEL "BG96"
-#endif
-
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
@@ -50,6 +31,11 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
+
 /// Registration status
 enum BG96RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
@@ -60,6 +46,19 @@ enum BG96RegStatus {
   REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
+
+/// Basic modem configurations for the BG96 modem family
+struct TinyGsmBG96ModemConfig : public TinyGsmModemConfigPreset<BG96RegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Quectel";
+#if defined(TINY_GSM_MODEM_BG95) || defined(TINY_GSM_MODEM_BG95SSL)
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "BG95";
+#else
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "BG96";
+#endif
+};
+
+constexpr char TinyGsmBG96ModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmBG96ModemConfig::MODEM_MODEL[];
 
 /**
  * @brief TCP behavior and limits for the BG95/BG96 modem family.
@@ -82,7 +81,7 @@ struct TinyGsmBG96TcpConfig
           /*connectTimeoutS*/ 150> {};
 
 /// Class for the Quectel BG96 and BG95
-class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, BG96RegStatus>,
+class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
                     public TinyGsmGPRS<TinyGsmBG96>,
                     public TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>,
                     public TinyGsmSSL<TinyGsmBG96>,
@@ -93,7 +92,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, BG96RegStatus>,
                     public TinyGsmNTP<TinyGsmBG96>,
                     public TinyGsmBattery<TinyGsmBG96>,
                     public TinyGsmTemperature<TinyGsmBG96> {
-  friend class TinyGsmModem<TinyGsmBG96, BG96RegStatus>;
+  friend class TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmBG96>;
   friend class TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>;
   friend class TinyGsmSSL<TinyGsmBG96>;
@@ -104,6 +103,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, BG96RegStatus>,
   friend class TinyGsmNTP<TinyGsmBG96>;
   friend class TinyGsmBattery<TinyGsmBG96>;
   friend class TinyGsmTemperature<TinyGsmBG96>;
+
+  using ModemConfig = TinyGsmBG96ModemConfig;
 
   /*
    * Inner Client
@@ -1306,5 +1307,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, BG96RegStatus>,
  protected:
   GsmClientBG96* sockets[TinyGsmBG96TcpConfig::kMuxCount];
 };
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTBG96_H_

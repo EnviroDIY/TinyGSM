@@ -16,6 +16,11 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
 
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
+
 /// State: current Wi-Fi state.
 enum ESP32RegStatus {
   REG_UNINITIALIZED =
@@ -30,6 +35,16 @@ enum ESP32RegStatus {
   REG_UNKNOWN       = 5,  ///< ESP32 station is in an unknown state.
 
 };
+
+/// Basic modem configurations for the ESP32 modem family
+struct TinyGsmESP32ModemConfig
+    : public TinyGsmModemConfigPreset<ESP32RegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Espressif";
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "ESP32";
+};
+
+constexpr char TinyGsmESP32ModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmESP32ModemConfig::MODEM_MODEL[];
 
 /**
  * @brief TCP behavior and limits for the ESP32 family.
@@ -60,18 +75,21 @@ struct TinyGsmESP32TcpConfig
  * @warning This class is used to communicate with a module that has been
  * programmed with the AT command firmware.
  */
-class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32, ESP32RegStatus>,
-                     public TinyGsmTCP<TinyGsmESP32, TinyGsmESP32TcpConfig>,
-                     public TinyGsmSSL<TinyGsmESP32>,
-                     public TinyGsmTime<TinyGsmESP32>,
-                     public TinyGsmNTP<TinyGsmESP32> {
-  friend class TinyGsmEspressif<TinyGsmESP32, ESP32RegStatus>;
-  friend class TinyGsmModem<TinyGsmESP32, ESP32RegStatus>;
+class TinyGsmESP32
+    : public TinyGsmEspressif<TinyGsmESP32, TinyGsmESP32ModemConfig>,
+      public TinyGsmTCP<TinyGsmESP32, TinyGsmESP32TcpConfig>,
+      public TinyGsmSSL<TinyGsmESP32>,
+      public TinyGsmTime<TinyGsmESP32>,
+      public TinyGsmNTP<TinyGsmESP32> {
+  friend class TinyGsmEspressif<TinyGsmESP32, TinyGsmESP32ModemConfig>;
+  friend class TinyGsmModem<TinyGsmESP32, TinyGsmESP32ModemConfig>;
   friend class TinyGsmWifi<TinyGsmESP32>;
   friend class TinyGsmTCP<TinyGsmESP32, TinyGsmESP32TcpConfig>;
   friend class TinyGsmSSL<TinyGsmESP32>;
   friend class TinyGsmTime<TinyGsmESP32>;
   friend class TinyGsmNTP<TinyGsmESP32>;
+
+  using ModemConfig = TinyGsmESP32ModemConfig;
 
   /*
    * Inner Client
@@ -335,7 +353,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32, ESP32RegStatus>,
    * @param stream Stream used to communicate with the modem.
    */
   explicit TinyGsmESP32(Stream& stream)
-      : TinyGsmEspressif<TinyGsmESP32, ESP32RegStatus>(stream) {
+      : TinyGsmEspressif<TinyGsmESP32, TinyGsmESP32ModemConfig>(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -1096,7 +1114,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32, ESP32RegStatus>,
     );
 
     String data;
-    int8_t rsp = waitResponse(timeout_ms, data, GFP(GSM_OK), GFP(GSM_ERROR),
+    int8_t rsp = waitResponse(timeout_ms, data, GFP(ModemConfig::GSM_OK),
+                              GFP(ModemConfig::GSM_ERROR),
                               GF("ALREADY CONNECT"));
     if (rsp == 1 && data.length() > 8) {
       int8_t coma        = data.indexOf(',');
@@ -1119,7 +1138,8 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32, ESP32RegStatus>,
       received = streamGetIntBefore(' ');  // check received length
     }
     if (waitResponse(30000L, GF(AT_NL "SEND OK" AT_NL),
-                     GF(AT_NL "SEND FAIL" AT_NL), GFP(GSM_ERROR)) != 1) {
+                     GF(AT_NL "SEND FAIL" AT_NL),
+                     GFP(ModemConfig::GSM_ERROR)) != 1) {
       return 0;
     }
     if (received != len) { DBG("### Sent:", received, "of", len); }
@@ -1161,8 +1181,9 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32, ESP32RegStatus>,
     bool verified_connections[TinyGsmESP32TcpConfig::kMuxCount] = {0, 0, 0, 0,
                                                                    0};
     for (int muxNo = 0; muxNo < TinyGsmESP32TcpConfig::kMuxCount; muxNo++) {
-      uint8_t has_status = waitResponse(GF("+CIPSTATE:"), GFP(GSM_OK),
-                                        GFP(GSM_ERROR));
+      uint8_t has_status = waitResponse(GF("+CIPSTATE:"),
+                                        GFP(ModemConfig::GSM_OK),
+                                        GFP(ModemConfig::GSM_ERROR));
       if (has_status == 1) {
         int8_t returned_mux = streamGetIntBefore(',');
         streamSkipUntil(',');   // Skip type
@@ -1259,5 +1280,7 @@ class TinyGsmESP32 : public TinyGsmEspressif<TinyGsmESP32, ESP32RegStatus>,
  protected:
   GsmClientESP32* sockets[TinyGsmESP32TcpConfig::kMuxCount];
 };
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTESP32_H_

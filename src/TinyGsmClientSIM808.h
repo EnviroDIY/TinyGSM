@@ -14,6 +14,11 @@
 #include "TinyGsmGPS.tpp"
 #include "TinyGsmBluetooth.tpp"
 
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
+
 /**
  * @brief Class for the SIMCOM SIM808 and SIM868, which extends the SIM800 with
  * GPS and Bluetooth support
@@ -169,5 +174,7 @@ class TinyGsmSim808 : public TinyGsmSim800,
     return true;
   }
 };
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM808_H_

@@ -17,28 +17,18 @@
 #endif
 #if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
 #define TINY_GSM_MAX_RESPONSE_CHECKS 5
-#endif
-
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "Neoway"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#define MODEM_MODEL "M590"
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
+#endif
+
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
 
 /// Registration status
 enum M590RegStatus {
@@ -50,6 +40,15 @@ enum M590RegStatus {
   REG_OK_ROAMING   = 5,   ///< Registered, roaming
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
+
+/// Basic modem configurations for the M590 modem family
+struct TinyGsmM590ModemConfig : public TinyGsmModemConfigPreset<M590RegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Neoway";
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "M590";
+};
+
+constexpr char TinyGsmM590ModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmM590ModemConfig::MODEM_MODEL[];
 
 /**
  * @brief TCP behavior and limits for the M590 modem family.
@@ -66,16 +65,18 @@ struct TinyGsmM590TcpConfig
           /*stopTimeoutS*/ 1> {};
 
 /// Class for the Neoway M590
-class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, M590RegStatus>,
+class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
                     public TinyGsmGPRS<TinyGsmM590>,
                     public TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>,
                     public TinyGsmSMS<TinyGsmM590>,
                     public TinyGsmTime<TinyGsmM590> {
-  friend class TinyGsmModem<TinyGsmM590, M590RegStatus>;
+  friend class TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmM590>;
   friend class TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>;
   friend class TinyGsmSMS<TinyGsmM590>;
   friend class TinyGsmTime<TinyGsmM590>;
+
+  using ModemConfig = TinyGsmM590ModemConfig;
 
   /*
    * Inner Client
@@ -246,7 +247,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, M590RegStatus>,
     streamSkipUntil('\n');  // skip the model
     streamSkipUntil('\n');  // skip the revision
     if (waitResponse() == 1) { return factory; }
-    return MODEM_MANUFACTURER;
+    return ModemConfig::MODEM_MANUFACTURER;
   }
 
   // This is extracted from the modem info
@@ -257,7 +258,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, M590RegStatus>,
     model.trim();
     streamSkipUntil('\n');  // skip the revision
     if (waitResponse() == 1) { return model; }
-    return MODEM_MODEL;
+    return ModemConfig::MODEM_MODEL;
   }
 
   // Gets the modem firmware version
@@ -608,5 +609,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, M590RegStatus>,
  protected:
   GsmClientM590* sockets[TinyGsmM590TcpConfig::kMuxCount];
 };
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTM590_H_

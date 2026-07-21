@@ -13,6 +13,11 @@
 #include "TinyGsmClientEspressif.h"
 #include "TinyGsmTCP.tpp"
 
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
+
 // NOTE: This module supports SSL, but we do not support any certificate
 // management for the non-OS version of the ESP8266 firmware, so we define
 // TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module so as not to
@@ -34,6 +39,16 @@ enum ESP8266NonOSRegStatus {
   REG_DENIED  = 5,  ///< ESP8266 station did NOT connect to an AP
   REG_UNKNOWN = 6,  ///< ESP8266 station is in an unknown state
 };
+
+/// Basic modem configurations for the ESP8266NonOS modem family
+struct TinyGsmESP8266NonOSModemConfig
+    : public TinyGsmModemConfigPreset<ESP8266NonOSRegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Espressif";
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "ESP8266";
+};
+
+constexpr char TinyGsmESP8266NonOSModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmESP8266NonOSModemConfig::MODEM_MODEL[];
 
 /**
  * @brief TCP behavior and limits for the ESP8266 (non OS AT version) family.
@@ -66,12 +81,17 @@ struct TinyGsmESP8266NonOSTcpConfig
  * please update your module.  It's quite outdated.
  */
 class TinyGsmESP8266NonOS
-    : public TinyGsmEspressif<TinyGsmESP8266NonOS, ESP8266NonOSRegStatus>,
+    : public TinyGsmEspressif<TinyGsmESP8266NonOS,
+                              TinyGsmESP8266NonOSModemConfig>,
       public TinyGsmTCP<TinyGsmESP8266NonOS, TinyGsmESP8266NonOSTcpConfig> {
-  friend class TinyGsmEspressif<TinyGsmESP8266NonOS, ESP8266NonOSRegStatus>;
-  friend class TinyGsmModem<TinyGsmESP8266NonOS, ESP8266NonOSRegStatus>;
+  friend class TinyGsmEspressif<TinyGsmESP8266NonOS,
+                                TinyGsmESP8266NonOSModemConfig>;
+  friend class TinyGsmModem<TinyGsmESP8266NonOS,
+                            TinyGsmESP8266NonOSModemConfig>;
   friend class TinyGsmWifi<TinyGsmESP8266NonOS>;
   friend class TinyGsmTCP<TinyGsmESP8266NonOS, TinyGsmESP8266NonOSTcpConfig>;
+
+  using ModemConfig = TinyGsmESP8266NonOSModemConfig;
 
   /*
    * Inner Client
@@ -216,7 +236,8 @@ class TinyGsmESP8266NonOS
    * @param stream Stream used to communicate with the modem.
    */
   explicit TinyGsmESP8266NonOS(Stream& stream)
-      : TinyGsmEspressif<TinyGsmESP8266NonOS, ESP8266NonOSRegStatus>(stream) {
+      : TinyGsmEspressif<TinyGsmESP8266NonOS, TinyGsmESP8266NonOSModemConfig>(
+            stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -358,7 +379,8 @@ class TinyGsmESP8266NonOS
 #endif
     );
     // TODO(?): Check mux
-    int8_t rsp = waitResponse(timeout_ms, GFP(GSM_OK), GFP(GSM_ERROR),
+    int8_t rsp = waitResponse(timeout_ms, GFP(ModemConfig::GSM_OK),
+                              GFP(ModemConfig::GSM_ERROR),
                               GF("ALREADY CONNECT"));
     if (rsp == 3) waitResponse();
     // May return "ERROR" after the "ALREADY CONNECT"
@@ -371,7 +393,8 @@ class TinyGsmESP8266NonOS
     // after "STATUS:" it should return the status number (0,1,2,3,4,5),
     // followed by an OK
     // Hopefully we'll catch the "3" here, but fall back to the OK or Error
-    int8_t status = waitResponse(GF("3"), GFP(GSM_OK), GFP(GSM_ERROR));
+    int8_t status = waitResponse(GF("3"), GFP(ModemConfig::GSM_OK),
+                                 GFP(ModemConfig::GSM_ERROR));
     // if the status is anything but 3, there are no connections open
     if (status != 1) {
       for (int muxNo = 0; muxNo < TinyGsmESP8266NonOSTcpConfig::kMuxCount;
@@ -384,8 +407,9 @@ class TinyGsmESP8266NonOS
         0, 0, 0, 0, 0};
     for (int muxNo = 0; muxNo < TinyGsmESP8266NonOSTcpConfig::kMuxCount;
          muxNo++) {
-      uint8_t has_status = waitResponse(GF("+CIPSTATUS:"), GFP(GSM_OK),
-                                        GFP(GSM_ERROR));
+      uint8_t has_status = waitResponse(GF("+CIPSTATUS:"),
+                                        GFP(ModemConfig::GSM_OK),
+                                        GFP(ModemConfig::GSM_ERROR));
       if (has_status == 1) {
         int8_t returned_mux = streamGetIntBefore(',');
         streamSkipUntil(',');   // Skip mux
@@ -485,5 +509,7 @@ class TinyGsmESP8266NonOS
  protected:
   GsmClientESP8266NonOS* sockets[TinyGsmESP8266NonOSTcpConfig::kMuxCount];
 };
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTESP8266NONOS_H_

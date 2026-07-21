@@ -20,26 +20,6 @@
 #endif
 #if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
 #define TINY_GSM_MAX_RESPONSE_CHECKS 6
-#endif
-
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "Quectel"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#if defined(TINY_GSM_MODEM_MC60E)
-#define MODEM_MODEL "MC60E"
-#else
-#define MODEM_MODEL "MC60"
-#endif
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
@@ -48,6 +28,12 @@
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
 #include "TinyGsmBattery.tpp"
+#endif
+
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
 
 /// Registration status
 enum MC60RegStatus {
@@ -59,6 +45,19 @@ enum MC60RegStatus {
   REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
+
+/// Basic modem configurations for the MC60 modem family
+struct TinyGsmMC60ModemConfig : public TinyGsmModemConfigPreset<MC60RegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Quectel";
+#if defined(TINY_GSM_MODEM_MC60E)
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "MC60E";
+#else
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "MC60";
+#endif
+};
+
+constexpr char TinyGsmMC60ModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmMC60ModemConfig::MODEM_MODEL[];
 
 /**
  * @brief TCP behavior and limits for the MC60 modem family.
@@ -76,20 +75,22 @@ struct TinyGsmMC60TcpConfig
           /*stopTimeoutS*/ 75> {};
 
 /// Class for the Quectel MC60
-class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, MC60RegStatus>,
+class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
                     public TinyGsmGPRS<TinyGsmMC60>,
                     public TinyGsmTCP<TinyGsmMC60, TinyGsmMC60TcpConfig>,
                     public TinyGsmCalling<TinyGsmMC60>,
                     public TinyGsmSMS<TinyGsmMC60>,
                     public TinyGsmTime<TinyGsmMC60>,
                     public TinyGsmBattery<TinyGsmMC60> {
-  friend class TinyGsmModem<TinyGsmMC60, MC60RegStatus>;
+  friend class TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmMC60>;
   friend class TinyGsmTCP<TinyGsmMC60, TinyGsmMC60TcpConfig>;
   friend class TinyGsmCalling<TinyGsmMC60>;
   friend class TinyGsmSMS<TinyGsmMC60>;
   friend class TinyGsmTime<TinyGsmMC60>;
   friend class TinyGsmBattery<TinyGsmMC60>;
+
+  using ModemConfig = TinyGsmMC60ModemConfig;
 
   /*
    * Inner Client
@@ -545,7 +546,8 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, MC60RegStatus>,
     sendAT(GF("+QIRD=0,1,"), mux, ',', (uint16_t)size);
     // If it replies only OK for the write command, it means there is no
     // received data in the buffer of the connection.
-    int8_t res = waitResponse(GF("+QIRD:"), GFP(GSM_OK), GFP(GSM_ERROR));
+    int8_t res = waitResponse(GF("+QIRD:"), GFP(ModemConfig::GSM_OK),
+                              GFP(ModemConfig::GSM_ERROR));
     if (res == 1) {
       streamSkipUntil(':');  // skip IP address
       streamSkipUntil(',');  // skip port
@@ -646,5 +648,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, MC60RegStatus>,
  protected:
   GsmClientMC60* sockets[TinyGsmMC60TcpConfig::kMuxCount];
 };
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTMC60_H_

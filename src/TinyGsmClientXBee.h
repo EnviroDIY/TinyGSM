@@ -37,16 +37,6 @@
 #endif
 #define AT_NL "\r"
 
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "Digi"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#define MODEM_MODEL "XBee"
-
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
@@ -90,6 +80,17 @@ enum XBeeRegStatus {
   REG_UNKNOWN      = 4,  ///< Unknown registration status
 };
 
+/// Basic modem configurations for the XBee modem family
+struct TinyGsmXBeeModemConfig : public TinyGsmModemConfigPreset<XBeeRegStatus> {
+  static constexpr char GSM_NL[] TINY_GSM_PROGMEM             = "\r";
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Digi";
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "XBee";
+};
+
+constexpr char TinyGsmXBeeModemConfig::GSM_NL[];
+constexpr char TinyGsmXBeeModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmXBeeModemConfig::MODEM_MODEL[];
+
 /**
  * @brief TCP behavior and limits for the XBee modem family.
  *
@@ -117,20 +118,22 @@ enum XBeeType {
 };
 
 /// Class for the Digi XBee family of modems
-class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
+class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
                     public TinyGsmGPRS<TinyGsmXBee>,
                     public TinyGsmWifi<TinyGsmXBee>,
                     public TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>,
                     public TinyGsmSMS<TinyGsmXBee>,
                     public TinyGsmBattery<TinyGsmXBee>,
                     public TinyGsmTemperature<TinyGsmXBee> {
-  friend class TinyGsmModem<TinyGsmXBee, XBeeRegStatus>;
+  friend class TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>;
   friend class TinyGsmGPRS<TinyGsmXBee>;
   friend class TinyGsmWifi<TinyGsmXBee>;
   friend class TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>;
   friend class TinyGsmSMS<TinyGsmXBee>;
   friend class TinyGsmBattery<TinyGsmXBee>;
   friend class TinyGsmTemperature<TinyGsmXBee>;
+
+  using ModemConfig = TinyGsmXBeeModemConfig;
 
   /*
    * Inner Client
@@ -1551,7 +1554,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
         // Ask for information about any open sockets
         sendAT(GF("SI"));
         String open_socks = stream.readStringUntil('\r');
-        open_socks.replace(AT_NL, "");
+        open_socks.replace(ModemConfig::GSM_NL, "");
         open_socks.trim();
         if (open_socks != "") {
           // In transparent mode, only socket 0 should be possible
@@ -1923,5 +1926,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, XBeeRegStatus>,
 };
 
 // cspell:words LTEM
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTXBEE_H_

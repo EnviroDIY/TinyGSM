@@ -24,23 +24,13 @@
 #endif
 #define TINY_GSM_SECURE_MUX_COUNT 6
 
+#include "TinyGsmModem.tpp"
+#include "TinyGsmTCP.tpp"
+
 #ifdef AT_NL
 #undef AT_NL
 #endif
 #define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "Sequans"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#define MODEM_MODEL "Monarch"
-
-#include "TinyGsmModem.tpp"
-#include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
 // management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
@@ -66,6 +56,16 @@ enum MonarchRegStatus {
   REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
+
+/// Basic modem configurations for the SequansMonarch modem family
+struct TinyGsmSequansMonarchModemConfig
+    : public TinyGsmModemConfigPreset<MonarchRegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Sequans";
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "Monarch";
+};
+
+constexpr char TinyGsmSequansMonarchModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmSequansMonarchModemConfig::MODEM_MODEL[];
 
 /**
  * @brief TCP behavior and limits for the Sequans Monarch modem family.
@@ -99,14 +99,16 @@ enum SocketStatus {
 
 /// Class for the Sequans Monarch
 class TinyGsmSequansMonarch
-    : public TinyGsmModem<TinyGsmSequansMonarch, MonarchRegStatus>,
+    : public TinyGsmModem<TinyGsmSequansMonarch,
+                          TinyGsmSequansMonarchModemConfig>,
       public TinyGsmGPRS<TinyGsmSequansMonarch>,
       public TinyGsmTCP<TinyGsmSequansMonarch, TinyGsmSequansMonarchTcpConfig>,
       public TinyGsmCalling<TinyGsmSequansMonarch>,
       public TinyGsmSMS<TinyGsmSequansMonarch>,
       public TinyGsmTime<TinyGsmSequansMonarch>,
       public TinyGsmTemperature<TinyGsmSequansMonarch> {
-  friend class TinyGsmModem<TinyGsmSequansMonarch, MonarchRegStatus>;
+  friend class TinyGsmModem<TinyGsmSequansMonarch,
+                            TinyGsmSequansMonarchModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSequansMonarch>;
   friend class TinyGsmTCP<TinyGsmSequansMonarch,
                           TinyGsmSequansMonarchTcpConfig>;
@@ -114,6 +116,8 @@ class TinyGsmSequansMonarch
   friend class TinyGsmSMS<TinyGsmSequansMonarch>;
   friend class TinyGsmTime<TinyGsmSequansMonarch>;
   friend class TinyGsmTemperature<TinyGsmSequansMonarch>;
+
+  using ModemConfig = TinyGsmSequansMonarchModemConfig;
 
   /*
    * Inner Client
@@ -375,12 +379,12 @@ class TinyGsmSequansMonarch
     if (!testAT()) { return false; }
 
     sendAT(GF("+CFUN=0"));
-    int8_t res = waitResponse(20000L, GFP(GSM_OK), GFP(GSM_ERROR),
-                              GF("+SYSSTART"));
+    int8_t res = waitResponse(20000L, GFP(ModemConfig::GSM_OK),
+                              GFP(ModemConfig::GSM_ERROR), GF("+SYSSTART"));
     if (res != 1 && res != 3) { return false; }
 
     sendAT(GF("+CFUN=1,1"));
-    res = waitResponse(20000L, GF("+SYSSTART"), GFP(GSM_ERROR));
+    res = waitResponse(20000L, GF("+SYSSTART"), GFP(ModemConfig::GSM_ERROR));
     if (res != 1 && res != 3) { return false; }
     delay(1000);
     return init(pin);
@@ -633,8 +637,9 @@ class TinyGsmSequansMonarch
     // <acceptAnyRemote> = Applies to UDP only
     sendAT(GF("+SQNSD="), mux, GF(",0,"), port, ',', '"', host, '"',
            GF(",0,0,1"));
-    rsp = waitResponse((timeout_ms - (millis() - startMillis)), GFP(GSM_OK),
-                       GFP(GSM_ERROR), GF("NO CARRIER" AT_NL));
+    rsp = waitResponse((timeout_ms - (millis() - startMillis)),
+                       GFP(ModemConfig::GSM_OK), GFP(ModemConfig::GSM_ERROR),
+                       GF("NO CARRIER" AT_NL));
 
     // creation of socket failed immediately.
     if (rsp != 1) { return false; }
@@ -770,7 +775,9 @@ class TinyGsmSequansMonarch
     sendAT(GF("+SQNSS"));
     for (int muxNo = 1; muxNo <= TinyGsmSequansMonarchTcpConfig::kMuxCount;
          muxNo++) {
-      if (waitResponse(GFP(GSM_OK), GF(AT_NL "+SQNSS: ")) != 2) { break; }
+      if (waitResponse(GFP(ModemConfig::GSM_OK), GF(AT_NL "+SQNSS: ")) != 2) {
+        break;
+      }
       uint8_t status = 0;
       // if (streamGetIntBefore(',') != muxNo) { // check the mux no
       //   DBG("### Warning: misaligned mux numbers!");
@@ -843,5 +850,7 @@ class TinyGsmSequansMonarch
 };
 
 // cspell:words SQNSSENDEXT
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSEQUANSMONARCH_H_

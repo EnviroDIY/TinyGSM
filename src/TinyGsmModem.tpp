@@ -11,28 +11,6 @@
 
 #include "TinyGsmCommon.h"
 
-#ifndef AT_NL
-#define AT_NL "\r\n"
-#endif
-
-#ifndef AT_OK
-#define AT_OK "OK"
-#endif
-
-#ifndef AT_ERROR
-#define AT_ERROR "ERROR"
-#endif
-
-#if defined TINY_GSM_DEBUG
-#ifndef AT_VERBOSE
-#define AT_VERBOSE "+CME ERROR:"
-#endif
-
-#ifndef AT_VERBOSE_2
-#define AT_VERBOSE_2 "+CMS ERROR:"
-#endif
-#endif
-
 #ifndef TINY_GSM_MAX_RESPONSE_CHECKS
 // NOTE: The minimum value of 5 is required for any modem that uses the default
 // implementation of getSimStatusImpl for the SIM status check, as it requires 5
@@ -46,37 +24,77 @@
 #endif
 #endif
 
-#ifndef MODEM_MANUFACTURER
-#define MODEM_MANUFACTURER "unknown"
-#endif
+/**
+ * @brief Template class for modem config traits.
+ *
+ * Most modems share common defaults; this base lets modem-specific config
+ * structs specify only the values that differ.
+ */
+template <typename regStatusType = int8_t>
+struct TinyGsmModemConfigPreset {
+  using RegStatus = regStatusType;
 
-#ifndef MODEM_MODEL
-#define MODEM_MODEL "unknown"
-#endif
+  /// The modem manufacturer
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "unknown";
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "unknown";
 
-/// The AT string
-static const char GSM_AT[] TINY_GSM_PROGMEM = "AT";
-
-/// The OK string
-static const char GSM_OK[] TINY_GSM_PROGMEM = AT_OK AT_NL;
-/// The ERROR string
-static const char GSM_ERROR[] TINY_GSM_PROGMEM = AT_ERROR AT_NL;
+  /// The newline character(s) used in AT commands.
+  static constexpr char GSM_NL[] TINY_GSM_PROGMEM = "\r\n";
+  /// The AT string
+  static constexpr char GSM_AT[] TINY_GSM_PROGMEM = "AT";
+  /// The OK string.
+  static constexpr char GSM_OK[] TINY_GSM_PROGMEM = "OK\r\n";
+  /// The ERROR string
+  static constexpr char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR\r\n";
 
 #if defined TINY_GSM_DEBUG
-/// The verbose error string
-static const char GSM_VERBOSE[] TINY_GSM_PROGMEM = AT_VERBOSE;
-/// A second verbose error string
-static const char GSM_VERBOSE_2[] TINY_GSM_PROGMEM = AT_VERBOSE_2;
+  /// The verbose error string
+  static constexpr char GSM_VERBOSE[] TINY_GSM_PROGMEM = "+CME ERROR:";
+  /// A second verbose error string
+  static constexpr char GSM_VERBOSE_2[] TINY_GSM_PROGMEM = "+CMS ERROR:";
+#endif
+};
+
+// Out-of-class definitions for C++11 compliance
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::MODEM_MANUFACTURER[];
+
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::MODEM_MODEL[];
+
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_NL[];
+
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_AT[];
+
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_OK[];
+
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_ERROR[];
+
+#if defined TINY_GSM_DEBUG
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_VERBOSE[];
+
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_VERBOSE_2[];
 #endif
 
 /**
  * @class TinyGsmModem
  * @brief The CRTP parent class for basic modem functions.
  * @tparam modemType The derived modem class
- * @tparam regStatusType The modem-specific registration status type
+ * @tparam modemConfig The modem-specific configuration class, which must be
+ * derived from TinyGsmModemConfigPreset
  */
-template <class modemType, typename regStatusType = int8_t>
+template <class modemType, class modemConfig = TinyGsmModemConfigPreset<int8_t>>
 class TinyGsmModem {
+  using ModemConfig   = modemConfig;
+  using regStatusType = typename ModemConfig::RegStatus;
+
   /* =========================================== */
   /* =========================================== */
   /*
@@ -112,7 +130,7 @@ class TinyGsmModem {
    */
   template <typename... Args>
   void sendAT(Args... cmd) {
-    thisModem().streamWrite(GFP(GSM_AT), cmd..., AT_NL);
+    thisModem().streamWrite(ModemConfig::GSM_AT, cmd..., ModemConfig::GSM_NL);
     thisModem().stream.flush();
     TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
   }
@@ -260,8 +278,8 @@ class TinyGsmModem {
    * @return *int8_t* the index of the response input
    */
   int8_t waitResponse(uint32_t timeout_ms, String& data,
-                      GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR)
+                      GsmConstStr r1 = GFP(ModemConfig::GSM_OK),
+                      GsmConstStr r2 = GFP(ModemConfig::GSM_ERROR)
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 2
                           ,
                       GsmConstStr r3 = nullptr
@@ -337,8 +355,9 @@ class TinyGsmModem {
    * of nullptr
    * @return *int8_t* the index of the response input
    */
-  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR)
+  int8_t waitResponse(uint32_t    timeout_ms,
+                      GsmConstStr r1 = GFP(ModemConfig::GSM_OK),
+                      GsmConstStr r2 = GFP(ModemConfig::GSM_ERROR)
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 2
                           ,
                       GsmConstStr r3 = nullptr
@@ -415,8 +434,8 @@ class TinyGsmModem {
    * of nullptr
    * @return *int8_t* the index of the response input
    */
-  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR)
+  int8_t waitResponse(GsmConstStr r1 = GFP(ModemConfig::GSM_OK),
+                      GsmConstStr r2 = GFP(ModemConfig::GSM_ERROR)
 #if TINY_GSM_MAX_RESPONSE_CHECKS > 2
                           ,
                       GsmConstStr r3 = nullptr
@@ -812,8 +831,9 @@ class TinyGsmModem {
 
   inline void cleanResponseString(String& res) {
     // Remove the OK from the string, as well as any newlines
-    res.replace(AT_NL "OK" AT_NL, "");
-    res.replace(AT_NL, " ");
+    String okResponse = String(ModemConfig::GSM_NL) + ModemConfig::GSM_OK;
+    res.replace(okResponse, "");
+    res.replace(ModemConfig::GSM_NL, " ");
     res.trim();
   }
 
@@ -962,12 +982,13 @@ class TinyGsmModem {
           }
         }
 #if defined TINY_GSM_DEBUG
-        if ((data.endsWith(GFP(GSM_VERBOSE))) ||
-            (data.endsWith(GFP(GSM_VERBOSE_2)))) {
+        if ((data.endsWith(ModemConfig::GSM_VERBOSE)) ||
+            (data.endsWith(ModemConfig::GSM_VERBOSE_2))) {
           // check how long the new line is
           // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
-          const int  len_atnl    = strnlen(AT_NL, 3);
-          const char last_atnl_c = len_atnl > 0 ? AT_NL[len_atnl - 1] : '\n';
+          const int  len_atnl = strnlen(ModemConfig::GSM_NL, 3);
+          const char last_atnl_c =
+              len_atnl > 0 ? ModemConfig::GSM_NL[len_atnl - 1] : '\n';
           // Read out the verbose message, until the last character of the new
           // line
           data += thisModem().stream.readStringUntil(last_atnl_c);
@@ -1021,7 +1042,7 @@ class TinyGsmModem {
     thisModem().sendAT(GF("+CGMI"));  // 3GPP TS 27.007 standard
     String res;
     if (thisModem().waitResponse(1000L, res) != 1) {
-      return String(MODEM_MANUFACTURER);
+      return String(ModemConfig::MODEM_MANUFACTURER);
     }
     thisModem().cleanResponseString(res);
     return res;
@@ -1032,7 +1053,7 @@ class TinyGsmModem {
     thisModem().sendAT(GF("+CGMM"));  // 3GPP TS 27.007 standard
     String res;
     if (thisModem().waitResponse(1000L, res) != 1) {
-      return String(MODEM_MODEL);
+      return String(ModemConfig::MODEM_MODEL);
     }
     thisModem().cleanResponseString(res);
     return res;

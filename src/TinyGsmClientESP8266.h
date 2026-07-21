@@ -16,6 +16,11 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
 
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
+
 /// State: current Wi-Fi state.
 enum ESP8266RegStatus {
   REG_UNINITIALIZED =
@@ -29,6 +34,16 @@ enum ESP8266RegStatus {
   REG_DISCONNECTING = 4,  ///< ESP8266 station is in Wi-Fi disconnected state.
   REG_UNKNOWN       = 5,  ///< ESP8266 station is in an unknown state.
 };
+
+/// Basic modem configurations for the ESP8266 modem family
+struct TinyGsmESP8266ModemConfig
+    : public TinyGsmModemConfigPreset<ESP8266RegStatus> {
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Espressif";
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "ESP8266";
+};
+
+constexpr char TinyGsmESP8266ModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmESP8266ModemConfig::MODEM_MODEL[];
 
 /**
  * @brief TCP behavior and limits for the ESP8266 family.
@@ -60,18 +75,20 @@ struct TinyGsmESP8266TcpConfig
  * programmed with the AT command firmware.
  */
 class TinyGsmESP8266
-    : public TinyGsmEspressif<TinyGsmESP8266, ESP8266RegStatus>,
+    : public TinyGsmEspressif<TinyGsmESP8266, TinyGsmESP8266ModemConfig>,
       public TinyGsmTCP<TinyGsmESP8266, TinyGsmESP8266TcpConfig>,
       public TinyGsmSSL<TinyGsmESP8266>,
       public TinyGsmTime<TinyGsmESP8266>,
       public TinyGsmNTP<TinyGsmESP8266> {
-  friend class TinyGsmEspressif<TinyGsmESP8266, ESP8266RegStatus>;
-  friend class TinyGsmModem<TinyGsmESP8266, ESP8266RegStatus>;
+  friend class TinyGsmEspressif<TinyGsmESP8266, TinyGsmESP8266ModemConfig>;
+  friend class TinyGsmModem<TinyGsmESP8266, TinyGsmESP8266ModemConfig>;
   friend class TinyGsmWifi<TinyGsmESP8266>;
   friend class TinyGsmTCP<TinyGsmESP8266, TinyGsmESP8266TcpConfig>;
   friend class TinyGsmSSL<TinyGsmESP8266>;
   friend class TinyGsmTime<TinyGsmESP8266>;
   friend class TinyGsmNTP<TinyGsmESP8266>;
+
+  using ModemConfig = TinyGsmESP8266ModemConfig;
 
   /*
    * Inner Client
@@ -295,7 +312,7 @@ class TinyGsmESP8266
    * @param stream Stream used to communicate with the modem.
    */
   explicit TinyGsmESP8266(Stream& stream)
-      : TinyGsmEspressif<TinyGsmESP8266, ESP8266RegStatus>(stream) {
+      : TinyGsmEspressif<TinyGsmESP8266, TinyGsmESP8266ModemConfig>(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -710,7 +727,8 @@ class TinyGsmESP8266
     );
 
     String data;
-    int8_t rsp = waitResponse(timeout_ms, data, GFP(GSM_OK), GFP(GSM_ERROR),
+    int8_t rsp = waitResponse(timeout_ms, data, GFP(ModemConfig::GSM_OK),
+                              GFP(ModemConfig::GSM_ERROR),
                               GF("ALREADY CONNECT"));
     if (rsp == 1 && data.length() > 8) {
       int8_t coma        = data.indexOf(',');
@@ -736,7 +754,8 @@ class TinyGsmESP8266
       received = streamGetIntBefore(' ');  // check received length
     }
     if (waitResponse(30000L, GF(AT_NL "SEND OK" AT_NL),
-                     GF(AT_NL "SEND FAIL" AT_NL), GFP(GSM_ERROR)) != 1) {
+                     GF(AT_NL "SEND FAIL" AT_NL),
+                     GFP(ModemConfig::GSM_ERROR)) != 1) {
       return 0;
     }
     if (received != len) { DBG("### Sent:", received, "of", len); }
@@ -748,8 +767,9 @@ class TinyGsmESP8266
     bool verified_connections[TinyGsmESP8266TcpConfig::kMuxCount] = {0, 0, 0, 0,
                                                                      0};
     for (int muxNo = 0; muxNo < TinyGsmESP8266TcpConfig::kMuxCount; muxNo++) {
-      uint8_t has_status = waitResponse(GF("+CIPSTATE:"), GFP(GSM_OK),
-                                        GFP(GSM_ERROR));
+      uint8_t has_status = waitResponse(GF("+CIPSTATE:"),
+                                        GFP(ModemConfig::GSM_OK),
+                                        GFP(ModemConfig::GSM_ERROR));
       if (has_status == 1) {
         int8_t returned_mux = streamGetIntBefore(',');
         streamSkipUntil(',');   // Skip type
@@ -841,5 +861,7 @@ class TinyGsmESP8266
  protected:
   GsmClientESP8266* sockets[TinyGsmESP8266TcpConfig::kMuxCount];
 };
+
+#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTESP8266_H_
