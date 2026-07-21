@@ -85,7 +85,7 @@ constexpr char TinyGsmSim7600ModemConfig::MODEM_MODEL[];
  * but the unsecured CIPSEND command will only accept 1500, so we'll take the
  * smaller number as the maximum send size.
  */
-struct TinyGsmSIM7600TcpConfig
+struct TinyGsmSim7600TcpConfig
     : public TinyGsmTcpConfigPreset<
           /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
           /*muxMode*/ TinyGsmTcpMuxMode::Static,
@@ -95,7 +95,7 @@ struct TinyGsmSIM7600TcpConfig
 class TinyGsmSim7600
     : public TinyGsmModem<TinyGsmSim7600, TinyGsmSim7600ModemConfig>,
       public TinyGsmGPRS<TinyGsmSim7600>,
-      public TinyGsmTCP<TinyGsmSim7600, TinyGsmSIM7600TcpConfig>,
+      public TinyGsmTCP<TinyGsmSim7600, TinyGsmSim7600TcpConfig>,
       public TinyGsmSSL<TinyGsmSim7600>,
       public TinyGsmSMS<TinyGsmSim7600>,
       public TinyGsmGSMLocation<TinyGsmSim7600>,
@@ -107,7 +107,7 @@ class TinyGsmSim7600
       public TinyGsmCalling<TinyGsmSim7600> {
   friend class TinyGsmModem<TinyGsmSim7600, TinyGsmSim7600ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSim7600>;
-  friend class TinyGsmTCP<TinyGsmSim7600, TinyGsmSIM7600TcpConfig>;
+  friend class TinyGsmTCP<TinyGsmSim7600, TinyGsmSim7600TcpConfig>;
   friend class TinyGsmSSL<TinyGsmSim7600>;
   friend class TinyGsmSMS<TinyGsmSim7600>;
   friend class TinyGsmGPS<TinyGsmSim7600>;
@@ -118,7 +118,7 @@ class TinyGsmSim7600
   friend class TinyGsmTemperature<TinyGsmSim7600>;
   friend class TinyGsmCalling<TinyGsmSim7600>;
 
-  using ModemConfig = TinyGsmSIM7600TcpConfig;
+  using ModemConfig = TinyGsmSim7600TcpConfig;
 
   /*
    * Inner Client
@@ -126,13 +126,13 @@ class TinyGsmSim7600
  public:
   /// Inner client
   class GsmClientSim7600
-      : public TinyGsmTCP<TinyGsmSim7600, TinyGsmSIM7600TcpConfig>::GsmClient {
+      : public TinyGsmTCP<TinyGsmSim7600, TinyGsmSim7600TcpConfig>::GsmClient {
     friend class TinyGsmSim7600;
 
    public:
     using TinyGsmTCP<TinyGsmSim7600,
-                     TinyGsmSIM7600TcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSim7600, TinyGsmSIM7600TcpConfig>::GsmClient::stop;
+                     TinyGsmSim7600TcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmSim7600, TinyGsmSim7600TcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -179,7 +179,7 @@ class TinyGsmSim7600
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TinyGsmSIM7600TcpConfig::kMuxCount &&
+      if (mux < TinyGsmSim7600TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -189,7 +189,7 @@ class TinyGsmSim7600
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TinyGsmSIM7600TcpConfig::kMuxCount);
+        this->mux = (mux % TinyGsmSim7600TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -198,7 +198,7 @@ class TinyGsmSim7600
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TinyGsmSIM7600TcpConfig::kStopTimeoutS * 1000L);
+      stop(TinyGsmSim7600TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -239,7 +239,7 @@ class TinyGsmSim7600
     TINY_GSM_SECURE_CLIENT_CTORS(Sim7600)
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TinyGsmSIM7600TcpConfig::kStopTimeoutS * 1000L);
+      stop(TinyGsmSim7600TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       if (!sslCtxConfigured) {
@@ -1146,7 +1146,7 @@ class TinyGsmSim7600
     // Read the status of all sockets at once
     sendAT(GF("+CIPOPEN?"));
     if (waitResponse(GF("+CIPOPEN:")) != 1) { return false; }
-    for (int muxNo = 0; muxNo < TinyGsmSIM7600TcpConfig::kMuxCount; muxNo++) {
+    for (int muxNo = 0; muxNo < TinyGsmSim7600TcpConfig::kMuxCount; muxNo++) {
       // +CIPOPEN:<mux>,<State or blank...>
       String state = stream.readStringUntil('\n');
       if (state.indexOf(',') > 0) { sockets[muxNo]->sock_connected = true; }
@@ -1165,7 +1165,7 @@ class TinyGsmSim7600
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
-        if (mux >= 0 && mux < TinyGsmSIM7600TcpConfig::kMuxCount &&
+        if (mux >= 0 && mux < TinyGsmSim7600TcpConfig::kMuxCount &&
             sockets[mux]) {
           sockets[mux]->got_data = true;
         }
@@ -1179,7 +1179,7 @@ class TinyGsmSim7600
     } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSIM7600TcpConfig::kMuxCount &&
+      if (mux >= 0 && mux < TinyGsmSim7600TcpConfig::kMuxCount &&
           sockets[mux]) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
@@ -1190,7 +1190,7 @@ class TinyGsmSim7600
     } else if (data.endsWith(GF("+IPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
       streamSkipUntil('\n');  // Skip the reason code
-      if (mux >= 0 && mux < TinyGsmSIM7600TcpConfig::kMuxCount &&
+      if (mux >= 0 && mux < TinyGsmSim7600TcpConfig::kMuxCount &&
           sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
@@ -1213,7 +1213,7 @@ class TinyGsmSim7600
   Stream& stream;
 
  protected:
-  GsmClientSim7600* sockets[TinyGsmSIM7600TcpConfig::kMuxCount];
+  GsmClientSim7600* sockets[TinyGsmSim7600TcpConfig::kMuxCount];
   // TODO(SRGD): I suspect we need to have two separate socket arrays, a secure
   // and not secure one
 };

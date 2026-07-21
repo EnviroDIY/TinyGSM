@@ -40,7 +40,7 @@
  * NOTE: The manual says 1460, but the actual value seems to be variable.  I
  * have modules P/N S2-108HB-Z3037 that never report more than 1360 available
  * and P/N S2-108HB-Z30GJ that top out at 1318.  I'm setting the default to
- * 1360, but you can change it in the TinyGsmSIM7080TcpConfig struct if you need
+ * 1360, but you can change it in the TinyGsmSim7080TcpConfig struct if you need
  * to.
  *
  * In my testing, if the check for available space in the send buffer reports
@@ -48,7 +48,7 @@
  * and you need to back off until it's fully cleared. Refilling a partially
  * emptied buffer doesn't go well.
  */
-struct TinyGsmSIM7080TcpConfig
+struct TinyGsmSim7080TcpConfig
     : public TinyGsmTcpConfigPreset<
           /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
           /*muxMode*/ TinyGsmTcpMuxMode::Static,
@@ -77,7 +77,7 @@ constexpr char TinyGsmSim7080ModemConfig::MODEM_MODEL[];
 /// Class for the SIMCOM SIM7070, SIM7080, and SIM7090
 class TinyGsmSim7080
     : public TinyGsmSim70xx<TinyGsmSim7080, TinyGsmSim7080ModemConfig>,
-      public TinyGsmTCP<TinyGsmSim7080, TinyGsmSIM7080TcpConfig>,
+      public TinyGsmTCP<TinyGsmSim7080, TinyGsmSim7080TcpConfig>,
       public TinyGsmSSL<TinyGsmSim7080>,
       public TinyGsmSMS<TinyGsmSim7080>,
       public TinyGsmGSMLocation<TinyGsmSim7080>,
@@ -87,7 +87,7 @@ class TinyGsmSim7080
   friend class TinyGsmSim70xx<TinyGsmSim7080, TinyGsmSim7080ModemConfig>;
   friend class TinyGsmModem<TinyGsmSim7080, TinyGsmSim7080ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSim7080>;
-  friend class TinyGsmTCP<TinyGsmSim7080, TinyGsmSIM7080TcpConfig>;
+  friend class TinyGsmTCP<TinyGsmSim7080, TinyGsmSim7080TcpConfig>;
   friend class TinyGsmSSL<TinyGsmSim7080>;
   friend class TinyGsmSMS<TinyGsmSim7080>;
   friend class TinyGsmGSMLocation<TinyGsmSim7080>;
@@ -104,13 +104,13 @@ class TinyGsmSim7080
  public:
   /// Inner client
   class GsmClientSim7080
-      : public TinyGsmTCP<TinyGsmSim7080, TinyGsmSIM7080TcpConfig>::GsmClient {
+      : public TinyGsmTCP<TinyGsmSim7080, TinyGsmSim7080TcpConfig>::GsmClient {
     friend class TinyGsmSim7080;
 
    public:
     using TinyGsmTCP<TinyGsmSim7080,
-                     TinyGsmSIM7080TcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSim7080, TinyGsmSIM7080TcpConfig>::GsmClient::stop;
+                     TinyGsmSim7080TcpConfig>::GsmClient::connect;
+    using TinyGsmTCP<TinyGsmSim7080, TinyGsmSim7080TcpConfig>::GsmClient::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
@@ -149,11 +149,11 @@ class TinyGsmSim7080
       sock_connected  = false;
       got_data        = false;
       is_mid_send     = false;
-      realMaxSendSize = TinyGsmSIM7080TcpConfig::kSendMaxSize;
+      realMaxSendSize = TinyGsmSim7080TcpConfig::kSendMaxSize;
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TinyGsmSIM7080TcpConfig::kMuxCount &&
+      if (mux < TinyGsmSim7080TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -163,7 +163,7 @@ class TinyGsmSim7080
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TinyGsmSIM7080TcpConfig::kMuxCount);
+        this->mux = (mux % TinyGsmSim7080TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -172,7 +172,7 @@ class TinyGsmSim7080
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TinyGsmSIM7080TcpConfig::kStopTimeoutS * 1000L);
+      stop(TinyGsmSim7080TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -197,7 +197,7 @@ class TinyGsmSim7080
     }
 
    protected:
-    size_t realMaxSendSize = TinyGsmSIM7080TcpConfig::kSendMaxSize;
+    size_t realMaxSendSize = TinyGsmSim7080TcpConfig::kSendMaxSize;
   };
 
   /*
@@ -220,7 +220,7 @@ class TinyGsmSim7080
     // availability.
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop(TinyGsmSIM7080TcpConfig::kStopTimeoutS * 1000L);
+      stop(TinyGsmSim7080TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       if (!sslCtxConfigured) {
@@ -308,7 +308,7 @@ class TinyGsmSim7080
     // Keep listening for modem URC's and proactively iterate through
     // sockets asking if any data is available
     bool check_socks = false;
-    for (int mux = 0; mux < TinyGsmSIM7080TcpConfig::kMuxCount; mux++) {
+    for (int mux = 0; mux < TinyGsmSim7080TcpConfig::kMuxCount; mux++) {
       GsmClientSim7080* sock = sockets[mux];
       if (sock && sock->got_data) {
         sock->got_data = false;
@@ -1119,12 +1119,12 @@ class TinyGsmSim7080
     // send buffer (that we can soon fill up with our next send attempt)
     sendAT(GF("+CASEND="), mux);
     if (waitResponse(GF("+CASEND:")) != 1) {
-      return TinyGsmSIM7080TcpConfig::kSendMaxSize;  // return 0?
+      return TinyGsmSim7080TcpConfig::kSendMaxSize;  // return 0?
     }
     size_t leftsize = streamGetIntBefore('\n');
     waitResponse();  // final ok
-    if (leftsize > TinyGsmSIM7080TcpConfig::kSendMaxSize) {
-      return TinyGsmSIM7080TcpConfig::kSendMaxSize;
+    if (leftsize > TinyGsmSim7080TcpConfig::kSendMaxSize) {
+      return TinyGsmSim7080TcpConfig::kSendMaxSize;
     }
     return leftsize;
   }
@@ -1193,7 +1193,7 @@ class TinyGsmSim7080
     // NOTE: This gets how many characters are available on all connections that
     // have data.  It does not return all the connections, just those with data.
     sendAT(GF("+CARECV?"));
-    for (int muxNo = 0; muxNo < TinyGsmSIM7080TcpConfig::kMuxCount; muxNo++) {
+    for (int muxNo = 0; muxNo < TinyGsmSim7080TcpConfig::kMuxCount; muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
       int res = waitResponse(3000, GF("+CARECV:"), GFP(ModemConfig::GSM_OK),
                              GFP(ModemConfig::GSM_ERROR));
@@ -1217,7 +1217,7 @@ class TinyGsmSim7080
         // if we get an OK, we've reached the last socket with available data
         // so we set any we haven't gotten to yet to 0
         for (int extra_mux = muxNo;
-             extra_mux < TinyGsmSIM7080TcpConfig::kMuxCount; extra_mux++) {
+             extra_mux < TinyGsmSim7080TcpConfig::kMuxCount; extra_mux++) {
           GsmClientSim7080* isock = sockets[extra_mux];
           if (isock) { isock->sock_available = 0; }
         }
@@ -1229,7 +1229,7 @@ class TinyGsmSim7080
       // Should be a final OK at the end.
       // If every connection was returned, catch the OK here.
       // If only a portion were returned, catch it above.
-      if (muxNo == TinyGsmSIM7080TcpConfig::kMuxCount - 1) { waitResponse(); }
+      if (muxNo == TinyGsmSim7080TcpConfig::kMuxCount - 1) { waitResponse(); }
     }
     modemGetConnected(mux);  // check the state of all connections
     if (!sockets[mux]) { return 0; }
@@ -1241,7 +1241,7 @@ class TinyGsmSim7080
     // since the last connection
     sendAT(GF("+CASTATE?"));
 
-    for (int muxNo = 0; muxNo < TinyGsmSIM7080TcpConfig::kMuxCount; muxNo++) {
+    for (int muxNo = 0; muxNo < TinyGsmSim7080TcpConfig::kMuxCount; muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
       int res = waitResponse(3000, GF("+CASTATE:"), GFP(ModemConfig::GSM_OK),
                              GFP(ModemConfig::GSM_ERROR));
@@ -1267,7 +1267,7 @@ class TinyGsmSim7080
         // if we get an OK, we've reached the last socket with available data
         // so we set any we haven't gotten to yet to 0
         for (int extra_mux = muxNo;
-             extra_mux < TinyGsmSIM7080TcpConfig::kMuxCount; extra_mux++) {
+             extra_mux < TinyGsmSim7080TcpConfig::kMuxCount; extra_mux++) {
           GsmClientSim7080* isock = sockets[extra_mux];
           if (isock) { isock->sock_connected = false; }
         }
@@ -1279,7 +1279,7 @@ class TinyGsmSim7080
       // Should be a final OK at the end.
       // If every connection was returned, catch the OK here.
       // If only a portion were returned, catch it above.
-      if (muxNo == TinyGsmSIM7080TcpConfig::kMuxCount - 1) { waitResponse(); }
+      if (muxNo == TinyGsmSim7080TcpConfig::kMuxCount - 1) { waitResponse(); }
     }
     return sockets[mux]->sock_connected;
   }
@@ -1292,7 +1292,7 @@ class TinyGsmSim7080
     if (data.endsWith(GF("+CARECV:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSIM7080TcpConfig::kMuxCount &&
+      if (mux >= 0 && mux < TinyGsmSim7080TcpConfig::kMuxCount &&
           sockets[mux]) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
@@ -1302,7 +1302,7 @@ class TinyGsmSim7080
       return true;
     } else if (data.endsWith(GF("+CADATAIND:"))) {
       int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSIM7080TcpConfig::kMuxCount &&
+      if (mux >= 0 && mux < TinyGsmSim7080TcpConfig::kMuxCount &&
           sockets[mux]) {
         sockets[mux]->got_data = true;
       }
@@ -1312,7 +1312,7 @@ class TinyGsmSim7080
     } else if (data.endsWith(GF("+CASTATE:"))) {
       int8_t mux   = streamGetIntBefore(',');
       int8_t state = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSIM7080TcpConfig::kMuxCount &&
+      if (mux >= 0 && mux < TinyGsmSim7080TcpConfig::kMuxCount &&
           sockets[mux]) {
         if (state != 1) {
           sockets[mux]->sock_connected = false;
@@ -1352,7 +1352,7 @@ class TinyGsmSim7080
   }
 
  protected:
-  GsmClientSim7080* sockets[TinyGsmSIM7080TcpConfig::kMuxCount];
+  GsmClientSim7080* sockets[TinyGsmSim7080TcpConfig::kMuxCount];
 };
 
 // cspell:words CASEND gotATOK
