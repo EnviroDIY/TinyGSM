@@ -201,6 +201,8 @@ uint32_t TinyGsmAutoBaud(T& at_serial, uint32_t minimum = 9600,
 
     DBG("Trying baud rate", rate, "...");
     at_serial.end();
+    unsigned long origTimeout = at_serial.getTimeout();
+    at_serial.setTimeout(100);  // avoid 1s default blocking wait
     at_serial.begin(rate);
     delay(10);
     for (int j = 0; j < 10; j++) {
@@ -208,9 +210,11 @@ uint32_t TinyGsmAutoBaud(T& at_serial, uint32_t minimum = 9600,
       String input = at_serial.readString();
       if (input.indexOf("OK") >= 0) {
         DBG("Modem responded at rate", rate);
+        at_serial.setTimeout(origTimeout);  // reset timeout
         return rate;
       }
     }
+    at_serial.setTimeout(origTimeout);  // reset timeout
   }
   at_serial.begin(minimum);
   return 0;
