@@ -295,7 +295,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(15)) { return false; }
     // MODEM:STARTUP
-    waitResponse(60000L, GF(AT_NL "+PBREADY" AT_NL));
+    waitResponse(60000L, GF("+PBREADY" AT_NL));
     return init(pin);
   }
 
@@ -329,7 +329,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
 
   String getLocalIPImpl() {
     sendAT(GF("+XIIC?"));
-    if (waitResponse(GF(AT_NL "+XIIC:")) != 1) { return ""; }
+    if (waitResponse(GF("+XIIC:")) != 1) { return ""; }
     streamSkipUntil(',');
     String res = stream.readStringUntil('\n');
     waitResponse();
@@ -396,7 +396,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
 
   bool isGprsConnectedImpl() {
     sendAT(GF("+XIIC?"));
-    if (waitResponse(GF(AT_NL "+XIIC:")) != 1) { return false; }
+    if (waitResponse(GF("+XIIC:")) != 1) { return false; }
     int8_t res = streamGetIntBefore(',');
     waitResponse();
     return res == 1;
@@ -547,7 +547,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
   size_t modemEndSendImpl(size_t len, uint8_t) {
     stream.write(static_cast<char>(0x0D));
     stream.flush();
-    if (waitResponse(30000L, GF(AT_NL "+TCPSEND:")) != 1) { return 0; }
+    if (waitResponse(30000L, GF("+TCPSEND:")) != 1) { return 0; }
     streamSkipUntil('\n');
     return len;
   }
@@ -562,7 +562,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
 
   String dnsIpQuery(const char* host) {
     sendAT(GF("+DNS=\""), host, '"');
-    if (waitResponse(10000L, GF(AT_NL "+DNS:")) != 1) { return ""; }
+    if (waitResponse(10000L, GF("+DNS:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse(GF("+DNS:OK" AT_NL));
     res.trim();

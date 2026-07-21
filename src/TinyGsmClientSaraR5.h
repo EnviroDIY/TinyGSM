@@ -27,11 +27,6 @@
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 // NOTE: This module supports SSL, but we do not support any certificate
 // management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
 // so as not to waste space.
@@ -459,7 +454,7 @@ class TinyGsmSaraR5
 
   String getLocalIPImpl() {
     sendAT(GF("+UPSND=0,0"));
-    if (waitResponse(GF(AT_NL "+UPSND:")) != 1) { return ""; }
+    if (waitResponse(GF("+UPSND:")) != 1) { return ""; }
     streamSkipUntil(',');   // Skip PSD profile
     streamSkipUntil('\"');  // Skip request type
     String res = stream.readStringUntil('\"');
@@ -593,7 +588,7 @@ class TinyGsmSaraR5
   // This uses "CGSN" instead of "GSN"
   String getIMEIImpl() {
     sendAT(GF("+CGSN"));
-    if (waitResponse(GF(AT_NL)) != 1) { return ""; }
+    if (waitResponse(GFP(ModemConfig::GSM_NL)) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -642,7 +637,7 @@ class TinyGsmSaraR5
     // waitResponse(10000L) ;
     if (waitResponse(10000L) != 1) { return ""; }
     // wait for the final result - wait full timeout time
-    if (waitResponse(120000L, GF(AT_NL "+UULOC:")) != 1) { return ""; }
+    if (waitResponse(120000L, GF("+UULOC:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -681,7 +676,7 @@ class TinyGsmSaraR5
     // wait for first "OK"
     if (waitResponse(10000L) != 1) { return false; }
     // wait for the final result - wait full timeout time
-    if (waitResponse(120000L, GF(AT_NL "+UULOC: ")) != 1) { return false; }
+    if (waitResponse(120000L, GF("+UULOC: ")) != 1) { return false; }
 
     // +UULOC: <date>, <time>, <lat>, <long>, <alt>, <uncertainty>, <speed>,
     // <direction>, <vertical_acc>, <sensor_used>, <SV_used>, <antenna_status>,
@@ -786,7 +781,7 @@ class TinyGsmSaraR5
 
   int8_t getBattPercentImpl() {
     sendAT(GF("+CIND?"));
-    if (waitResponse(GF(AT_NL "+CIND:")) != 1) { return 0; }
+    if (waitResponse(GF("+CIND:")) != 1) { return 0; }
 
     int8_t res     = streamGetIntBefore(',');
     int8_t percent = res * 20;  // return is 0-5
@@ -826,7 +821,7 @@ class TinyGsmSaraR5
     // create a socket
     sendAT(GF("+USOCR=6"));
     // reply is +USOCR: ## of socket created
-    if (waitResponse(GF(AT_NL "+USOCR:")) != 1) { return false; }
+    if (waitResponse(GF("+USOCR:")) != 1) { return false; }
     *mux = streamGetIntBefore('\n');
     waitResponse();
 
@@ -864,7 +859,7 @@ class TinyGsmSaraR5
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
-    if (waitResponse(GF(AT_NL "+USOWR:")) != 1) { return 0; }
+    if (waitResponse(GF("+USOWR:")) != 1) { return 0; }
     uint8_t  ret_mux = streamGetIntBefore(',');   // check mux
     uint16_t sent    = streamGetIntBefore('\n');  // check send length
     bool     success = waitResponse() ==
@@ -877,7 +872,7 @@ class TinyGsmSaraR5
   size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
-    if (waitResponse(GF(AT_NL "+USORD:")) != 1) { return 0; }
+    if (waitResponse(GF("+USORD:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
     int16_t len_reported = streamGetIntBefore(',');
     streamSkipUntil('\"');
@@ -893,7 +888,7 @@ class TinyGsmSaraR5
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USORD="), mux, ",0");
     size_t  result = 0;
-    uint8_t res    = waitResponse(GF(AT_NL "+USORD:"));
+    uint8_t res    = waitResponse(GF("+USORD:"));
     // Will give error "operation not allowed" when attempting to read a socket
     // that you have already told to close
     if (res == 1) {
@@ -910,7 +905,7 @@ class TinyGsmSaraR5
   bool modemGetConnectedImpl(uint8_t mux) {
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USOCTL="), mux, ",10");
-    uint8_t res = waitResponse(GF(AT_NL "+USOCTL:"));
+    uint8_t res = waitResponse(GF("+USOCTL:"));
     if (res != 1) { return false; }
 
     streamSkipUntil(',');  // Skip mux
@@ -990,7 +985,5 @@ class TinyGsmSaraR5
 };
 
 // cspell:words USOWR CSFB UTRAN
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSARAR5_H_

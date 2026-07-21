@@ -527,7 +527,7 @@ class TinyGsmA7672X
 
   String getSimCCIDImpl() {
     sendAT(GF("+CICCID"));
-    if (waitResponse(GF(AT_NL "+ICCID:")) != 1) { return ""; }
+    if (waitResponse(GF("+ICCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -753,7 +753,7 @@ class TinyGsmA7672X
       // <session_id> is the mux number and <err> should be 0 if there's no
       // error
       rsp = waitResponse(timeout_ms);  // capture the OK or ERROR
-      rsp &= waitResponse(timeout_ms, GF(AT_NL "+CCHOPEN:")) != 1;
+      rsp &= waitResponse(timeout_ms, GF("+CCHOPEN:")) != 1;
       // TODO: verify this
     } else {
       // TODO: Should NETOPEN be called once during the GPRS connection process
@@ -773,7 +773,7 @@ class TinyGsmA7672X
       // There may also be an ERROR returned after the +CIPOPEN: line if the PDP
       // context wasn't activated first. We ignore this case.
       rsp = waitResponse(timeout_ms);  // capture the OK or ERROR
-      if (rsp) { rsp &= waitResponse(timeout_ms, GF(AT_NL "+CIPOPEN:")) != 1; }
+      if (rsp) { rsp &= waitResponse(timeout_ms, GF("+CIPOPEN:")) != 1; }
     }
 
     // Since both CIPOPEN and CCHOPEN return the same response, we can handle it
@@ -818,7 +818,7 @@ class TinyGsmA7672X
       return 0;
     } else {
       // after OK, returns +CIPSEND: <link_num>,<reqSendLength>,<cnfSendLength>
-      if (waitResponse(GF(AT_NL "+CIPSEND:")) != 1) { return 0; }
+      if (waitResponse(GF("+CIPSEND:")) != 1) { return 0; }
       uint8_t ret_mux = streamGetIntBefore(',');  // check mux
       streamSkipUntil(',');  // Skip requested bytes to send
       // TODO:  make sure requested and confirmed bytes match
@@ -883,7 +883,7 @@ class TinyGsmA7672X
       // +CCHRECV: LEN,<cache_len_0>,<cache_len_1>
       // <cache_len_0> = The length of RX data cached for connection 0.
       // <cache_len_1> = The length of RX data cached for connection 1.
-      if (waitResponse(GF(AT_NL "+CCHRECV: ")) != 1) { return 0; }
+      if (waitResponse(GF("+CCHRECV: ")) != 1) { return 0; }
       streamSkipUntil(',');                        // Skip the text "LEN"
       size_t len_on_0 = streamGetIntBefore(',');   // read cache_len_0
       size_t len_on_1 = streamGetIntBefore('\n');  // read cache_len_1
@@ -940,7 +940,7 @@ class TinyGsmA7672X
    */
  protected:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
+    if (data.endsWith(GF("+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');

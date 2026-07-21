@@ -324,7 +324,7 @@ class TinyGsmSim800
       return false;
   #else
       sendAT(GF("+CIPSSL=?"));
-      if (waitResponse(GF(AT_NL "+CIPSSL:")) != 1) { return false; }
+      if (waitResponse(GF("+CIPSSL:")) != 1) { return false; }
       return waitResponse() == 1;
   #endif
     }
@@ -513,7 +513,7 @@ class TinyGsmSim800
   // May not return the "+CCID" before the number
   String getSimCCIDImpl() {
     sendAT(GF("+CCID"));
-    if (waitResponse(GF(AT_NL)) != 1) { return ""; }
+    if (waitResponse(GFP(ModemConfig::GSM_NL)) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     // Trim out the CCID header in case it is there
@@ -558,7 +558,7 @@ class TinyGsmSim800
   uint8_t getVolume() {
     // Get speaker volume
     sendAT(GF("+CLVL?"));
-    if (waitResponse(GF(AT_NL)) != 1) { return 0; }
+    if (waitResponse(GFP(ModemConfig::GSM_NL)) != 1) { return 0; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.replace("+CLVL:", "");
@@ -686,7 +686,7 @@ class TinyGsmSim800
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
-    if (waitResponse(GF(AT_NL "DATA ACCEPT:")) != 1) { return 0; }
+    if (waitResponse(GF("DATA ACCEPT:")) != 1) { return 0; }
     uint8_t  ret_mux = streamGetIntBefore(',');   // check mux
     uint16_t sent    = streamGetIntBefore('\n');  // check send length
     if (sent != len) { DBG("### Sent:", sent, "of", len, "on", mux); }
@@ -752,7 +752,7 @@ class TinyGsmSim800
    */
  protected:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
+    if (data.endsWith(GF("+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
@@ -767,7 +767,7 @@ class TinyGsmSim800
         data += mode;
         return false;
       }
-    } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
+    } else if (data.endsWith(GF("+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TinyGsmSim800TcpConfig::kMuxCount && sockets[mux]) {

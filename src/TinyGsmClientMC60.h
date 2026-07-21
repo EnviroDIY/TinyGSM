@@ -388,7 +388,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
   SimStatus getSimStatusImpl(uint32_t timeout_ms) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
       sendAT(GF("+CPIN?"));
-      if (waitResponse(GF(AT_NL "+CPIN:")) != 1) {
+      if (waitResponse(GF("+CPIN:")) != 1) {
         delay(1000);
         continue;
       }
@@ -512,14 +512,14 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
-    if (waitResponse(GF(AT_NL "SEND OK")) != 1) { return 0; }
+    if (waitResponse(GF("SEND OK")) != 1) { return 0; }
 
     bool allAcknowledged = false;
     // bool failed = false;
     while (!allAcknowledged) {
       sendAT(GF("+QISACK="), mux);  // If 'mux' is not specified, MC60 returns
                                     // 'ERRROR' (for QIMUX == 1)
-      if (waitResponse(5000L, GF(AT_NL "+QISACK:")) != 1) {
+      if (waitResponse(5000L, GF("+QISACK:")) != 1) {
         return -1;
       } else {
         streamSkipUntil(','); /** Skip total */
@@ -601,7 +601,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
    */
  protected:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(AT_NL "+QIRDI:"))) {  // TODO(?):
+    if (data.endsWith(GF("+QIRDI:"))) {  // TODO(?):
                                                // QIRD? or QIRDI?
       // +QIRDI: <id>,<sc>,<sid>,<num>,<len>,< tlen>
       streamSkipUntil(',');  // Skip the context

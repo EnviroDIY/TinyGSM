@@ -1137,8 +1137,7 @@ class TinyGsmESP32
     if (waitResponse(10000L, GF("Recv ")) == 1) {
       received = streamGetIntBefore(' ');  // check received length
     }
-    if (waitResponse(30000L, GF(AT_NL "SEND OK" AT_NL),
-                     GF(AT_NL "SEND FAIL" AT_NL),
+    if (waitResponse(30000L, GF("SEND OK" AT_NL), GF("SEND FAIL" AT_NL),
                      GFP(ModemConfig::GSM_ERROR)) != 1) {
       return 0;
     }
@@ -1209,7 +1208,7 @@ class TinyGsmESP32
    */
  protected:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(AT_NL "+IPD,"))) {
+    if (data.endsWith(GF("+IPD,"))) {
       int8_t   mux = streamGetIntBefore(',');
       uint16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TinyGsmESP32TcpConfig::kMuxCount && sockets[mux]) {
@@ -1223,10 +1222,12 @@ class TinyGsmESP32
       DBG("### Got Data:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("CLOSED"))) {
-      int8_t muxStart = TinyGsmMax(0,
-                                   data.lastIndexOf(AT_NL, data.length() - 8));
-      int8_t coma     = data.indexOf(',', muxStart);
-      int8_t mux      = data.substring(muxStart, coma).toInt();
+      int8_t muxStart =
+          TinyGsmMax(0,
+                     data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
+                                      data.length() - 8));
+      int8_t coma = data.indexOf(',', muxStart);
+      int8_t mux  = data.substring(muxStart, coma).toInt();
       if (mux >= 0 && mux < TinyGsmESP32TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
@@ -1252,7 +1253,7 @@ class TinyGsmESP32
       data = "";
       // DBG("### Busy, please wait");
       return true;
-    } else if (data.endsWith(GF(AT_NL "ready" AT_NL))) {
+    } else if (data.endsWith(GF("ready" AT_NL))) {
       streamSkipUntil('\n');
       data = "";
       // DBG("### Module ready!");

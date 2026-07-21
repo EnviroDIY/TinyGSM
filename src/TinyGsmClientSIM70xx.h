@@ -23,11 +23,6 @@
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmGPS.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /// Registration status
 enum SIM70xxRegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
@@ -144,7 +139,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
   String getNetworkModes() {
     // Get the help string, not the setting value
     thisModem().sendAT(GF("+CNMP=?"));
-    if (thisModem().waitResponse(GF(AT_NL "+CNMP:")) != 1) { return ""; }
+    if (thisModem().waitResponse(GF("+CNMP:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     thisModem().waitResponse();
     return res;
@@ -156,7 +151,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
    */
   int16_t getNetworkMode() {
     thisModem().sendAT(GF("+CNMP?"));
-    if (thisModem().waitResponse(GF(AT_NL "+CNMP:")) != 1) { return false; }
+    if (thisModem().waitResponse(GF("+CNMP:")) != 1) { return false; }
     int16_t mode = thisModem().streamGetIntBefore('\n');
     thisModem().waitResponse();
     return mode;
@@ -183,7 +178,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
   String getPreferredModes() {
     // Get the help string, not the setting value
     thisModem().sendAT(GF("+CMNB=?"));
-    if (thisModem().waitResponse(GF(AT_NL "+CMNB:")) != 1) { return ""; }
+    if (thisModem().waitResponse(GF("+CMNB:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     thisModem().waitResponse();
     return res;
@@ -195,7 +190,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
    */
   int16_t getPreferredMode() {
     thisModem().sendAT(GF("+CMNB?"));
-    if (thisModem().waitResponse(GF(AT_NL "+CMNB:")) != 1) { return false; }
+    if (thisModem().waitResponse(GF("+CMNB:")) != 1) { return false; }
     int16_t mode = thisModem().streamGetIntBefore('\n');
     thisModem().waitResponse();
     return mode;
@@ -226,7 +221,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
     // n: whether to automatically report the system mode info
     // stat: the current service. 0 if it not connected
     thisModem().sendAT(GF("+CNSMOD?"));
-    if (thisModem().waitResponse(GF(AT_NL "+CNSMOD:")) != 1) { return false; }
+    if (thisModem().waitResponse(GF("+CNSMOD:")) != 1) { return false; }
     n    = thisModem().streamGetIntBefore(',') != 0;
     stat = thisModem().streamGetIntBefore('\n');
     thisModem().waitResponse();
@@ -258,7 +253,9 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
   // Doesn't return the "+CCID" before the number
   String getSimCCIDImpl() {
     thisModem().sendAT(GF("+CCID"));
-    if (thisModem().waitResponse(GF(AT_NL)) != 1) { return ""; }
+    if (thisModem().waitResponse(GFP(SIM70xxModemConfig::GSM_NL)) != 1) {
+      return "";
+    }
     String res = stream.readStringUntil('\n');
     thisModem().waitResponse();
     res.trim();
@@ -268,7 +265,9 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
   // Gets the IMEI of the modem with AT+CGSN
   String getIMEIImpl() {
     thisModem().sendAT(GF("+CGSN"));
-    if (thisModem().waitResponse(GF(AT_NL)) != 1) { return ""; }
+    if (thisModem().waitResponse(GFP(SIM70xxModemConfig::GSM_NL)) != 1) {
+      return "";
+    }
     String res = stream.readStringUntil('\n');
     thisModem().waitResponse();
     res.trim();
@@ -295,7 +294,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
   // get the RAW GPS output
   String getGPSrawImpl() {
     thisModem().sendAT(GF("+CGNSINF"));
-    if (thisModem().waitResponse(10000L, GF(AT_NL "+CGNSINF:")) != 1) {
+    if (thisModem().waitResponse(10000L, GF("+CGNSINF:")) != 1) {
       return "";
     }
     String res = stream.readStringUntil('\n');
@@ -309,7 +308,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
                   int* usat, float* accuracy, int* year, int* month, int* day,
                   int* hour, int* minute, int* second) {
     thisModem().sendAT(GF("+CGNSINF"));
-    if (thisModem().waitResponse(10000L, GF(AT_NL "+CGNSINF:")) != 1) {
+    if (thisModem().waitResponse(10000L, GF("+CGNSINF:")) != 1) {
       return false;
     }
 
@@ -398,7 +397,5 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
   /// Stream used to communicate with the modem.
   Stream& stream;
 };
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM70XX_H_

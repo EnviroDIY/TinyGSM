@@ -414,7 +414,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
  protected:
   String getSimCCIDImpl() {
     sendAT(GF("+QCCID"));
-    if (waitResponse(GF(AT_NL "+QCCID:")) != 1) { return ""; }
+    if (waitResponse(GF("+QCCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -495,7 +495,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
  protected:
   float getTemperatureImpl() {
     sendAT(GF("+QTEMP?"));
-    if (waitResponse(GF(AT_NL "+QTEMP:")) != 1) {
+    if (waitResponse(GF("+QTEMP:")) != 1) {
       return static_cast<float>(-9999);
     }
     streamSkipUntil(',');  // Skip mode
@@ -531,14 +531,14 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t) {
-    if (waitResponse(GF(AT_NL "SEND OK")) != 1) { return 0; }
+    if (waitResponse(GF("SEND OK")) != 1) { return 0; }
     return len;
     // TODO(?): get len/ack properly
     // bool allAcknowledged = false;
     // // bool failed = false;
     // while ( !allAcknowledged ) {
     //   sendAT( GF("+QISACK"));
-    //   if (waitResponse(5000L, GF(AT_NL "+QISACK:")) != 1) {
+    //   if (waitResponse(5000L, GF("+QISACK:")) != 1) {
     //     return -1;
     //   } else {
     //     streamSkipUntil(',');  // Skip total length sent on connection
@@ -619,7 +619,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
    */
  protected:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(AT_NL "+QIRDI:"))) {
+    if (data.endsWith(GF("+QIRDI:"))) {
       streamSkipUntil(',');  // Skip the context
       streamSkipUntil(',');  // Skip the role
       int8_t mux = streamGetIntBefore('\n');

@@ -30,11 +30,6 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /// Registration status
 enum SIM5360RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
@@ -275,7 +270,7 @@ class TinyGsmSim5360
     if (waitResponse(10000L) != 1) { return false; }
     // After booting, modem sends out messages as each of its
     // internal modules loads.  The final message is "PB DONE".
-    if (waitResponse(40000L, GF(AT_NL "PB DONE")) != 1) { return false; }
+    if (waitResponse(40000L, GF("PB DONE")) != 1) { return false; }
     return init(pin);
   }
 
@@ -320,7 +315,7 @@ class TinyGsmSim5360
    */
   String getNetworkModes() {
     sendAT(GF("+CNMP=?"));
-    if (waitResponse(GF(AT_NL "+CNMP:")) != 1) { return ""; }
+    if (waitResponse(GF("+CNMP:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     return res;
@@ -332,7 +327,7 @@ class TinyGsmSim5360
    */
   int16_t getNetworkMode() {
     sendAT(GF("+CNMP?"));
-    if (waitResponse(GF(AT_NL "+CNMP:")) != 1) { return false; }
+    if (waitResponse(GF("+CNMP:")) != 1) { return false; }
     int16_t mode = streamGetIntBefore('\n');
     waitResponse();
     return mode;
@@ -447,7 +442,7 @@ class TinyGsmSim5360
     // We to ignore any immediate response and wait for the
     // URC to show it's really connected.
     sendAT(GF("+NETOPEN"));
-    if (waitResponse(75000L, GF(AT_NL "+NETOPEN: 0")) != 1) { return false; }
+    if (waitResponse(75000L, GF("+NETOPEN: 0")) != 1) { return false; }
 
     return true;
   }
@@ -463,7 +458,7 @@ class TinyGsmSim5360
     // Note: all sockets should be closed first - on 3G/4G models the sockets
     // must be closed manually
     sendAT(GF("+NETCLOSE"));
-    if (waitResponse(60000L, GF(AT_NL "+NETCLOSE: 0")) != 1) { return false; }
+    if (waitResponse(60000L, GF("+NETCLOSE: 0")) != 1) { return false; }
 
     return true;
   }
@@ -471,7 +466,7 @@ class TinyGsmSim5360
   bool isGprsConnectedImpl() {
     sendAT(GF("+NETOPEN?"));
     // May return +NETOPEN: 1, 0.  We just confirm that the first number is 1
-    if (waitResponse(GF(AT_NL "+NETOPEN: 1")) != 1) { return false; }
+    if (waitResponse(GF("+NETOPEN: 1")) != 1) { return false; }
     waitResponse();
 
     sendAT(GF("+IPADDR"));  // Inquire Socket PDP address
@@ -497,7 +492,7 @@ class TinyGsmSim5360
   // Gets the CCID of a sim card via AT+CCID
   String getSimCCIDImpl() {
     sendAT(GF("+CICCID"));
-    if (waitResponse(GF(AT_NL "+ICCID:")) != 1) { return ""; }
+    if (waitResponse(GF("+ICCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -546,7 +541,7 @@ class TinyGsmSim5360
   // get the RAW GPS output
   String getGPSrawImpl() {
     sendAT(GF("+CGPSINFO"));
-    if (waitResponse(GF(AT_NL "+CGPSINFO:")) != 1) { return ""; }
+    if (waitResponse(GF("+CGPSINFO:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -558,7 +553,7 @@ class TinyGsmSim5360
                   int* usat, float* accuracy, int* year, int* month, int* day,
                   int* hour, int* minute, int* second) {
     sendAT(GF("+CGPSINFO"));
-    if (waitResponse(GF(AT_NL "+CGPSINFO:")) != 1) { return false; }
+    if (waitResponse(GF("+CGPSINFO:")) != 1) { return false; }
     delay(30);
 
     float ilat = 0;
@@ -646,7 +641,7 @@ class TinyGsmSim5360
   // SRGD Note:  Returns voltage in VOLTS instead of millivolts
   int16_t getBattVoltageImpl() {
     sendAT(GF("+CBC"));
-    if (waitResponse(GF(AT_NL "+CBC:")) != 1) { return 0; }
+    if (waitResponse(GF("+CBC:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip battery charge status
     streamSkipUntil(',');  // Skip battery charge level
     // get voltage in VOLTS
@@ -662,7 +657,7 @@ class TinyGsmSim5360
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
     sendAT(GF("+CBC"));
-    if (waitResponse(GF(AT_NL "+CBC:")) != 1) { return false; }
+    if (waitResponse(GF("+CBC:")) != 1) { return false; }
     chargeState = streamGetIntBefore(',');
     percent     = streamGetIntBefore(',');
     // get voltage in VOLTS
@@ -684,7 +679,7 @@ class TinyGsmSim5360
     if (waitResponse() != 1) { return 0; }
     // Get Temparature Value
     sendAT(GF("+CMTE?"));
-    if (waitResponse(GF(AT_NL "+CMTE:")) != 1) { return false; }
+    if (waitResponse(GF("+CMTE:")) != 1) { return false; }
     float res = streamGetFloatBefore('\n');
     // Wait for final OK
     waitResponse();
@@ -706,7 +701,7 @@ class TinyGsmSim5360
     sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","),
            port);
     // The reply is +CIPOPEN: ## of socket created
-    if (waitResponse(timeout_ms, GF(AT_NL "+CIPOPEN:")) != 1) { return false; }
+    if (waitResponse(timeout_ms, GF("+CIPOPEN:")) != 1) { return false; }
     return true;
   }
 
@@ -718,7 +713,7 @@ class TinyGsmSim5360
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
-    if (waitResponse(GF(AT_NL "+CIPSEND:")) != 1) { return 0; }
+    if (waitResponse(GF("+CIPSEND:")) != 1) { return 0; }
     uint8_t ret_mux = streamGetIntBefore(',');  // check mux
     streamSkipUntil(',');                       // Skip requested bytes to send
     uint16_t sent = streamGetIntBefore('\n');   // check send length
@@ -784,7 +779,7 @@ class TinyGsmSim5360
    */
  protected:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
+    if (data.endsWith(GF("+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
@@ -799,7 +794,7 @@ class TinyGsmSim5360
         data += mode;
         return false;
       }
-    } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
+    } else if (data.endsWith(GF("+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TinyGsmSim5360TcpConfig::kMuxCount &&
@@ -838,7 +833,5 @@ class TinyGsmSim5360
  protected:
   GsmClientSim5360* sockets[TinyGsmSim5360TcpConfig::kMuxCount];
 };
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM5360_H_
