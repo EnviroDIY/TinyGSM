@@ -341,7 +341,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
     if (waitResponse() != 1) { return false; }
 
     // Start TCPIP Task and Set APN, User Name and Password
-    sendAT("+QIREGAPP=\"", apn, GF("\",\""), user, GF("\",\""), pwd, '"');
+    sendAT(GF("+QIREGAPP=\""), apn, GF("\",\""), user, GF("\",\""), pwd, '"');
     if (waitResponse() != 1) { return false; }
 
     // Activate GPRS/CSD Context
