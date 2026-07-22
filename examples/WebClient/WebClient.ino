@@ -1,12 +1,13 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} WebClient.ino
  *
- * This sketch connects to a website and downloads a page.
+ * @brief This sketch manually constructs an HTTP request and sends it to a web
+ * server using TinyGSM.
+ *
+ * This example requires the least amount of RAM and Flash on the Arduino
+ * because it does not use any external libraries.
  * It can be used to perform HTTP/RESTful API calls.
- *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- **************************************************************/
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800

@@ -1,25 +1,25 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} HttpsClient.ino
  *
- * This sketch connects to a website and downloads a page.
+ * @brief This sketch connects to a secure website and downloads a page using
+ * the Arduino HTTP client library.
+ *
  * It can be used to perform HTTP/RESTful API calls.
  *
  * For this example, you need to install ArduinoHttpClient library:
  *   https://github.com/arduino-libraries/ArduinoHttpClient
  *   or from http://librarymanager/all#ArduinoHttpClient
  *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
  * SSL/TLS is not yet supported on the Quectel modems
  * The A6/A7/A20 and M590 are not capable of SSL/TLS
  *
  * For more HTTP API examples, see ArduinoHttpClient library
  *
- * NOTE: This example may NOT work with the XBee because the
+ * @warning This example may NOT work with the XBee because the
  * HttpClient library does not empty to serial buffer fast enough
  * and the buffer overflow causes the HttpClient library to stall.
  * Boards with faster processors may work, 8MHz boards will not.
- **************************************************************/
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800

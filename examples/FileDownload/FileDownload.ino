@@ -1,15 +1,16 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} FileDownload.ino
+ *
+ * @brief This sketch downloads a file from a server and checks its CRC32
+ * checksum.
  *
  * For this example, you need to install CRC32 library:
  *   https://github.com/bakercp/CRC32
  *   or from http://librarymanager/all#CRC32+checksum
  *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- * ATTENTION! Downloading big files requires of knowledge of
- * the TinyGSM internals and some modem specifics,
- * so this is for more experienced developers.
+ * @attention Downloading big files requires of knowledge of the TinyGSM
+ * internals and some modem specifics, so this is for more experienced
+ * developers.
  *
  *
  * This example downloads a file from a server and checks its CRC32 checksum.
@@ -17,8 +18,8 @@
  * integrity.
  *
  * NOTE: The file being downloaded is from a site which requires SSL/TLS so this
- *example will only work on those boards that support it.
- **************************************************************/
+ * example will only work on those boards that support it.
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800

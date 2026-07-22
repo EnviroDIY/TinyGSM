@@ -1,12 +1,8 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} Hologram_Dash.ino
  *
- * This sketch connects to a website and downloads a page.
- * It can be used to perform HTTP/RESTful API calls.
- *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- **************************************************************/
+ * @brief This sketch connects to a Hologram Dash using TinyGSM and a GSM modem.
+ * ========================================================================== */
 
 // Hologram Dash uses UBLOX U2 modems
 #define TINY_GSM_MODEM_UBLOX

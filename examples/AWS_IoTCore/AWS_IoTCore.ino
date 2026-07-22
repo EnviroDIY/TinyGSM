@@ -1,15 +1,7 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} AWS_IoTCore.ino
  *
- * For this example, you need to install PubSubClient library:
- *   https://github.com/knolleary/pubsubclient
- *   or from http://librarymanager/all#PubSubClient
- *
- * NOTE: This example only works for modules that have support for writing
- * certificates. Modules that support SSL in this library, but not writing
- * certificates, cannot use this example!
- *
- **************************************************************
- * This example connects to AWS IoT Core using MQTT over SSL.
+ * @brief This example connects to AWS IoT Core using MQTT over SSL.
  *
  * This program writes new certificates to the modem, connects to AWS IoT Core,
  * publishes an initial message, and then subscribes to a topic to toggle an
@@ -18,15 +10,23 @@
  * any messages on the subscribed topic, it will toggle the LED state.  The
  * content of any received messages is ignored.
  *
- * You should run this program once to load your certificates and confirm that
- * you can connect to AWS IoT Core over MQTT. Once you have confirmed your
- * certificates are loaded and working, there is no reason to rerun this program
- * unless you have a new modem, reset your modem, or your certificates change.
- * Most modules store the certificates in flash, which has a limited number of
- * read/write cycles. To avoid wearing out the flash unnecessarily, you should
- * only run this program when necessarily, don't re-write the certificates every
- * time you want to connect to AWS IoT Core.
- **************************************************************/
+ * @important You should run this program once to load your certificates and
+ * confirm that you can connect to AWS IoT Core over MQTT. Once you have
+ * confirmed your certificates are loaded and working, there is no reason to
+ * rerun this program unless you have a new modem, reset your modem, or your
+ * certificates change. Most modules store the certificates in flash, which has
+ * a limited number of read/write cycles. To avoid wearing out the flash
+ * unnecessarily, you should only run this program when necessarily, don't
+ * re-write the certificates every time you want to connect to AWS IoT Core.
+ *
+ * For this example, you need to install PubSubClient library:
+ *   https://github.com/knolleary/pubsubclient
+ *   or from http://librarymanager/all#PubSubClient
+ *
+ * @note This example only works for modules that have support for writing
+ * certificates. Modules that support SSL in this library, but not writing
+ * certificates, cannot use this example!
+ * ========================================================================== */
 
 // Select your modem:
 // #define TINY_GSM_MODEM_SIM7000SSL

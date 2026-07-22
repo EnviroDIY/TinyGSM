@@ -1,12 +1,11 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} BlynkClient.ino
+ *
+ * @brief This sketch connects to Blynk using TinyGSM and a GSM modem.
  *
  * For this example, you need to install Blynk library:
  *   https://github.com/blynkkk/blynk-library/releases/latest
  *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- **************************************************************
  *
  * Blynk is a platform with iOS and Android apps to control
  * Arduino, Raspberry Pi and the likes over the Internet.
@@ -20,7 +19,7 @@
  *                http://www.blynk.io/
  *
  * Change GPRS apm, user, pass, and Blynk auth token to run :)
- **************************************************************/
+ * ========================================================================== */
 
 #define BLYNK_TEMPLATE_ID "TMPxxxxxx"
 #define BLYNK_TEMPLATE_NAME "Device"

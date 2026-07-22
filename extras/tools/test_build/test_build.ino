@@ -1,9 +1,10 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} test_build.ino
  *
- *  DO NOT USE THIS - this is just a compilation test!
- *  This is NOT an example for use of this library!
- *
- **************************************************************/
+ * @warning DO NOT USE THIS - this is just a compilation test!
+ * This is NOT an example for use of this library!
+ * ========================================================================== */
+
 #define TINY_GSM_DEBUG Serial
 #define TINY_GSM_DEBUG_DEEP
 
