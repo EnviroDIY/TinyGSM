@@ -364,7 +364,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
 
   bool gprsDisconnectImpl() {
     sendAT(GF("+QIDEACT"));  // Deactivate the bearer context
-    return waitResponse(60000L, GF("DEACT OK"), GF("ERROR")) == 1;
+    return waitResponse(60000L, GF("DEACT OK")) == 1;
   }
 
   String getProviderImpl() {
@@ -425,9 +425,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
    */
   bool deleteAllSMS() {
     sendAT(GF("+QMGDA=6"));
-    if (waitResponse(waitResponse(60000L, GF("OK"), GF("ERROR")) == 1)) {
-      return true;
-    }
+    if (waitResponse(waitResponse(60000L) == 1)) { return true; }
     return false;
   }
 
