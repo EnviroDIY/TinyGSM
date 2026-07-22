@@ -421,8 +421,9 @@ class TinyGsmSaraR5
   bool getCurrentRadioAccessTechnology(int& rat) {
     sendAT(GF("+URAT?"));
     if (waitResponse(10000L, GF("+URAT:")) != 1) { return false; }
-    rat = streamGetIntBefore('\n');
-    waitResponse();  // OK after the result
+    int16_t parsedRat = streamGetIntBefore('\n');
+    if (waitResponse() != 1 || parsedRat == -9999) { return false; }
+    rat = parsedRat;
     return true;
   }
 
