@@ -1094,9 +1094,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
              GF("\","), port, GF(",0"));
       if (waitResponse() != 1) return false;
 
-      if (waitResponse(timeout_ms, GF("+QSSLOPEN:")) != 1) {
-        return false;
-      }
+      if (waitResponse(timeout_ms, GF("+QSSLOPEN:")) != 1) { return false; }
       // 20230629 -> +QSSLOPEN: <clientID>,<err>
       // clientID is mux
       // err must be 0

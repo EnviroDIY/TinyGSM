@@ -8,7 +8,7 @@
 
 <!--! @endif -->
 
-A small Arduino library for AT Command based internet modules, that just works.
+A small Arduino library for AT-command-based internet modules, that just works.
 
 <!--! @image{inline} html logo.png TinyGSM logo -->
 <!--! @image{inline} xml logo.png TinyGSM logo -->
@@ -337,13 +337,13 @@ TinyGSM knows which commands to send, and how to handle AT responses, and wraps 
 
 This library is "blocking" in all of its communication.
 Depending on the function, your code may be blocked for several _minutes_ while waiting for the module responses.
-Apart from the obvious (ie, `waitForNetwork()`) several other functions may block your code for up to several _minutes_.
+Apart from the obvious (i.e., `waitForNetwork()`) several other functions may block your code for up to several _minutes_.
 The `gprsConnect()` and `client.connect()` functions commonly block the longest, especially in poorer service regions.
-The module shutdown and restart may also be quite slow.
+Shutting down or restarting the module may also be quite slow.
 
-This library _does not_ support any sort of "hardware" or pin level controls for the modules.
+This library _does not_ support any sort of "hardware" or pin-level controls for the modules.
 If you need to turn your module on or reset it using some sort of High/Low/High pin sequence, you must write those functions yourself.
-If you're interested in pin controls for your module, there's documentation of the wake/sleep protocols for most of the modules supported by this library in the modems components of the [ModularSensors library](https://github.com/EnviroDIY/ModularSensors/).
+If you're interested in pin controls for your module, there's documentation of the wake/sleep protocols for most of the modules supported by this library in the [ModularSensors library](https://github.com/EnviroDIY/ModularSensors/).
 
 ## API Reference
 
@@ -473,7 +473,7 @@ instead of this:
 ```cpp
 client.print("GET ");
 client.print(resource);
-client.println(" HTTP/1.1")
+client.println(" HTTP/1.1");
 ```
 
 - Make sure there is one entirely blank line between the last header and the content of any POST request.

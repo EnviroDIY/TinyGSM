@@ -122,13 +122,13 @@ void loop() {
 
   client.connect(server, 80);
 
-  // Make a HTTP GET request:
+  // Make a HTTP GET request using client prints
   client.print(String("GET ") + resource + " HTTP/1.0\r\n");
   client.print(String("Host: ") + server + "\r\n");
   client.print("Connection: close\r\n\r\n");
 
 #if !defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
-  // Write the request out to the server so it goes all at once
+  // Make the same HTTP GET request using beginWrite/write/endWrite
   client.beginWrite(63);
   client.write("GET ");
   client.write(resource);

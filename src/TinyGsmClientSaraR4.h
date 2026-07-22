@@ -764,9 +764,7 @@ class TinyGsmSaraR4
     sendAT(GF("+UTEMP=0"));  // Would use 1 for Fahrenheit
     if (waitResponse() != 1) { return static_cast<float>(-9999); }
     sendAT(GF("+UTEMP?"));
-    if (waitResponse(GF("+UTEMP:")) != 1) {
-      return static_cast<float>(-9999);
-    }
+    if (waitResponse(GF("+UTEMP:")) != 1) { return static_cast<float>(-9999); }
     int16_t res  = streamGetIntBefore('\n');
     float   temp = -9999;
     if (res != -1) { temp = (static_cast<float>(res)) / 10; }
@@ -819,8 +817,8 @@ class TinyGsmSaraR4
       DBG("### Opening socket asynchronously!  Socket cannot be used until "
           "the URC '+UUSOCO' appears.");
       sendAT(GF("+USOCO="), *mux, GF(",\""), host, GF("\","), port, GF(",1"));
-      if (waitResponse(timeout_ms - (millis() - startMillis),
-                       GF("+UUSOCO:")) == 1) {
+      if (waitResponse(timeout_ms - (millis() - startMillis), GF("+UUSOCO:")) ==
+          1) {
         streamGetIntBefore(',');  // skip repeated mux
         int8_t connection_status = streamGetIntBefore('\n');
         DBG("### Waited", millis() - startMillis, "ms for socket to open");

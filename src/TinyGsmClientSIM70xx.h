@@ -294,9 +294,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
   // get the RAW GPS output
   String getGPSrawImpl() {
     thisModem().sendAT(GF("+CGNSINF"));
-    if (thisModem().waitResponse(10000L, GF("+CGNSINF:")) != 1) {
-      return "";
-    }
+    if (thisModem().waitResponse(10000L, GF("+CGNSINF:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     thisModem().waitResponse();
     res.trim();
