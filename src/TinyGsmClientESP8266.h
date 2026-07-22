@@ -748,7 +748,7 @@ class TinyGsmESP8266
     if (waitResponse(10000L, GF("Recv ")) == 1) {
       received = streamGetIntBefore(' ');  // check received length
     }
-    if (waitResponse(30000L, GF("SEND OK" AT_NL), GF("SEND FAIL" AT_NL),
+    if (waitResponse(30000L, GF("SEND OK\r\n"), GF("SEND FAIL\r\n"),
                      GFP(ModemConfig::GSM_ERROR)) != 1) {
       return 0;
     }
@@ -830,7 +830,7 @@ class TinyGsmESP8266
       data = "";
       // DBG("### Busy, please wait");
       return true;
-    } else if (data.endsWith(GF("ready" AT_NL))) {
+    } else if (data.endsWith(GF("ready\r\n"))) {
       streamSkipUntil('\n');
       data = "";
       // DBG("### Module ready!");

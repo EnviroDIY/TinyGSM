@@ -290,7 +290,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(15)) { return false; }
     // MODEM:STARTUP
-    waitResponse(60000L, GF("+PBREADY" AT_NL));
+    waitResponse(60000L, GF("+PBREADY\r\n"));
     return init(pin);
   }
 
@@ -476,8 +476,8 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
       String ip = dnsIpQuery(host);
 
       sendAT(GF("+TCPSETUP="), mux, ',', ip, ',', port);
-      int8_t rsp = waitResponse(timeout_ms, GF(",OK" AT_NL), GF(",FAIL" AT_NL),
-                                GF("+TCPSETUP:Error" AT_NL));
+      int8_t rsp = waitResponse(timeout_ms, GF(",OK\r\n"), GF(",FAIL\r\n"),
+                                GF("+TCPSETUP:Error\r\n"));
       if (1 == rsp) {
         return true;
       } else if (3 == rsp) {
@@ -559,7 +559,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
     sendAT(GF("+DNS=\""), host, '"');
     if (waitResponse(10000L, GF("+DNS:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
-    waitResponse(GF("+DNS:OK" AT_NL));
+    waitResponse(GF("+DNS:OK\r\n"));
     res.trim();
     return res;
   }

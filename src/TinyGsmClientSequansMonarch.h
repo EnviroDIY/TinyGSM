@@ -634,7 +634,7 @@ class TinyGsmSequansMonarch
            GF(",0,0,1"));
     rsp = waitResponse((timeout_ms - (millis() - startMillis)),
                        GFP(ModemConfig::GSM_OK), GFP(ModemConfig::GSM_ERROR),
-                       GF("NO CARRIER" AT_NL));
+                       GF("NO CARRIER\r\n"));
 
     // creation of socket failed immediately.
     if (rsp != 1) { return false; }

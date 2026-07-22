@@ -1177,7 +1177,7 @@ class TinyGsmSim7000SSL
       data = "";
       DBG("### Daylight savings time state updated.");
       return true;
-    } else if (data.endsWith(GF("SMS Ready" AT_NL))) {
+    } else if (data.endsWith(GF("SMS Ready\r\n"))) {
       data = "";
       DBG("### Unexpected module reset!");
       init();

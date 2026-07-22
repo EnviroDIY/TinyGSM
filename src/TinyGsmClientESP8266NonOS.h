@@ -434,7 +434,7 @@ class TinyGsmESP8266NonOS
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t) {
-    if (waitResponse(30000L, GF("SEND OK" AT_NL)) != 1) { return 0; }
+    if (waitResponse(30000L, GF("SEND OK\r\n")) != 1) { return 0; }
     return len;
   }
 
@@ -479,7 +479,7 @@ class TinyGsmESP8266NonOS
       data = "";
       // DBG("### Busy, please wait");
       return true;
-    } else if (data.endsWith(GF("ready" AT_NL))) {
+    } else if (data.endsWith(GF("ready\r\n"))) {
       streamSkipUntil('\n');
       data = "";
       // DBG("### Module ready!");

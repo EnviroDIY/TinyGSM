@@ -493,9 +493,9 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     sendAT(GF("+QIOPEN="), mux, GF(",\""), GF("TCP"), GF("\",\""), host,
            GF("\","), port);
-    int8_t rsp = waitResponse(timeout_ms, GF("CONNECT OK" AT_NL),
-                              GF("CONNECT FAIL" AT_NL),
-                              GF("ALREADY CONNECT" AT_NL));
+    int8_t rsp = waitResponse(timeout_ms, GF("CONNECT OK\r\n"),
+                              GF("CONNECT FAIL\r\n"),
+                              GF("ALREADY CONNECT\r\n"));
     return (1 == rsp);
   }
 
@@ -617,8 +617,9 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
       data = "";
       // DBG("### Got Data:", len_total, "on", mux);
       return true;
-    } else if (data.endsWith(GF("CLOSED" AT_NL))) {
-      int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
+    } else if (data.endsWith(GF("CLOSED\r\n"))) {
+      int8_t nl   = data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
+                                     data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
       if (mux >= 0 && mux < TinyGsmMC60TcpConfig::kMuxCount && sockets[mux]) {
