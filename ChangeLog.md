@@ -59,7 +59,7 @@ gsmClient.endWrite(strlen(request));
 - Added an example connecting to AWS IoT Core with mutual authentication.
 - Added an example using multiple connections at once
 - Added an "is_secure" property to all clients to help differentiate them
-- Added a function (`setDefaultBaud(uint32_t baud)`) to set defuault baud rate on Espressif modules
+- Added a function (`setDefaultBaud(uint32_t baud)`) to set default baud rate on Espressif modules
 - Added defines for the frequency of checking for lost incoming message notifications (`TINY_GSM_UNREAD_CHECK_MS`)
   - This can be used as an external build flag.
 - Added defines for the maximum size each modem accepts in a single send command (`TINY_GSM_SEND_MAX_SIZE`)
@@ -105,7 +105,7 @@ gsmClient.endWrite(strlen(request));
 
 ### Added
 
-- Added support for SSL for the Quentcel BG95 and BG96 from [Aurelien BOUIN](https://github.com/aurelihein) and [George O'Connor](https://github.com/georgeman93)
+- Added support for SSL for the Quectel BG95 and BG96 from [Aurelien BOUIN](https://github.com/aurelihein) and [George O'Connor](https://github.com/georgeman93)
 - Added support for UBLOX SARA-R5 from [Sebastian Bergner](https://github.com/sebastianbergner)
 - Added support for SIMCOM A7672X from [Giovanni de Rosso Unruh](https://github.com/giovannirosso)
 - Added SIM5320 GPS location from [Bengarman](https://github.com/Bengarman)
