@@ -121,7 +121,7 @@ if "EXAMPLES_TO_IGNORE" in os.environ.keys() and os.environ.get(
         example
         for example in examples_to_build
         if not any(
-            e.lower() in os.path.normpath(example).split(os.sep)
+            e in [p.lower() for p in os.path.normpath(example).split(os.sep)]
             for e in [example_.lower().strip() for example_ in ex_ignore]
         )
     ]
@@ -285,6 +285,23 @@ cart_join = list(product(*[examples_to_build, boards, modem_list]))
 
 
 # %%
+# Exclude modems without SSL support from HttpsClient and AWS_IoTCore examples
+unsecured_modems = [
+    "TINY_GSM_MODEM_SIM900",
+    "TINY_GSM_MODEM_SIM7000",
+    "TINY_GSM_MODEM_SIM5320",
+    "TINY_GSM_MODEM_SIM5360",
+    "TINY_GSM_MODEM_SIM5300",
+    "TINY_GSM_MODEM_SIM7100",
+    "TINY_GSM_MODEM_M95",
+    "TINY_GSM_MODEM_BG95",
+    "TINY_GSM_MODEM_A6",
+    "TINY_GSM_MODEM_A7",
+    "TINY_GSM_MODEM_M590",
+    "TINY_GSM_MODEM_MC60",
+    "TINY_GSM_MODEM_MC60E",
+]
+
 # a list of known failures to skip in the job matrix
 matrix_exclusions = [
     {
@@ -338,16 +355,8 @@ matrix_exclusions = [
             "feather328p",
             "feather32u4",
         ],  # doesn't fit on 328p or 32u
-        "modems": [
-            "TINY_GSM_MODEM_SARAR4",
-            "TINY_GSM_MODEM_SARAR5",
-            "TINY_GSM_MODEM_BG96",
-            "TINY_GSM_MODEM_SIM7000SSL",
-            "TINY_GSM_MODEM_SIM7070",
-            "TINY_GSM_MODEM_SIM7600",
-            "TINY_GSM_MODEM_ESP32",
-            "TINY_GSM_MODEM_A7672X",
-        ],
+        # Exclude only SSL-capable modems on memory-constrained boards.
+        "modems": [modem for modem in modem_list if modem not in unsecured_modems],
     },
     {
         "example": os.path.join("extras", "tools", "AT_Debug"),
@@ -359,23 +368,6 @@ matrix_exclusions = [
         "boards": boards,
         "modems": deepcopy(modem_list),
     },
-]
-
-# Exclude modems without SSL support from HttpsClient and AWS_IoTCore examples
-unsecured_modems = [
-    "TINY_GSM_MODEM_SIM900",
-    "TINY_GSM_MODEM_SIM7000",
-    "TINY_GSM_MODEM_SIM5320",
-    "TINY_GSM_MODEM_SIM5360",
-    "TINY_GSM_MODEM_SIM5300",
-    "TINY_GSM_MODEM_SIM7100",
-    "TINY_GSM_MODEM_M95",
-    "TINY_GSM_MODEM_BG95",
-    "TINY_GSM_MODEM_A6",
-    "TINY_GSM_MODEM_A7",
-    "TINY_GSM_MODEM_M590",
-    "TINY_GSM_MODEM_MC60",
-    "TINY_GSM_MODEM_MC60E",
 ]
 for example in [
     os.path.join("examples", "HttpsClient"),
