@@ -263,22 +263,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
         : GsmClientUBLOX(modem) {
       is_secure = true;
     }
-
-    int connect(const char* host, uint16_t port, int timeout_s) override {
-      is_mid_send = false;
-      // stop();  // DON'T stop! We don't know our actual mux yet!
-      TINY_GSM_YIELD();
-      rx.clear();
-      uint8_t oldMux = mux;
-      sock_connected = at->modemConnect(host, port, &mux, timeout_s);
-      if (mux != oldMux) {
-        DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
-        at->sockets[oldMux] = nullptr;
-      }
-      at->sockets[mux] = this;
-      at->maintain();
-      return sock_connected;
-    }
   };
 
   /*
