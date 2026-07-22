@@ -11,15 +11,6 @@
 #define SRC_TINYGSMCLIENTSEQUANSMONARCH_H_
 #pragma message("TinyGSM:  TinyGsmClientSequansMonarch")
 
-#if defined(TINY_GSM_MAX_RESPONSE_CHECKS)
-#if TINY_GSM_MAX_RESPONSE_CHECKS < 5
-#undef TINY_GSM_MAX_RESPONSE_CHECKS
-#endif
-#endif
-#if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
-#define TINY_GSM_MAX_RESPONSE_CHECKS 5
-#endif
-
 #ifdef TINY_GSM_SECURE_MUX_COUNT
 #undef TINY_GSM_SECURE_MUX_COUNT
 #endif

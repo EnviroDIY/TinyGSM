@@ -11,20 +11,11 @@
 #define SRC_TINYGSMCLIENTM590_H_
 #pragma message("TinyGSM:  TinyGsmClientM590")
 
-#if defined(TINY_GSM_MAX_RESPONSE_CHECKS)
-#if TINY_GSM_MAX_RESPONSE_CHECKS < 5
-#undef TINY_GSM_MAX_RESPONSE_CHECKS
-#endif
-#endif
-#if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
-#define TINY_GSM_MAX_RESPONSE_CHECKS 5
-
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
-#endif
 
 /// Registration status
 enum M590RegStatus {

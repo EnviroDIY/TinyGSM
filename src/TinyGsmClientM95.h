@@ -12,14 +12,6 @@
 #define SRC_TINYGSMCLIENTM95_H_
 #pragma message("TinyGSM:  TinyGsmClientM95")
 
-#if defined(TINY_GSM_MAX_RESPONSE_CHECKS)
-#if TINY_GSM_MAX_RESPONSE_CHECKS < 5
-#undef TINY_GSM_MAX_RESPONSE_CHECKS
-#endif
-#endif
-#if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
-#define TINY_GSM_MAX_RESPONSE_CHECKS 5
-
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmGPRS.tpp"
@@ -28,7 +20,6 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
-#endif
 
 /// Registration status
 enum M95RegStatus {

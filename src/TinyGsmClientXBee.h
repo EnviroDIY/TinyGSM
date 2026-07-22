@@ -12,15 +12,6 @@
 #define SRC_TINYGSMCLIENTXBEE_H_
 #pragma message("TinyGSM:  TinyGsmClientXBee")
 
-#if defined(TINY_GSM_MAX_RESPONSE_CHECKS)
-#if TINY_GSM_MAX_RESPONSE_CHECKS < 2
-#undef TINY_GSM_MAX_RESPONSE_CHECKS
-#endif
-#endif
-#if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
-#define TINY_GSM_MAX_RESPONSE_CHECKS 2
-#endif
-
 
 #ifdef TINY_GSM_XBEE_GUARD_TIME
 #undef TINY_GSM_XBEE_GUARD_TIME
