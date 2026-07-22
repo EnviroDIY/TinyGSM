@@ -185,7 +185,7 @@ class TinyGsmEspressif
     if (!thisModem().testAT()) { return false; }
     thisModem().sendAT(GF("+RST"));
     if (thisModem().waitResponse(10000L) != 1) { return false; }
-    if (thisModem().waitResponse(10000L, GF("ready" AT_NL)) != 1) {
+    if (thisModem().waitResponse(10000L, GF("ready\r\n")) != 1) {
       return false;
     }
     delay(850);
@@ -261,10 +261,10 @@ class TinyGsmEspressif
     // versions
     thisModem().sendAT(GF("+CWJAP=\""), ssid, GF("\",\""), pwd, '"');
     if (thisModem().waitResponse(30000L, GFP(ModemConfig::GSM_OK),
-                                 GF("FAIL" AT_NL)) != 1) {
+                                 GF("FAIL\r\n")) != 1) {
       thisModem().sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, '"');
       if (thisModem().waitResponse(30000L, GFP(ModemConfig::GSM_OK),
-                                   GF("FAIL" AT_NL)) != 1) {
+                                   GF("FAIL\r\n")) != 1) {
         return false;
       }
     }

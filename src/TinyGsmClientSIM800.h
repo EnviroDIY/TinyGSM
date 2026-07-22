@@ -666,10 +666,10 @@ class TinyGsmSim800
 #endif
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host,
            GF("\","), port);
-    rsp = waitResponse(
-        timeout_ms, GF("CONNECT OK" AT_NL), GF("CONNECT FAIL" AT_NL),
-        GF("ALREADY CONNECT" AT_NL), GF("ERROR" AT_NL),
-        GF("CLOSE OK" AT_NL));  // Happens when HTTPS handshake fails
+    rsp =
+        waitResponse(timeout_ms, GF("CONNECT OK\r\n"), GF("CONNECT FAIL\r\n"),
+                     GF("ALREADY CONNECT\r\n"), GFP(ModemConfig::GSM_ERROR),
+                     GF("CLOSE OK\r\n"));  // Happens when HTTPS handshake fails
     return (1 == rsp);
   }
 
@@ -772,8 +772,9 @@ class TinyGsmSim800
       data = "";
       // DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (data.endsWith(GF("CLOSED" AT_NL))) {
-      int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
+    } else if (data.endsWith(GF("CLOSED\r\n"))) {
+      int8_t nl   = data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
+                                     data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
       if (mux >= 0 && mux < TinyGsmSim800TcpConfig::kMuxCount && sockets[mux]) {

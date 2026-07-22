@@ -803,8 +803,8 @@ class TinyGsmA7672X
     if (ssl) {
       // Because we set CCHSET to return the send result, we should get a
       // +CCHSEND: <session_id>,<err>
-      if (waitResponse(10000L, GF("+CCHSEND:"), GF("ERROR" AT_NL),
-                       GF("CLOSE OK" AT_NL)) != 1) {
+      if (waitResponse(10000L, GF("+CCHSEND:"), GFP(ModemConfig::GSM_ERROR),
+                       GF("CLOSE OK\r\n")) != 1) {
         return 0;
       }
       uint8_t ret_mux = streamGetIntBefore(',');       // check mux
@@ -950,7 +950,7 @@ class TinyGsmA7672X
         data += mode;
         return false;
       }
-    } else if (data.endsWith(GF("RECV EVENT" AT_NL))) {
+    } else if (data.endsWith(GF("RECV EVENT\r\n"))) {
       // WHAT??? No, no, no, you can't issue a sendAT/waitResponse here!! The
       // handle URC's function is the module-unique part of the general purpose
       // waitResponse function.
@@ -969,7 +969,7 @@ class TinyGsmA7672X
       data = "";
       DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (data.endsWith(GF("+CCHRECV: 0,0" AT_NL))) {
+    } else if (data.endsWith(GF("+CCHRECV: 0,0\r\n"))) {
       int8_t mux = data.substring(data.lastIndexOf(',') + 1).toInt();
       if (mux >= 0 && mux < TinyGsmA7672xTcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = true;

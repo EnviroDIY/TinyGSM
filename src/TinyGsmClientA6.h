@@ -381,7 +381,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
     int8_t rsp = waitResponse(60000L, GF("+CIEV: \"SOUNDER\",0"),
                               GF("+CIEV: \"CALL\",0"));
 
-    int8_t rsp2 = waitResponse(300L, GF("BUSY" AT_NL), GF("NO ANSWER" AT_NL));
+    int8_t rsp2 = waitResponse(300L, GF("BUSY\r\n"), GF("NO ANSWER\r\n"));
 
     return rsp == 1 && rsp2 == 0;
   }
@@ -536,8 +536,8 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
     int8_t newMux = streamGetIntBefore('\n');
 
     int8_t rsp = waitResponse((timeout_ms - (millis() - startMillis)),
-                              GF("CONNECT OK" AT_NL), GF("CONNECT FAIL" AT_NL),
-                              GF("ALREADY CONNECT" AT_NL));
+                              GF("CONNECT OK\r\n"), GF("CONNECT FAIL\r\n"),
+                              GF("ALREADY CONNECT\r\n"));
     if (waitResponse() != 1) { return false; }
     *mux = newMux;
 

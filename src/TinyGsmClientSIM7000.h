@@ -399,9 +399,9 @@ class TinyGsmSim7000
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host,
            GF("\","), port);
     return (1 ==
-            waitResponse(timeout_ms, GF("CONNECT OK" AT_NL),
-                         GF("CONNECT FAIL" AT_NL), GF("ALREADY CONNECT" AT_NL),
-                         GF("ERROR" AT_NL), GF("CLOSE OK" AT_NL)));
+            waitResponse(timeout_ms, GF("CONNECT OK\r\n"),
+                         GF("CONNECT FAIL\r\n"), GF("ALREADY CONNECT\r\n"),
+                         GFP(ModemConfig::GSM_ERROR), GF("CLOSE OK\r\n")));
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
@@ -505,8 +505,9 @@ class TinyGsmSim7000
       data = "";
       // DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (data.endsWith(GF("CLOSED" AT_NL))) {
-      int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
+    } else if (data.endsWith(GF("CLOSED\r\n"))) {
+      int8_t nl   = data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
+                                     data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
       if (mux >= 0 && mux < TinyGsmSim7000TcpConfig::kMuxCount &&
@@ -536,7 +537,7 @@ class TinyGsmSim7000
       data = "";
       DBG("### Daylight savings time state updated.");
       return true;
-    } else if (data.endsWith(GF("SMS Ready" AT_NL))) {
+    } else if (data.endsWith(GF("SMS Ready\r\n"))) {
       data = "";
       DBG("### Unexpected module reset!");
       init();

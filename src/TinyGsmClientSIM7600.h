@@ -113,7 +113,7 @@ class TinyGsmSim7600
   friend class TinyGsmTemperature<TinyGsmSim7600>;
   friend class TinyGsmCalling<TinyGsmSim7600>;
 
-  using ModemConfig = TinyGsmSim7600TcpConfig;
+  using ModemConfig = TinyGsmSim7600ModemConfig;
 
   /*
    * Inner Client
@@ -1018,8 +1018,8 @@ class TinyGsmSim7600
     if (ssl) {
       // Because we set CCHSET to return the send result, we should get a
       // +CCHSEND: <session_id>,<err>
-      if (waitResponse(10000L, GF("+CCHSEND:"), GF("ERROR" AT_NL),
-                       GF("CLOSE OK" AT_NL)) != 1) {
+      if (waitResponse(10000L, GF("+CCHSEND:"), GFP(ModemConfig::GSM_ERROR),
+                       GF("CLOSE OK\r\n")) != 1) {
         return 0;
       }
       uint8_t ret_mux = streamGetIntBefore(',');        // check mux
