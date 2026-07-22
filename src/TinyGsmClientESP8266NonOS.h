@@ -13,11 +13,6 @@
 #include "TinyGsmClientEspressif.h"
 #include "TinyGsmTCP.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 // NOTE: This module supports SSL, but we do not support any certificate
 // management for the non-OS version of the ESP8266 firmware, so we define
 // TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module so as not to
@@ -511,7 +506,5 @@ class TinyGsmESP8266NonOS
  protected:
   GsmClientESP8266NonOS* sockets[TinyGsmESP8266NonOSTcpConfig::kMuxCount];
 };
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTESP8266NONOS_H_

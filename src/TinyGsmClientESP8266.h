@@ -16,11 +16,6 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /// State: current Wi-Fi state.
 enum ESP8266RegStatus {
   REG_UNINITIALIZED =
@@ -862,7 +857,5 @@ class TinyGsmESP8266
  protected:
   GsmClientESP8266* sockets[TinyGsmESP8266TcpConfig::kMuxCount];
 };
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTESP8266_H_

@@ -36,11 +36,6 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /// Registration status
 enum A7672xRegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
@@ -1043,7 +1038,5 @@ class TinyGsmA7672X
 };
 
 // cspell:words CCHSEND
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTA7672X_H_

@@ -24,11 +24,6 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /***
  * @brief TCP behavior and limits for the SIM7000 modem family using the SSL
  * application toolkit.
@@ -1197,7 +1192,5 @@ class TinyGsmSim7000SSL
 };
 
 // cspell:words CASEND
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM7000SSL_H_

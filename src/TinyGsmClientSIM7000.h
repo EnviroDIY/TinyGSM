@@ -18,11 +18,6 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /***
  * @brief TCP behavior and limits for the SIM7000 modem family.
  */
@@ -417,9 +412,7 @@ class TinyGsmSim7000
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
-    if (waitResponse(GF("DATA ACCEPT:"), GF("SEND FAIL")) != 1) {
-      return 0;
-    }
+    if (waitResponse(GF("DATA ACCEPT:"), GF("SEND FAIL")) != 1) { return 0; }
     uint8_t  ret_mux = streamGetIntBefore(',');   // check mux
     uint16_t sent    = streamGetIntBefore('\n');  // check send length
     if (sent != len) { DBG("### Sent:", sent, "of", len, "on", mux); }
@@ -555,7 +548,5 @@ class TinyGsmSim7000
  protected:
   GsmClientSim7000* sockets[TinyGsmSim7000TcpConfig::kMuxCount];
 };
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM7000_H_

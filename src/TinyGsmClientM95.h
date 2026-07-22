@@ -29,11 +29,6 @@
 #include "TinyGsmTemperature.tpp"
 #endif
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /// Registration status
 enum M95RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
@@ -495,9 +490,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
  protected:
   float getTemperatureImpl() {
     sendAT(GF("+QTEMP?"));
-    if (waitResponse(GF("+QTEMP:")) != 1) {
-      return static_cast<float>(-9999);
-    }
+    if (waitResponse(GF("+QTEMP:")) != 1) { return static_cast<float>(-9999); }
     streamSkipUntil(',');  // Skip mode
     // Read charge of thermistor
     // milliVolts = streamGetIntBefore(',');
@@ -657,7 +650,5 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
  protected:
   GsmClientM95* sockets[TinyGsmM95TcpConfig::kMuxCount];
 };
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTM95_H_

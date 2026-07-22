@@ -37,11 +37,6 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /// Registration status
 enum SIM7600RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
@@ -1219,7 +1214,5 @@ class TinyGsmSim7600
 };
 
 // cspell:words CCHSEND
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM7600_H_
