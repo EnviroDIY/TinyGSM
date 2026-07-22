@@ -24,7 +24,7 @@ This tool sketch tries to auto-detect the modem baud rate and provides direct AT
 
 - [The AT debug tool on GitHub](https://github.com/EnviroDIY/TinyGSM/tree/master/extras/tools/AT_Debug)
 
-<!--! @m_innerpage{tool_at_debug} -->
+<!--! @subpage tool_at_debug -->
 
 ## Diagnostics<!--! {#tools_diagnostics} -->
 
@@ -32,7 +32,7 @@ This tool sketch runs a series of modem diagnostic checks and prints the results
 
 - [The diagnostics tool on GitHub](https://github.com/EnviroDIY/TinyGSM/tree/master/extras/tools/Diagnostics)
 
-<!--! @m_innerpage{tool_diagnostics} -->
+<!--! @subpage tool_diagnostics -->
 
 ## Factory Reset<!--! {#tools_factory_reset} -->
 
@@ -40,7 +40,7 @@ This tool sketch sends commands to reset a supported modem back to factory defau
 
 - [The factory reset tool on GitHub](https://github.com/EnviroDIY/TinyGSM/tree/master/extras/tools/FactoryReset)
 
-<!--! @m_innerpage{tool_factory_reset} -->
+<!--! @subpage tool_factory_reset -->
 
 ## Test Build<!--! {#tools_test_build} -->
 
@@ -48,4 +48,4 @@ This tool sketch is a compile-only validation target used to exercise API covera
 
 - [The test build tool on GitHub](https://github.com/EnviroDIY/TinyGSM/tree/master/extras/tools/test_build)
 
-<!--! @m_innerpage{tool_test_build} -->
+<!--! @subpage tool_test_build -->
