@@ -831,9 +831,10 @@ class TinyGsmModem {
 
   inline void cleanResponseString(String& res) {
     // Remove the OK from the string, as well as any newlines
-    String okResponse = String(ModemConfig::GSM_NL) + ModemConfig::GSM_OK;
+    const String nlResponse = String(GFP(ModemConfig::GSM_NL));
+    String       okResponse = nlResponse + String(GFP(ModemConfig::GSM_OK));
     res.replace(okResponse, "");
-    res.replace(ModemConfig::GSM_NL, " ");
+    res.replace(nlResponse, " ");
     res.trim();
   }
 
@@ -982,13 +983,16 @@ class TinyGsmModem {
           }
         }
 #if defined TINY_GSM_DEBUG
-        if ((data.endsWith(ModemConfig::GSM_VERBOSE)) ||
-            (data.endsWith(ModemConfig::GSM_VERBOSE_2))) {
+        const String verbosePrefix1 = String(GFP(ModemConfig::GSM_VERBOSE));
+        const String verbosePrefix2 = String(GFP(ModemConfig::GSM_VERBOSE_2));
+        if ((data.endsWith(verbosePrefix1)) ||
+            (data.endsWith(verbosePrefix2))) {
           // check how long the new line is
           // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
-          const int  len_atnl = strnlen(ModemConfig::GSM_NL, 3);
-          const char last_atnl_c =
-              len_atnl > 0 ? ModemConfig::GSM_NL[len_atnl - 1] : '\n';
+          const String atnlString  = String(GFP(ModemConfig::GSM_NL));
+          const int    len_atnl    = atnlString.length();
+          const char   last_atnl_c = len_atnl > 0 ? atnlString[len_atnl - 1]
+                                                  : '\n';
           // Read out the verbose message, until the last character of the new
           // line
           data += thisModem().stream.readStringUntil(last_atnl_c);
