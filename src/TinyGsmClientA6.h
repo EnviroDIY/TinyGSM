@@ -11,15 +11,6 @@
 #define SRC_TINYGSMCLIENTA6_H_
 #pragma message("TinyGSM:  TinyGsmClientA6")
 
-#if defined(TINY_GSM_MAX_RESPONSE_CHECKS)
-#if TINY_GSM_MAX_RESPONSE_CHECKS < 5
-#undef TINY_GSM_MAX_RESPONSE_CHECKS
-#endif
-#endif
-#if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
-#define TINY_GSM_MAX_RESPONSE_CHECKS 5
-#endif
-
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmGPRS.tpp"
