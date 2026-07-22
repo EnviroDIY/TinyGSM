@@ -1,13 +1,11 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} AllFunctions.ino
  *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
+ * @brief This sketch tests all the functions of the TinyGSM library.
  *
- * NOTE:
- * Some of the functions may be unavailable for your modem.
+ * @note Some of the functions may be unavailable for your modem.
  * Just comment them out.
- *
- **************************************************************/
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800

@@ -1,12 +1,9 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} Multiple_Connections.ino
  *
- * This sketch connects to a website and downloads a page.
- * It can be used to perform HTTP/RESTful API calls.
- *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- **************************************************************/
+ * @brief This sketch opens connections to two different servers at the same
+ * time and downloads a page from each.
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800

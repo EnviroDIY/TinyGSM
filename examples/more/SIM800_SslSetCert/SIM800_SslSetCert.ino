@@ -1,18 +1,19 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} SIM800_SslSetCert.ino
  *
- * This sketch uploads SSL certificates to the SIM8xx
+ * @brief This sketch uploads SSL certificates to the SIM8xx
  *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- **************************************************************/
+ * @warning The actual certificates included in this example are expired and
+ * will not work for SSL connections.  You must replace them with valid
+ * certificates for your application.
+ * ========================================================================== */
 
 // This example is specific to SIM8xx
 #define TINY_GSM_MODEM_SIM800
 
 // Select your certificate:
-#include "DSTRootCAX3.h"
-// #include "DSTRootCAX3.der.h"
+#include "DSTRootCAX3.h"      // Expired 2021-09-30
+#include "DSTRootCAX3.der.h"  // Expired 2021-09-30
 // #include "COMODORSACertificationAuthority.h"
 
 // Select the file you want to write into

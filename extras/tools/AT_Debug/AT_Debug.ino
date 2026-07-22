@@ -1,12 +1,14 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} AT_Debug.ino
  *
- * This script tries to auto-detect the baud rate
- * and allows direct AT commands access
+ * @brief This script tries to auto-detect the baud rate and allows direct AT
+ * commands access.
  *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- **************************************************************/
+ * @warning The quality of the passthrough connection created by this sketch is
+ * limited by the baud rate and the speed of the Arduino.  If possible, you
+ * should connect your modem directly to your computer and use a terminal
+ * program to send AT commands.
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800

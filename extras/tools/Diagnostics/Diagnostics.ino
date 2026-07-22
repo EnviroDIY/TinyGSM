@@ -1,13 +1,13 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} Diagnostics.ino
+ *
+ * @brief This sketch runs a series of diagnostic tests on the modem and prints
+ * the results.
  *
  * To run this tool you need StreamDebugger library:
  *   https://github.com/vshymanskyy/StreamDebugger
  *   or from http://librarymanager/all#StreamDebugger
- *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- **************************************************************/
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
