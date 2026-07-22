@@ -401,7 +401,10 @@ class TinyGsmTCP {
             continue;
           }
           // continue to parse URCs from the modem stream until the timeout
-          if (!rx.size() && sock_connected) { at->maintain(); }
+          if (!rx.size()) {
+            if (!sock_connected) { break; }
+            at->maintain();
+          }
         }
         return cnt;
       }
