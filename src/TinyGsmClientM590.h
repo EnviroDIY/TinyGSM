@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientM590.h
+ * @brief      M590 modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -38,8 +39,10 @@ enum M590RegStatus {
 
 /// Basic modem configurations for the M590 modem family
 struct TinyGsmM590ModemConfig : public TinyGsmModemConfigPreset<M590RegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Neoway";
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "M590";
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "M590";
 };
 
 constexpr char TinyGsmM590ModemConfig::MODEM_MANUFACTURER[];

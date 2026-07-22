@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientMC60.h
+ * @brief      MC60 modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -43,10 +44,13 @@ enum MC60RegStatus {
 
 /// Basic modem configurations for the MC60 modem family
 struct TinyGsmMC60ModemConfig : public TinyGsmModemConfigPreset<MC60RegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Quectel";
 #if defined(TINY_GSM_MODEM_MC60E)
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "MC60E";
 #else
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "MC60";
 #endif
 };

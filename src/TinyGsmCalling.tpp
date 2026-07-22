@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmCalling.tpp
+ * @brief      Voice calling and DTMF helper mixin for modem implementations.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy

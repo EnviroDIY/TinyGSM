@@ -1,5 +1,7 @@
 /**
  * @file       TinyGsmBattery.tpp
+ * @brief      Battery status and power reporting mixin for modem
+ * implementations.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy

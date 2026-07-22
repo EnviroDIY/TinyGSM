@@ -1,5 +1,6 @@
 /**
  * @file TinyGsmFifo.h
+ * @brief      Lightweight FIFO buffer utility used by TinyGSM internals.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy

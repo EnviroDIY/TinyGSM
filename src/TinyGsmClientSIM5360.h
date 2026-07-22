@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientSIM5360.h
+ * @brief      SIM5360 modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -44,14 +45,19 @@ enum SIM5360RegStatus {
 /// Basic modem configurations for the SIM5360 modem family
 struct TinyGsmSim5360ModemConfig
     : public TinyGsmModemConfigPreset<SIM5360RegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
 #if defined(TINY_GSM_MODEM_SIM5320)
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM5320";
 #elif defined(TINY_GSM_MODEM_SIM5300)
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM5300";
 #elif defined(TINY_GSM_MODEM_SIM7100)
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7100";
 #else
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM5360";
 #endif
 };

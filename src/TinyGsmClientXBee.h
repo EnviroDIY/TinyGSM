@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientXBee.h
+ * @brief      XBee modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy, XBee module by Sara
@@ -77,9 +78,12 @@ enum XBeeRegStatus {
 
 /// Basic modem configurations for the XBee modem family
 struct TinyGsmXBeeModemConfig : public TinyGsmModemConfigPreset<XBeeRegStatus> {
-  static constexpr char GSM_NL[] TINY_GSM_PROGMEM             = "\r";
+  /// The newline character(s) used in AT commands.
+  static constexpr char GSM_NL[] TINY_GSM_PROGMEM = "\r";
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Digi";
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "XBee";
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "XBee";
 };
 
 constexpr char TinyGsmXBeeModemConfig::GSM_NL[];
@@ -322,7 +326,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       // want to go into command mode.
       // return at->modemGetConnected();
     }
-    /// @copydoc TinyGsmTCP::GsmClient::bool()
+    /// @copydoc TinyGsmTCP::GsmClient::operator bool()
     operator bool() override {
       return connected();
     }

@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientBG96.h
+ * @brief      BG96 modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy and Aurelien BOUIN (SSL)
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -44,10 +45,13 @@ enum BG96RegStatus {
 
 /// Basic modem configurations for the BG96 modem family
 struct TinyGsmBG96ModemConfig : public TinyGsmModemConfigPreset<BG96RegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Quectel";
 #if defined(TINY_GSM_MODEM_BG95) || defined(TINY_GSM_MODEM_BG95SSL)
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "BG95";
 #else
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "BG96";
 #endif
 };

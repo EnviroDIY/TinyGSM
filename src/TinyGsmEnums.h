@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmEnums.h
+ * @brief      Shared TinyGSM enumerations and strongly-typed status values.
  * @author     Sara Damiano
  * @license    LGPL-3.0
  */

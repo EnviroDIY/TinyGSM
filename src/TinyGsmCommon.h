@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmCommon.h
+ * @brief      Common TinyGSM macros, utilities, and shared constants.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy

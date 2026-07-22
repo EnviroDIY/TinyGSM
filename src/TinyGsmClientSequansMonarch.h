@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientSequansMonarch.h
+ * @brief      Sequans Monarch modem client and modem-trait definitions.
  * @author     Michael Krumpus
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2019 Michael Krumpus
@@ -55,8 +56,10 @@ enum MonarchRegStatus {
 /// Basic modem configurations for the SequansMonarch modem family
 struct TinyGsmSequansMonarchModemConfig
     : public TinyGsmModemConfigPreset<MonarchRegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Sequans";
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "Monarch";
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "Monarch";
 };
 
 constexpr char TinyGsmSequansMonarchModemConfig::MODEM_MANUFACTURER[];

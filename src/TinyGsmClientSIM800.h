@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientSIM800.h
+ * @brief      SIM800-family modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -61,14 +62,19 @@ enum SIM800RegStatus {
 /// Basic modem configurations for the SIM800 modem family
 struct TinyGsmSim800ModemConfig
     : public TinyGsmModemConfigPreset<SIM800RegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "unknown";
 #if defined(TINY_GSM_MODEM_SIM808)
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM808";
 #elif defined(TINY_GSM_MODEM_SIM868)
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM868";
 #elif defined(TINY_GSM_MODEM_SIM900)
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM900";
 #else
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM800";
 #endif
 };

@@ -1,5 +1,6 @@
 /**
  * @file     TinyGsmClientSIM808.h
+ * @brief      SIM808 modem client and modem-trait definitions.
  * @author   Volodymyr Shymanskyy
  * @license  LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy

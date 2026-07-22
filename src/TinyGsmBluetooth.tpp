@@ -1,5 +1,6 @@
 /**
- * @file       TinyGsmGPS.tpp
+ * @file       TinyGsmBluetooth.tpp
+ * @brief      Bluetooth control and status mixin for modem implementations.
  * @author     Adrian Cervera Andes
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2021 Adrian Cervera Andes

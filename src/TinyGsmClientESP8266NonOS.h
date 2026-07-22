@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientESP8266NonOS.h
+ * @brief      ESP8266 Non-OS modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -38,8 +39,10 @@ enum ESP8266NonOSRegStatus {
 /// Basic modem configurations for the ESP8266NonOS modem family
 struct TinyGsmESP8266NonOSModemConfig
     : public TinyGsmModemConfigPreset<ESP8266NonOSRegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Espressif";
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "ESP8266";
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "ESP8266";
 };
 
 constexpr char TinyGsmESP8266NonOSModemConfig::MODEM_MANUFACTURER[];

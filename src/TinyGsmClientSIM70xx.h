@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientSIM70xx.h
+ * @brief      Shared SIM70xx modem client base types and helpers.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
