@@ -343,7 +343,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
     if (waitResponse() != 1) { return false; }
 
     // Start TCPIP Task and Set APN, User Name and Password
-    sendAT("+QIREGAPP=\"", apn, GF("\",\""), user, GF("\",\""), pwd, '"');
+    sendAT(GF("+QIREGAPP=\""), apn, GF("\",\""), user, GF("\",\""), pwd, '"');
     if (waitResponse() != 1) { return false; }
 
     // Activate GPRS/CSD Context
@@ -597,7 +597,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
  protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+QIRDI:"))) {  // TODO(?):
-                                               // QIRD? or QIRDI?
+                                         // QIRD? or QIRDI?
       // +QIRDI: <id>,<sc>,<sid>,<num>,<len>,< tlen>
       streamSkipUntil(',');  // Skip the context
       streamSkipUntil(',');  // Skip the role
