@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientUBLOX.h
+ * @brief      u-blox modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -52,8 +53,10 @@ enum UBLOXRegStatus {
 /// Basic modem configurations for the UBLOX modem family
 struct TinyGsmUBLOXModemConfig
     : public TinyGsmModemConfigPreset<UBLOXRegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "u-blox";
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "unknown";
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "unknown";
 };
 
 constexpr char TinyGsmUBLOXModemConfig::MODEM_MANUFACTURER[];

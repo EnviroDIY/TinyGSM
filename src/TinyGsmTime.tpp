@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmTime.tpp
+ * @brief      Clock and date-time helper mixin for modem implementations.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy

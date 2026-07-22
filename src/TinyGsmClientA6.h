@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientA6.h
+ * @brief      A6 modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -40,10 +41,13 @@ enum A6RegStatus {
 
 /// Basic modem configurations for the A6 modem family
 struct TinyGsmA6ModemConfig : public TinyGsmModemConfigPreset<A6RegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Ai-Thinker";
 #if defined(TINY_GSM_MODEM_A7)
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "A7";
 #else
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "A6";
 #endif
 };

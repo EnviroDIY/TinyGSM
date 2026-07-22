@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmModem.tpp
+ * @brief      Core modem trait presets and shared modem interface helpers.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -29,9 +30,12 @@
  *
  * Most modems share common defaults; this base lets modem-specific config
  * structs specify only the values that differ.
+ *
+ * @tparam regStatusType The type used for registration status values.
  */
 template <typename regStatusType = int8_t>
 struct TinyGsmModemConfigPreset {
+  /// The type used for registration status values.
   using RegStatus = regStatusType;
 
   /// The modem manufacturer
@@ -58,28 +62,36 @@ struct TinyGsmModemConfigPreset {
 
 // Out-of-class definitions for C++11 compliance
 template <typename regStatusType>
+/// @brief Out-of-class definition of the default modem manufacturer string.
 constexpr char TinyGsmModemConfigPreset<regStatusType>::MODEM_MANUFACTURER[];
 
 template <typename regStatusType>
+/// @brief Out-of-class definition of the default modem model string.
 constexpr char TinyGsmModemConfigPreset<regStatusType>::MODEM_MODEL[];
 
 template <typename regStatusType>
+/// @brief Out-of-class definition of the default AT newline sequence.
 constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_NL[];
 
 template <typename regStatusType>
+/// @brief Out-of-class definition of the default AT command prefix.
 constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_AT[];
 
 template <typename regStatusType>
+/// @brief Out-of-class definition of the default modem OK response string.
 constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_OK[];
 
 template <typename regStatusType>
+/// @brief Out-of-class definition of the default modem ERROR response string.
 constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_ERROR[];
 
 #if defined TINY_GSM_DEBUG
 template <typename regStatusType>
+/// @brief Out-of-class definition of the first verbose error response prefix.
 constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_VERBOSE[];
 
 template <typename regStatusType>
+/// @brief Out-of-class definition of the second verbose error response prefix.
 constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_VERBOSE_2[];
 #endif
 

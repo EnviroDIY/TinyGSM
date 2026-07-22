@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientSIM7600.h
+ * @brief      SIM7600 modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -51,12 +52,16 @@ enum SIM7600RegStatus {
 /// Basic modem configurations for the SIM7600 modem family
 struct TinyGsmSim7600ModemConfig
     : public TinyGsmModemConfigPreset<SIM7600RegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
 #if defined(TINY_GSM_MODEM_SIM7500)
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7500";
 #elif defined(TINY_GSM_MODEM_SIM7800)
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7800";
 #else
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7600";
 #endif
 };

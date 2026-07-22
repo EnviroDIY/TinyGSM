@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmSSL.tpp
+ * @brief      TLS/SSL connection helper mixin for secure clients.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy

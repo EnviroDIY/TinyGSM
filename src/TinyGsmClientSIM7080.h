@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientSim7080.h
+ * @brief      SIM7070/SIM7080/SIM7090 modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -56,12 +57,16 @@ struct TinyGsmSim7080TcpConfig
 /// Basic modem configurations for the SIM7080 modem family
 struct TinyGsmSim7080ModemConfig
     : public TinyGsmModemConfigPreset<SIM70xxRegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
 #if defined(TINY_GSM_MODEM_SIM7070)
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7070";
 #elif defined(TINY_GSM_MODEM_SIM7090)
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7090";
 #else
+  /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7080";
 #endif
 };

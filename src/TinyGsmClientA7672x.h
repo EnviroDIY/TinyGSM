@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientA7672x.h
+ * @brief      A7672x modem client and modem-trait definitions.
  * @author     Giovanni de Rosso Unruh
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2022 Giovanni de Rosso Unruh
@@ -50,8 +51,10 @@ enum A7672xRegStatus {
 /// Basic modem configurations for the A7672x modem family
 struct TinyGsmA7672XModemConfig
     : public TinyGsmModemConfigPreset<A7672xRegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "A7672x";
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "A7672x";
 };
 
 constexpr char TinyGsmA7672XModemConfig::MODEM_MANUFACTURER[];

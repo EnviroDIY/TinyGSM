@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmWifi.tpp
+ * @brief      Wi-Fi connection helper mixin for supported modems.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy

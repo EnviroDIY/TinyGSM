@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmGPRS.tpp
+ * @brief      GPRS and packet-data connection helper mixin.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy

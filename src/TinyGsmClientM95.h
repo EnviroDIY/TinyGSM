@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientM95.h
+ * @brief      M95 modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy, Pacman Pereira, and Replicade Ltd.
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy, (c)2017 Replicade Ltd.
@@ -42,8 +43,10 @@ enum M95RegStatus {
 
 /// Basic modem configurations for the M95 modem family
 struct TinyGsmM95ModemConfig : public TinyGsmModemConfigPreset<M95RegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Quectel";
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "M95";
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "M95";
 };
 
 constexpr char TinyGsmM95ModemConfig::MODEM_MANUFACTURER[];

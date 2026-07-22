@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmTemperature.tpp
+ * @brief      Modem temperature query helper mixin.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy

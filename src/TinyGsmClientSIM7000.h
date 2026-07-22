@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientSIM7000.h
+ * @brief      SIM7000 modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -30,8 +31,10 @@ struct TinyGsmSim7000TcpConfig
 /// Basic modem configurations for the SIM7000 modem family
 struct TinyGsmSim7000ModemConfig
     : public TinyGsmModemConfigPreset<SIM70xxRegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "SIM7000";
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7000";
 };
 
 constexpr char TinyGsmSim7000ModemConfig::MODEM_MANUFACTURER[];

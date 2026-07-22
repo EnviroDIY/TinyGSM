@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmClientSaraR5.h
+ * @brief      u-blox SARA-R5 modem client and modem-trait definitions.
  * @author     Sebastian Bergner, Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -72,8 +73,10 @@ enum SaraR5RegStatus {
 /// Basic modem configurations for the SaraR5 modem family
 struct TinyGsmSaraR5ModemConfig
     : public TinyGsmModemConfigPreset<SaraR5RegStatus> {
+  /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "u-blox";
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM        = "SARA-R5";
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SARA-R5";
 };
 
 constexpr char TinyGsmSaraR5ModemConfig::MODEM_MANUFACTURER[];

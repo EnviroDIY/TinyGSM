@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmGPS.tpp
+ * @brief      GNSS/GPS helper mixin for location and satellite data.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy

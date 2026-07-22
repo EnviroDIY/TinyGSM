@@ -1,9 +1,15 @@
 /**
  * @file       TinyGsmClient.h
+ * @brief      Primary TinyGSM include that selects modem-specific client
+ * aliases.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
+ *
+ * When using a single modem type, this file can be included directly to get the
+ * modem-specific client aliases.  If multiple modem types are used, include the
+ * modem-specific client header files directly and do not include this file.
  */
 
 #ifndef SRC_TINYGSMCLIENT_H_
