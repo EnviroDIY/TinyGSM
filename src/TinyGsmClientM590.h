@@ -25,11 +25,6 @@
 #include "TinyGsmTime.tpp"
 #endif
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /// Registration status
 enum M590RegStatus {
   REG_NO_RESULT    = -1,  ///< No result yet
@@ -609,7 +604,5 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
  protected:
   GsmClientM590* sockets[TinyGsmM590TcpConfig::kMuxCount];
 };
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTM590_H_

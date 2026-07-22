@@ -25,11 +25,6 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /***
  * @brief TCP behavior and limits for the SIM7080 modem family.
  *
@@ -1356,7 +1351,5 @@ class TinyGsmSim7080
 };
 
 // cspell:words CASEND gotATOK
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSIM7080_H_

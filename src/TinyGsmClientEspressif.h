@@ -22,11 +22,6 @@
 #include "TinyGsmModem.tpp"
 #include "TinyGsmWifi.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /**
  * @brief Parent class for the Espressif ESP8266 and ESP32 modules
  *
@@ -356,7 +351,5 @@ class TinyGsmEspressif
   /// Stream used to communicate with the modem.
   Stream& stream;
 };
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTESPRESSIF_H_

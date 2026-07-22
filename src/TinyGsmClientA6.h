@@ -27,11 +27,6 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmBattery.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /// Registration status
 enum A6RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
@@ -611,7 +606,5 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
  protected:
   GsmClientA6* sockets[TinyGsmA6TcpConfig::kMuxCount];
 };
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTA6_H_

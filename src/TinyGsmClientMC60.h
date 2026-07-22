@@ -30,11 +30,6 @@
 #include "TinyGsmBattery.tpp"
 #endif
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 /// Registration status
 enum MC60RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
@@ -648,7 +643,5 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
  protected:
   GsmClientMC60* sockets[TinyGsmMC60TcpConfig::kMuxCount];
 };
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTMC60_H_

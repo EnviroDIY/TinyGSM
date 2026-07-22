@@ -27,11 +27,6 @@
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
 // NOTE: This module supports SSL, but we do not support any certificate
 // management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
 // so as not to waste space.
@@ -851,7 +846,5 @@ class TinyGsmSequansMonarch
 };
 
 // cspell:words SQNSSENDEXT
-
-#undef AT_NL
 
 #endif  // SRC_TINYGSMCLIENTSEQUANSMONARCH_H_
