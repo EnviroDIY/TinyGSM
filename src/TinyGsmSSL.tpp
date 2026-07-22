@@ -135,7 +135,7 @@ class TinyGsmSSL {
   }
   /// @copydoc convertCertificate(CertificateType, const char*)
   bool convertCertificate(CertificateType cert_type, String filename) {
-     return convertCertificate(cert_type, filename.c_str());
+    return convertCertificate(cert_type, filename.c_str());
   }
   /**
    * @brief Convert a certificate authority (CA) certificate.
@@ -149,7 +149,7 @@ class TinyGsmSSL {
   }
   /// @copydoc convertCACertificate(const char*)
   bool convertCACertificate(String ca_cert_name) {
-     return convertCACertificate(ca_cert_name.c_str());
+    return convertCACertificate(ca_cert_name.c_str());
   }
   /**
    * @brief Convert a client certificate and its corresponding key.
@@ -171,7 +171,7 @@ class TinyGsmSSL {
   bool convertClientCertificates(String client_cert_name,
                                  String client_cert_key) {
     return convertClientCertificates(client_cert_name.c_str(),
-                     client_cert_key.c_str());
+                                     client_cert_key.c_str());
   }
   /**
    * @brief Convert a pre-shared key (PSK) and its corresponding identity.
@@ -189,7 +189,7 @@ class TinyGsmSSL {
   }
   /// @copydoc convertPSKandID(const char*, const char*)
   bool convertPSKandID(String psk, String pskIdent) {
-     return convertPSKandID(psk.c_str(), pskIdent.c_str());
+    return convertPSKandID(psk.c_str(), pskIdent.c_str());
   }
   /**
    * @brief Convert a pre-shared key (PSK) table file.
@@ -205,7 +205,7 @@ class TinyGsmSSL {
   }
   /// @copydoc convertPSKTable(const char*)
   bool convertPSKTable(String psk_table_name) {
-     return convertPSKTable(psk_table_name.c_str());
+    return convertPSKTable(psk_table_name.c_str());
   }
   /**@}*/
 

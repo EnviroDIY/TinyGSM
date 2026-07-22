@@ -21,7 +21,6 @@
  * @class TinyGsmBluetooth
  * @brief The CRTP parent class for Bluetooth functions.
  * @tparam modemType The derived modem class
- * functions.
  */
 template <class modemType>
 class TinyGsmBluetooth {

@@ -196,7 +196,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       return sock_connected;
     }
     /// @copydoc TinyGsmTCP::GsmClient::connect(const char*, uint16_t)
-    virtual int connect(const char* host, uint16_t port) override {
+    int connect(const char* host, uint16_t port) override {
       return connect(host, port, 75);
     }
 
@@ -1549,7 +1549,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         // Ask for information about any open sockets
         sendAT(GF("SI"));
         String open_socks = stream.readStringUntil('\r');
-        open_socks.replace(ModemConfig::GSM_NL, "");
+        open_socks.replace(String(GFP(ModemConfig::GSM_NL)), "");
         open_socks.trim();
         if (open_socks != "") {
           // In transparent mode, only socket 0 should be possible
