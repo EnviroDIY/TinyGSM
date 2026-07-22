@@ -47,6 +47,12 @@ class TinyGsmNTP {
   byte NTPServerSync(const char* server = "pool.ntp.org", int TimeZone = 0) {
     return thisModem().NTPServerSyncImpl(server, TimeZone);
   }
+
+  /// @copydoc NTPServerSync(const char*, int)
+  byte NTPServerSync(const String& server, int TimeZone = 0) {
+    return NTPServerSync(server.c_str(), TimeZone);
+  }
+
   /**
    * @brief Wait for the modem to synchronize with the NTP server
    * @param timeout_s The timeout in seconds
