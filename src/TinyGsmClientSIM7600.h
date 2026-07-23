@@ -9,7 +9,7 @@
  * @defgroup simcom_sim7600 SIMCom SIM7500/SIM7600/SIM7800 Modem Family
  * @brief Manufacturer: SIMCom. Models: SIM7500, SIM7600, SIM7800.
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -114,7 +114,7 @@
  *     - @ref TinyGsmSim7600::configureSSLContext "configureSSLContext()"
  *     - @ref TinyGsmSim7600::linkSSLContext "linkSSLContext()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - TCP sockets:
  *   - 10

@@ -10,7 +10,7 @@
  * @brief Manufacturer: SIMCom. Models: SIM7000 (SSL toolkit).
  * @ingroup simcom_sim70xx
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -114,7 +114,7 @@
  *     - @ref TinyGsmSim7000SSL::applySSLPSK "applySSLPSK()"
  *     - @ref TinyGsmSim7000SSL::linkSSLContext "linkSSLContext()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - TCP sockets:
  *   - 8

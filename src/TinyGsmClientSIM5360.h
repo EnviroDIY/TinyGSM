@@ -9,7 +9,7 @@
  * @defgroup simcom_sim5360 SIMCom SIM53xx/SIM71xx Modem Family
  * @brief Manufacturer: SIMCom. Models: SIM5320, SIM5360, SIM5300, SIM7100.
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -96,7 +96,7 @@
  *     - @ref TinyGsmSim5360::getNetworkMode "getNetworkMode()"
  *     - @ref TinyGsmSim5360::setNetworkMode "setNetworkMode()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - TCP sockets:
  *   - 10

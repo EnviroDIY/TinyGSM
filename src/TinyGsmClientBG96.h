@@ -9,7 +9,7 @@
  * @defgroup quectel_bg96 Quectel BG95/BG96 Modem Family
  * @brief Manufacturer: Quectel. Models: BG95, BG96.
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -104,7 +104,7 @@
  * - Client related functions
  *     - @ref TinyGsmBG96::configureSSLContext "configureSSLContext()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - Combined TCP/SSL sockets:
  *   - 12

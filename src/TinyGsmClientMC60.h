@@ -12,7 +12,7 @@
  * @defgroup quectel_mc60 Quectel MC60 Modem Family
  * @brief Manufacturer: Quectel. Models: MC60, MC60E.
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -82,7 +82,7 @@
  * - Text messaging (SMS) functions
  *     - @ref TinyGsmMC60::deleteAllSMS "deleteAllSMS()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - TCP sockets:
  *   - 6

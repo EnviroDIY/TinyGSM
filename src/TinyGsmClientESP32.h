@@ -10,7 +10,7 @@
  * @ingroup espressif_at
  * @brief Manufacturer: Espressif. Models: ESP32 (AT firmware).
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
@@ -46,7 +46,7 @@
  *     - @ref TinyGsmESP32::setTimeZone "setTimeZone()"
  *     - @ref TinyGsmESP32::setTimeSyncInterval "setTimeSyncInterval()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - Combined TCP/SSL sockets:
  *   - 5

@@ -10,7 +10,7 @@
  * @brief Manufacturer: u-blox. Models: cellular modules supported by
  * TinyGsmUBLOX.
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -93,7 +93,7 @@
  *     - @ref TinyGsmUBLOX::setRadioAccessTechnology "setRadioAccessTechnology()"
  *     - @ref TinyGsmUBLOX::getCurrentRadioAccessTechnology "getCurrentRadioAccessTechnology()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - Combined TCP/SSL sockets:
  *   - 7

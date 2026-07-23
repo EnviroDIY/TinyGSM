@@ -9,7 +9,7 @@
  * @defgroup neoway_m590 Neoway M590 Modem Family
  * @brief Manufacturer: Neoway. Models: M590.
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -67,7 +67,7 @@
  *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
  *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - TCP sockets:
  *   - 2

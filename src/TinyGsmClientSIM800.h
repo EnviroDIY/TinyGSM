@@ -9,7 +9,7 @@
  * @defgroup simcom_sim800 SIMCom SIM800/SIM900 Modem Family
  * @brief Manufacturer: SIMCom. Models: SIM800 series, SIM900.
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -95,7 +95,7 @@
  *     - @ref TinyGsmSim800::setAudioChannel "setAudioChannel()"
  *     - @ref TinyGsmSim800::playToolkitTone "playToolkitTone()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - TCP sockets:
  *   - 8

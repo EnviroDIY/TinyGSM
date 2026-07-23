@@ -10,7 +10,7 @@
  * @brief Manufacturer: SIMCom. Models: SIM7070, SIM7080, SIM7090.
  * @ingroup simcom_sim70xx
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -114,7 +114,7 @@
  *     - @ref TinyGsmSim7080::applySSLPSK "applySSLPSK()"
  *     - @ref TinyGsmSim7080::linkSSLContext "linkSSLContext()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - Combined TCP/SSL sockets:
  *   - 12

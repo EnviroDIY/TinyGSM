@@ -11,7 +11,7 @@
  * @brief Manufacturer: Digi. Models: XBee cellular modules supported by
  * TinyGSM.
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -88,7 +88,7 @@
  *     - @ref TinyGsmXBee::changeSettingIfNeeded "changeSettingIfNeeded()"
  *     - @ref TinyGsmXBee::gotIPforSavedHost "gotIPforSavedHost()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - Combined TCP/SSL sockets:
  *   - 1
