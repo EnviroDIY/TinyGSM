@@ -203,7 +203,9 @@ struct TinyGsmXBeeTcpConfig
           /*connectTimeoutS*/ 75,  // default
           /*stopTimeoutS*/ 5> {};
 
-/// These are responses to the HS command to get "hardware series"
+/// The known types of XBees
+/// The values are responses to the HS command to get "hardware series"
+/// @ingroup digi_xbee
 enum XBeeType {
   XBEE_UNKNOWN   = 0,      ///< Unknown XBee type
   XBEE_S6B_WIFI  = 0x601,  ///< Digi XBee Wi-Fi
