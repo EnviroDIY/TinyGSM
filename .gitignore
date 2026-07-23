@@ -62,7 +62,14 @@ boards/*
 tests/*
 lib/*
 archive/*
-docs/*
+docs/__pycache__/*
+docs/css/*
+docs/*output*
+docs/*.png
+docs/*.js
+docs/*.ttf
+docs/examples.dox
+docs/clients*.dox
 clang_format_all.bat
 continuous_integration_artifacts/*
 generateKeywords.bat

@@ -5,8 +5,41 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
+ *
+ * @defgroup espressif_esp8266_nonos Espressif ESP8266 Non-OS Modem Family
+ * @ingroup espressif_at
+ * @brief Manufacturer: Espressif. Models: ESP8266 (Non-OS AT firmware).
+ *
+ * ## Supported Public Functions
+ *
+ * - TCP functions (TinyGsmTCP.tpp)
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ *
+ * ## Connection Information
+ *
+ * - Combined TCP/SSL sockets:
+ *   - 5
+ *   - Using more than 1 SSL socket at a time may cause the module to crash.
+ * - SSL contexts: 2
+ * - Socket Buffering:
+ *   - The modem does **not** have an internal buffer for incoming data.
+ *   - You must read all data from the modem as soon as it arrives, or you will
+ * lose it.
+ *   - You can reduce the risk of losing data by setting this library's buffer
+ * to be as large as possible; this will increase the memory footprint of your
+ * program.
+ *   - Change the buffer size by defining TINY_GSM_RX_BUFFER_SIZE in your sketch
+ * before including any TinyGSM header file.
+ *   - Change the buffer size by defining TINY_GSM_RX_BUFFER_SIZE in your sketch
+ * before including any TinyGSM header file.
+ * - Socket Numbering:
+ *   - The modem does not allow you to specify the multiplexing channel.
+ *   - The modem will automatically assign a channel when the client connects to
+ * a server.
+ *   - Use the getMux() function to get the assigned multiplexing channel number
+ * after a successful connection.
  */
-
 #ifndef SRC_TINYGSMCLIENTESP8266NONOS_H_
 #define SRC_TINYGSMCLIENTESP8266NONOS_H_
 #pragma message("TinyGSM:  TinyGsmClientESP8266NonOS")
@@ -24,6 +57,7 @@
 #endif
 
 /// Status of ESP8266 station interface
+/// @ingroup espressif_esp8266_nonos
 enum ESP8266NonOSRegStatus {
   REG_UNINITIALIZED = 0,  ///< ESP8266 station is not initialized.
   REG_UNREGISTERED  = 1,  ///< ESP8266 station is initialized, but not started a
@@ -37,6 +71,7 @@ enum ESP8266NonOSRegStatus {
 };
 
 /// Basic modem configurations for the ESP8266NonOS modem family
+/// @ingroup espressif_esp8266_nonos
 struct TinyGsmESP8266NonOSModemConfig
     : public TinyGsmModemConfigPreset<ESP8266NonOSRegStatus> {
   /// The modem manufacturer
@@ -60,6 +95,7 @@ constexpr char TinyGsmESP8266NonOSModemConfig::MODEM_MODEL[];
  *
  * The ESP8266 devices can receive 2048 bytes and send 1460 bytes at most in a
  * single transmission.
+ * @ingroup espressif_esp8266_nonos
  */
 struct TinyGsmESP8266NonOSTcpConfig
     : public TinyGsmTcpConfigPreset<
@@ -77,6 +113,7 @@ struct TinyGsmESP8266NonOSTcpConfig
  * @warning This class is used to communicate with a module that has been
  * programmed with the non-OS based AT command firmware.  If you're using this,
  * please update your module.  It's quite outdated.
+ * @ingroup espressif_esp8266_nonos
  */
 class TinyGsmESP8266NonOS
     : public TinyGsmEspressif<TinyGsmESP8266NonOS,
@@ -96,6 +133,7 @@ class TinyGsmESP8266NonOS
    */
  public:
   /// Inner client
+  /// @ingroup espressif_esp8266_nonos
   class GsmClientESP8266NonOS
       : public TinyGsmTCP<TinyGsmESP8266NonOS,
                           TinyGsmESP8266NonOSTcpConfig>::GsmClient {
@@ -198,6 +236,7 @@ class TinyGsmESP8266NonOS
    */
  public:
   /// Inner secure client
+  /// @ingroup espressif_esp8266_nonos
   class GsmClientSecureESP8266NonOS : public GsmClientESP8266NonOS {
     friend class TinyGsmESP8266NonOS;
 

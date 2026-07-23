@@ -5,8 +5,10 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
+ *
+ * @defgroup simcom_sim70xx SIMCom SIM70xx Shared Modem Family
+ * @brief Manufacturer: SIMCom. Models: SIM7000, SIM7070, SIM7080, SIM7090.
  */
-
 #ifndef SRC_TINYGSMCLIENTSIM70XX_H_
 #define SRC_TINYGSMCLIENTSIM70XX_H_
 #pragma message("TinyGSM:  TinyGsmClientSIM70xx")
@@ -16,6 +18,7 @@
 #include "TinyGsmGPS.tpp"
 
 /// Registration status
+/// @ingroup simcom_sim70xx
 enum SIM70xxRegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
@@ -32,6 +35,9 @@ enum SIM70xxRegStatus {
  * @tparam SIM70xxType The derived class type
  */
 template <class SIM70xxType, class SIM70xxModemConfig>
+/** @ingroup simcom_sim70xx */
+/** @ingroup simcom_sim70xx */
+/** @ingroup simcom_sim70xx */
 class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
                        public TinyGsmGPRS<SIM70xxType>,
                        public TinyGsmGPS<SIM70xxType> {

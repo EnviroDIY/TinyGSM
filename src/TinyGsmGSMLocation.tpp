@@ -34,7 +34,6 @@ class TinyGsmGSMLocation {
   /**
    * @anchor gsm_location_functions
    * @name GSM Location functions
-   * @brief Functions for retrieving GSM-based location data.
    */
   /**@{*/
 

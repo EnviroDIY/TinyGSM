@@ -32,9 +32,7 @@ class TinyGsmGPS {
  public:
   /**
    * @anchor gps_functions
-   * @name GPS functions
-   * @brief Functions for enabling, disabling, and retrieving GPS (GNSS,
-   * GLONASS) data.
+   * @name GPS (GNSS, GLONASS) functions
    */
   /**@{*/
   /**

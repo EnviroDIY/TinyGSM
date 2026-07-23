@@ -5,6 +5,63 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
+ *
+ * @defgroup espressif_esp32 Espressif ESP32 AT Modem Family
+ * @ingroup espressif_at
+ * @brief Manufacturer: Espressif. Models: ESP32 (AT firmware).
+ *
+ * ## Supported Public Functions
+ *
+ * - TCP functions (TinyGsmTCP.tpp)
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
+ *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
+ *     - @ref TinyGsmSSL<modemType>::deleteCertificate "deleteCertificate()"
+ *     - @ref TinyGsmSSL<modemType>::printCertificate "printCertificate()"
+ *     - @ref TinyGsmSSL<modemType>::convertCertificate "convertCertificate()"
+ *     - @ref TinyGsmSSL<modemType>::convertCACertificate "convertCACertificate()"
+ *     - @ref TinyGsmSSL<modemType>::convertClientCertificates "convertClientCertificates()"
+ *     - @ref TinyGsmSSL<modemType>::convertPSKandID "convertPSKandID()"
+ *     - @ref TinyGsmSSL<modemType>::convertPSKTable "convertPSKTable()"
+ * - Time functions (TinyGsmTime.tpp)
+ *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
+ * - NTP server functions (TinyGsmNTP.tpp)
+ *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
+ *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
+ *     - @ref TinyGsmNTP<modemType>::ShowNTPError "ShowNTPError()"
+ * - NTP Utilities (TinyGsmNTP.tpp)
+ *     - @ref TinyGsmNTP<modemType>::TinyGsmIsValidNumber "TinyGsmIsValidNumber()"
+ * - Secure socket layer (SSL) certificate management functions
+ *     - @ref TinyGsmESP32::loadCACert "loadCACert()"
+ *     - @ref TinyGsmESP32::loadClientCert "loadClientCert()"
+ *     - @ref TinyGsmESP32::loadPrivateKey "loadPrivateKey()"
+ *     - @ref TinyGsmESP32::loadCertificateByNumber "loadCertificateByNumber()"
+ *     - @ref TinyGsmESP32::deleteCertificateByNumber "deleteCertificateByNumber()"
+ *     - @ref TinyGsmESP32::printCertificateByNumber "printCertificateByNumber()"
+ * - Time functions
+ *     - @ref TinyGsmESP32::setTimeZone "setTimeZone()"
+ *     - @ref TinyGsmESP32::setTimeSyncInterval "setTimeSyncInterval()"
+ *
+ * ## Connection Information
+ *
+ * - Combined TCP/SSL sockets:
+ *   - 5
+ *   - Using more than 1 SSL socket at a time may cause the module to crash.
+ * - SSL contexts: 2
+ * - Socket Buffering:
+ *   - The modem has an internal buffer for incoming data.
+ *   - This gives you leeway to pull data from the buffer as needed with less
+ * risk of losing data.
+ * - Socket Numbering:
+ *   - The modem does not allow you to specify the multiplexing channel.
+ *   - The modem will automatically assign a channel when the client connects to
+ * a server.
+ *   - Use the getMux() function to get the assigned multiplexing channel number
+ * after a successful connection.
  */
 
 #ifndef SRC_TINYGSMCLIENTESP32_H_
@@ -18,6 +75,7 @@
 #include "TinyGsmNTP.tpp"
 
 /// State: current Wi-Fi state.
+/// @ingroup espressif_esp32
 enum ESP32RegStatus {
   REG_UNINITIALIZED =
       0,  ///< ESP32 station has not started any Wi-Fi connection.
@@ -33,6 +91,7 @@ enum ESP32RegStatus {
 };
 
 /// Basic modem configurations for the ESP32 modem family
+/// @ingroup espressif_esp32
 struct TinyGsmESP32ModemConfig
     : public TinyGsmModemConfigPreset<ESP32RegStatus> {
   /// The modem manufacturer
@@ -56,6 +115,7 @@ constexpr char TinyGsmESP32ModemConfig::MODEM_MODEL[];
  *
  * The ESP32 devices can receive 8192 bytes and send 2920 bytes at most in one
  * single transmission.
+ * @ingroup espressif_esp32
  */
 struct TinyGsmESP32TcpConfig
     : public TinyGsmTcpConfigPreset<
@@ -72,6 +132,7 @@ struct TinyGsmESP32TcpConfig
  *
  * @warning This class is used to communicate with a module that has been
  * programmed with the AT command firmware.
+ * @ingroup espressif_esp32
  */
 class TinyGsmESP32
     : public TinyGsmEspressif<TinyGsmESP32, TinyGsmESP32ModemConfig>,
@@ -94,6 +155,7 @@ class TinyGsmESP32
    */
  public:
   /// Inner client
+  /// @ingroup espressif_esp32
   class GsmClientESP32
       : public TinyGsmTCP<TinyGsmESP32, TinyGsmESP32TcpConfig>::GsmClient {
     friend class TinyGsmESP32;
@@ -238,6 +300,7 @@ class TinyGsmESP32
    */
  public:
   /// Inner secure client
+  /// @ingroup espressif_esp32
   class GsmClientSecureESP32 : public GsmClientESP32, public GsmSecureClient {
     friend class TinyGsmESP32;
 
