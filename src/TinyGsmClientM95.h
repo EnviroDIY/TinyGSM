@@ -6,6 +6,99 @@
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy, (c)2017 Replicade Ltd.
  * <http://www.replicade.com>
  * @date       Nov 2016
+ *
+ * @defgroup quectel_m95 Quectel M95 Modem Family
+ * @brief Manufacturer: Quectel. Models: M95.
+ *
+ * ## Supported Public Functions
+ *
+ * - Basic functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::init "init()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sendAT "sendAT()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::setBaud "setBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
+ * - Power functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::poweroff "poweroff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
+ * - Generic Network Functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality "getSignalQuality()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getLocalIP "getLocalIP()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::localIP "localIP()"
+ * - Utilities (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
+ * - SIM card functions (TinyGsmGPRS.tpp)
+ *     - @ref TinyGsmGPRS<modemType>::simUnlock "simUnlock()"
+ *     - @ref TinyGsmGPRS<modemType>::getSimCCID "getSimCCID()"
+ *     - @ref TinyGsmGPRS<modemType>::getIMEI "getIMEI()"
+ *     - @ref TinyGsmGPRS<modemType>::getIMSI "getIMSI()"
+ *     - @ref TinyGsmGPRS<modemType>::getSimStatus "getSimStatus()"
+ * - GPRS functions (TinyGsmGPRS.tpp)
+ *     - @ref TinyGsmGPRS<modemType>::gprsConnect "gprsConnect()"
+ *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
+ *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
+ *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
+ *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
+ * - TCP functions (TinyGsmTCP.tpp)
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ * - Phone Call functions (TinyGsmCalling.tpp)
+ *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
+ *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
+ *     - @ref TinyGsmCalling<modemType>::callHangup "callHangup()"
+ *     - @ref TinyGsmCalling<modemType>::dtmfSend "dtmfSend()"
+ * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
+ *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
+ *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
+ *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
+ * - Time functions (TinyGsmTime.tpp)
+ *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
+ * - Battery functions (TinyGsmBattery.tpp)
+ *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
+ *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
+ *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
+ *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
+ * - Temperature functions (TinyGsmTemperature.tpp)
+ *     - @ref TinyGsmTemperature<modemType>::getTemperature "getTemperature()"
+ * - Text messaging (SMS) functions
+ *     - @ref TinyGsmM95::deleteAllSMS "deleteAllSMS()"
+ *
+ * ## Connection Information
+ *
+ * - TCP sockets:
+ *   - 6
+ *   - SSL is not supported
+ * - Socket Buffering:
+ *   - The modem has an internal buffer for incoming data.
+ *   - This gives you some leeway to pull data from the buffer as needed with
+ * less risk of losing data.
+ *   - Because this module doesn't supply a way to check how much data is stored
+ * in the buffer, you should try to avoid reading it out in small chunks.
+ * - Socket Numbering:
+ *   - The modem does not allow you to specify the multiplexing channel.
+ *   - The modem will automatically assign a channel when the client connects to
+ * a server.
+ *   - Use the getMux() function to get the assigned multiplexing channel number
+ * after a successful connection.
  */
 
 #ifndef SRC_TINYGSMCLIENTM95_H_
@@ -22,6 +115,7 @@
 #include "TinyGsmTemperature.tpp"
 
 /// Registration status
+/// @ingroup quectel_m95
 enum M95RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
@@ -33,6 +127,7 @@ enum M95RegStatus {
 };
 
 /// Basic modem configurations for the M95 modem family
+/// @ingroup quectel_m95
 struct TinyGsmM95ModemConfig : public TinyGsmModemConfigPreset<M95RegStatus> {
   /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Quectel";
@@ -48,6 +143,7 @@ constexpr char TinyGsmM95ModemConfig::MODEM_MODEL[];
  *
  * The send data commands, QISEND and QSSLSEND, both accept up to 1460 bytes of
  * input.
+ * @ingroup quectel_m95
  */
 struct TinyGsmM95TcpConfig
     : public TinyGsmTcpConfigPreset<
@@ -59,6 +155,7 @@ struct TinyGsmM95TcpConfig
           /*stopTimeoutS*/ 75> {};
 
 /// Class for the Quectel M95
+/// @ingroup quectel_m95
 class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
                    public TinyGsmGPRS<TinyGsmM95>,
                    public TinyGsmTCP<TinyGsmM95, TinyGsmM95TcpConfig>,
@@ -83,6 +180,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
    */
  public:
   /// Inner client
+  /// @ingroup quectel_m95
   class GsmClientM95
       : public TinyGsmTCP<TinyGsmM95, TinyGsmM95TcpConfig>::GsmClient {
     friend class TinyGsmM95;

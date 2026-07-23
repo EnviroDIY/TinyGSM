@@ -5,6 +5,117 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
+ *
+ * @defgroup simcom_sim7000 SIMCom SIM7000 Modem Family
+ * @brief Manufacturer: SIMCom. Models: SIM7000.
+ * @ingroup simcom_sim70xx
+ *
+ * ## Supported Public Functions
+ *
+ * - Basic functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::init "init()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sendAT "sendAT()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::setBaud "setBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
+ * - Power functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::poweroff "poweroff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
+ * - Generic Network Functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality "getSignalQuality()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getLocalIP "getLocalIP()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::localIP "localIP()"
+ * - Utilities (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
+ * - SIM card functions (TinyGsmGPRS.tpp)
+ *     - @ref TinyGsmGPRS<modemType>::simUnlock "simUnlock()"
+ *     - @ref TinyGsmGPRS<modemType>::getSimCCID "getSimCCID()"
+ *     - @ref TinyGsmGPRS<modemType>::getIMEI "getIMEI()"
+ *     - @ref TinyGsmGPRS<modemType>::getIMSI "getIMSI()"
+ *     - @ref TinyGsmGPRS<modemType>::getSimStatus "getSimStatus()"
+ * - GPRS functions (TinyGsmGPRS.tpp)
+ *     - @ref TinyGsmGPRS<modemType>::gprsConnect "gprsConnect()"
+ *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
+ *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
+ *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
+ *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
+ * - GPS (GNSS, GLONASS) functions (TinyGsmGPS.tpp)
+ *     - @ref TinyGsmGPS<modemType>::enableGPS "enableGPS()"
+ *     - @ref TinyGsmGPS<modemType>::disableGPS "disableGPS()"
+ *     - @ref TinyGsmGPS<modemType>::getGPSraw "getGPSraw()"
+ *     - @ref TinyGsmGPS<modemType>::getGPS "getGPS()"
+ *     - @ref TinyGsmGPS<modemType>::getGPSTime "getGPSTime()"
+ *     - @ref TinyGsmGPS<modemType>::setGNSSMode "setGNSSMode()"
+ *     - @ref TinyGsmGPS<modemType>::getGNSSMode "getGNSSMode()"
+ * - Generic network functions
+ *     - @ref TinyGsmSim70xx::getNetworkModes "getNetworkModes()"
+ *     - @ref TinyGsmSim70xx::getNetworkMode "getNetworkMode()"
+ *     - @ref TinyGsmSim70xx::setNetworkMode "setNetworkMode()"
+ *     - @ref TinyGsmSim70xx::getPreferredModes "getPreferredModes()"
+ *     - @ref TinyGsmSim70xx::getPreferredMode "getPreferredMode()"
+ *     - @ref TinyGsmSim70xx::setPreferredMode "setPreferredMode()"
+ *     - @ref TinyGsmSim70xx::getNetworkSystemMode "getNetworkSystemMode()"
+ *     - @ref TinyGsmSim70xx::setNetworkSystemMode "setNetworkSystemMode()"
+ * - TCP functions (TinyGsmTCP.tpp)
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
+ *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
+ *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
+ *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
+ * - Time functions (TinyGsmTime.tpp)
+ *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
+ * - NTP server functions (TinyGsmNTP.tpp)
+ *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
+ *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
+ *     - @ref TinyGsmNTP<modemType>::ShowNTPError "ShowNTPError()"
+ * - NTP Utilities (TinyGsmNTP.tpp)
+ *     - @ref TinyGsmNTP<modemType>::TinyGsmIsValidNumber "TinyGsmIsValidNumber()"
+ * - GSM Location functions (TinyGsmGSMLocation.tpp)
+ *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationRaw "getGsmLocationRaw()"
+ *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocation "getGsmLocation()"
+ *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationTime "getGsmLocationTime()"
+ * - Battery functions (TinyGsmBattery.tpp)
+ *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
+ *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
+ *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
+ *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
+ *
+ * ## Connection Information
+ *
+ * - TCP sockets:
+ *   - 8
+ *   - SSL is not supported
+ * - Socket Buffering:
+ *   - The modem has an internal buffer for incoming data.
+ *   - This gives you leeway to pull data from the buffer as needed with less
+ * risk of losing data.
+ * - Socket Numbering:
+ *   - The modem uses user-specified MUX channel numbers for socket connections.
+ *   - If you attempt to create a new client with a channel number that is
+ * already in use and other unused channels are available, this library will
+ * select the next available one.
+ *   - Use the getMux() function to get the assigned multiplexing channel number
+ * after a successful connection.
  */
 
 #ifndef SRC_TINYGSMCLIENTSIM7000_H_
@@ -21,6 +132,7 @@
 
 /***
  * @brief TCP behavior and limits for the SIM7000 modem family.
+ * @ingroup simcom_sim7000
  */
 struct TinyGsmSim7000TcpConfig
     : public TinyGsmTcpConfigPreset<
@@ -29,6 +141,7 @@ struct TinyGsmSim7000TcpConfig
           /*muxCount*/ 8> {};
 
 /// Basic modem configurations for the SIM7000 modem family
+/// @ingroup simcom_sim7000
 struct TinyGsmSim7000ModemConfig
     : public TinyGsmModemConfigPreset<SIM70xxRegStatus> {
   /// The modem manufacturer
@@ -41,6 +154,7 @@ constexpr char TinyGsmSim7000ModemConfig::MODEM_MANUFACTURER[];
 constexpr char TinyGsmSim7000ModemConfig::MODEM_MODEL[];
 
 /// Class for the SIMCOM SIM7000 using the TCP-IP toolkit
+/// @ingroup simcom_sim7000
 class TinyGsmSim7000
     : public TinyGsmSim70xx<TinyGsmSim7000, TinyGsmSim7000ModemConfig>,
       public TinyGsmTCP<TinyGsmSim7000, TinyGsmSim7000TcpConfig>,
@@ -67,6 +181,7 @@ class TinyGsmSim7000
    */
  public:
   /// Inner client
+  /// @ingroup simcom_sim7000
   class GsmClientSim7000
       : public TinyGsmTCP<TinyGsmSim7000, TinyGsmSim7000TcpConfig>::GsmClient {
     friend class TinyGsmSim7000;

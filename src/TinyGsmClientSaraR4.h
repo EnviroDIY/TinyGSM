@@ -5,16 +5,112 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
+ *
+ * @defgroup ublox_sara_r4 u-blox SARA-R4 Modem Family
+ * @brief Manufacturer: u-blox. Models: SARA-R4.
+ *
+ * ## Supported Public Functions
+ *
+ * - Basic functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::init "init()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sendAT "sendAT()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::setBaud "setBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
+ * - Power functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::poweroff "poweroff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
+ * - Generic Network Functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality "getSignalQuality()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getLocalIP "getLocalIP()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::localIP "localIP()"
+ * - Utilities (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
+ * - SIM card functions (TinyGsmGPRS.tpp)
+ *     - @ref TinyGsmGPRS<modemType>::simUnlock "simUnlock()"
+ *     - @ref TinyGsmGPRS<modemType>::getSimCCID "getSimCCID()"
+ *     - @ref TinyGsmGPRS<modemType>::getIMEI "getIMEI()"
+ *     - @ref TinyGsmGPRS<modemType>::getIMSI "getIMSI()"
+ *     - @ref TinyGsmGPRS<modemType>::getSimStatus "getSimStatus()"
+ * - GPRS functions (TinyGsmGPRS.tpp)
+ *     - @ref TinyGsmGPRS<modemType>::gprsConnect "gprsConnect()"
+ *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
+ *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
+ *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
+ *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
+ * - TCP functions (TinyGsmTCP.tpp)
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
+ *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
+ *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
+ *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
+ * - GSM Location functions (TinyGsmGSMLocation.tpp)
+ *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationRaw "getGsmLocationRaw()"
+ *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocation "getGsmLocation()"
+ *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationTime "getGsmLocationTime()"
+ * - GPS (GNSS, GLONASS) functions (TinyGsmGPS.tpp)
+ *     - @ref TinyGsmGPS<modemType>::enableGPS "enableGPS()"
+ *     - @ref TinyGsmGPS<modemType>::disableGPS "disableGPS()"
+ *     - @ref TinyGsmGPS<modemType>::getGPSraw "getGPSraw()"
+ *     - @ref TinyGsmGPS<modemType>::getGPS "getGPS()"
+ *     - @ref TinyGsmGPS<modemType>::getGPSTime "getGPSTime()"
+ *     - @ref TinyGsmGPS<modemType>::setGNSSMode "setGNSSMode()"
+ *     - @ref TinyGsmGPS<modemType>::getGNSSMode "getGNSSMode()"
+ * - Time functions (TinyGsmTime.tpp)
+ *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
+ * - Battery functions (TinyGsmBattery.tpp)
+ *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
+ *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
+ *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
+ *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
+ * - Temperature functions (TinyGsmTemperature.tpp)
+ *     - @ref TinyGsmTemperature<modemType>::getTemperature "getTemperature()"
+ * - Generic network functions
+ *     - @ref TinyGsmSaraR4::setRadioAccessTechnology "setRadioAccessTechnology()"
+ *
+ * ## Connection Information
+ *
+ * - TCP sockets:
+ *   - 7
+ * - SSL sockets:
+ *   - 4
+ * - SSL contexts:
+ *   - 4
+ * - Socket Buffering:
+ *   - The modem has an internal buffer for incoming data.
+ *   - This gives you leeway to pull data from the buffer as needed with less
+ * risk of losing data.
+ * - Socket Numbering:
+ *   - The modem does not allow you to specify the multiplexing channel.
+ *   - The modem will automatically assign a channel when the client connects to
+ * a server.
+ *   - Use the getMux() function to get the assigned multiplexing channel number
+ * after a successful connection.
  */
 
 #ifndef SRC_TINYGSMCLIENTSARAR4_H_
 #define SRC_TINYGSMCLIENTSARAR4_H_
 #pragma message("TinyGSM:  TinyGsmClientSaraR4")
-
-#ifdef TINY_GSM_SECURE_MUX_COUNT
-#undef TINY_GSM_SECURE_MUX_COUNT
-#endif
-#define TINY_GSM_SECURE_MUX_COUNT 4
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
@@ -36,6 +132,7 @@
 #include "TinyGsmTemperature.tpp"
 
 /// Registration status
+/// @ingroup ublox_sara_r4
 enum SaraR4RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
@@ -46,7 +143,8 @@ enum SaraR4RegStatus {
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
-/// Basic modem configurations for the SaraR4 modem family
+/// Basic modem configurations for the u-blox SARA-R4 modem family
+/// @ingroup ublox_sara_r4
 struct TinyGsmSaraR4ModemConfig
     : public TinyGsmModemConfigPreset<SaraR4RegStatus> {
   /// The modem manufacturer
@@ -59,18 +157,21 @@ constexpr char TinyGsmSaraR4ModemConfig::MODEM_MANUFACTURER[];
 constexpr char TinyGsmSaraR4ModemConfig::MODEM_MODEL[];
 
 /**
- * @brief TCP behavior and limits for the SARA R4 modem family.
+ * @brief TCP behavior and limits for the u-blox SARA R4 modem family.
  *
  * Per the manual, 7 standard sockets or 4 SSL sockets can be managed.
  *
  * Also supports 5 SSL contexts (0-4), but this library hard-codes to 0.
  * The SSL context is collection of SSL settings, not the connection identifier.
  *
+ * @todo Handle the different number of sockets for TCP and SSL in the code.
+ *
  * @warning You cannot control the socket mux number on this module! The module
  * opens the connection and returns the connection number it opened.
  *
- * The send data command, USOWR,  accepts up to 1024 bytes in "normal" and
+ * The send data command, USOWR, accepts up to 1024 bytes in "normal" and
  * "binary extended" modes and up to 512 bytes in "HEX" mode.
+ * @ingroup ublox_sara_r4
  */
 struct TinyGsmSaraR4TcpConfig
     : public TinyGsmTcpConfigPreset<
@@ -82,6 +183,7 @@ struct TinyGsmSaraR4TcpConfig
           /*stopTimeoutS*/ 135> {};
 
 /// Class for the u-blox SARA-R4
+/// @ingroup ublox_sara_r4
 class TinyGsmSaraR4
     : public TinyGsmModem<TinyGsmSaraR4, TinyGsmSaraR4ModemConfig>,
       public TinyGsmGPRS<TinyGsmSaraR4>,
@@ -109,6 +211,7 @@ class TinyGsmSaraR4
    */
  public:
   /// Inner client
+  /// @ingroup ublox_sara_r4
   class GsmClientSaraR4
       : public TinyGsmTCP<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>::GsmClient {
     friend class TinyGsmSaraR4;
@@ -271,6 +374,7 @@ class TinyGsmSaraR4
    */
  public:
   /// Inner secure client
+  /// @ingroup ublox_sara_r4
   class GsmClientSecureSaraR4 : public GsmClientSaraR4 {
     friend class TinyGsmSaraR4;
 

@@ -5,6 +5,62 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
+ *
+ * @defgroup espressif_esp8266 Espressif ESP8266 AT Modem Family
+ * @ingroup espressif_at
+ * @brief Manufacturer: Espressif. Models: ESP8266 (AT firmware).
+ *
+ * ## Supported Public Functions
+ *
+ * - TCP functions (TinyGsmTCP.tpp)
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
+ *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
+ *     - @ref TinyGsmSSL<modemType>::deleteCertificate "deleteCertificate()"
+ *     - @ref TinyGsmSSL<modemType>::printCertificate "printCertificate()"
+ *     - @ref TinyGsmSSL<modemType>::convertCertificate "convertCertificate()"
+ *     - @ref TinyGsmSSL<modemType>::convertCACertificate "convertCACertificate()"
+ *     - @ref TinyGsmSSL<modemType>::convertClientCertificates "convertClientCertificates()"
+ *     - @ref TinyGsmSSL<modemType>::convertPSKandID "convertPSKandID()"
+ *     - @ref TinyGsmSSL<modemType>::convertPSKTable "convertPSKTable()"
+ * - Time functions (TinyGsmTime.tpp)
+ *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
+ * - NTP server functions (TinyGsmNTP.tpp)
+ *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
+ *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
+ *     - @ref TinyGsmNTP<modemType>::ShowNTPError "ShowNTPError()"
+ * - NTP Utilities (TinyGsmNTP.tpp)
+ *     - @ref TinyGsmNTP<modemType>::TinyGsmIsValidNumber "TinyGsmIsValidNumber()"
+ * - Time functions
+ *     - @ref TinyGsmESP8266::setTimeZone "setTimeZone()"
+ *
+ * ## Connection Information
+ *
+ * - Combined TCP/SSL sockets:
+ *   - 5
+ *   - Using more than 1 SSL socket at a time may cause the module to crash.
+ * - SSL contexts: 2
+ * - Socket Buffering:
+ *   - The modem does **not** have an internal buffer for incoming data.
+ *   - You must read all data from the modem as soon as it arrives, or you will
+ * lose it.
+ *   - You can reduce the risk of losing data by setting this library's buffer
+ * to be as large as possible; this will increase the memory footprint of your
+ * program.
+ *   - Change the buffer size by defining TINY_GSM_RX_BUFFER_SIZE in your sketch
+ * before including any TinyGSM header file.
+ *   - Change the buffer size by defining TINY_GSM_RX_BUFFER_SIZE in your sketch
+ * before including any TinyGSM header file.
+ * - Socket Numbering:
+ *   - The modem does not allow you to specify the multiplexing channel.
+ *   - The modem will automatically assign a channel when the client connects to
+ * a server.
+ *   - Use the getMux() function to get the assigned multiplexing channel number
+ * after a successful connection.
  */
 
 #ifndef SRC_TINYGSMCLIENTESP8266_H_
@@ -18,6 +74,7 @@
 #include "TinyGsmNTP.tpp"
 
 /// State: current Wi-Fi state.
+/// @ingroup espressif_esp8266
 enum ESP8266RegStatus {
   REG_UNINITIALIZED =
       0,  ///< ESP8266 station has not started any Wi-Fi connection.
@@ -32,6 +89,7 @@ enum ESP8266RegStatus {
 };
 
 /// Basic modem configurations for the ESP8266 modem family
+/// @ingroup espressif_esp8266
 struct TinyGsmESP8266ModemConfig
     : public TinyGsmModemConfigPreset<ESP8266RegStatus> {
   /// The modem manufacturer
@@ -55,6 +113,7 @@ constexpr char TinyGsmESP8266ModemConfig::MODEM_MODEL[];
  *
  * The ESP8266 devices can receive 2048 bytes and send 1460 bytes at most in a
  * single transmission.
+ * @ingroup espressif_esp8266
  */
 struct TinyGsmESP8266TcpConfig
     : public TinyGsmTcpConfigPreset<
@@ -71,6 +130,7 @@ struct TinyGsmESP8266TcpConfig
  *
  * @warning This class is used to communicate with a module that has been
  * programmed with the AT command firmware.
+ * @ingroup espressif_esp8266
  */
 class TinyGsmESP8266
     : public TinyGsmEspressif<TinyGsmESP8266, TinyGsmESP8266ModemConfig>,
@@ -93,6 +153,7 @@ class TinyGsmESP8266
    */
  public:
   /// Inner client
+  /// @ingroup espressif_esp8266
   class GsmClientESP8266
       : public TinyGsmTCP<TinyGsmESP8266, TinyGsmESP8266TcpConfig>::GsmClient {
     friend class TinyGsmESP8266;
@@ -195,6 +256,7 @@ class TinyGsmESP8266
    */
  public:
   /// Inner secure client
+  /// @ingroup espressif_esp8266
   class GsmClientSecureESP8266 : public GsmClientESP8266,
                                  public GsmSecureClient {
     friend class TinyGsmESP8266;

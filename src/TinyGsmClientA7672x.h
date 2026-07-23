@@ -5,16 +5,130 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2022 Giovanni de Rosso Unruh
  * @date       Oct 2022
+ *
+ * @defgroup simcom_a7672x SIMCom A7672x Modem Family
+ * @brief Manufacturer: SIMCom. Models: A7672x.
+ *
+ * ## Supported Public Functions
+ *
+ * - Basic functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::init "init()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sendAT "sendAT()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::setBaud "setBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
+ * - Power functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::poweroff "poweroff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
+ * - Generic Network Functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality "getSignalQuality()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getLocalIP "getLocalIP()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::localIP "localIP()"
+ * - Utilities (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
+ * - SIM card functions (TinyGsmGPRS.tpp)
+ *     - @ref TinyGsmGPRS<modemType>::simUnlock "simUnlock()"
+ *     - @ref TinyGsmGPRS<modemType>::getSimCCID "getSimCCID()"
+ *     - @ref TinyGsmGPRS<modemType>::getIMEI "getIMEI()"
+ *     - @ref TinyGsmGPRS<modemType>::getIMSI "getIMSI()"
+ *     - @ref TinyGsmGPRS<modemType>::getSimStatus "getSimStatus()"
+ * - GPRS functions (TinyGsmGPRS.tpp)
+ *     - @ref TinyGsmGPRS<modemType>::gprsConnect "gprsConnect()"
+ *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
+ *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
+ *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
+ *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
+ * - TCP functions (TinyGsmTCP.tpp)
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
+ *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
+ *     - @ref TinyGsmSSL<modemType>::deleteCertificate "deleteCertificate()"
+ *     - @ref TinyGsmSSL<modemType>::printCertificate "printCertificate()"
+ *     - @ref TinyGsmSSL<modemType>::convertCertificate "convertCertificate()"
+ *     - @ref TinyGsmSSL<modemType>::convertCACertificate "convertCACertificate()"
+ *     - @ref TinyGsmSSL<modemType>::convertClientCertificates "convertClientCertificates()"
+ *     - @ref TinyGsmSSL<modemType>::convertPSKandID "convertPSKandID()"
+ *     - @ref TinyGsmSSL<modemType>::convertPSKTable "convertPSKTable()"
+ * - Phone Call functions (TinyGsmCalling.tpp)
+ *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
+ *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
+ *     - @ref TinyGsmCalling<modemType>::callHangup "callHangup()"
+ *     - @ref TinyGsmCalling<modemType>::dtmfSend "dtmfSend()"
+ * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
+ *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
+ *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
+ *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
+ * - GSM Location functions (TinyGsmGSMLocation.tpp)
+ *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationRaw "getGsmLocationRaw()"
+ *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocation "getGsmLocation()"
+ *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationTime "getGsmLocationTime()"
+ * - Time functions (TinyGsmTime.tpp)
+ *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
+ * - NTP server functions (TinyGsmNTP.tpp)
+ *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
+ *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
+ *     - @ref TinyGsmNTP<modemType>::ShowNTPError "ShowNTPError()"
+ * - NTP Utilities (TinyGsmNTP.tpp)
+ *     - @ref TinyGsmNTP<modemType>::TinyGsmIsValidNumber "TinyGsmIsValidNumber()"
+ * - Battery functions (TinyGsmBattery.tpp)
+ *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
+ *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
+ *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
+ *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
+ * - Temperature functions (TinyGsmTemperature.tpp)
+ *     - @ref TinyGsmTemperature<modemType>::getTemperature "getTemperature()"
+ * - Generic network functions
+ *     - @ref TinyGsmA7672X::getLocalIPSecure "getLocalIPSecure()"
+ * - Phone Call functions
+ *     - @ref TinyGsmA7672X::setGsmBusy "setGsmBusy()"
+ * - Client related functions
+ *     - @ref TinyGsmA7672X::configureSSLContext "configureSSLContext()"
+ *     - @ref TinyGsmA7672X::linkSSLContext "linkSSLContext()"
+ *
+ * ## Connection Information
+ *
+ * - TCP sockets:
+ *   - 10
+ * - SSL sockets:
+ *   - 2
+ * - SSL contexts:
+ *   - 10
+ * - Socket Buffering:
+ *   - The modem has an internal buffer for incoming data.
+ *   - This gives you leeway to pull data from the buffer as needed with less
+ * risk of losing data.
+ * - Socket Numbering:
+ *   - The modem uses user-specified MUX channel numbers for socket connections.
+ *   - If you attempt to create a new client with a channel number that is
+ * already in use and other unused channels are available, this library will
+ * select the next available one.
+ *   - Use the getMux() function to get the assigned multiplexing channel number
+ * after a successful connection.
  */
 
 #ifndef SRC_TINYGSMCLIENTA7672X_H_
 #define SRC_TINYGSMCLIENTA7672X_H_
 #pragma message("TinyGSM:  TinyGsmClientA7672x")
-
-#ifdef TINY_GSM_SECURE_MUX_COUNT
-#undef TINY_GSM_SECURE_MUX_COUNT
-#endif
-#define TINY_GSM_SECURE_MUX_COUNT 2
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
@@ -29,6 +143,7 @@
 #include "TinyGsmTemperature.tpp"
 
 /// Registration status
+/// @ingroup simcom_a7672x
 enum A7672xRegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
@@ -40,6 +155,7 @@ enum A7672xRegStatus {
 };
 
 /// Basic modem configurations for the A7672x modem family
+/// @ingroup simcom_a7672x
 struct TinyGsmA7672XModemConfig
     : public TinyGsmModemConfigPreset<A7672xRegStatus> {
   /// The modem manufacturer
@@ -54,7 +170,7 @@ constexpr char TinyGsmA7672XModemConfig::MODEM_MODEL[];
 /**
  * @brief TCP behavior and limits for the A7672x modem family.
  *
- * The module supports 10 TCP sockets or 2 SSL
+ * The module supports 10 TCP sockets or 2 SSL sockets.
  *
  * @todo I think the number of TCP and SSL sockets are independent of each other
  * and managed completely differently.  That is, I think there can be two
@@ -63,6 +179,8 @@ constexpr char TinyGsmA7672XModemConfig::MODEM_MODEL[];
  * module test the real number of TCP and SSL connections that can be made at
  * once?
  *
+ * @todo Handle the different number of sockets for TCP and SSL in the code.
+ *
  * The module also supports 10 SSL contexts.
  * The SSL context is a collection of SSL settings, not the connection
  * identifier. This library always uses SSL context 0.
@@ -70,6 +188,7 @@ constexpr char TinyGsmA7672XModemConfig::MODEM_MODEL[];
  * The secure send data command, CCHSEND, can handle up to 2048 bytes of input,
  * but the unsecured CIPSEND command will only accept 1500, so we'll take the
  * smaller number as the maximum send size.
+ * @ingroup simcom_a7672x
  */
 struct TinyGsmA7672xTcpConfig
     : public TinyGsmTcpConfigPreset<
@@ -80,6 +199,7 @@ struct TinyGsmA7672xTcpConfig
 /**
  * @brief Class for the SIMCom A7672x modem, which is a 4G LTE Cat-M1/NB-IoT
  * modem with GPS and SSL support.
+ * @ingroup simcom_a7672x
  */
 class TinyGsmA7672X
     : public TinyGsmModem<TinyGsmA7672X, TinyGsmA7672XModemConfig>,
@@ -112,6 +232,7 @@ class TinyGsmA7672X
    */
  public:
   /// Inner client
+  /// @ingroup simcom_a7672x
   class GsmClientA7672X
       : public TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>::GsmClient {
     friend class TinyGsmA7672X;
@@ -214,6 +335,7 @@ class TinyGsmA7672X
    */
  public:
   /// Inner secure client
+  /// @ingroup simcom_a7672x
   class GsmClientSecureA7672X : public GsmClientA7672X, public GsmSecureClient {
     friend class TinyGsmA7672X;
 

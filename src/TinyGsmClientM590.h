@@ -5,8 +5,91 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
+ *
+ * @defgroup neoway_m590 Neoway M590 Modem Family
+ * @brief Manufacturer: Neoway. Models: M590.
+ *
+ * ## Supported Public Functions
+ *
+ * - Basic functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::init "init()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sendAT "sendAT()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::setBaud "setBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
+ * - Power functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::poweroff "poweroff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
+ * - Generic Network Functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality "getSignalQuality()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getLocalIP "getLocalIP()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::localIP "localIP()"
+ * - Utilities (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
+ * - SIM card functions (TinyGsmGPRS.tpp)
+ *     - @ref TinyGsmGPRS<modemType>::simUnlock "simUnlock()"
+ *     - @ref TinyGsmGPRS<modemType>::getSimCCID "getSimCCID()"
+ *     - @ref TinyGsmGPRS<modemType>::getIMEI "getIMEI()"
+ *     - @ref TinyGsmGPRS<modemType>::getIMSI "getIMSI()"
+ *     - @ref TinyGsmGPRS<modemType>::getSimStatus "getSimStatus()"
+ * - GPRS functions (TinyGsmGPRS.tpp)
+ *     - @ref TinyGsmGPRS<modemType>::gprsConnect "gprsConnect()"
+ *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
+ *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
+ *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
+ *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
+ * - TCP functions (TinyGsmTCP.tpp)
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
+ *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
+ *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
+ *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
+ * - Time functions (TinyGsmTime.tpp)
+ *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
+ *
+ * ## Connection Information
+ *
+ * - TCP sockets:
+ *   - 2
+ *   - SSL is not supported
+ * - Socket Buffering:
+ *   - The modem does **not** have an internal buffer for incoming data.
+ *   - You must read all data from the modem as soon as it arrives, or you will
+ * lose it.
+ *   - You can reduce the risk of losing data by setting this library's buffer
+ * to be as large as possible; this will increase the memory footprint of your
+ * program.
+ *   - Change the buffer size by defining TINY_GSM_RX_BUFFER_SIZE in your sketch
+ * before including any TinyGSM header file.
+ *   - Change the buffer size by defining TINY_GSM_RX_BUFFER_SIZE in your sketch
+ * before including any TinyGSM header file.
+ * - Socket Numbering:
+ *   - The modem does not allow you to specify the multiplexing channel.
+ *   - The modem will automatically assign a channel when the client connects to
+ * a server.
+ *   - Use the getMux() function to get the assigned multiplexing channel number
+ * after a successful connection.
  */
-
 #ifndef SRC_TINYGSMCLIENTM590_H_
 #define SRC_TINYGSMCLIENTM590_H_
 #pragma message("TinyGSM:  TinyGsmClientM590")
@@ -18,6 +101,7 @@
 #include "TinyGsmTime.tpp"
 
 /// Registration status
+/// @ingroup neoway_m590
 enum M590RegStatus {
   REG_NO_RESULT    = -1,  ///< No result yet
   REG_UNREGISTERED = 0,   ///< Not registered
@@ -29,6 +113,7 @@ enum M590RegStatus {
 };
 
 /// Basic modem configurations for the M590 modem family
+/// @ingroup neoway_m590
 struct TinyGsmM590ModemConfig : public TinyGsmModemConfigPreset<M590RegStatus> {
   /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Neoway";
@@ -43,6 +128,7 @@ constexpr char TinyGsmM590ModemConfig::MODEM_MODEL[];
  * @brief TCP behavior and limits for the M590 modem family.
  *
  * The M590 can send up to 2000 bytes at a time with TCPSEND
+ * @ingroup neoway_m590
  */
 struct TinyGsmM590TcpConfig
     : public TinyGsmTcpConfigPreset<
@@ -54,6 +140,7 @@ struct TinyGsmM590TcpConfig
           /*stopTimeoutS*/ 1> {};
 
 /// Class for the Neoway M590
+/// @ingroup neoway_m590
 class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
                     public TinyGsmGPRS<TinyGsmM590>,
                     public TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>,
@@ -72,6 +159,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
    */
  public:
   /// Inner client
+  /// @ingroup neoway_m590
   class GsmClientM590
       : public TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>::GsmClient {
     friend class TinyGsmM590;
