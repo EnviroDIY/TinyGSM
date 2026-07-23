@@ -10,13 +10,13 @@
  * @ingroup espressif_at
  * @brief Manufacturer: Espressif. Models: ESP8266 (Non-OS AT firmware).
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - Combined TCP/SSL sockets:
  *   - 5

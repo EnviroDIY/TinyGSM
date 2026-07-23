@@ -10,7 +10,7 @@
  * @defgroup quectel_m95 Quectel M95 Modem Family
  * @brief Manufacturer: Quectel. Models: M95.
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -82,7 +82,7 @@
  * - Text messaging (SMS) functions
  *     - @ref TinyGsmM95::deleteAllSMS "deleteAllSMS()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - TCP sockets:
  *   - 6

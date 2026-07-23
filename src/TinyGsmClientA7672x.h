@@ -9,7 +9,7 @@
  * @defgroup simcom_a7672x SIMCom A7672x Modem Family
  * @brief Manufacturer: SIMCom. Models: A7672x.
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -105,7 +105,7 @@
  *     - @ref TinyGsmA7672X::configureSSLContext "configureSSLContext()"
  *     - @ref TinyGsmA7672X::linkSSLContext "linkSSLContext()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - TCP sockets:
  *   - 10

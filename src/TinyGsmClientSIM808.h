@@ -10,7 +10,7 @@
  * @ingroup simcom_sim800
  * @brief Manufacturer: SIMCom. Models: SIM808, SIM868.
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -109,7 +109,7 @@
  *     - @ref TinyGsmBluetooth<modemType>::setBluetoothVisibility "setBluetoothVisibility()"
  *     - @ref TinyGsmBluetooth<modemType>::setBluetoothHostName "setBluetoothHostName()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - TCP sockets: 8.
  * - SSL sockets: 5.

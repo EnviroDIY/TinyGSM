@@ -9,7 +9,7 @@
  * @defgroup ublox_sara_r5 u-blox SARA-R5 Modem Family
  * @brief Manufacturer: u-blox. Models: SARA-R5.
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -92,7 +92,7 @@
  *     - @ref TinyGsmSaraR5::setRadioAccessTechnology "setRadioAccessTechnology()"
  *     - @ref TinyGsmSaraR5::getCurrentRadioAccessTechnology "getCurrentRadioAccessTechnology()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - Combined TCP/SSL sockets:
  *   - 7

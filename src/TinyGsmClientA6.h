@@ -9,7 +9,7 @@
  * @defgroup aithinker_a6 Ai-Thinker A6/A7 Modem Family
  * @brief Manufacturer: Ai-Thinker. Models: A6, A7.
  *
- * ## Supported Public Functions
+ * # Supported Public Functions
  *
  * - Basic functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
@@ -81,7 +81,7 @@
  *     - @ref TinyGsmA6::audioSetSpeaker "audioSetSpeaker()"
  *     - @ref TinyGsmA6::audioMuteMic "audioMuteMic()"
  *
- * ## Connection Information
+ * # Connection Information
  *
  * - TCP sockets:
  *   - 8
@@ -701,5 +701,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
  protected:
   GsmClientA6* sockets[TinyGsmA6TcpConfig::kMuxCount];
 };
+
+// cSpell:words aithinker
 
 #endif  // SRC_TINYGSMCLIENTA6_H_
