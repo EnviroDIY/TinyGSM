@@ -117,7 +117,6 @@
  *   - The modem has an internal buffer for incoming data.
  *   - This gives you leeway to pull data from the buffer as needed with less
  * risk of losing data.
- * *
  * - Socket Numbering:
  *   - The modem uses user-specified MUX channel numbers for socket connections.
  *   - If you attempt to create a new client with a channel number that is

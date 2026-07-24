@@ -389,7 +389,7 @@ def build_doc_block(entries: list[FunctionEntry]) -> str:
         else:
             unsupported.append(entry)
 
-    lines = [" * ## Supported Public Functions", " *"]
+    lines = [" * # Supported Public Functions", " *"]
     if not grouped:
         lines.append(" * - None documented.")
     for group_label, supported, unsupported in grouped:
@@ -421,10 +421,10 @@ def update_file(path: Path, index: dict[str, ClassInfo]) -> bool:
     if not top_match:
         return False
 
-    start = text.find("## Supported Public Functions", top_match.start())
+    start = text.find("# Supported Public Functions", top_match.start())
     if start == -1:
         start = text.find("## Supported Features", top_match.start())
-    conn = text.find("## Connection Information", top_match.start())
+    conn = text.find("# Connection Information", top_match.start())
     if start == -1 or conn == -1 or conn <= start:
         return False
 
@@ -444,7 +444,7 @@ def update_file(path: Path, index: dict[str, ClassInfo]) -> bool:
     new_block = build_doc_block(entries)
 
     conn_block = text[conn_line_start:]
-    if conn_block.startswith("## Connection Information"):
+    if conn_block.startswith("# Connection Information"):
         conn_block = " * " + conn_block
 
     new_text = text[:line_start] + new_block + "\n" + conn_block
@@ -472,6 +472,8 @@ def main() -> None:
 
     for name in updated:
         print(f"Updated {name}")
+    if not updated:
+        print("No files updated")
 
 
 if __name__ == "__main__":
