@@ -22,8 +22,8 @@ enum SimStatus {
   SIM_ERROR  = 0,  ///< SIM card error
   SIM_READY  = 1,  ///< SIM card is ready
   SIM_LOCKED = 2,  ///< SIM card is locked (PIN required)
-  SIM_ANTITHEFT_LOCKED =
-      3,  ///< SIM card is locked due to anti-theft protection
+  /// SIM card is locked due to anti-theft protection
+  SIM_ANTITHEFT_LOCKED = 3,
 };
 
 /**
