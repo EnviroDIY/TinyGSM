@@ -142,6 +142,7 @@ class TinyGsmESP8266
   friend class TinyGsmModem<TinyGsmESP8266, TinyGsmESP8266ModemConfig>;
   friend class TinyGsmWifi<TinyGsmESP8266>;
   friend class TinyGsmTCP<TinyGsmESP8266, TinyGsmESP8266TcpConfig>;
+  friend class GsmClient<TinyGsmESP8266, TinyGsmESP8266TcpConfig>;
   friend class TinyGsmSSL<TinyGsmESP8266>;
   friend class TinyGsmTime<TinyGsmESP8266>;
   friend class TinyGsmNTP<TinyGsmESP8266>;
@@ -155,13 +156,12 @@ class TinyGsmESP8266
   /// Inner client
   /// @ingroup espressif_esp8266
   class GsmClientESP8266
-      : public TinyGsmTCP<TinyGsmESP8266, TinyGsmESP8266TcpConfig>::GsmClient {
+      : public GsmClient<TinyGsmESP8266, TinyGsmESP8266TcpConfig> {
     friend class TinyGsmESP8266;
 
    public:
-    using TinyGsmTCP<TinyGsmESP8266,
-                     TinyGsmESP8266TcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmESP8266, TinyGsmESP8266TcpConfig>::GsmClient::stop;
+    using GsmClient<TinyGsmESP8266, TinyGsmESP8266TcpConfig>::connect;
+    using GsmClient<TinyGsmESP8266, TinyGsmESP8266TcpConfig>::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem

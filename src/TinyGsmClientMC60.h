@@ -170,6 +170,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
   friend class TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmMC60>;
   friend class TinyGsmTCP<TinyGsmMC60, TinyGsmMC60TcpConfig>;
+  friend class GsmClient<TinyGsmMC60, TinyGsmMC60TcpConfig>;
   friend class TinyGsmCalling<TinyGsmMC60>;
   friend class TinyGsmSMS<TinyGsmMC60>;
   friend class TinyGsmTime<TinyGsmMC60>;
@@ -183,13 +184,12 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
  public:
   /// Inner client
   /// @ingroup quectel_mc60
-  class GsmClientMC60
-      : public TinyGsmTCP<TinyGsmMC60, TinyGsmMC60TcpConfig>::GsmClient {
+  class GsmClientMC60 : public GsmClient<TinyGsmMC60, TinyGsmMC60TcpConfig> {
     friend class TinyGsmMC60;
 
    public:
-    using TinyGsmTCP<TinyGsmMC60, TinyGsmMC60TcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmMC60, TinyGsmMC60TcpConfig>::GsmClient::stop;
+    using GsmClient<TinyGsmMC60, TinyGsmMC60TcpConfig>::connect;
+    using GsmClient<TinyGsmMC60, TinyGsmMC60TcpConfig>::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem

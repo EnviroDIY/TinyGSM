@@ -195,6 +195,7 @@ class TinyGsmSim7000SSL
   friend class TinyGsmModem<TinyGsmSim7000SSL, TinyGsmSim7000SSLModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSim7000SSL>;
   friend class TinyGsmTCP<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>;
+  friend class GsmClient<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>;
   friend class TinyGsmSSL<TinyGsmSim7000SSL>;
   friend class TinyGsmSMS<TinyGsmSim7000SSL>;
   friend class TinyGsmGSMLocation<TinyGsmSim7000SSL>;
@@ -212,15 +213,12 @@ class TinyGsmSim7000SSL
   /// Inner client
   /// @ingroup simcom_sim7000ssl
   class GsmClientSim7000SSL
-      : public TinyGsmTCP<TinyGsmSim7000SSL,
-                          TinyGsmSim7000SSLTcpConfig>::GsmClient {
+      : public GsmClient<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig> {
     friend class TinyGsmSim7000SSL;
 
    public:
-    using TinyGsmTCP<TinyGsmSim7000SSL,
-                     TinyGsmSim7000SSLTcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSim7000SSL,
-                     TinyGsmSim7000SSLTcpConfig>::GsmClient::stop;
+    using GsmClient<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>::connect;
+    using GsmClient<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem

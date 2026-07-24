@@ -195,6 +195,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   friend class TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>;
   friend class TinyGsmGPRS<TinyGsmUBLOX>;
   friend class TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>;
+  friend class GsmClient<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>;
   friend class TinyGsmCalling<TinyGsmUBLOX>;
   friend class TinyGsmSMS<TinyGsmUBLOX>;
   friend class TinyGsmGSMLocation<TinyGsmUBLOX>;
@@ -210,13 +211,12 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
  public:
   /// Inner client
   /// @ingroup ublox_cellular
-  class GsmClientUBLOX
-      : public TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>::GsmClient {
+  class GsmClientUBLOX : public GsmClient<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig> {
     friend class TinyGsmUBLOX;
 
    public:
-    using TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>::GsmClient::stop;
+    using GsmClient<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>::connect;
+    using GsmClient<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem

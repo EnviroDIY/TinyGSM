@@ -144,6 +144,7 @@ class TinyGsmESP32
   friend class TinyGsmModem<TinyGsmESP32, TinyGsmESP32ModemConfig>;
   friend class TinyGsmWifi<TinyGsmESP32>;
   friend class TinyGsmTCP<TinyGsmESP32, TinyGsmESP32TcpConfig>;
+  friend class GsmClient<TinyGsmESP32, TinyGsmESP32TcpConfig>;
   friend class TinyGsmSSL<TinyGsmESP32>;
   friend class TinyGsmTime<TinyGsmESP32>;
   friend class TinyGsmNTP<TinyGsmESP32>;
@@ -156,13 +157,12 @@ class TinyGsmESP32
  public:
   /// Inner client
   /// @ingroup espressif_esp32
-  class GsmClientESP32
-      : public TinyGsmTCP<TinyGsmESP32, TinyGsmESP32TcpConfig>::GsmClient {
+  class GsmClientESP32 : public GsmClient<TinyGsmESP32, TinyGsmESP32TcpConfig> {
     friend class TinyGsmESP32;
 
    public:
-    using TinyGsmTCP<TinyGsmESP32, TinyGsmESP32TcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmESP32, TinyGsmESP32TcpConfig>::GsmClient::stop;
+    using GsmClient<TinyGsmESP32, TinyGsmESP32TcpConfig>::connect;
+    using GsmClient<TinyGsmESP32, TinyGsmESP32TcpConfig>::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem

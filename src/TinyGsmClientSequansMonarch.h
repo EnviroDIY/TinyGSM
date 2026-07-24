@@ -187,6 +187,7 @@ class TinyGsmSequansMonarch
   friend class TinyGsmGPRS<TinyGsmSequansMonarch>;
   friend class TinyGsmTCP<TinyGsmSequansMonarch,
                           TinyGsmSequansMonarchTcpConfig>;
+  friend class GsmClient<TinyGsmSequansMonarch, TinyGsmSequansMonarchTcpConfig>;
   friend class TinyGsmCalling<TinyGsmSequansMonarch>;
   friend class TinyGsmSMS<TinyGsmSequansMonarch>;
   friend class TinyGsmTime<TinyGsmSequansMonarch>;
@@ -201,15 +202,15 @@ class TinyGsmSequansMonarch
   /// Inner client
   /// @ingroup sequans_monarch
   class GsmClientSequansMonarch
-      : public TinyGsmTCP<TinyGsmSequansMonarch,
-                          TinyGsmSequansMonarchTcpConfig>::GsmClient {
+      : public GsmClient<TinyGsmSequansMonarch,
+                         TinyGsmSequansMonarchTcpConfig> {
     friend class TinyGsmSequansMonarch;
 
    public:
-    using TinyGsmTCP<TinyGsmSequansMonarch,
-                     TinyGsmSequansMonarchTcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSequansMonarch,
-                     TinyGsmSequansMonarchTcpConfig>::GsmClient::stop;
+    using GsmClient<TinyGsmSequansMonarch,
+                    TinyGsmSequansMonarchTcpConfig>::connect;
+    using GsmClient<TinyGsmSequansMonarch,
+                    TinyGsmSequansMonarchTcpConfig>::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem

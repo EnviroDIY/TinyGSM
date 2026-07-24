@@ -149,6 +149,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
   friend class TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmM590>;
   friend class TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>;
+  friend class GsmClient<TinyGsmM590, TinyGsmM590TcpConfig>;
   friend class TinyGsmSMS<TinyGsmM590>;
   friend class TinyGsmTime<TinyGsmM590>;
 
@@ -160,13 +161,12 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
  public:
   /// Inner client
   /// @ingroup neoway_m590
-  class GsmClientM590
-      : public TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>::GsmClient {
+  class GsmClientM590 : public GsmClient<TinyGsmM590, TinyGsmM590TcpConfig> {
     friend class TinyGsmM590;
 
    public:
-    using TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>::GsmClient::stop;
+    using GsmClient<TinyGsmM590, TinyGsmM590TcpConfig>::connect;
+    using GsmClient<TinyGsmM590, TinyGsmM590TcpConfig>::stop;
 
     /**
      * @brief Create a new GsmClientM590 object.  This must be initialized with
