@@ -147,7 +147,28 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
-/***
+/// Basic modem configurations for the SIM7080 modem family
+/// @ingroup simcom_sim7080
+struct TinyGsmSim7080ModemConfig
+    : public TinyGsmModemConfigPreset<SIM70xxRegStatus> {
+  /// The modem manufacturer
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
+#if defined(TINY_GSM_MODEM_SIM7070)
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7070";
+#elif defined(TINY_GSM_MODEM_SIM7090)
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7090";
+#else
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7080";
+#endif
+};
+
+constexpr char TinyGsmSim7080ModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmSim7080ModemConfig::MODEM_MODEL[];
+
+/**
  * @brief TCP behavior and limits for the SIM7080 modem family.
  *
  * Also supports 6 SSL contexts (0-5)
@@ -175,27 +196,6 @@ struct TinyGsmSim7080TcpConfig
           /*connectTimeoutS*/ 75,  // default
           /*stopTimeoutS*/ 15,
           /*minFreeTxBuffer*/ 1360> {};
-
-/// Basic modem configurations for the SIM7080 modem family
-/// @ingroup simcom_sim7080
-struct TinyGsmSim7080ModemConfig
-    : public TinyGsmModemConfigPreset<SIM70xxRegStatus> {
-  /// The modem manufacturer
-  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
-#if defined(TINY_GSM_MODEM_SIM7070)
-  /// The modem model
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7070";
-#elif defined(TINY_GSM_MODEM_SIM7090)
-  /// The modem model
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7090";
-#else
-  /// The modem model
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7080";
-#endif
-};
-
-constexpr char TinyGsmSim7080ModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmSim7080ModemConfig::MODEM_MODEL[];
 
 /// Class for the SIMCOM SIM7070, SIM7080, and SIM7090
 /// @ingroup simcom_sim7080

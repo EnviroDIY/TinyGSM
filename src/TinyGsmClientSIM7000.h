@@ -130,16 +130,6 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
-/***
- * @brief TCP behavior and limits for the SIM7000 modem family.
- * @ingroup simcom_sim7000
- */
-struct TinyGsmSim7000TcpConfig
-    : public TinyGsmTcpConfigPreset<
-          /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
-          /*muxMode*/ TinyGsmTcpMuxMode::Static,
-          /*muxCount*/ 8> {};
-
 /// Basic modem configurations for the SIM7000 modem family
 /// @ingroup simcom_sim7000
 struct TinyGsmSim7000ModemConfig
@@ -152,6 +142,16 @@ struct TinyGsmSim7000ModemConfig
 
 constexpr char TinyGsmSim7000ModemConfig::MODEM_MANUFACTURER[];
 constexpr char TinyGsmSim7000ModemConfig::MODEM_MODEL[];
+
+/**
+ * @brief TCP behavior and limits for the SIM7000 modem family.
+ * @ingroup simcom_sim7000
+ */
+struct TinyGsmSim7000TcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 8> {};
 
 /// Class for the SIMCOM SIM7000 using the TCP-IP toolkit
 /// @ingroup simcom_sim7000

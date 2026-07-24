@@ -148,7 +148,20 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
-/***
+/// Basic modem configurations for the SIM7000SSL modem family
+/// @ingroup simcom_sim7000ssl
+struct TinyGsmSim7000SSLModemConfig
+    : public TinyGsmModemConfigPreset<SIM70xxRegStatus> {
+  /// The modem manufacturer
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7000";
+};
+
+constexpr char TinyGsmSim7000SSLModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmSim7000SSLModemConfig::MODEM_MODEL[];
+
+/**
  * @brief TCP behavior and limits for the SIM7000 modem family using the SSL
  * application toolkit.
  *
@@ -166,19 +179,6 @@ struct TinyGsmSim7000SSLTcpConfig
           /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
           /*muxMode*/ TinyGsmTcpMuxMode::Static,
           /*muxCount*/ 8> {};
-
-/// Basic modem configurations for the SIM7000SSL modem family
-/// @ingroup simcom_sim7000ssl
-struct TinyGsmSim7000SSLModemConfig
-    : public TinyGsmModemConfigPreset<SIM70xxRegStatus> {
-  /// The modem manufacturer
-  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
-  /// The modem model
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7000";
-};
-
-constexpr char TinyGsmSim7000SSLModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmSim7000SSLModemConfig::MODEM_MODEL[];
 
 /// Class for the SIMCOM SIM7000 with SSL support using the SSL application
 /// @ingroup simcom_sim7000ssl

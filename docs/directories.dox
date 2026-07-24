@@ -1,0 +1,24 @@
+/**
+ * @dir src
+ * @brief Contains the source code for the TinyGSM library
+ */
+/**
+ * @dir docs
+ * @brief Contains extra documentation and files to help build the documentation
+ */
+/**
+ * @dir examples
+ * @brief Contains all of the example sketches
+ * @dir examples/more
+ * @brief Furtner examples that are specific to certain modems or features
+ */
+/**
+ * @dir extras
+ * @brief Has logos, test files, and helper and debugging sketches
+ * @dir extras/tools
+ * @brief Has helper and debugging sketches
+ */
+/**
+ * @dir continuous_integration
+ * @brief Contains continuous integration scripts and configurations
+ */
