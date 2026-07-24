@@ -76,16 +76,19 @@
 /// State: current Wi-Fi state.
 /// @ingroup espressif_esp8266
 enum ESP8266RegStatus {
-  REG_UNINITIALIZED =
-      0,  ///< ESP8266 station has not started any Wi-Fi connection.
-  REG_UNREGISTERED = 1,  ///< ESP8266 station has connected to an AP, but does
-                         ///< not get an IPv4 address yet.
-  REG_OK =
-      2,  ///< ESP8266 station has connected to an AP, and got an IPv4 address.
-  REG_CONNECTING =
-      3,  ///< ESP8266 station is in Wi-Fi connecting or reconnecting state.
-  REG_DISCONNECTING = 4,  ///< ESP8266 station is in Wi-Fi disconnected state.
-  REG_UNKNOWN       = 5,  ///< ESP8266 station is in an unknown state.
+  /// ESP8266 station has not started any Wi-Fi connection.
+  REG_UNINITIALIZED = 0,
+  /// ESP8266 station has connected to an AP, but does not get an IPv4 address
+  /// yet.
+  REG_UNREGISTERED = 1,
+  /// ESP8266 station has connected to an AP, and got an IPv4 address.
+  REG_OK = 2,
+  /// ESP8266 station is in Wi-Fi connecting or reconnecting state.
+  REG_CONNECTING = 3,
+  /// ESP8266 station is in Wi-Fi disconnected state.
+  REG_DISCONNECTING = 4,
+  /// ESP8266 station is in an unknown state.
+  REG_UNKNOWN = 5,
 };
 
 /// Basic modem configurations for the ESP8266 modem family

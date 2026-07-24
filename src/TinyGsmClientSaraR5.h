@@ -145,19 +145,18 @@ enum SaraR5RegStatus {
   REG_UNKNOWN          = 4,   ///< Unknown registration status
   REG_SMS_ONLY_HOME    = 6,   ///< Registered on the home network for SMS only
   REG_SMS_ONLY_ROAMING = 7,   ///< Registered on a roaming network for SMS only
-  REG_EMERGENCY_ONLY =
-      8,  ///< ublox AT command manual states: attached for emergency bearer
-          ///< services only (see 3GPP TS 24.008 [85] and 3GPP TS 24.301 [120]
-          ///< that specify the condition when the MS is considered as attached
-          ///< for emergency bearer services)
-  REG_NO_FALLBACK_LTE_HOME =
-      9,  ///< not 100% certain, ublox AT command manual states: registered for
-          ///< "CSFB not preferred", home network (applicable only when
-          ///< AcTStatus indicates E-UTRAN)
-  REG_NO_FALLBACK_LTE_ROAMING =
-      10  ///< not 100% certain, ublox AT command manual states: registered for
-          ///< "CSFB not preferred", roaming (applicable only when AcTStatus
-          ///< indicates E-UTRAN)
+  /// ublox AT command manual states: attached for emergency bearer services
+  /// only (see 3GPP TS 24.008 [85] and 3GPP TS 24.301 [120] that specify the
+  /// condition when the MS is considered as attached for emergency bearer
+  /// services)
+  REG_EMERGENCY_ONLY = 8,
+  /// not 100% certain, ublox AT command manual states: registered for "CSFB not
+  /// preferred", home network (applicable only when AcTStatus indicates
+  /// E-UTRAN)
+  REG_NO_FALLBACK_LTE_HOME = 9,
+  /// not 100% certain, ublox AT command manual states: registered for "CSFB not
+  /// preferred", roaming (applicable only when AcTStatus indicates E-UTRAN)
+  REG_NO_FALLBACK_LTE_ROAMING = 10
 };
 
 /// Basic modem configurations for the SaraR5 modem family

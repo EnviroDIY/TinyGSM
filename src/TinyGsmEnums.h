@@ -20,22 +20,23 @@
 
 /// Enum for different types of SSL/TLS certificates.
 enum class CertificateType : int8_t {
-  CA_CERTIFICATE = 0,  ///< The CA certificate is used to verify the server's
-                       ///< certificate. This is the most common type of
-                       ///< certificate used in SSL connections.
-  CLIENT_CERTIFICATE =
-      1,  ///< The client certificate is used to authenticate the client to the
-          ///< server. This is less common and is typically used in mutual
-          ///< authentication scenarios.
-  CLIENT_KEY = 2,  ///< The client key is used in conjunction with the client
-                   ///< certificate for mutual authentication. It is a private
-                   ///< key that should be kept secure and not shared.
-  CLIENT_PSK = 3,  ///< The client pre-shared key is used for authentication in
-                   ///< TLS-PSK connections. It is a secret key shared between
-                   ///< the client and the server.
-  CLIENT_PSK_IDENTITY =
-      4,  ///< The client pre-shared key identity is used in conjunction with
-          ///< the client PSK for authentication in TLS-PSK connections.
+  /// The CA certificate is used to verify the server's certificate. This is the
+  /// most common type of certificate used in SSL connections.
+  CA_CERTIFICATE = 0,
+  /// The client certificate is used to authenticate the client to the server.
+  /// This is less common and is typically used in mutual authentication
+  /// scenarios.
+  CLIENT_CERTIFICATE = 1,
+  /// The client key is used in conjunction with the client certificate for
+  /// mutual authentication. It is a private key that should be kept secure and
+  /// not shared.
+  CLIENT_KEY = 2,
+  /// The client pre-shared key is used for authentication in TLS-PSK
+  /// connections. It is a secret key shared between the client and the server.
+  CLIENT_PSK = 3,
+  /// The client pre-shared key identity is used in conjunction with the client
+  /// PSK for authentication in TLS-PSK connections.
+  CLIENT_PSK_IDENTITY = 4,
 };
 
 /**
@@ -77,14 +78,14 @@ enum class SSLAuthMode : int8_t {
 
 /// Enum for different SSL/TLS versions.
 enum class SSLVersion : int8_t {
-  NO_SSL  = -1,  ///< No SSL/TLS, plain TCP connection
-  SSL3_0  = 0,   ///< SSL 3.0
-  TLS1_0  = 1,   ///< TLS 1.0
-  TLS1_1  = 2,   ///< TLS 1.1
-  TLS1_2  = 3,   ///< TLS 1.2
-  ALL_SSL = 4,  ///< Try all SSL/TLS versions, the modem will negotiate the best
-                ///< version
-  TLS1_3 = 5    ///< TLS 1.3
+  NO_SSL = -1,  ///< No SSL/TLS, plain TCP connection
+  SSL3_0 = 0,   ///< SSL 3.0
+  TLS1_0 = 1,   ///< TLS 1.0
+  TLS1_1 = 2,   ///< TLS 1.1
+  TLS1_2 = 3,   ///< TLS 1.2
+  /// Try all SSL/TLS versions, the modem will negotiate the best version
+  ALL_SSL = 4,
+  TLS1_3  = 5  ///< TLS 1.3
 };
 
 /// Enum for different date/time formats.
@@ -97,12 +98,15 @@ enum class TinyGSMDateTimeFormat : int8_t {
  * @brief Set the epoch start value.
  */
 enum class TinyGSM_EpochStart : int8_t {
-  UNIX = 0,  ///< Use a Unix epoch, starting 1/1/1970 (946684800s behind of Y2K
-             ///< epoch, 315878400ss behind of GPS epoch)
-  Y2K = 1,   ///< Use an epoch starting 1/1/2000, as some RTC's and Arduinos do
-            ///< (946684800s ahead of UNIX epoch, 630806400s ahead of GPS epoch)
-  GPS = 2  ///< Use the GPS epoch starting Jan 5, 1980 (315878400s ahead of UNIX
-           ///< epoch, 630806400s behind of Y2K epoch)
+  /// Use a Unix epoch, starting 1/1/1970 (946684800s behind of Y2K epoch,
+  /// 315878400ss behind of GPS epoch)
+  UNIX = 0,
+  /// Use an epoch starting 1/1/2000, as some RTC's and Arduinos do (946684800s
+  /// ahead of UNIX epoch, 630806400s ahead of GPS epoch)
+  Y2K = 1,
+  /// Use the GPS epoch starting Jan 5, 1980 (315878400s ahead of UNIX epoch,
+  /// 630806400s behind of Y2K epoch)
+  GPS = 2
 };
 
 #endif

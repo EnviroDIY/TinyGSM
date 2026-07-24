@@ -59,15 +59,20 @@
 /// Status of ESP8266 station interface
 /// @ingroup espressif_esp8266_nonos
 enum ESP8266NonOSRegStatus {
-  REG_UNINITIALIZED = 0,  ///< ESP8266 station is not initialized.
-  REG_UNREGISTERED  = 1,  ///< ESP8266 station is initialized, but not started a
-                          ///< Wi-Fi connection yet.
-  REG_OK_IP  = 2,  ///< ESP8266 station connected to an AP and has obtained IP
-  REG_OK_TCP = 3,  ///< ESP8266 station created a TCP or UDP transmission
-  REG_OK_NO_TCP =
-      4,  ///< the TCP or UDP transmission of ESP8266 station disconnected
-  REG_DENIED  = 5,  ///< ESP8266 station did NOT connect to an AP
-  REG_UNKNOWN = 6,  ///< ESP8266 station is in an unknown state
+  /// ESP8266 station is not initialized.
+  REG_UNINITIALIZED = 0,
+  /// ESP8266 station is initialized, but not started a Wi-Fi connection yet.
+  REG_UNREGISTERED = 1,
+  /// ESP8266 station connected to an AP and has obtained IP
+  REG_OK_IP = 2,
+  /// ESP8266 station created a TCP or UDP transmission
+  REG_OK_TCP = 3,
+  /// the TCP or UDP transmission of ESP8266 station disconnected
+  REG_OK_NO_TCP = 4,
+  /// ESP8266 station did NOT connect to an AP
+  REG_DENIED = 5,
+  /// ESP8266 station is in an unknown state
+  REG_UNKNOWN = 6,
 };
 
 /// Basic modem configurations for the ESP8266NonOS modem family

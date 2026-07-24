@@ -83,3 +83,4 @@ compile_commands.json
 docs/DOC_TEMPLATE_clients_secure_fxns copy.dox_TEMPLATE
 docs/DOC_TEMPLATE_clients_secure_fxns.dox_TEMPLATE
 docs/DOC_TEMPLATE_clients.dox_TEMPLATE
+docs/.doxybook/*

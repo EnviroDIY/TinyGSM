@@ -21,21 +21,23 @@
 
 /// Supported receive buffer handling modes for TCP clients.
 enum class TinyGsmTcpBufferMode {
-  NoModemBuffer,      ///< the modem does not have a buffer for incoming data
-  BufferReadNoCheck,  ///< the modem does have a buffer for incoming data but
-                      ///< there is no way to check how much data is in the
-                      ///< buffer
-  BufferReadAndCheckSize,  ///< the modem does have a buffer for incoming data
-                           ///< and there is a way to check how much data is in
-                           ///< the buffer
+  /// the modem does not have a buffer for incoming data
+  NoModemBuffer,
+  /// the modem does have a buffer for incoming data but there is no way to
+  /// check how much data is in the buffer
+  BufferReadNoCheck,
+  /// the modem does have a buffer for incoming data and there is a way to check
+  /// how much data is in the buffer
+  BufferReadAndCheckSize,
 };
 
 /// Supported socket multiplexing assignment modes.
 enum class TinyGsmTcpMuxMode {
-  Static,   ///< the modem will always use the user-specified MUX channel
-            ///< numbers for TCP connections
-  Dynamic,  ///< the modem can and will dynamically assign MUX channels for TCP
-            ///< connections
+  /// the modem will always use the user-specified MUX channel numbers for TCP
+  /// connections
+  Static,
+  /// the modem can and will dynamically assign MUX channels for TCP connections
+  Dynamic,
 };
 
 /**
