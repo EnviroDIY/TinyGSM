@@ -62,6 +62,7 @@ boards/*
 tests/*
 lib/*
 archive/*
+generated_docs/*
 docs/__pycache__/*
 docs/css/*
 docs/*output*
@@ -79,3 +80,6 @@ continuous_integration/arduino_cli_local.yaml
 clang-format-all.py
 runDoxygen.bat
 compile_commands.json
+docs/DOC_TEMPLATE_clients_secure_fxns copy.dox_TEMPLATE
+docs/DOC_TEMPLATE_clients_secure_fxns.dox_TEMPLATE
+docs/DOC_TEMPLATE_clients.dox_TEMPLATE
