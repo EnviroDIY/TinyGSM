@@ -204,6 +204,7 @@ class TinyGsmSim800
   friend class TinyGsmModem<TinyGsmSim800, TinyGsmSim800ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSim800>;
   friend class TinyGsmTCP<TinyGsmSim800, TinyGsmSim800TcpConfig>;
+  friend class GsmClient<TinyGsmSim800, TinyGsmSim800TcpConfig>;
   friend class TinyGsmCalling<TinyGsmSim800>;
   friend class TinyGsmSMS<TinyGsmSim800>;
   friend class TinyGsmGSMLocation<TinyGsmSim800>;
@@ -220,12 +221,12 @@ class TinyGsmSim800
   /// Inner client
   /// @ingroup simcom_sim800
   class GsmClientSim800
-      : public TinyGsmTCP<TinyGsmSim800, TinyGsmSim800TcpConfig>::GsmClient {
+      : public GsmClient<TinyGsmSim800, TinyGsmSim800TcpConfig> {
     friend class TinyGsmSim800;
 
    public:
-    using TinyGsmTCP<TinyGsmSim800, TinyGsmSim800TcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSim800, TinyGsmSim800TcpConfig>::GsmClient::stop;
+    using GsmClient<TinyGsmSim800, TinyGsmSim800TcpConfig>::connect;
+    using GsmClient<TinyGsmSim800, TinyGsmSim800TcpConfig>::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem

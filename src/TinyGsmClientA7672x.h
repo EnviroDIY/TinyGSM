@@ -216,6 +216,7 @@ class TinyGsmA7672X
   friend class TinyGsmModem<TinyGsmA7672X, TinyGsmA7672XModemConfig>;
   friend class TinyGsmGPRS<TinyGsmA7672X>;
   friend class TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>;
+  friend class GsmClient<TinyGsmA7672X, TinyGsmA7672xTcpConfig>;
   friend class TinyGsmSSL<TinyGsmA7672X>;
   friend class TinyGsmCalling<TinyGsmA7672X>;
   friend class TinyGsmSMS<TinyGsmA7672X>;
@@ -234,12 +235,12 @@ class TinyGsmA7672X
   /// Inner client
   /// @ingroup simcom_a7672x
   class GsmClientA7672X
-      : public TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>::GsmClient {
+      : public GsmClient<TinyGsmA7672X, TinyGsmA7672xTcpConfig> {
     friend class TinyGsmA7672X;
 
    public:
-    using TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>::GsmClient::stop;
+    using GsmClient<TinyGsmA7672X, TinyGsmA7672xTcpConfig>::connect;
+    using GsmClient<TinyGsmA7672X, TinyGsmA7672xTcpConfig>::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem

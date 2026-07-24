@@ -229,6 +229,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   friend class TinyGsmGPRS<TinyGsmXBee>;
   friend class TinyGsmWifi<TinyGsmXBee>;
   friend class TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>;
+  friend class GsmClient<TinyGsmXBee, TinyGsmXBeeTcpConfig>;
   friend class TinyGsmSMS<TinyGsmXBee>;
   friend class TinyGsmBattery<TinyGsmXBee>;
   friend class TinyGsmTemperature<TinyGsmXBee>;
@@ -241,13 +242,12 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
  public:
   /// Inner client
   /// @ingroup digi_xbee
-  class GsmClientXBee
-      : public TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>::GsmClient {
+  class GsmClientXBee : public GsmClient<TinyGsmXBee, TinyGsmXBeeTcpConfig> {
     friend class TinyGsmXBee;
 
    public:
-    using TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>::GsmClient::stop;
+    using GsmClient<TinyGsmXBee, TinyGsmXBeeTcpConfig>::connect;
+    using GsmClient<TinyGsmXBee, TinyGsmXBeeTcpConfig>::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem

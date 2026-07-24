@@ -71,6 +71,10 @@ struct TinyGsmTcpConfigPreset {
   static const size_t kMinFreeTxBuffer = minFreeTxBuffer;
 };
 
+// Forward declaration of the GSM Client class so it can be friended.
+template <class modemType, class tcpConfig>
+class GsmClient;
+
 /**
  * @brief The CRTP parent class for TCP functions of the modem.
  * @tparam modemType The derived modem class
@@ -79,6 +83,10 @@ struct TinyGsmTcpConfigPreset {
 template <class modemType, class tcpConfig>
 class TinyGsmTCP {
   using TcpConfig = tcpConfig;
+  // Grant the paired GsmClient access to the protected modem-command helpers
+  // below (mirrors the access GsmClient used to get automatically when it was
+  // a nested class of this mixin).
+  friend class GsmClient<modemType, tcpConfig>;
 
   /* =========================================== */
   /* =========================================== */
@@ -184,447 +192,6 @@ class TinyGsmTCP {
     return static_cast<modemType&>(*this);
   }
 
-  /*
-   * Inner Client
-   */
- public:
-  /// Inner client
-  class GsmClient : public Client {
-    // Make all classes created from the modem template friends
-    friend class TinyGsmTCP<modemType, tcpConfig>;
-
-   public:
-    /**
-     * @brief Initialize this client with modem context and channel state.
-     *
-     * @param modem Pointer to the modem instance.
-     * @param mux Multiplexing channel to assign.
-     * @return true if initialization completed.
-     */
-    virtual bool init(modemType* modem, uint8_t mux) = 0;
-
-    /**
-     * @brief Connect to a server using a host name and port number, with a
-     * specified timeout.
-     *
-     * @param host The host name of the server to connect to.
-     * @param port The port number to connect to on the server.
-     * @param timeout_s The timeout for the connection attempt, in seconds.
-     * @return 1 if the connection was successful, 0 otherwise.
-     */
-    virtual int connect(const char* host, uint16_t port, int timeout_s) = 0;
-
-    /**
-     * @brief Connect to a server using an IPAddress and port number, with a
-     * specified timeout.
-     *
-     * The default implementation of this function converts the IPAddress to a
-     * string and calls the connect(const char* host, uint16_t port, int
-     * timeout_s) function.
-     *
-     * @param ip The IP address of the server to connect to.
-     * @param port The port number to connect to on the server.
-     * @param timeout_s The timeout for the connection attempt, in seconds.
-     * @return 1 if the connection was successful, 0 otherwise.
-     */
-    virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
-      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
-    }
-    /**
-     * @fn int connect(const char* host, uint16_t port) override
-     * @brief Connect to a server using a host name and port number
-     * @param host The host name of the server to connect to.
-     * @param port The port number to connect to on the server.
-     * @return 1 if the connection was successful, 0 otherwise.
-     */
-    int connect(const char* host, uint16_t port) override {
-      return connect(host, port, TcpConfig::kConnectTimeoutS);
-    }
-    /**
-     * @fn int connect(IPAddress ip, uint16_t port) override
-     * @brief Connect to a server using an IPAddress and port number
-     * @param ip The IP address of the server to connect to.
-     * @param port The port number to connect to on the server.
-     * @return 1 if the connection was successful, 0 otherwise.
-     */
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, TcpConfig::kConnectTimeoutS);
-    }
-
-    /**
-     * @brief Convert an IPAddress to a String for use in connect()
-     * @param ip The IPAddress to convert
-     * @return A String representation of the IPAddress
-     */
-    static inline String TinyGsmStringFromIp(IPAddress ip) {
-      String host;
-      host.reserve(16);
-      host += ip[0];
-      host += ".";
-      host += ip[1];
-      host += ".";
-      host += ip[2];
-      host += ".";
-      host += ip[3];
-      return host;
-    }
-
-    /**
-     * @brief Close the client connection, with a specified maximum wait time
-     * for the operation.
-     *
-     * @param maxWaitMs The maximum time to wait for the connection to close,
-     * in milliseconds.
-     */
-    virtual void stop(uint32_t maxWaitMs) = 0;
-    /**
-     * @brief Close the client connection, with a default maximum wait time
-     */
-    void stop() override {
-      stop(TcpConfig::kStopTimeoutS * 1000L);
-    }
-
-    /**
-     * @brief Writes data out on the client using the modem send functionality
-     * @param buf The buffer of data to send
-     * @param size The size of the buffer
-     * @return The number of bytes written
-     */
-    size_t write(const uint8_t* buf, size_t size) override {
-      if (is_mid_send) {
-        // if we're in the middle of a write, pass directly to the stream
-        return at->stream.write(buf, size);
-      }
-      TINY_GSM_YIELD();
-      at->maintain();
-      // If the modem is one where we can read and check the size of the buffer,
-      // then the 'available()' function will call a check of the current size
-      // of the buffer and state of the connection. [available calls maintain,
-      // maintain calls modemGetAvailable, modemGetAvailable calls
-      // modemGetConnected]  This cascade means that the sock_connected value
-      // should be correct and we can trust it if it says we're not connected to
-      // send.
-      if (TcpConfig::kBufferMode ==
-              TinyGsmTcpBufferMode::BufferReadAndCheckSize &&
-          !sock_connected) {
-        return 0;
-      }
-      return at->modemSend(buf, size, mux);
-    }
-
-    /**
-     * @brief Writes a single byte of data to the modem for sending
-     * @param c The byte of data to send
-     * @return The number of bytes written
-     *
-     * @warning This function is not efficient for sending large amounts of
-     * data. Use the write(const uint8_t* buf, size_t size) or write(const
-     * char* str) function instead.
-     */
-    size_t write(uint8_t c) override {
-      return write(&c, 1);
-    }
-
-    /**
-     * @brief Writes a null-terminated string of data to the modem for sending
-     * @param str The null-terminated string to send
-     * @return The number of bytes written
-     */
-    virtual size_t write(const char* str) {
-      if (str == nullptr) return 0;
-      return write(reinterpret_cast<const uint8_t*>(str), strlen(str));
-    }
-
-    /**
-     * @brief Get the number of bytes available for in the client's receive
-     * buffer.
-     * This returns the combined total of the number of bytes available
-     * in the TinyGSM fifo and the modem chip's internal fifo (where supported).
-     * @return int The number of bytes available in the client's receive buffer.
-     */
-    int available() override {
-      is_mid_send = false;  // Any calls to the AT when mid-send will cause the
-                            // send to fail
-      TINY_GSM_YIELD();
-      // Returns the number of characters available in the TinyGSM fifo
-      if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
-        if (!rx.size() && sock_connected) { at->maintain(); }
-        return rx.size();
-      }
-
-      // Returns the combined number of characters available in the TinyGSM
-      // fifo and the modem chips internal fifo.
-      if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::BufferReadNoCheck) {
-        if (!rx.size()) { at->maintain(); }
-        return static_cast<uint16_t>(rx.size()) + sock_available;
-      }
-
-      // Returns the combined number of characters available in the TinyGSM
-      // fifo and the modem chips internal fifo, doing an extra check-in
-      // with the modem to see if anything has arrived without a URC.
-      if (!rx.size()) {
-        if (millis() - prev_check > TINY_GSM_UNREAD_CHECK_MS) {
-          // setting got_data to true will tell maintain to run
-          // modemGetAvailable(mux)
-          got_data   = true;
-          prev_check = millis();
-        }
-        at->maintain();
-      }
-      return static_cast<uint16_t>(rx.size()) + sock_available;
-    }
-
-    /**
-     * @brief Read data from the client's receive buffer into a user provided
-     * buffer.
-     *
-     * @param buf The buffer to read data into.
-     * @param size The maximum number of bytes to read.
-     * @return int The number of bytes actually read.
-     */
-    int read(uint8_t* buf, size_t size) override {
-      TINY_GSM_YIELD();
-      is_mid_send = false;  // Any calls to the AT when mid-send will cause the
-                            // send to fail
-      size_t cnt = 0;
-
-      if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
-        // Reads characters out of the TinyGSM fifo, waiting for any URC's
-        // from the modem for new data if there's nothing in the fifo.
-        uint32_t _startMillis = millis();
-        while (cnt < size && millis() - _startMillis < _timeout) {
-          // Read out of the TinyGSM fifo
-          size_t chunk = TinyGsmMin(size - cnt, rx.size());
-          if (chunk > 0) {
-            rx.get(buf, chunk);
-            buf += chunk;
-            cnt += chunk;
-            continue;
-          }
-          // continue to parse URCs from the modem stream until the timeout
-          if (!rx.size()) {
-            if (!sock_connected) { break; }
-            at->maintain();
-          }
-        }
-        return cnt;
-      }
-
-      if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::BufferReadNoCheck) {
-        // Reads characters out of the TinyGSM fifo, and from the modem chip's
-        // internal fifo if available.
-        while (cnt < size) {
-          // Read out of the TinyGSM fifo
-          size_t chunk = TinyGsmMin(size - cnt, rx.size());
-          if (chunk > 0) {
-            rx.get(buf, chunk);
-            buf += chunk;
-            cnt += chunk;
-            continue;
-          }
-          at->maintain();  // clear the modem stream/parse URCs
-          // Refill the TinyGSM fifo from the modem's internal buffer
-          // TODO: Read directly from modem into user buffer, skipping FIFO
-          if (sock_available > 0) {
-            int n = at->modemRead(
-                TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
-            if (n == 0) break;
-          } else {
-            break;
-          }
-        }
-        return cnt;
-      }
-
-      // Reads characters out of the TinyGSM fifo, and from the modem chips
-      // internal fifo if available, also double checking with the modem if
-      // data has arrived without issuing a URC.
-      while (cnt < size) {
-        // Read out of the TinyGSM fifo
-        size_t chunk = TinyGsmMin(size - cnt, rx.size());
-        if (chunk > 0) {
-          rx.get(buf, chunk);
-          buf += chunk;
-          cnt += chunk;
-          continue;
-        }
-        // Workaround: Some modules "forget" to notify about data arrival
-        if (millis() - prev_check > TINY_GSM_UNREAD_CHECK_MS) {
-          // setting got_data to true will tell maintain to run
-          // modemGetAvailable()
-          got_data   = true;
-          prev_check = millis();
-        }
-        at->maintain();  // clear the modem stream, parse URCs, run
-                         // modemGetAvailable()
-        // Refill the TinyGSM fifo from the modem's internal buffer
-        // TODO: Read directly from modem into user buffer, skipping FIFO
-        if (sock_available > 0) {
-          int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
-                                mux);
-          if (n == 0) break;
-        } else {
-          break;
-        }
-      }
-      return cnt;
-    }
-
-    /**
-     * @brief Read a single byte from the client's receive buffer.
-     * @return int The byte read, or -1 if no data is available.
-     */
-    int read() override {
-      uint8_t c;
-      if (read(&c, 1) == 1) { return c; }
-      return -1;
-    }
-
-    /**
-     * @brief Peek at the next byte in the client's receive buffer without
-     * removing it.
-     *
-     * @return int The next byte, or -1 if no data is available.
-     */
-    int peek() override {
-      return rx.peek();
-    }
-
-    /**
-     * @brief Flush the client's receive buffer (ie, wait for all data to be
-     * sent).
-     */
-    void flush() override {
-      at->stream.flush();
-    }
-
-    /**
-     * @brief Check if the client is connected.
-     * @return uint8_t True if the client is connected, false otherwise.
-     */
-    uint8_t connected() override {
-      if (is_mid_send) { return true; }  // Don't interrupt a send
-      if (available()) { return true; }
-      // If the modem is one where we can read and check the size of the buffer,
-      // then the 'available()' function will call a check of the current size
-      // of the buffer and state of the connection. [available calls maintain,
-      // maintain calls modemGetAvailable, modemGetAvailable calls
-      // modemGetConnected]  This cascade means that the sock_connected value
-      // should be correct and all we need
-      if (TcpConfig::kBufferMode ==
-          TinyGsmTcpBufferMode::BufferReadAndCheckSize) {
-        return sock_connected;
-      }
-      // If the modem doesn't have an internal buffer, or if we can't check how
-      // many characters are in the buffer then the cascade won't happen.
-      // We need to call modemGetConnected to check the sock state.
-      return at->modemGetConnected(mux);
-    }
-    /// Check if the client is connected (overrides operator bool)
-    operator bool() override {
-      return connected();
-    }
-
-    /// destructor - need to remove self from the socket pointer array
-    virtual ~GsmClient() {
-      if (mux < TcpConfig::kMuxCount) {
-        if (at->sockets[mux] == this) { at->sockets[mux] = nullptr; }
-      }
-    }
-
-    /**
-     * @anchor extended_client_api
-     * @name Extended Client API
-     */
-    /**@{*/
-
-    /**
-     * @brief Get the remote IP address of the connected client
-     * @return The remote IP address as a String
-     */
-    virtual String remoteIP() = 0;
-
-    /**
-     * @brief Get the socket number of the connected client
-     * @return The socket number as a uint8_t
-     */
-    uint8_t getMux() {
-      return mux;
-    }
-
-    /**
-     * @brief Begin writing to the modem client
-     *
-     * Use this to have the modem initiate a send data prompt which you can then
-     * fill using stream.write() commands. This is useful for sending large
-     * amounts of data in small chunks. It is analogous to the beginPublish()
-     * and endPublish() methods in PubSubClient.
-     *
-     * @param size The size of data to send. The maximum length varies by module
-     * @return True if the module is ready to receive data to forward to the TCP
-     * connection.
-     */
-    bool beginWrite(uint16_t size) {
-      if (size > TcpConfig::kSendMaxSize) {
-        DBG(GF("### ERROR: You are attempting send"), size,
-            GF("bytes, which is more than the"), TcpConfig::kSendMaxSize,
-            GF("that can be sent at once by this modem!"));
-        return false;
-      }
-      is_mid_send = true;
-      return at->modemBeginSend(size, mux);
-    }
-    /**
-     * @brief Conclude a write to the module
-     *
-     * @param expected_size The size of data that should have been sent. If a
-     * non-zero value is given, the function will check that the module has sent
-     * the expected amount of data. Does not work on all modules.
-     * @return True if the module has successfully sent the data to the TCP
-     * connection.
-     */
-    bool endWrite(uint16_t expected_size = 0) {
-      uint16_t sent_size = at->modemEndSend(expected_size, mux);
-      is_mid_send        = false;
-      if (expected_size) { return sent_size == expected_size; }
-      return true;
-    }
-    /**@}*/
-
-   protected:
-    // Read and dump anything remaining in the modem's internal buffer.
-    // Using this in the client stop() function.
-    // The socket will appear open in response to connected() even after it
-    // closes until all data is read from the buffer.
-    // Doing it this way allows the external mcu to find and get all of the
-    // data that it wants from the socket even if it was closed externally.
-    inline void dumpModemBuffer(uint32_t maxWaitMs) {
-      if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
-        rx.clear();
-        at->streamClear();
-      } else {
-        TINY_GSM_YIELD();
-        uint32_t startMillis = millis();
-        while (sock_available > 0 && (millis() - startMillis < maxWaitMs)) {
-          rx.clear();
-          at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
-        }
-        rx.clear();
-        at->streamClear();
-      }
-    }
-
-    modemType*                               at             = nullptr;
-    uint8_t                                  mux            = 0;
-    uint16_t                                 sock_available = 0;
-    uint32_t                                 prev_check     = 0;
-    bool                                     sock_connected = false;
-    bool                                     got_data       = false;
-    bool                                     is_secure      = false;
-    bool                                     is_mid_send    = false;
-    TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> rx;
-  };
-
   /* =========================================== */
   /* =========================================== */
   /*
@@ -641,7 +208,7 @@ class TinyGsmTCP {
       // Keep listening for modem URC's and proactively iterate through
       // sockets asking if any data is available
       for (int mux = 0; mux < TcpConfig::kMuxCount; mux++) {
-        GsmClient* sock = thisModem().sockets[mux];
+        GsmClient<modemType, tcpConfig>* sock = thisModem().sockets[mux];
         if (sock && sock->got_data && sock->sock_available == 0) {
           sock->got_data       = false;
           sock->sock_available = thisModem().modemGetAvailable(mux);
@@ -843,6 +410,460 @@ class TinyGsmTCP {
   size_t modemGetAvailableImpl(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   bool modemGetConnectedImpl(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+};
+
+/**
+ * @brief The TCP client class.
+ *
+ * @note: This is a base class for TCP clients, but it is NOT an inner class
+ * of the TinyGsmTCP class.
+ *
+ * @tparam modemType The derived modem class
+ * @tparam tcpConfig Trait type controlling TCP behavior and limits.
+ */
+template <class modemType, class tcpConfig>
+class GsmClient : public Client {
+  using TcpConfig = tcpConfig;
+  // Make all classes created from the modem template friends
+  friend class TinyGsmTCP<modemType, tcpConfig>;
+
+ public:
+  /**
+   * @anchor client_like_functions
+   * @name Functions implementing the Arduino Client interface
+   */
+  /**@{*/
+
+  /**
+   * @brief Initialize this client with modem context and channel state.
+   *
+   * @param modem Pointer to the modem instance.
+   * @param mux Multiplexing channel to assign.
+   * @return true if initialization completed.
+   */
+  virtual bool init(modemType* modem, uint8_t mux) = 0;
+
+  /**
+   * @brief Connect to a server using a host name and port number, with a
+   * specified timeout.
+   *
+   * @param host The host name of the server to connect to.
+   * @param port The port number to connect to on the server.
+   * @param timeout_s The timeout for the connection attempt, in seconds.
+   * @return 1 if the connection was successful, 0 otherwise.
+   */
+  virtual int connect(const char* host, uint16_t port, int timeout_s) = 0;
+
+  /**
+   * @brief Connect to a server using an IPAddress and port number, with a
+   * specified timeout.
+   *
+   * The default implementation of this function converts the IPAddress to a
+   * string and calls the connect(const char* host, uint16_t port, int
+   * timeout_s) function.
+   *
+   * @param ip The IP address of the server to connect to.
+   * @param port The port number to connect to on the server.
+   * @param timeout_s The timeout for the connection attempt, in seconds.
+   * @return 1 if the connection was successful, 0 otherwise.
+   */
+  virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
+    return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
+  }
+  /**
+   * @fn int connect(const char* host, uint16_t port) override
+   * @brief Connect to a server using a host name and port number
+   * @param host The host name of the server to connect to.
+   * @param port The port number to connect to on the server.
+   * @return 1 if the connection was successful, 0 otherwise.
+   */
+  int connect(const char* host, uint16_t port) override {
+    return connect(host, port, TcpConfig::kConnectTimeoutS);
+  }
+  /**
+   * @fn int connect(IPAddress ip, uint16_t port) override
+   * @brief Connect to a server using an IPAddress and port number
+   * @param ip The IP address of the server to connect to.
+   * @param port The port number to connect to on the server.
+   * @return 1 if the connection was successful, 0 otherwise.
+   */
+  int connect(IPAddress ip, uint16_t port) override {
+    return connect(ip, port, TcpConfig::kConnectTimeoutS);
+  }
+
+  /**
+   * @brief Close the client connection, with a specified maximum wait time
+   * for the operation.
+   *
+   * @param maxWaitMs The maximum time to wait for the connection to close,
+   * in milliseconds.
+   */
+  virtual void stop(uint32_t maxWaitMs) = 0;
+  /**
+   * @brief Close the client connection, with a default maximum wait time
+   */
+  void stop() override {
+    stop(TcpConfig::kStopTimeoutS * 1000L);
+  }
+
+  /**
+   * @brief Writes data out on the client using the modem send functionality
+   * @param buf The buffer of data to send
+   * @param size The size of the buffer
+   * @return The number of bytes written
+   */
+  size_t write(const uint8_t* buf, size_t size) override {
+    if (is_mid_send) {
+      // if we're in the middle of a write, pass directly to the stream
+      return at->stream.write(buf, size);
+    }
+    TINY_GSM_YIELD();
+    at->maintain();
+    // If the modem is one where we can read and check the size of the buffer,
+    // then the 'available()' function will call a check of the current size
+    // of the buffer and state of the connection. [available calls maintain,
+    // maintain calls modemGetAvailable, modemGetAvailable calls
+    // modemGetConnected]  This cascade means that the sock_connected value
+    // should be correct and we can trust it if it says we're not connected to
+    // send.
+    if (TcpConfig::kBufferMode ==
+            TinyGsmTcpBufferMode::BufferReadAndCheckSize &&
+        !sock_connected) {
+      return 0;
+    }
+    return at->modemSend(buf, size, mux);
+  }
+
+  /**
+   * @brief Writes a single byte of data to the modem for sending
+   * @param c The byte of data to send
+   * @return The number of bytes written
+   *
+   * @warning This function is not efficient for sending large amounts of
+   * data. Use the write(const uint8_t* buf, size_t size) or write(const
+   * char* str) function instead.
+   */
+  size_t write(uint8_t c) override {
+    return write(&c, 1);
+  }
+
+  /**
+   * @brief Writes a null-terminated string of data to the modem for sending
+   * @param str The null-terminated string to send
+   * @return The number of bytes written
+   */
+  virtual size_t write(const char* str) {
+    if (str == nullptr) return 0;
+    return write(reinterpret_cast<const uint8_t*>(str), strlen(str));
+  }
+
+  /**
+   * @brief Get the number of bytes available for in the client's receive
+   * buffer.
+   * This returns the combined total of the number of bytes available
+   * in the TinyGSM fifo and the modem chip's internal fifo (where supported).
+   * @return int The number of bytes available in the client's receive buffer.
+   */
+  int available() override {
+    is_mid_send = false;  // Any calls to the AT when mid-send will cause the
+                          // send to fail
+    TINY_GSM_YIELD();
+    // Returns the number of characters available in the TinyGSM fifo
+    if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
+      if (!rx.size() && sock_connected) { at->maintain(); }
+      return rx.size();
+    }
+
+    // Returns the combined number of characters available in the TinyGSM
+    // fifo and the modem chips internal fifo.
+    if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::BufferReadNoCheck) {
+      if (!rx.size()) { at->maintain(); }
+      return static_cast<uint16_t>(rx.size()) + sock_available;
+    }
+
+    // Returns the combined number of characters available in the TinyGSM
+    // fifo and the modem chips internal fifo, doing an extra check-in
+    // with the modem to see if anything has arrived without a URC.
+    if (!rx.size()) {
+      if (millis() - prev_check > TINY_GSM_UNREAD_CHECK_MS) {
+        // setting got_data to true will tell maintain to run
+        // modemGetAvailable(mux)
+        got_data   = true;
+        prev_check = millis();
+      }
+      at->maintain();
+    }
+    return static_cast<uint16_t>(rx.size()) + sock_available;
+  }
+
+  /**
+   * @brief Read data from the client's receive buffer into a user provided
+   * buffer.
+   *
+   * @param buf The buffer to read data into.
+   * @param size The maximum number of bytes to read.
+   * @return int The number of bytes actually read.
+   */
+  int read(uint8_t* buf, size_t size) override {
+    TINY_GSM_YIELD();
+    is_mid_send = false;  // Any calls to the AT when mid-send will cause the
+                          // send to fail
+    size_t cnt = 0;
+
+    if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
+      // Reads characters out of the TinyGSM fifo, waiting for any URC's
+      // from the modem for new data if there's nothing in the fifo.
+      uint32_t _startMillis = millis();
+      while (cnt < size && millis() - _startMillis < _timeout) {
+        // Read out of the TinyGSM fifo
+        size_t chunk = TinyGsmMin(size - cnt, rx.size());
+        if (chunk > 0) {
+          rx.get(buf, chunk);
+          buf += chunk;
+          cnt += chunk;
+          continue;
+        }
+        // continue to parse URCs from the modem stream until the timeout
+        if (!rx.size()) {
+          if (!sock_connected) { break; }
+          at->maintain();
+        }
+      }
+      return cnt;
+    }
+
+    if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::BufferReadNoCheck) {
+      // Reads characters out of the TinyGSM fifo, and from the modem chip's
+      // internal fifo if available.
+      while (cnt < size) {
+        // Read out of the TinyGSM fifo
+        size_t chunk = TinyGsmMin(size - cnt, rx.size());
+        if (chunk > 0) {
+          rx.get(buf, chunk);
+          buf += chunk;
+          cnt += chunk;
+          continue;
+        }
+        at->maintain();  // clear the modem stream/parse URCs
+        // Refill the TinyGSM fifo from the modem's internal buffer
+        // TODO: Read directly from modem into user buffer, skipping FIFO
+        if (sock_available > 0) {
+          int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
+                                mux);
+          if (n == 0) break;
+        } else {
+          break;
+        }
+      }
+      return cnt;
+    }
+
+    // Reads characters out of the TinyGSM fifo, and from the modem chips
+    // internal fifo if available, also double checking with the modem if
+    // data has arrived without issuing a URC.
+    while (cnt < size) {
+      // Read out of the TinyGSM fifo
+      size_t chunk = TinyGsmMin(size - cnt, rx.size());
+      if (chunk > 0) {
+        rx.get(buf, chunk);
+        buf += chunk;
+        cnt += chunk;
+        continue;
+      }
+      // Workaround: Some modules "forget" to notify about data arrival
+      if (millis() - prev_check > TINY_GSM_UNREAD_CHECK_MS) {
+        // setting got_data to true will tell maintain to run
+        // modemGetAvailable()
+        got_data   = true;
+        prev_check = millis();
+      }
+      at->maintain();  // clear the modem stream, parse URCs, run
+                       // modemGetAvailable()
+      // Refill the TinyGSM fifo from the modem's internal buffer
+      // TODO: Read directly from modem into user buffer, skipping FIFO
+      if (sock_available > 0) {
+        int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
+                              mux);
+        if (n == 0) break;
+      } else {
+        break;
+      }
+    }
+    return cnt;
+  }
+
+  /**
+   * @brief Read a single byte from the client's receive buffer.
+   * @return int The byte read, or -1 if no data is available.
+   */
+  int read() override {
+    uint8_t c;
+    if (read(&c, 1) == 1) { return c; }
+    return -1;
+  }
+
+  /**
+   * @brief Peek at the next byte in the client's receive buffer without
+   * removing it.
+   *
+   * @return int The next byte, or -1 if no data is available.
+   */
+  int peek() override {
+    return rx.peek();
+  }
+
+  /**
+   * @brief Flush the client's receive buffer (ie, wait for all data to be
+   * sent).
+   */
+  void flush() override {
+    at->stream.flush();
+  }
+
+  /**
+   * @brief Check if the client is connected.
+   * @return uint8_t True if the client is connected, false otherwise.
+   */
+  uint8_t connected() override {
+    if (is_mid_send) { return true; }  // Don't interrupt a send
+    if (available()) { return true; }
+    // If the modem is one where we can read and check the size of the buffer,
+    // then the 'available()' function will call a check of the current size
+    // of the buffer and state of the connection. [available calls maintain,
+    // maintain calls modemGetAvailable, modemGetAvailable calls
+    // modemGetConnected]  This cascade means that the sock_connected value
+    // should be correct and all we need
+    if (TcpConfig::kBufferMode ==
+        TinyGsmTcpBufferMode::BufferReadAndCheckSize) {
+      return sock_connected;
+    }
+    // If the modem doesn't have an internal buffer, or if we can't check how
+    // many characters are in the buffer then the cascade won't happen.
+    // We need to call modemGetConnected to check the sock state.
+    return at->modemGetConnected(mux);
+  }
+  /// Check if the client is connected (overrides operator bool)
+  operator bool() override {
+    return connected();
+  }
+
+  /// destructor - need to remove self from the socket pointer array
+  virtual ~GsmClient() {
+    if (mux < TcpConfig::kMuxCount) {
+      if (at->sockets[mux] == this) { at->sockets[mux] = nullptr; }
+    }
+  }
+  /**@}*/
+
+  /**
+   * @anchor extended_client_api
+   * @name Extended Client API
+   */
+  /**@{*/
+
+  /**
+   * @brief Get the remote IP address of the connected client
+   * @return The remote IP address as a String
+   */
+  virtual String remoteIP() = 0;
+
+  /**
+   * @brief Get the socket number of the connected client
+   * @return The socket number as a uint8_t
+   */
+  uint8_t getMux() {
+    return mux;
+  }
+
+  /**
+   * @brief Begin writing to the modem client
+   *
+   * Use this to have the modem initiate a send data prompt which you can then
+   * fill using stream.write() commands. This is useful for sending large
+   * amounts of data in small chunks. It is analogous to the beginPublish()
+   * and endPublish() methods in PubSubClient.
+   *
+   * @param size The size of data to send. The maximum length varies by module
+   * @return True if the module is ready to receive data to forward to the TCP
+   * connection.
+   */
+  bool beginWrite(uint16_t size) {
+    if (size > TcpConfig::kSendMaxSize) {
+      DBG(GF("### ERROR: You are attempting send"), size,
+          GF("bytes, which is more than the"), TcpConfig::kSendMaxSize,
+          GF("that can be sent at once by this modem!"));
+      return false;
+    }
+    is_mid_send = true;
+    return at->modemBeginSend(size, mux);
+  }
+  /**
+   * @brief Conclude a write to the module
+   *
+   * @param expected_size The size of data that should have been sent. If a
+   * non-zero value is given, the function will check that the module has sent
+   * the expected amount of data. Does not work on all modules.
+   * @return True if the module has successfully sent the data to the TCP
+   * connection.
+   */
+  bool endWrite(uint16_t expected_size = 0) {
+    uint16_t sent_size = at->modemEndSend(expected_size, mux);
+    is_mid_send        = false;
+    if (expected_size) { return sent_size == expected_size; }
+    return true;
+  }
+
+  /**
+   * @brief Convert an IPAddress to a String for use in connect()
+   * @param ip The IPAddress to convert
+   * @return A String representation of the IPAddress
+   */
+  static inline String TinyGsmStringFromIp(IPAddress ip) {
+    String host;
+    host.reserve(16);
+    host += ip[0];
+    host += ".";
+    host += ip[1];
+    host += ".";
+    host += ip[2];
+    host += ".";
+    host += ip[3];
+    return host;
+  }
+  /**@}*/
+
+ protected:
+  // Read and dump anything remaining in the modem's internal buffer.
+  // Using this in the client stop() function.
+  // The socket will appear open in response to connected() even after it
+  // closes until all data is read from the buffer.
+  // Doing it this way allows the external mcu to find and get all of the
+  // data that it wants from the socket even if it was closed externally.
+  inline void dumpModemBuffer(uint32_t maxWaitMs) {
+    if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
+      rx.clear();
+      at->streamClear();
+    } else {
+      TINY_GSM_YIELD();
+      uint32_t startMillis = millis();
+      while (sock_available > 0 && (millis() - startMillis < maxWaitMs)) {
+        rx.clear();
+        at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+      }
+      rx.clear();
+      at->streamClear();
+    }
+  }
+
+  modemType*                               at             = nullptr;
+  uint8_t                                  mux            = 0;
+  uint16_t                                 sock_available = 0;
+  uint32_t                                 prev_check     = 0;
+  bool                                     sock_connected = false;
+  bool                                     got_data       = false;
+  bool                                     is_secure      = false;
+  bool                                     is_mid_send    = false;
+  TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> rx;
 };
 
 #endif  // SRC_TINYGSMTCP_TPP_

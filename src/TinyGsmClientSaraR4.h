@@ -197,6 +197,7 @@ class TinyGsmSaraR4
   friend class TinyGsmModem<TinyGsmSaraR4, TinyGsmSaraR4ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSaraR4>;
   friend class TinyGsmTCP<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>;
+  friend class GsmClient<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>;
   friend class TinyGsmSMS<TinyGsmSaraR4>;
   friend class TinyGsmGSMLocation<TinyGsmSaraR4>;
   friend class TinyGsmGPS<TinyGsmSaraR4>;
@@ -213,12 +214,12 @@ class TinyGsmSaraR4
   /// Inner client
   /// @ingroup ublox_sara_r4
   class GsmClientSaraR4
-      : public TinyGsmTCP<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>::GsmClient {
+      : public GsmClient<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig> {
     friend class TinyGsmSaraR4;
 
    public:
-    using TinyGsmTCP<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>::GsmClient::stop;
+    using GsmClient<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>::connect;
+    using GsmClient<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem

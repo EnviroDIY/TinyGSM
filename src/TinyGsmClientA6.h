@@ -171,6 +171,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   friend class TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmA6>;
   friend class TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>;
+  friend class GsmClient<TinyGsmA6, TinyGsmA6TcpConfig>;
   friend class TinyGsmCalling<TinyGsmA6>;
   friend class TinyGsmSMS<TinyGsmA6>;
   friend class TinyGsmTime<TinyGsmA6>;
@@ -184,13 +185,12 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
  public:
   /// Inner client
   /// @ingroup aithinker_a6
-  class GsmClientA6
-      : public TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>::GsmClient {
+  class GsmClientA6 : public GsmClient<TinyGsmA6, TinyGsmA6TcpConfig> {
     friend class TinyGsmA6;
 
    public:
-    using TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>::GsmClient::stop;
+    using GsmClient<TinyGsmA6, TinyGsmA6TcpConfig>::connect;
+    using GsmClient<TinyGsmA6, TinyGsmA6TcpConfig>::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem

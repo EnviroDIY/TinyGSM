@@ -195,6 +195,7 @@ class TinyGsmSim5360
   friend class TinyGsmModem<TinyGsmSim5360, TinyGsmSim5360ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSim5360>;
   friend class TinyGsmTCP<TinyGsmSim5360, TinyGsmSim5360TcpConfig>;
+  friend class GsmClient<TinyGsmSim5360, TinyGsmSim5360TcpConfig>;
   friend class TinyGsmSMS<TinyGsmSim5360>;
   friend class TinyGsmGSMLocation<TinyGsmSim5360>;
   friend class TinyGsmGPS<TinyGsmSim5360>;
@@ -212,13 +213,12 @@ class TinyGsmSim5360
   /// Inner client
   /// @ingroup simcom_sim5360
   class GsmClientSim5360
-      : public TinyGsmTCP<TinyGsmSim5360, TinyGsmSim5360TcpConfig>::GsmClient {
+      : public GsmClient<TinyGsmSim5360, TinyGsmSim5360TcpConfig> {
     friend class TinyGsmSim5360;
 
    public:
-    using TinyGsmTCP<TinyGsmSim5360,
-                     TinyGsmSim5360TcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSim5360, TinyGsmSim5360TcpConfig>::GsmClient::stop;
+    using GsmClient<TinyGsmSim5360, TinyGsmSim5360TcpConfig>::connect;
+    using GsmClient<TinyGsmSim5360, TinyGsmSim5360TcpConfig>::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem

@@ -212,6 +212,7 @@ class TinyGsmSim7080
   friend class TinyGsmModem<TinyGsmSim7080, TinyGsmSim7080ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSim7080>;
   friend class TinyGsmTCP<TinyGsmSim7080, TinyGsmSim7080TcpConfig>;
+  friend class GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig>;
   friend class TinyGsmSSL<TinyGsmSim7080>;
   friend class TinyGsmSMS<TinyGsmSim7080>;
   friend class TinyGsmGSMLocation<TinyGsmSim7080>;
@@ -229,13 +230,12 @@ class TinyGsmSim7080
   /// Inner client
   /// @ingroup simcom_sim7080
   class GsmClientSim7080
-      : public TinyGsmTCP<TinyGsmSim7080, TinyGsmSim7080TcpConfig>::GsmClient {
+      : public GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig> {
     friend class TinyGsmSim7080;
 
    public:
-    using TinyGsmTCP<TinyGsmSim7080,
-                     TinyGsmSim7080TcpConfig>::GsmClient::connect;
-    using TinyGsmTCP<TinyGsmSim7080, TinyGsmSim7080TcpConfig>::GsmClient::stop;
+    using GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig>::connect;
+    using GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig>::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
