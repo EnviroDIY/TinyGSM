@@ -129,7 +129,8 @@ class TinyGsmModem {
    */
   template <typename... Args>
   void sendAT(Args... cmd) {
-    thisModem().streamWrite(ModemConfig::GSM_AT, cmd..., ModemConfig::GSM_NL);
+    thisModem().streamWrite(GFP(ModemConfig::GSM_AT), cmd...,
+                            GFP(ModemConfig::GSM_NL));
     thisModem().stream.flush();
     TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
   }
@@ -173,17 +174,6 @@ class TinyGsmModem {
                                19200,  460800, 230400, 74400,  74880,
                                2400,   4800,   14400,  28800};
 
-    // start the modem serial at the current baud rate
-    at_serial.end();
-    at_serial.begin(targetBaud);
-    // test for at response from the modem
-    bool at_success = thisModem().testAT(1500L);
-    // if we got a response and it's the baud rate we want, we're done
-    if (at_success) {
-      DBG("Modem responded at rate", targetBaud);
-      return true;
-    }
-
     uint32_t maximum = 921600;
 #if defined(F_CPU)
     if (F_CPU <= 8000000L) {
@@ -196,6 +186,18 @@ class TinyGsmModem {
       DBG("Target baud rate", targetBaud,
           "is too high for this processor.  Maximum is", maximum);
       targetBaud = maximum;
+    }
+
+    // start the modem serial at the current baud rate
+    at_serial.end();
+    at_serial.begin(targetBaud);
+    delay(25);  // settle
+    // test for at response from the modem
+    bool at_success = testAT(1500L);
+    // if we got a response and it's the baud rate we want, we're done
+    if (at_success) {
+      DBG("Modem responded at rate", targetBaud);
+      return true;
     }
 
     // If we didn't get the right response, or if we got a response but it's
@@ -215,9 +217,9 @@ class TinyGsmModem {
         delay(25);  // settle
 
 #if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_ESP8266)
-        thisModem().setDefaultBaud(targetBaud);
+        setDefaultBaud(targetBaud);
 #else
-        thisModem().setBaud(targetBaud);
+        setBaud(targetBaud);
 #endif
 
         at_serial.end();
@@ -226,7 +228,7 @@ class TinyGsmModem {
 
         // test for at response from the modem
         DBG("Checking for a response at", targetBaud, "...");
-        at_success = thisModem().testAT(1500L);
+        at_success = testAT(1500L);
         // if we got a response and it's the baud rate we want, we're done
         if (at_success) {
           DBG(GF("Successfully changed the baud rate from"), rate, GF("to"),
