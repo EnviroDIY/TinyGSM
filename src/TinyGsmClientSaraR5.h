@@ -136,15 +136,24 @@
 /// Registration status
 /// @ingroup ublox_sara_r5
 enum SaraR5RegStatus {
-  REG_NO_RESULT        = -1,  ///< No registration result
-  REG_UNREGISTERED     = 0,   ///< Not registered on the network
-  REG_SEARCHING        = 2,   ///< Searching for network
-  REG_DENIED           = 3,   ///< Registration denied
-  REG_OK_HOME          = 1,   ///< Registered on the home network
-  REG_OK_ROAMING       = 5,   ///< Registered on a roaming network
-  REG_UNKNOWN          = 4,   ///< Unknown registration status
-  REG_SMS_ONLY_HOME    = 6,   ///< Registered on the home network for SMS only
-  REG_SMS_ONLY_ROAMING = 7,   ///< Registered on a roaming network for SMS only
+  /// No registration result
+  REG_NO_RESULT = -1,
+  /// Not registered on the network
+  REG_UNREGISTERED = 0,
+  /// Searching for network
+  REG_SEARCHING = 2,
+  /// Registration denied
+  REG_DENIED = 3,
+  /// Registered on the home network
+  REG_OK_HOME = 1,
+  /// Registered on a roaming network
+  REG_OK_ROAMING = 5,
+  /// Unknown registration status
+  REG_UNKNOWN = 4,
+  /// Registered on the home network for SMS only
+  REG_SMS_ONLY_HOME = 6,
+  /// Registered on a roaming network for SMS only
+  REG_SMS_ONLY_ROAMING = 7,
   /// ublox AT command manual states: attached for emergency bearer services
   /// only (see 3GPP TS 24.008 [85] and 3GPP TS 24.301 [120] that specify the
   /// condition when the MS is considered as attached for emergency bearer
