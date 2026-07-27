@@ -29,8 +29,6 @@
 #include <Client.h>
 #endif
 
-#include "TinyGsmEnums.h"
-
 #ifndef TINY_GSM_YIELD_MS
 /// The number of milliseconds to yield to the system in the main loop
 #define TINY_GSM_YIELD_MS 0

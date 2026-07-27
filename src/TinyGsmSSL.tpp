@@ -39,6 +39,82 @@
 #define TINY_GSM_DEFAULT_SSL_CTX 0
 #endif
 
+/// Enum for different types of SSL/TLS certificates.
+enum class CertificateType : int8_t {
+  /// The CA certificate is used to verify the server's certificate. This is the
+  /// most common type of certificate used in SSL connections.
+  CA_CERTIFICATE = 0,
+  /// The client certificate is used to authenticate the client to the server.
+  /// This is less common and is typically used in mutual authentication
+  /// scenarios.
+  CLIENT_CERTIFICATE = 1,
+  /// The client key is used in conjunction with the client certificate for
+  /// mutual authentication. It is a private key that should be kept secure and
+  /// not shared.
+  CLIENT_KEY = 2,
+  /// The client pre-shared key is used for authentication in TLS-PSK
+  /// connections. It is a secret key shared between the client and the server.
+  CLIENT_PSK = 3,
+  /// The client pre-shared key identity is used in conjunction with the client
+  /// PSK for authentication in TLS-PSK connections.
+  CLIENT_PSK_IDENTITY = 4,
+};
+
+/**
+ * @enum SSLAuthMode
+ * @brief Enum for different SSL/TLS authentication modes (auth_mode).
+ *
+ * @var SSLAuthMode::NO_VALIDATION
+ * 0: no validation
+ *    - SRGD Note: Very insecure! You do not need to load any certificates
+ *    onto your device for this. Not all servers will accept it.
+ * @var SSLAuthMode::CLIENT_VALIDATION
+ * 1: the client provides the client certificate for the server to
+ * verify.
+ *    - SRGD Note: I do not believe this is commonly used. To use
+ *    this, you must load a client certificate and a client key onto
+ *    your device.
+ * @var SSLAuthMode::CA_VALIDATION
+ * 2: the client loads CA certificate to verify the server’s
+ * certificate.
+ *    - SRGD Note: This is a common authentication type used by
+ *    browsers, where the browser verifies the server's certificate.
+ *    For this to work, you must load either the server's intermediate or parent
+ *    CA certificate onto your device.
+ * @var SSLAuthMode::MUTUAL_AUTHENTICATION
+ * 3: mutual authentication.
+ *    - SRGD Note: This is used by AWS IoT Core and other IoT
+ *    services. In this case you must load 3 certs to your device:
+ *    The server's CA cert, the client cert, and the client key.
+ * @var SSLAuthMode::PRE_SHARED_KEYS
+ * 4: pre-shared key encryption
+ */
+enum class SSLAuthMode : int8_t {
+  NO_VALIDATION         = 0,
+  CLIENT_VALIDATION     = 1,
+  CA_VALIDATION         = 2,
+  MUTUAL_AUTHENTICATION = 3,
+  PRE_SHARED_KEYS       = 4,
+};
+
+/// Enum for different SSL/TLS versions.
+enum class SSLVersion : int8_t {
+  /// No SSL/TLS, plain TCP connection
+  NO_SSL = -1,
+  /// SSL 3.0
+  SSL3_0 = 0,
+  /// TLS 1.0
+  TLS1_0 = 1,
+  /// TLS 1.1
+  TLS1_1 = 2,
+  /// TLS 1.2
+  TLS1_2 = 3,
+  /// Try all SSL/TLS versions, the modem will negotiate the best version
+  ALL_SSL = 4,
+  /// TLS 1.3
+  TLS1_3 = 5
+};
+
 /**
  * @brief The CRTP parent class for Secure Socket Layer (SSL) functions.
  * @tparam modemType The derived modem class
