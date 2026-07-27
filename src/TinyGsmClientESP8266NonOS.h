@@ -49,7 +49,7 @@
 
 // NOTE: This module supports SSL, but we do not support any certificate
 // management for the non-OS version of the ESP8266 firmware, so we define
-// TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module so as not to
+// TINY_GSM_MODEM_HAS_SSL here and do not include the SSL module so as not to
 // waste space.
 #ifndef TINY_GSM_MODEM_HAS_SSL
 /// flag to indicate that the modem has Secure Socket Layer (SSL) functions
