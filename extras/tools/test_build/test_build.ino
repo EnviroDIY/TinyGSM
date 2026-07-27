@@ -9,7 +9,6 @@
 #define TINY_GSM_DEBUG_DEEP
 
 #include <TinyGsmClient.h>
-#include <TinyGsmEnums.h>
 
 TinyGsm modem(Serial);
 

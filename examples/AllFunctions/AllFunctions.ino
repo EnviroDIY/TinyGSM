@@ -150,6 +150,8 @@ void setup() {
   DBG("Wait...");
   delay(500L);
 
+  DBG("Looking for modem at", TARGET_BAUD, "baud and setting baud rate to",
+      TARGET_BAUD, "if it is not already the baud rate of the modem.");
   uint32_t maximum = 921600;
 #if defined(F_CPU)
   if (F_CPU <= 8000000L) {
@@ -178,6 +180,7 @@ void setup() {
     SerialAT.end();
     SerialAT.begin(targetBaud);
   } else {
+    DBG("Attempting to force baud rate to", targetBaud);
     modem.forceModemBaud(SerialAT, targetBaud);
   }
 }
