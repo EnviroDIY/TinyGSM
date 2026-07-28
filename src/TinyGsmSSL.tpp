@@ -121,6 +121,14 @@ enum class SSLVersion : int8_t {
  */
 template <class modemType>
 class TinyGsmSSL {
+ public:
+  /// Compile-time capability flag indicating SSL/TLS support
+  static constexpr bool hasSSL = true;
+  /// Compile-time capability flag indicating certificate specification support
+  static constexpr bool canSpecifyCerts = true;
+  /// Compile-time capability flag indicating certificate loading support
+  static constexpr bool canLoadCerts = true;
+
   /* =========================================== */
   /* =========================================== */
   /*

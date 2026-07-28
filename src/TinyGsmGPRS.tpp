@@ -36,6 +36,10 @@ enum SimStatus {
  */
 template <class modemType>
 class TinyGsmGPRS {
+ public:
+  /// Compile-time capability flag indicating GPRS/cellular data support
+  static constexpr bool hasGPRS = true;
+
   /* =========================================== */
   /* =========================================== */
   /*

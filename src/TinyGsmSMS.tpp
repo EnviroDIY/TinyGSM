@@ -23,6 +23,10 @@
  */
 template <class modemType>
 class TinyGsmSMS {
+ public:
+  /// Compile-time capability flag indicating SMS messaging support
+  static constexpr bool hasSMS = true;
+
   /* =========================================== */
   /* =========================================== */
   /*

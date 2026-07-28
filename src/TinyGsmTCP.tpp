@@ -90,6 +90,10 @@ class TinyGsmTCP {
   // a nested class of this mixin).
   friend class GsmClient<modemType, tcpConfig>;
 
+ public:
+  /// Compile-time capability flag indicating TCP socket support
+  static constexpr bool hasTCP = true;
+
   /* =========================================== */
   /* =========================================== */
   /*

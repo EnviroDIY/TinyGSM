@@ -24,6 +24,10 @@
  */
 template <class modemType>
 class TinyGsmGPS {
+ public:
+  /// Compile-time capability flag indicating GPS/GNSS support
+  static constexpr bool hasGPS = true;
+
   /* =========================================== */
   /* =========================================== */
   /*

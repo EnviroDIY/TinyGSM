@@ -25,6 +25,10 @@
  */
 template <class modemType>
 class TinyGsmBattery {
+ public:
+  /// Compile-time capability flag indicating battery status support
+  static constexpr bool hasBattery = true;
+
   /* =========================================== */
   /* =========================================== */
   /*
