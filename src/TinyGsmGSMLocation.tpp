@@ -25,6 +25,10 @@
  */
 template <class modemType>
 class TinyGsmGSMLocation {
+ public:
+  /// Compile-time capability flag indicating GSM-based location support
+  static constexpr bool hasGSMLocation = true;
+
   /* =========================================== */
   /* =========================================== */
   /*

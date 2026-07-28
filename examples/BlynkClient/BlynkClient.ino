@@ -12,11 +12,9 @@
  * You can easily build graphic interfaces for all your
  * projects by simply dragging and dropping widgets.
  *
- * Blynk supports many development boards with WiFi, Ethernet,
- * GSM, Bluetooth, BLE, USB/Serial connection methods.
- * See more in Blynk library examples and community forum.
- *
- *                http://www.blynk.io/
+ * [Blynk](http://www.blynk.io/) supports many development boards with WiFi,
+ * Ethernet, GSM, Bluetooth, BLE, USB/Serial connection methods. See more in
+ * [Blynk library examples and community forum](http://community.blynk.cc/).
  *
  * Change GPRS apm, user, pass, and Blynk auth token to run :)
  * ========================================================================== */

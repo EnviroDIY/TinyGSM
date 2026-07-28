@@ -24,6 +24,10 @@
  */
 template <class modemType>
 class TinyGsmNTP {
+ public:
+  /// Compile-time capability flag indicating NTP support
+  static constexpr bool hasNTP = true;
+
   /* =========================================== */
   /* =========================================== */
   /*

@@ -9,6 +9,7 @@
 #define TINY_GSM_DEBUG_DEEP
 
 #include <TinyGsmClient.h>
+#include <TinyGsmCapabilities.h>
 
 TinyGsm modem(Serial);
 
@@ -18,6 +19,48 @@ void setup() {
 }
 
 void loop() {
+  // Test compile-time capability detection
+  // These queries can be used to check modem capabilities at compile time
+  if (TinyGsmCapabilities::has_ssl<TinyGsm>::value) {
+    Serial.println("SSL capability: available");
+  }
+  if (TinyGsmCapabilities::has_gps<TinyGsm>::value) {
+    Serial.println("GPS capability: available");
+  }
+  if (TinyGsmCapabilities::has_wifi<TinyGsm>::value) {
+    Serial.println("WiFi capability: available");
+  }
+  if (TinyGsmCapabilities::has_gprs<TinyGsm>::value) {
+    Serial.println("GPRS capability: available");
+  }
+  if (TinyGsmCapabilities::has_sms<TinyGsm>::value) {
+    Serial.println("SMS capability: available");
+  }
+  if (TinyGsmCapabilities::has_calling<TinyGsm>::value) {
+    Serial.println("Calling capability: available");
+  }
+  if (TinyGsmCapabilities::has_battery<TinyGsm>::value) {
+    Serial.println("Battery capability: available");
+  }
+  if (TinyGsmCapabilities::has_temperature<TinyGsm>::value) {
+    Serial.println("Temperature capability: available");
+  }
+  if (TinyGsmCapabilities::has_ntp<TinyGsm>::value) {
+    Serial.println("NTP capability: available");
+  }
+  if (TinyGsmCapabilities::has_time<TinyGsm>::value) {
+    Serial.println("Time capability: available");
+  }
+  if (TinyGsmCapabilities::has_gsm_location<TinyGsm>::value) {
+    Serial.println("GSM Location capability: available");
+  }
+  if (TinyGsmCapabilities::has_bluetooth<TinyGsm>::value) {
+    Serial.println("Bluetooth capability: available");
+  }
+  if (TinyGsmCapabilities::has_tcp<TinyGsm>::value) {
+    Serial.println("TCP capability: available");
+  }
+
   // Test the basic functions
   modem.begin();
   modem.begin("1234");
@@ -149,6 +192,14 @@ void loop() {
   }
 
   client.stop();
+
+  // Note: You can now query modem capabilities at compile-time using
+  // TinyGsmCapabilities traits instead of (or in addition to) preprocessor
+  // defines. C++11 compatible - use regular if for runtime queries:
+  //   if (TinyGsmCapabilities::has_ssl<TinyGsm>::value) { ... }
+  // C++17 - use if constexpr for conditional compilation:
+  //   if constexpr (TinyGsmCapabilities::has_ssl<TinyGsm>::value) { ... }
+  // See examples/CapabilityQuery for a full demonstration.
 
 #if defined(TINY_GSM_MODEM_HAS_SSL)
   TinyGsmClientSecure client_secure(modem);

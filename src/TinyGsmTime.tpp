@@ -43,6 +43,10 @@ enum class TinyGSM_EpochStart : int8_t {
  */
 template <class modemType>
 class TinyGsmTime {
+ public:
+  /// Compile-time capability flag indicating time/clock support
+  static constexpr bool hasTime = true;
+
   /* =========================================== */
   /* =========================================== */
   /*

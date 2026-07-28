@@ -27,6 +27,10 @@
  */
 template <class modemType>
 class TinyGsmTemperature {
+ public:
+  /// Compile-time capability flag indicating temperature sensor support
+  static constexpr bool hasTemperature = true;
+
   /* =========================================== */
   /* =========================================== */
   /*

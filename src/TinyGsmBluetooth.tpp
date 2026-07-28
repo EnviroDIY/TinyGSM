@@ -25,6 +25,10 @@
  */
 template <class modemType>
 class TinyGsmBluetooth {
+ public:
+  /// Compile-time capability flag indicating Bluetooth support
+  static constexpr bool hasBluetooth = true;
+
   /* =========================================== */
   /* =========================================== */
   /*

@@ -23,6 +23,10 @@
  */
 template <class modemType>
 class TinyGsmWifi {
+ public:
+  /// Compile-time capability flag indicating WiFi support
+  static constexpr bool hasWifi = true;
+
   /* =========================================== */
   /* =========================================== */
   /*

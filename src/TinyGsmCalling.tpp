@@ -24,6 +24,10 @@
  */
 template <class modemType>
 class TinyGsmCalling {
+ public:
+  /// Compile-time capability flag indicating voice call support
+  static constexpr bool hasCalling = true;
+
   /* =========================================== */
   /* =========================================== */
   /*

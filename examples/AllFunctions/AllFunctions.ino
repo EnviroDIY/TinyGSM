@@ -116,19 +116,7 @@ const char resource_ssl[] = "/TinyGSM/logo.txt";
 const int  port_ssl       = 443;
 
 #include <TinyGsmClient.h>
-
-#if TINY_GSM_TEST_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
-#undef TINY_GSM_TEST_GPRS
-#undef TINY_GSM_TEST_WIFI
-#define TINY_GSM_TEST_GPRS false
-#define TINY_GSM_TEST_WIFI true
-#endif
-#if TINY_GSM_TEST_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
-#undef TINY_GSM_USE_GPRS
-#undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_GPRS true
-#define TINY_GSM_USE_WIFI false
-#endif
+#include <TinyGsmCapabilities.h>
 
 #ifdef DUMP_AT_COMMANDS
 #include <StreamDebugger.h>
@@ -217,6 +205,24 @@ void loop() {
   String mod_sn = modem.getModemSerialNumber();
   DBG("Modem Serial Number (may be SIM CCID):", mod_sn);
 #endif
+
+  // Display modem capabilities using compile-time detection
+  DBG("Modem Capabilities:");
+  DBG("  GPRS:", TinyGsmCapabilities::has_gprs<TinyGsm>::value ? "YES" : "NO");
+  DBG("  WiFi:", TinyGsmCapabilities::has_wifi<TinyGsm>::value ? "YES" : "NO");
+  DBG("  SSL:", TinyGsmCapabilities::has_ssl<TinyGsm>::value ? "YES" : "NO");
+  DBG("  GPS:", TinyGsmCapabilities::has_gps<TinyGsm>::value ? "YES" : "NO");
+  DBG("  SMS:", TinyGsmCapabilities::has_sms<TinyGsm>::value ? "YES" : "NO");
+  DBG("  Calling:",
+      TinyGsmCapabilities::has_calling<TinyGsm>::value ? "YES" : "NO");
+  DBG("  Battery:",
+      TinyGsmCapabilities::has_battery<TinyGsm>::value ? "YES" : "NO");
+  DBG("  Temperature:",
+      TinyGsmCapabilities::has_temperature<TinyGsm>::value ? "YES" : "NO");
+  DBG("  GSM Location:",
+      TinyGsmCapabilities::has_gsm_location<TinyGsm>::value ? "YES" : "NO");
+  DBG("  NTP:", TinyGsmCapabilities::has_ntp<TinyGsm>::value ? "YES" : "NO");
+  DBG("  Time:", TinyGsmCapabilities::has_time<TinyGsm>::value ? "YES" : "NO");
 
 #if TINY_GSM_TEST_GPRS
   // Unlock your SIM card with a PIN if needed
