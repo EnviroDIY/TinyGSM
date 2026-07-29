@@ -148,6 +148,18 @@ class TinyGsmModem {
   }
 
   /**
+   * @brief Set the default baud rate for the modem, ie, the baud rate that the
+   * modem will use after a reset or power cycle.
+   *
+   * @param baud The baud rate to set the modem to use after a reset or power
+   * cycle.
+   * @return True if the command was successful, false otherwise.
+   */
+  bool setDefaultBaud(uint32_t baud) {
+    return thisModem().setDefaultBaudImpl(baud);
+  }
+
+  /**
    * @brief Attempt to set the modem baud rate by trying set the command to
    * change the baud rate to various common baud rates and seeing if the modem
    * responds to AT commands at that baud rate.
@@ -737,6 +749,8 @@ class TinyGsmModem {
     thisModem().sendAT(GF("+IPR="), baud);
     return thisModem().waitResponse() == 1;
   }
+
+  bool setDefaultBaudImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   bool testATImpl(uint32_t timeout_ms) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
