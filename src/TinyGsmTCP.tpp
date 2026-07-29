@@ -48,18 +48,18 @@ template <TinyGsmTcpBufferMode bufferMode, TinyGsmTcpMuxMode muxMode,
           int stopTimeoutS = 15, size_t minFreeTxBuffer = 1>
 struct TinyGsmTcpConfigPreset {
   /// The buffer mode for the modem's TCP receive buffer.
-  static const TinyGsmTcpBufferMode kBufferMode = bufferMode;
+  static constexpr TinyGsmTcpBufferMode kBufferMode = bufferMode;
   /// The multiplexing mode for the modem's TCP connections.
-  static const TinyGsmTcpMuxMode kMuxMode = muxMode;
+  static constexpr TinyGsmTcpMuxMode kMuxMode = muxMode;
 
   /// The number of simultaneous TCP channels supported by the modem.
-  static const uint8_t kMuxCount = muxCount;
+  static constexpr uint8_t kMuxCount = muxCount;
   /// The timeout in seconds to wait for a connection to be established.
-  static const int kConnectTimeoutS = connectTimeoutS;
+  static constexpr int kConnectTimeoutS = connectTimeoutS;
   /// The timeout in seconds to wait for a connection to disconnect cleanly.
-  static const int kStopTimeoutS = stopTimeoutS;
+  static constexpr int kStopTimeoutS = stopTimeoutS;
   /// The maximum size of data that can be sent in a single transmission.
-  static const size_t kSendMaxSize = sendMaxSize;
+  static constexpr size_t kSendMaxSize = sendMaxSize;
   /**
    * @brief This is the minimum amount of free send buffer space the modem must
    * report before attempting a send.
@@ -70,7 +70,7 @@ struct TinyGsmTcpConfigPreset {
    * Some modules (SIM7080G) will freeze or crash if you pummel them with data
    * when the send buffer isn't empty.
    */
-  static const size_t kMinFreeTxBuffer = minFreeTxBuffer;
+  static constexpr size_t kMinFreeTxBuffer = minFreeTxBuffer;
 };
 
 // Forward declaration of the GSM Client class so it can be friended.
