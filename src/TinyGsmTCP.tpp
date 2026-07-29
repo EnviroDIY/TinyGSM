@@ -421,7 +421,7 @@ class TinyGsmTCP {
 /**
  * @brief The TCP client class.
  *
- * @note: This is a base class for TCP clients, but it is NOT an inner class
+ * @note This is a base class for TCP clients, but it is NOT an inner class
  * of the TinyGsmTCP class.
  *
  * @tparam modemType The derived modem class

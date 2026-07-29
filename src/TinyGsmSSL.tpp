@@ -342,7 +342,7 @@ class TinyGsmSSL {
 /**
  * The secure client class
  *
- * @note: This is a base class for secure clients, but it is NOT an inner class
+ * @note This is a base class for secure clients, but it is NOT an inner class
  * of the TinyGsmSSL class.
  */
 class GsmSecureClient {
