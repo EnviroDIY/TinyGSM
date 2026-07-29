@@ -137,11 +137,11 @@ class TinyGsmModem {
 
   /**
    * @brief Set the module baud rate
-   * @param baud The baud rate the use
+   * @param baud The baud rate to use
    * @return True if the baud rate was set successfully, false otherwise.
    *
-   * @note After setting and applying the new baud rate, you will have to end()
-   * and begin() the serial object.
+   * @note After setting and applying the new baud rate, you will have to %end()
+   * and %begin() the serial object.
    */
   bool setBaud(uint32_t baud) {
     return thisModem().setBaudImpl(baud);
@@ -412,7 +412,7 @@ class TinyGsmModem {
    *
    * This generally restarts the module as well.
    *
-   * @return *True if the module successfully reset to default, false otherwise.
+   * @return True if the module successfully reset to default, false otherwise.
    */
   bool factoryDefault() {
     return thisModem().factoryDefaultImpl();
