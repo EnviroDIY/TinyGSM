@@ -237,6 +237,9 @@ def collect_wrappers(
 
     def finalize_member(signature: str) -> None:
         nonlocal pending_group, current_group
+        if access != "public":
+            return
+
         name = extract_member_name(signature, class_name)
         if not name or name.startswith("operator"):
             return
@@ -249,9 +252,6 @@ def collect_wrappers(
         if pending_group:
             current_group = pending_group
             pending_group = None
-
-        if access != "public":
-            return
 
         if name in seen:
             return
@@ -370,7 +370,7 @@ def format_list(items: list[FunctionEntry], indent: str = " *     - ") -> list[s
 
 
 def build_doc_block(entries: list[FunctionEntry]) -> str:
-    grouped: list[tuple[str, list[str], list[str]]] = []
+    grouped: list[tuple[str, list[FunctionEntry], list[FunctionEntry]]] = []
     group_index: dict[str, int] = {}
 
     for entry in entries:

@@ -2,6 +2,7 @@
 from math import floor
 import os
 import json
+from pathlib import Path
 from PIL import ImageFont, Image, ImageDraw
 
 # from IPython.display import display
@@ -9,16 +10,13 @@ from PIL import ImageFont, Image, ImageDraw
 
 # %%
 # The workspace directory
-docbuild_dir = "C:\\Users\\sdamiano\\Documents\\GitHub\\EnviroDIY\\TinyGSM\\docs\\"
+repo_root = str(Path(__file__).resolve().parents[1])
+docbuild_dir = os.path.join(repo_root, "docs")
 repo_name = "TinyGSM"
-lib_specs_path = (
-    "C:\\Users\\sdamiano\\Documents\\GitHub\\EnviroDIY\\TinyGSM\\library.json"
-)
+lib_specs_path = os.path.join(repo_root, "library.json")
 logo_text = ""
 short_logo_text = ""
-with open(
-    "C:\\Users\\sdamiano\\Documents\\GitHub\\EnviroDIY\\TinyGSM\\extras\\logo.txt", "r"
-) as file:
+with open(os.path.join(repo_root, "extras", "logo.txt"), "r") as file:
     for line in file:
         print(line.strip())
         logo_text += line[2:]
@@ -44,7 +42,7 @@ logo_sizes = {
     "favicon": {"width": 32, "height": 32},
     "main_logo": {"width": 500, "height": 80},
 }
-ubuntu_font = f"{docbuild_dir}\\UbuntuMono-Regular.ttf"
+ubuntu_font = os.path.join(docbuild_dir, "UbuntuMono-Regular.ttf")
 black = (0, 0, 0, 255)
 white = (255, 255, 255, 255)
 ediy_green = (142, 197, 81, 255)
@@ -59,7 +57,9 @@ def get_font_size(text, max_width, max_height):
     final_rendered_width = 0
     final_rendered_height = 0
     limiter = ""
-    while fits_in_box == False:
+    while not fits_in_box:
+        if font_size < 1:
+            raise ValueError(f"Cannot fit {text!r} within {max_width}x{max_height}")
         font = ImageFont.truetype(font=ubuntu_font, size=font_size)
         # (left, top, right, bottom)
         left, top, right, bottom = font.getbbox(text, mode="")
@@ -167,8 +167,9 @@ def create_logo(
             # NOTE: not ascender
         )
     # display(img)
-    img.save(f"{docbuild_dir}\\{logo_type}.png")
-    print(f"Saved {docbuild_dir}\\{logo_type}.png")
+    logo_path = os.path.join(docbuild_dir, f"{logo_type}.png")
+    img.save(logo_path)
+    print(f"Saved {logo_path}")
 
 
 # %%

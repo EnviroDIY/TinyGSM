@@ -516,8 +516,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
    */
   bool deleteAllSMS() {
     sendAT(GF("+QMGDA=6"));
-    if (waitResponse(waitResponse(60000L) == 1)) { return true; }
-    return false;
+    return waitResponse(60000L) == 1;
   }
 
   /*

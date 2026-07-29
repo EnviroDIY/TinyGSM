@@ -13,9 +13,9 @@
  * For more HTTP API examples, see ArduinoHttpClient library
  *
  * @warning This example may NOT work with the XBee because the
- * HttpClient library does not empty to serial buffer fast enough
+ * HttpClient library does not empty the serial buffer fast enough
  * and the buffer overflow causes the HttpClient library to stall.
- * Boards with faster processors may work, 8MHz boards will not.
+ * Boards with faster processors may work, 8 MHz boards will not.
  * ========================================================================== */
 
 // Select your modem:

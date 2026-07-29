@@ -34,130 +34,117 @@ void setup() {
   SerialMon.begin(115200);
   delay(10);
 
-  SerialMon.println("\n\n===========================================");
-  SerialMon.println("TinyGSM Capability Query Example");
-  SerialMon.println("===========================================\n");
+  SerialMon.println(F("\n\n==========================================="));
+  SerialMon.println(F("TinyGSM Capability Query Example"));
+  SerialMon.println(F("===========================================\n"));
 
   // Print the modem type
-  SerialMon.println("Modem: SIM7080");
+  SerialMon.println(F("Modem: SIM7080"));
   SerialMon.println();
 
   // Query capabilities using compile-time traits
   // Note: These traits are evaluated at compile time, even with C++11
-  SerialMon.println("Compile-time capability detection:");
-  SerialMon.println("----------------------------------");
+  SerialMon.println(F("Compile-time capability detection:"));
+  SerialMon.println(F("----------------------------------"));
 
   // SSL/TLS capabilities
   if (TinyGsmCapabilities::has_ssl<TinyGsm>::value) {
-    SerialMon.println("✓ SSL/TLS support: YES");
+    SerialMon.println(F("✓ SSL/TLS support: YES"));
     if (TinyGsmCapabilities::can_specify_certs<TinyGsm>::value) {
-      SerialMon.println("  ✓ Can specify certificates");
+      SerialMon.println(F("  ✓ Can specify certificates"));
     }
     if (TinyGsmCapabilities::can_load_certs<TinyGsm>::value) {
-      SerialMon.println("  ✓ Can load certificates");
+      SerialMon.println(F("  ✓ Can load certificates"));
     }
   } else {
-    SerialMon.println("✗ SSL/TLS support: NO");
+    SerialMon.println(F("✗ SSL/TLS support: NO"));
   }
 
   // GPS capability
   if (TinyGsmCapabilities::has_gps<TinyGsm>::value) {
-    SerialMon.println("✓ GPS/GNSS support: YES");
+    SerialMon.println(F("✓ GPS/GNSS support: YES"));
   } else {
-    SerialMon.println("✗ GPS/GNSS support: NO");
+    SerialMon.println(F("✗ GPS/GNSS support: NO"));
   }
 
   // Cellular data capability
   if (TinyGsmCapabilities::has_gprs<TinyGsm>::value) {
-    SerialMon.println("✓ GPRS/Cellular data: YES");
+    SerialMon.println(F("✓ GPRS/Cellular data: YES"));
   } else {
-    SerialMon.println("✗ GPRS/Cellular data: NO");
+    SerialMon.println(F("✗ GPRS/Cellular data: NO"));
   }
 
   // WiFi capability
   if (TinyGsmCapabilities::has_wifi<TinyGsm>::value) {
-    SerialMon.println("✓ WiFi support: YES");
+    SerialMon.println(F("✓ WiFi support: YES"));
   } else {
-    SerialMon.println("✗ WiFi support: NO");
+    SerialMon.println(F("✗ WiFi support: NO"));
   }
 
   // SMS capability
   if (TinyGsmCapabilities::has_sms<TinyGsm>::value) {
-    SerialMon.println("✓ SMS messaging: YES");
+    SerialMon.println(F("✓ SMS messaging: YES"));
   } else {
-    SerialMon.println("✗ SMS messaging: NO");
+    SerialMon.println(F("✗ SMS messaging: NO"));
   }
 
   // Voice calling capability
   if (TinyGsmCapabilities::has_calling<TinyGsm>::value) {
-    SerialMon.println("✓ Voice calling: YES");
+    SerialMon.println(F("✓ Voice calling: YES"));
   } else {
-    SerialMon.println("✗ Voice calling: NO");
+    SerialMon.println(F("✗ Voice calling: NO"));
   }
 
   // Battery status capability
   if (TinyGsmCapabilities::has_battery<TinyGsm>::value) {
-    SerialMon.println("✓ Battery status: YES");
+    SerialMon.println(F("✓ Battery status: YES"));
   } else {
-    SerialMon.println("✗ Battery status: NO");
+    SerialMon.println(F("✗ Battery status: NO"));
   }
 
   // Temperature sensor capability
   if (TinyGsmCapabilities::has_temperature<TinyGsm>::value) {
-    SerialMon.println("✓ Temperature sensor: YES");
+    SerialMon.println(F("✓ Temperature sensor: YES"));
   } else {
-    SerialMon.println("✗ Temperature sensor: NO");
+    SerialMon.println(F("✗ Temperature sensor: NO"));
   }
 
   // Network Time Protocol capability
   if (TinyGsmCapabilities::has_ntp<TinyGsm>::value) {
-    SerialMon.println("✓ NTP support: YES");
+    SerialMon.println(F("✓ NTP support: YES"));
   } else {
-    SerialMon.println("✗ NTP support: NO");
+    SerialMon.println(F("✗ NTP support: NO"));
   }
 
   // Time/clock functions capability
   if (TinyGsmCapabilities::has_time<TinyGsm>::value) {
-    SerialMon.println("✓ Time/clock functions: YES");
+    SerialMon.println(F("✓ Time/clock functions: YES"));
   } else {
-    SerialMon.println("✗ Time/clock functions: NO");
+    SerialMon.println(F("✗ Time/clock functions: NO"));
   }
 
   // GSM-based location capability
   if (TinyGsmCapabilities::has_gsm_location<TinyGsm>::value) {
-    SerialMon.println("✓ GSM location: YES");
+    SerialMon.println(F("✓ GSM location: YES"));
   } else {
-    SerialMon.println("✗ GSM location: NO");
+    SerialMon.println(F("✗ GSM location: NO"));
   }
 
   // Bluetooth capability
   if (TinyGsmCapabilities::has_bluetooth<TinyGsm>::value) {
-    SerialMon.println("✓ Bluetooth support: YES");
+    SerialMon.println(F("✓ Bluetooth support: YES"));
   } else {
-    SerialMon.println("✗ Bluetooth support: NO");
+    SerialMon.println(F("✗ Bluetooth support: NO"));
   }
 
   // TCP sockets capability (should always be true)
   if (TinyGsmCapabilities::has_tcp<TinyGsm>::value) {
-    SerialMon.println("✓ TCP sockets: YES");
+    SerialMon.println(F("✓ TCP sockets: YES"));
   } else {
-    SerialMon.println("✗ TCP sockets: NO");
+    SerialMon.println(F("✗ TCP sockets: NO"));
   }
 
-  SerialMon.println("\n===========================================\n");
-
-  // Note: For conditional compilation (e.g., creating different client types
-  // based on capabilities), you would need C++17 and 'if constexpr'.
-  // With C++11, use preprocessor macros or template metaprogramming instead.
-  //
-  // C++17 example (requires -std=c++17):
-  //   if constexpr (TinyGsmCapabilities::has_ssl<TinyGsm>::value) {
-  //     TinyGsmClientSecure secureClient(modem);
-  //   } else {
-  //     TinyGsmClient client(modem);
-  //   }
-
-  SerialMon.println("\n===========================================\n");
+  SerialMon.println(F("\n===========================================\n"));
 }
 
 void loop() {

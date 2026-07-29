@@ -1,7 +1,7 @@
 /** ============================================================================
  * @example{lineno} MqttClient.ino
  *
- * @brief This sketch connects to a MQTT broker and publishes and subscribes to
+ * @brief This sketch connects to an MQTT broker and publishes and subscribes to
  * topics to control and report the status of the onboard LED.
  *
  * This example connects to HiveMQ's showcase broker.

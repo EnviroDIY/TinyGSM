@@ -388,8 +388,8 @@ class TinyGsmTCP {
           TcpConfig::kSendMaxSize, GF("bytes, but it has"), sendLength);
     }
     if (sendLength < TcpConfig::kMinFreeTxBuffer) {
-      DBG(GF(
-          "### Waiting up to 15s for sufficient available send buffer space"));
+      DBG(GF("### Waiting up to"), timeout_ms,
+          GF("ms for sufficient available send buffer space"));
     }
 #endif
     uint32_t start = millis();
@@ -755,7 +755,7 @@ class GsmClient : public Client {
 
   /// destructor - need to remove self from the socket pointer array
   virtual ~GsmClient() {
-    if (mux < TcpConfig::kMuxCount) {
+    if (at != nullptr && mux < TcpConfig::kMuxCount) {
       if (at->sockets[mux] == this) { at->sockets[mux] = nullptr; }
     }
   }

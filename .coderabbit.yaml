@@ -32,6 +32,11 @@ reviews:
         Each sentence should be on a new line.
         Markdown files should follow rules of markdownlint.
         Check C++ and Arduino code snippets as C++ code.
+    - path: '**/*.dox'
+      instructions: >-
+        Review for grammar, spelling, and clarity.
+        Ensure that Doxygen comments are clear and follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
+        Check C++ and Arduino code snippets as C++ code.
     - path: '**/*.ino'
       instructions: >-
         Treat Arduino code in ino files as C++ code.
@@ -45,18 +50,22 @@ reviews:
       instructions: >-
         Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
         Since this is an Arduino project, never suggest using the standard library (std::).
+        C++ code should be C++11 compatible, and should not use later features.
         For memory savings, prefer defines to const variables, and prefer using the F() macro for string literals longer than a single character.
         Files should be formatted according to the .clang-format file in the repo.
         This is a header-only library; all code should be in the header and template files.
         Template files used as includes should have the .tpp extension, and should not be included directly by the user.
+        Ensure that Doxygen comments are clear and follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
     - path: '**/*.tpp'
       instructions: >-
         Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
         Since this is an Arduino project, never suggest using the standard library (std::).
+        C++ code should be C++11 compatible, and should not use later features.
         For memory savings, prefer defines to const variables, and prefer using the F() macro for string literals longer than a single character.
         Files should be formatted according to the .clang-format file in the repo.
         This is a header-only library; all code should be in the header and template files.
         Template files used as includes should have the .tpp extension, and should not be included directly by the user.
+        Ensure that Doxygen comments are clear and follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
     - path: '**/*.cpp'
       instructions: >-
         This is a header-only library, there should not be any .cpp files. If you see a .cpp file, it should be removed.

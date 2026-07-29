@@ -45,7 +45,7 @@ class TinyGsmTCP;
  * templates to determine what features are available.
  *
  * Custom implementations of type traits for AVR compatibility (no
- * <type_traits>). Compatible with C++11 and later.
+ * type_traits). Compatible with C++11 and later.
  *
  * Usage:
  * @code

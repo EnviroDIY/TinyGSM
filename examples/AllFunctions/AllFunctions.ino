@@ -167,7 +167,7 @@ void setup() {
 #endif
     SerialAT.end();
     SerialAT.begin(targetBaud);
-  } else {
+  } else if (found_baud == 0) {
     DBG("Attempting to force baud rate to", targetBaud);
     modem.forceModemBaud(SerialAT, targetBaud);
   }

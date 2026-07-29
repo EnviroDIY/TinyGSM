@@ -455,6 +455,8 @@ Here are some tips for writing layer 7 (particularly HTTP request) manually:
 use this:
 
 ```cpp
+// NOTE: buffer must be large enough to hold the full request line;
+// consider using strncat or checking your_url_host length first
 char buffer[128] = "";
 strcat(buffer, "GET ");
 strcat(buffer, your_url_host);
@@ -485,7 +487,8 @@ client.println(" HTTP/1.1");
 When using `SoftwareSerial` (on Uno, Nano, etc), the speed **115200** may not work.
 Try selecting **57600**, **38400**, or even lower - the one that works best for you.
 In some cases **9600** is unstable, but using **38400** helps, etc.
-Be sure to set correct TX/RX pins in the sketch. Please note that not every Arduino pin can serve as TX or RX pin.
+Be sure to set correct TX/RX pins in the sketch.
+Please note that not every Arduino pin can serve as TX or RX pin.
 **Read more about AVR Serial options and configuration [on Paul Stroffregen's site](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [the Arduino reference site](https://www.arduino.cc/en/Reference/SoftwareSerial).**
 
 ### ESP32 Notes

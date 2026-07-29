@@ -1,6 +1,6 @@
 # SIM800 SSL Set Cert<!--! {#example_sim800_ssl_set_cert} -->
 
-This example uploads SSL certificate material to SIM8xx modems so secure TLS connections can be established.
+This example uploads SSL certificate material to SIM8xx modems; replace the bundled expired certificates before establishing TLS connections.
 
 _______
 

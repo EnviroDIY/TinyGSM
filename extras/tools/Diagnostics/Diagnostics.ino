@@ -4,9 +4,10 @@
  * @brief This sketch runs a series of diagnostic tests on the modem and prints
  * the results.
  *
- * To run this tool you need StreamDebugger library:
- *   https://github.com/vshymanskyy/StreamDebugger
- *   or from http://librarymanager/all#StreamDebugger
+ * StreamDebugger library is optional. It is required only when enabling
+ * DUMP_AT_COMMANDS for AT-command dumps; the tool runs without it by default.
+ * Download StreamDebugger from https://github.com/vshymanskyy/StreamDebugger or
+ * from http://librarymanager/all#StreamDebugger
  * ========================================================================== */
 
 // Select your modem:

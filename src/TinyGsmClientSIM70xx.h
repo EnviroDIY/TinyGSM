@@ -33,11 +33,10 @@ enum SIM70xxRegStatus {
  * @brief Parent class for the SIMCom SIM70xx family of modems
  *
  * @tparam SIM70xxType The derived class type
+ *
+ * @ingroup simcom_sim70xx
  */
 template <class SIM70xxType, class SIM70xxModemConfig>
-/** @ingroup simcom_sim70xx */
-/** @ingroup simcom_sim70xx */
-/** @ingroup simcom_sim70xx */
 class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
                        public TinyGsmGPRS<SIM70xxType>,
                        public TinyGsmGPS<SIM70xxType> {

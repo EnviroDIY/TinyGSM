@@ -22,43 +22,43 @@ void loop() {
   // Test compile-time capability detection
   // These queries can be used to check modem capabilities at compile time
   if (TinyGsmCapabilities::has_ssl<TinyGsm>::value) {
-    Serial.println("SSL capability: available");
+    Serial.println(F("SSL capability: available"));
   }
   if (TinyGsmCapabilities::has_gps<TinyGsm>::value) {
-    Serial.println("GPS capability: available");
+    Serial.println(F("GPS capability: available"));
   }
   if (TinyGsmCapabilities::has_wifi<TinyGsm>::value) {
-    Serial.println("WiFi capability: available");
+    Serial.println(F("WiFi capability: available"));
   }
   if (TinyGsmCapabilities::has_gprs<TinyGsm>::value) {
-    Serial.println("GPRS capability: available");
+    Serial.println(F("GPRS capability: available"));
   }
   if (TinyGsmCapabilities::has_sms<TinyGsm>::value) {
-    Serial.println("SMS capability: available");
+    Serial.println(F("SMS capability: available"));
   }
   if (TinyGsmCapabilities::has_calling<TinyGsm>::value) {
-    Serial.println("Calling capability: available");
+    Serial.println(F("Calling capability: available"));
   }
   if (TinyGsmCapabilities::has_battery<TinyGsm>::value) {
-    Serial.println("Battery capability: available");
+    Serial.println(F("Battery capability: available"));
   }
   if (TinyGsmCapabilities::has_temperature<TinyGsm>::value) {
-    Serial.println("Temperature capability: available");
+    Serial.println(F("Temperature capability: available"));
   }
   if (TinyGsmCapabilities::has_ntp<TinyGsm>::value) {
-    Serial.println("NTP capability: available");
+    Serial.println(F("NTP capability: available"));
   }
   if (TinyGsmCapabilities::has_time<TinyGsm>::value) {
-    Serial.println("Time capability: available");
+    Serial.println(F("Time capability: available"));
   }
   if (TinyGsmCapabilities::has_gsm_location<TinyGsm>::value) {
-    Serial.println("GSM Location capability: available");
+    Serial.println(F("GSM Location capability: available"));
   }
   if (TinyGsmCapabilities::has_bluetooth<TinyGsm>::value) {
-    Serial.println("Bluetooth capability: available");
+    Serial.println(F("Bluetooth capability: available"));
   }
   if (TinyGsmCapabilities::has_tcp<TinyGsm>::value) {
-    Serial.println("TCP capability: available");
+    Serial.println(F("TCP capability: available"));
   }
 
   // Test the basic functions
@@ -168,11 +168,11 @@ void loop() {
   // Make a HTTP GET request using client prints
   client.print(String("GET ") + resource + " HTTP/1.0\r\n");
   client.print(String("Host: ") + server + "\r\n");
-  client.print("Connection: close\r\n\r\n");
+  client.print(F("Connection: close\r\n\r\n"));
 
 #if !defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
   // Make the same HTTP GET request using beginWrite/write/endWrite
-  client.beginWrite(63);
+  client.beginWrite(62);
   client.write("GET ");
   client.write(resource);
   client.write(" HTTP/1.0\r\n");
@@ -180,7 +180,7 @@ void loop() {
   client.write(server);
   client.write("\r\n");
   client.write("Connection: close\r\n\r\n");
-  client.endWrite(63);
+  client.endWrite(62);
 #endif
 
   uint32_t timeout = millis();
@@ -269,7 +269,7 @@ void loop() {
   // Make a HTTP GET request:
   client_secure.print(String("GET ") + resource + " HTTP/1.0\r\n");
   client_secure.print(String("Host: ") + server + "\r\n");
-  client_secure.print("Connection: close\r\n\r\n");
+  client_secure.print(F("Connection: close\r\n\r\n"));
 
   timeout = millis();
   while (client_secure.connected() && millis() - timeout < 10000L) {

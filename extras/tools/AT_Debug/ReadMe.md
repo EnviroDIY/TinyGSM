@@ -1,6 +1,6 @@
 # AT Debug<!--! {#tool_at_debug} -->
 
-This script tries to auto-detect the baud rate and allows direct AT commands access.
+This sketch tries to auto-detect the baud rate and provides direct access to AT commands.
 
 _______
 
