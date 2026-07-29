@@ -94,20 +94,6 @@ class TinyGsmEspressif
     return success;
   }
 
- public:
-  /**
-   * @brief Set the default baud rate for the modem, ie, the baud rate that the
-   * modem will use after a reset or power cycle.
-   *
-   * @param baud The baud rate to set the modem to use after a reset or power
-   * cycle.
-   * @return True if the command was successful, false otherwise.
-   */
-  bool setDefaultBaud(uint32_t baud) {
-    thisModem().sendAT(GF("+UART_DEF="), baud, ",8,1,0,0");
-    return thisModem().waitResponse() == 1;
-  }
-
  protected:
   bool setBaudImpl(uint32_t baud) {
     thisModem().sendAT(GF("+UART_CUR="), baud, ",8,1,0,0");
@@ -122,6 +108,11 @@ class TinyGsmEspressif
       // }
     }
     return res;
+  }
+
+  bool setDefaultBaudImpl(uint32_t baud) {
+    thisModem().sendAT(GF("+UART_DEF="), baud, ",8,1,0,0");
+    return thisModem().waitResponse() == 1;
   }
 
   String getModemInfoImpl() {
