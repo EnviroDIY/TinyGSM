@@ -32,7 +32,7 @@
  *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
- * - Generic Network Functions (TinyGsmModem.tpp)
+ * - Generic network functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
@@ -57,7 +57,7 @@
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
- * - Phone Call functions (TinyGsmCalling.tpp)
+ * - Phone call functions (TinyGsmCalling.tpp)
  *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
  *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
  *     - @ref TinyGsmCalling<modemType>::callHangup "callHangup()"
@@ -66,15 +66,13 @@
  *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
  *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
  *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
- * - GSM Location functions (TinyGsmGSMLocation.tpp)
+ * - GSM location functions (TinyGsmGSMLocation.tpp)
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationRaw "getGsmLocationRaw()"
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocation "getGsmLocation()"
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationTime "getGsmLocationTime()"
  * - Time functions (TinyGsmTime.tpp)
  *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
  *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
  * - NTP server functions (TinyGsmNTP.tpp)
  *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
  *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
@@ -86,7 +84,7 @@
  *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
  *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
  *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
- * - Phone Call functions
+ * - Phone call functions
  *     - @ref TinyGsmSim800::setGsmBusy "setGsmBusy()"
  * - Audio functions
  *     - @ref TinyGsmSim800::setVolume "setVolume()"
@@ -507,7 +505,7 @@ class TinyGsmSim800
   //  template.
 
   /*
-   * WiFi functions
+   * Wifi functions
    */
   // No functions of this type supported
 
@@ -626,7 +624,7 @@ class TinyGsmSim800
   }
 
   /*
-   * Phone Call functions
+   * Phone call functions
    */
  public:
   /**

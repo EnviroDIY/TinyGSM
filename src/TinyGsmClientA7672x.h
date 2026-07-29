@@ -32,7 +32,7 @@
  *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
- * - Generic Network Functions (TinyGsmModem.tpp)
+ * - Generic network functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
@@ -60,13 +60,12 @@
  * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
  *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
  *     - @ref TinyGsmSSL<modemType>::deleteCertificate "deleteCertificate()"
- *     - @ref TinyGsmSSL<modemType>::printCertificate "printCertificate()"
  *     - @ref TinyGsmSSL<modemType>::convertCertificate "convertCertificate()"
  *     - @ref TinyGsmSSL<modemType>::convertCACertificate "convertCACertificate()"
  *     - @ref TinyGsmSSL<modemType>::convertClientCertificates "convertClientCertificates()"
  *     - @ref TinyGsmSSL<modemType>::convertPSKandID "convertPSKandID()"
  *     - @ref TinyGsmSSL<modemType>::convertPSKTable "convertPSKTable()"
- * - Phone Call functions (TinyGsmCalling.tpp)
+ * - Phone call functions (TinyGsmCalling.tpp)
  *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
  *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
  *     - @ref TinyGsmCalling<modemType>::callHangup "callHangup()"
@@ -75,15 +74,13 @@
  *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
  *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
  *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
- * - GSM Location functions (TinyGsmGSMLocation.tpp)
+ * - GSM location functions (TinyGsmGSMLocation.tpp)
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationRaw "getGsmLocationRaw()"
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocation "getGsmLocation()"
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationTime "getGsmLocationTime()"
  * - Time functions (TinyGsmTime.tpp)
  *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
  *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
  * - NTP server functions (TinyGsmNTP.tpp)
  *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
  *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
@@ -99,9 +96,9 @@
  *     - @ref TinyGsmTemperature<modemType>::getTemperature "getTemperature()"
  * - Generic network functions
  *     - @ref TinyGsmA7672X::getLocalIPSecure "getLocalIPSecure()"
- * - Phone Call functions
+ * - Phone call functions
  *     - @ref TinyGsmA7672X::setGsmBusy "setGsmBusy()"
- * - Client related functions
+ * - SSL client functions
  *     - @ref TinyGsmA7672X::configureSSLContext "configureSSLContext()"
  *     - @ref TinyGsmA7672X::linkSSLContext "linkSSLContext()"
  *
@@ -555,7 +552,7 @@ class TinyGsmA7672X
   }
 
   /*
-   * WiFi functions
+   * Wifi functions
    */
   // No functions of this type supported (but the modem does support WiFi)
 
@@ -647,7 +644,7 @@ class TinyGsmA7672X
   }
 
   /*
-   * Phone Call functions
+   * Phone call functions
    */
  public:
   /**
@@ -671,7 +668,7 @@ class TinyGsmA7672X
   // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
 
   /*
-   * GSM Location functions
+   * GSM location functions
    */
   // No functions of this type supported
   /*
@@ -714,7 +711,7 @@ class TinyGsmA7672X
   }
 
   /*
-   * Client related functions
+   * SSL client functions
    */
  public:
   /**
@@ -814,6 +811,10 @@ class TinyGsmA7672X
     sendAT(GF("+CCHSSLCFG="), mux, ',', context_id);
     return waitResponse(2000L) == 1;
   }
+
+  /*
+   * Client related functions
+   */
 
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,

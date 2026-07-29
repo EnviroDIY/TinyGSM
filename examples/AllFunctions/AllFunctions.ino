@@ -118,6 +118,19 @@ const int  port_ssl       = 443;
 #include <TinyGsmClient.h>
 #include <TinyGsmCapabilities.h>
 
+#if TINY_GSM_TEST_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
+#undef TINY_GSM_TEST_GPRS
+#undef TINY_GSM_TEST_WIFI
+#define TINY_GSM_TEST_GPRS false
+#define TINY_GSM_TEST_WIFI true
+#endif
+#if TINY_GSM_TEST_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
+#undef TINY_GSM_USE_GPRS
+#undef TINY_GSM_USE_WIFI
+#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_WIFI false
+#endif
+
 #ifdef DUMP_AT_COMMANDS
 #include <StreamDebugger.h>
 StreamDebugger debugger(SerialAT, SerialMon);

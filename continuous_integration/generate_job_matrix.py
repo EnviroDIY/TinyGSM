@@ -15,7 +15,7 @@ from platformio.project.config import ProjectConfig
 # configuration
 # boards to *always* skip on PlatformIO
 pio_skip_boards = ["esp32-c6-devkitm-1", "arduino_nano_esp32"]
-acli_skip_boards = ["uno_pic32", "genuino101", "bluepill_f103c8"]
+acli_skip_boards = ["uno_pic32", "genuino101"]
 
 # %%
 # set verbose
@@ -25,15 +25,15 @@ if "RUNNER_DEBUG" in os.environ.keys() and os.environ["RUNNER_DEBUG"] == "1":
 
 
 # %%
-# Some working directories
-
 # The workspace directory
 if "GITHUB_WORKSPACE" in os.environ.keys():
     workspace_dir = os.environ.get("GITHUB_WORKSPACE", os.getcwd())
 else:
     workspace_dir = os.getcwd()
+
 if "\\continuous_integration" in workspace_dir:
     workspace_dir = workspace_dir.replace("\\continuous_integration", "")
+
 workspace_path = os.path.abspath(os.path.realpath(workspace_dir))
 print(f"Workspace Path: {workspace_path}")
 
@@ -45,12 +45,16 @@ examples_path = os.path.join(workspace_dir, examples_dir)
 examples_path = os.path.abspath(os.path.realpath(examples_path))
 print(f"Examples Path: {examples_path}")
 
+
+# %%
 # The extras directory
 extras_dir = "./extras/"
 extras_path = os.path.join(workspace_dir, extras_dir)
 extras_path = os.path.abspath(os.path.realpath(extras_path))
 print(f"Extras Path: {extras_path}")
 
+
+# %%
 # The continuous integration directory
 ci_dir = "./continuous_integration/"
 ci_path = os.path.join(workspace_dir, ci_dir)
@@ -60,6 +64,8 @@ if not os.path.exists(ci_path):
     print(f"Creating the directory for CI: {ci_path}")
     os.makedirs(ci_path, exist_ok=True)
 
+
+# %%
 # A directory of files to save and upload as artifacts to use in future jobs
 artifact_dir = os.path.join(
     os.path.join(workspace_dir, "continuous_integration_artifacts")
@@ -136,7 +142,6 @@ if use_verbose:
 
 # %%
 # Pull files to convert between boards and platforms and FQBNs
-
 # Translation between board names on PlatformIO and the Arduino CLI
 response = requests.get(
     "https://raw.githubusercontent.com/EnviroDIY/workflows/main/scripts/platformio_to_arduino_boards.json"
@@ -147,13 +152,14 @@ with open(os.path.join(ci_path, "platformio_to_arduino_boards.json")) as f:
     pio_to_acli = json.load(f)
 
 # %%
-# read configurations based on existing files and environment variables
-
 # Arduino CLI configuration
 # Always use the generic one from the shared workflow repository
+downloaded_arduino_cli_config = False
 if "GITHUB_WORKSPACE" in os.environ.keys():
     arduino_cli_config = os.path.join(ci_path, "arduino_cli.yaml")
+    arduino_cli_format = "json"
     if not os.path.isfile(arduino_cli_config):
+        downloaded_arduino_cli_config = True
         # download the default file
         response = requests.get(
             "https://raw.githubusercontent.com/EnviroDIY/workflows/main/scripts/arduino_cli.yaml"
@@ -167,8 +173,12 @@ if "GITHUB_WORKSPACE" in os.environ.keys():
             os.path.join(artifact_path, "arduino_cli.yaml"),
         )
 else:
-    arduino_cli_config = os.path.join(ci_dir, "arduino_cli_local.yaml")
+    arduino_cli_config = os.path.abspath(
+        os.path.join(ci_path, "arduino_cli_local.yaml")
+    )
+    arduino_cli_format = "json"
 
+# %%
 # PlatformIO configuration
 # If one exists in a "continuous_integration" subfolder of the repository, use it.
 # Otherwise, use the generic one from the shared workflow repository
@@ -401,6 +411,7 @@ filtered_matrix = [e for e in cart_join if e not in expanded_matrix_exclusions_s
 def create_arduino_cli_compile_command(
     code_subfolder: str,
     fqbn: str,
+    extra_flags: List[str] = [],
 ) -> str:
     arduino_command_args = [
         "arduino-cli",
@@ -414,10 +425,15 @@ def create_arduino_cli_compile_command(
         "--config-file",
         f'"{arduino_cli_config}"',
         "--format",
-        "text",
+        f"{arduino_cli_format}",
         "--fqbn",
         fqbn,
     ]
+    if len(extra_flags) > 0:
+        arduino_command_args += [
+            "--build-property",
+            "compiler.cpp.extra_flags=" + " ".join(extra_flags),
+        ]
     arduino_command_args += [
         f'"{os.path.join(workspace_path, code_subfolder)}"',
     ]
@@ -426,72 +442,113 @@ def create_arduino_cli_compile_command(
 
 def create_pio_ci_compile_command(
     code_subfolder: str,
-    pio_board_or_env: str,
+    pio_board_or_env: str | List[str],
     use_pio_config_file: bool,
+    extra_flags: List[str] = [],
+    use_run: bool = False,
 ) -> str:
     pio_command_args = [
         "pio",
-        "ci",
+        "run" if use_run else "ci",
     ]
     if use_verbose:
         pio_command_args += ["--verbose"]
     if use_pio_config_file:
-        pio_command_args += [
-            "--project-conf",
-            f'"{pio_config_file}"',
-            "--environment",
-            pio_board_or_env,
-        ]
-    else:
-        pio_command_args += [
-            "--board",
-            pio_board_or_env,
-        ]
-    pio_command_args += [
-        f'"{os.path.join(workspace_path, code_subfolder)}"',
-    ]
-    return " ".join(pio_command_args)
-
-
-def create_multi_env_pio_ci_compile_command(
-    code_subfolder: str,
-    pio_board_or_env_list: List[str],
-    use_pio_config_file: bool,
-) -> str:
-    pio_command_args = [
-        "pio",
-        "ci",
-    ]
-    if use_verbose:
-        pio_command_args += ["--verbose"]
-    if use_pio_config_file:
-        pio_command_args += [
-            "--project-conf",
-            f'"{pio_config_file}"',
-        ]
-        for pio_board_or_env in pio_board_or_env_list:
-            pio_command_args += [
-                "--environment",
-                pio_board_or_env,
-            ]
-    else:
-        for pio_board_or_env in pio_board_or_env_list:
+        pio_command_args += ["--project-conf", f'"{pio_config_file}"']
+        if type(pio_board_or_env) == str:
+            pio_command_args += ["--environment", pio_board_or_env]
+        else:
+            for pio_board_or_env_item in pio_board_or_env:
+                pio_command_args += [
+                    "--environment",
+                    pio_board_or_env_item,
+                ]
+    elif not use_run:
+        if type(pio_board_or_env) == str:
             pio_command_args += [
                 "--board",
                 pio_board_or_env,
             ]
-    pio_command_args += [
-        f'"{os.path.join(workspace_path, code_subfolder)}"',
-    ]
+        else:
+            for pio_board_or_env_item in pio_board_or_env:
+                pio_command_args += [
+                    "--board",
+                    pio_board_or_env_item,
+                ]
+    else:
+        raise ValueError(
+            "you must be using a pio config file if you are using the 'run' command"
+        )
+    if use_run:
+        pio_command_args += [
+            "--project-dir",
+            f'"{os.path.realpath(os.path.join(artifact_dir, "pio_ci_build"))}"',
+        ]
+    if (
+        len(extra_flags) > 0 and not use_pio_config_file and not use_run
+    ):  # these CANNOT be used with a pio config file
+        pio_command_args += [
+            "--project-option",
+            f'"build_flags = {' '.join(extra_flags)}"',
+        ]
+    else:
+        if len(extra_flags) > 0 and use_pio_config_file and not use_run:
+            print(
+                "Warning: extra_flags are being ignored because you are using a pio config file."
+            )
+        elif len(extra_flags) > 0 and use_run:
+            print(
+                "Warning: extra_flags are being ignored because you are using a pio run command."
+            )
+    if not use_run:
+        pio_command_args += [
+            f'"{os.path.join(workspace_path, code_subfolder)}"',
+        ]
+
     return " ".join(pio_command_args)
 
 
-def group_and_log_commands(commands: List[str], group_title: str) -> List[str]:
+def get_filename_for_log(job: dict) -> str:
+    if "job_type" in job:
+        job_type = job["job_type"]
+    else:
+        job_type = "arduino" if "arduino-cli" in job["command"][0] else "pio"
+    m_name = job["modem"].replace("TINY_GSM_MODEM_", "")
+    extension = "json" if job_type == "arduino" else "log"
+    ex_name = job["example"].rsplit(os.path.sep)[-1]
+    return os.path.abspath(
+        os.path.join(
+            artifact_path,
+            f"{job_type}_{m_name}_{job['board']}_{ex_name}.{extension}",
+        )
+    )
+
+
+def get_job_info_from_filename(filename: str) -> dict:
+    name_parts = os.path.basename(filename).split("_")
+    if len(name_parts) == 3:
+        return {
+            "job_type": name_parts[0],
+            "board": name_parts[1],
+            "example": name_parts[2].rsplit(".", 1)[0],
+        }
+    else:
+        return {
+            "job_type": name_parts[0],
+            "modem": name_parts[1],
+            "board": name_parts[2],
+            "example": name_parts[3].rsplit(".", 1)[0],
+        }
+
+
+def group_and_log_commands(
+    commands: List[str], group_title: str, output_filename: str
+) -> List[str]:
     command_list = []
     command_list.append("\necho ::group::{}".format(group_title))
     command_list.append("group_failed=0")
     for command in commands:
-        command_list.append(command + " 2>&1 | tee -a output.log")
+        command_list.append(command + ' 2>&1 | tee -a "{}"'.format(output_filename))
         command_list.append("result_code=${PIPESTATUS[0]}")
         command_list.append(
             'if [ "$result_code" -ne "0" ]; then group_failed=1; status=1; fi'
@@ -516,6 +573,14 @@ def create_command_list_from_matrix(
             build_command = create_command_function(
                 code_subfolder=example, fqbn=fqbn, **kwargs
             )
+            output_file_name = get_filename_for_log(
+                {
+                    "job_type": "arduino",
+                    "modem": modem,
+                    "board": board,
+                    "example": example,
+                }
+            )
         else:
             return [
                 f"echo 'Skipping {example} for {board} because no matching Arduino FQBN was found.'"
@@ -536,6 +601,9 @@ def create_command_list_from_matrix(
             pio_board_or_env=pio_board_or_env,
             use_pio_config_file=use_pio_config_file,
             **kwargs,
+        )
+        output_file_name = get_filename_for_log(
+            {"job_type": "pio", "modem": modem, "board": board, "example": example}
         )
     else:
         raise ValueError("Invalid command function provided.")
@@ -562,8 +630,18 @@ def create_command_list_from_matrix(
     commands_with_log: List[str] = group_and_log_commands(
         commands=[sed_comment, sed_addition, build_command],
         group_title=f"{group_title}",
+        output_filename=output_file_name,
     )
     return commands_with_log
+
+
+# %%
+# Create job info for the examples
+# Use one job per board/modem with one command per example
+print(
+    f"Per compiler tests: {len(filtered_matrix)}  (filtered from {len(cart_join)} total combinations)"
+)
+print(f"Total tests: {len(filtered_matrix)*2}")
 
 
 # %%
@@ -571,16 +649,15 @@ def create_command_list_from_matrix(
 arduino_job_matrix = []
 pio_job_matrix = []
 start_job_commands: List[str] = ["status=0"]
-end_job_commands: List[str] = ["\n\nexit $status"]
+end_job_commands: List[str] = [
+    "\n\necho ::group::outputs",
+    "ls -l -h",
+    "echo ::endgroup::",
+    "\n\nexit $status",
+]
 
 
 # %%
-# Create job info for the examples
-# Use one job per board/modem with one command per example
-print(
-    f"Total tests: {len(filtered_matrix)} (filtered from {len(cart_join)} total combinations)"
-)
-
 for board in boards:
     b_matrix = [item for item in filtered_matrix if item[1] == board]
     arduino_ex_commands = []
@@ -619,7 +696,9 @@ for board in boards:
             }
         )
 
+# %%
 print(f"Total jobs: {len(arduino_job_matrix)+len(pio_job_matrix)}")
+
 
 # %%
 # Convert commands in the matrix into bash scripts
@@ -658,7 +737,6 @@ json_out = open(os.path.join(artifact_dir, "arduino_job_matrix.json"), "w+")
 json.dump(arduino_job_matrix, json_out, indent=2)
 json_out.close()
 
-
 print('echo "pio_job_matrix={}" >> $GITHUB_OUTPUT'.format(json.dumps(pio_job_matrix)))
 json_out = open(os.path.join(artifact_dir, "pio_job_matrix.json"), "w+")
 json.dump(pio_job_matrix, json_out, indent=2)
@@ -688,12 +766,13 @@ if "GITHUB_WORKSPACE" not in os.environ.keys():
         os.rmdir(ci_path)  # remove dir if empty
     except:
         pass
-    try:
-        print("Deleting default Arduino CLI file")
-        os.remove(arduino_cli_config)  # remove downloaded file
-        os.rmdir(ci_path)  # remove dir if empty
-    except:
-        pass
+    if downloaded_arduino_cli_config:
+        try:
+            print("Deleting default Arduino CLI file")
+            os.remove(arduino_cli_config)  # remove downloaded file
+            os.rmdir(ci_path)  # remove dir if empty
+        except:
+            pass
     if default_pio_config_file:
         try:
             print("Deleting default_pio_config_file")
@@ -704,4 +783,4 @@ if "GITHUB_WORKSPACE" not in os.environ.keys():
 
 
 # %%
-# cSpell:words devkitm acli genuino bluepill fqbn fqbns pipestatus jsons endgroup
+# cSpell:words devkitm acli genuino bluepill fqbn fqbns pipestatus jsons endgroup DTINY_GSM_RX_BUFFER Wextra

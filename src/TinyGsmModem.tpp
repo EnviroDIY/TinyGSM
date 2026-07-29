@@ -492,7 +492,7 @@ class TinyGsmModem {
 
   /**
    * @anchor network_functions
-   * @name Generic Network Functions
+   * @name Generic network functions
    */
   /**@{*/
 

@@ -32,8 +32,7 @@
  *     - @ref TinyGsmModem<modemType, modemConfig>::poweroff "poweroff()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
- * - Generic Network Functions (TinyGsmModem.tpp)
+ * - Generic network functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
@@ -58,7 +57,7 @@
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
- * - Phone Call functions (TinyGsmCalling.tpp)
+ * - Phone call functions (TinyGsmCalling.tpp)
  *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
  *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
  *     - @ref TinyGsmCalling<modemType>::callHangup "callHangup()"
@@ -70,8 +69,6 @@
  * - Time functions (TinyGsmTime.tpp)
  *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
  *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
  * - Battery functions (TinyGsmBattery.tpp)
  *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
  *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
@@ -405,7 +402,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
   // No functions of this type supported
 
   /*
-   * WiFi functions
+   * Wifi functions
    */
   // No functions of this type supported
 
@@ -509,9 +506,9 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
   }
 
   /*
-   * Phone Call functions
+   * Phone call functions
    */
-  // Follows all phone call functions as inherited from TinyGsmCalling.tpp
+  // Follows all Phone call functions as inherited from TinyGsmCalling.tpp
 
 
   /*
@@ -537,7 +534,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
   }
 
   /*
-   * GSM Location functions
+   * GSM location functions
    */
   // No functions of this type supported
 

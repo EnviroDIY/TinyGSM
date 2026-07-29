@@ -37,7 +37,7 @@ class TinyGsmGSMLocation {
  public:
   /**
    * @anchor gsm_location_functions
-   * @name GSM Location functions
+   * @name GSM location functions
    */
   /**@{*/
 
@@ -123,7 +123,7 @@ class TinyGsmGSMLocation {
    */
 
   /*
-   * GSM Location functions
+   * GSM location functions
    * Template is based on SIMCOM commands
    */
  protected:

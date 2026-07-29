@@ -32,7 +32,7 @@
  *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
- * - Generic Network Functions (TinyGsmModem.tpp)
+ * - Generic network functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
@@ -66,7 +66,7 @@
  *     - @ref TinyGsmSSL<modemType>::convertClientCertificates "convertClientCertificates()"
  *     - @ref TinyGsmSSL<modemType>::convertPSKandID "convertPSKandID()"
  *     - @ref TinyGsmSSL<modemType>::convertPSKTable "convertPSKTable()"
- * - Phone Call functions (TinyGsmCalling.tpp)
+ * - Phone call functions (TinyGsmCalling.tpp)
  *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
  *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
  *     - @ref TinyGsmCalling<modemType>::callHangup "callHangup()"
@@ -81,17 +81,13 @@
  *     - @ref TinyGsmGPS<modemType>::getGPSraw "getGPSraw()"
  *     - @ref TinyGsmGPS<modemType>::getGPS "getGPS()"
  *     - @ref TinyGsmGPS<modemType>::getGPSTime "getGPSTime()"
- *     - @ref TinyGsmGPS<modemType>::setGNSSMode "setGNSSMode()"
- *     - @ref TinyGsmGPS<modemType>::getGNSSMode "getGNSSMode()"
  * - Time functions (TinyGsmTime.tpp)
  *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
  *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
  *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
  * - NTP server functions (TinyGsmNTP.tpp)
  *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
  *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
- *     - @ref TinyGsmNTP<modemType>::ShowNTPError "ShowNTPError()"
  * - NTP Utilities (TinyGsmNTP.tpp)
  *     - @ref TinyGsmNTP<modemType>::TinyGsmIsValidNumber "TinyGsmIsValidNumber()"
  * - Battery functions (TinyGsmBattery.tpp)
@@ -101,7 +97,7 @@
  *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
  * - Temperature functions (TinyGsmTemperature.tpp)
  *     - @ref TinyGsmTemperature<modemType>::getTemperature "getTemperature()"
- * - Client related functions
+ * - SSL client functions
  *     - @ref TinyGsmBG96::configureSSLContext "configureSSLContext()"
  *
  * # Connection Information
@@ -705,7 +701,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   }
 
   /*
-   * WiFi functions
+   * Wifi functions
    */
   // No functions of this type supported
 
@@ -761,9 +757,9 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   }
 
   /*
-   * Phone Call functions
+   * Phone call functions
    */
-  // Follows all phone call functions as inherited from TinyGsmCalling.tpp
+  // Follows all Phone call functions as inherited from TinyGsmCalling.tpp
 
   /*
    * Audio functions
@@ -776,7 +772,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
 
   /*
-   * GSM Location functions
+   * GSM location functions
    */
  protected:
   // NOTE:  As of application firmware version 01.016.01.016 triangulated
@@ -1054,7 +1050,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   }
 
   /*
-   * Client related functions
+   * SSL client functions
    */
  public:
   /**
@@ -1186,6 +1182,10 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 
     return success;
   }
+
+  /*
+   * Client related functions
+   */
 
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,

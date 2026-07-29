@@ -33,7 +33,7 @@
  *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
- * - Generic Network Functions (TinyGsmModem.tpp)
+ * - Generic network functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
@@ -54,15 +54,12 @@
  *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
  *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
  *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
- *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
  * - GPS (GNSS, GLONASS) functions (TinyGsmGPS.tpp)
  *     - @ref TinyGsmGPS<modemType>::enableGPS "enableGPS()"
  *     - @ref TinyGsmGPS<modemType>::disableGPS "disableGPS()"
  *     - @ref TinyGsmGPS<modemType>::getGPSraw "getGPSraw()"
  *     - @ref TinyGsmGPS<modemType>::getGPS "getGPS()"
  *     - @ref TinyGsmGPS<modemType>::getGPSTime "getGPSTime()"
- *     - @ref TinyGsmGPS<modemType>::setGNSSMode "setGNSSMode()"
- *     - @ref TinyGsmGPS<modemType>::getGNSSMode "getGNSSMode()"
  * - Generic network functions
  *     - @ref TinyGsmSim70xx::getNetworkModes "getNetworkModes()"
  *     - @ref TinyGsmSim70xx::getNetworkMode "getNetworkMode()"
@@ -82,21 +79,18 @@
  *     - @ref TinyGsmSSL<modemType>::convertCertificate "convertCertificate()"
  *     - @ref TinyGsmSSL<modemType>::convertCACertificate "convertCACertificate()"
  *     - @ref TinyGsmSSL<modemType>::convertClientCertificates "convertClientCertificates()"
- *     - @ref TinyGsmSSL<modemType>::convertPSKandID "convertPSKandID()"
  *     - @ref TinyGsmSSL<modemType>::convertPSKTable "convertPSKTable()"
  * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
  *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
  *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
  *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
- * - GSM Location functions (TinyGsmGSMLocation.tpp)
+ * - GSM location functions (TinyGsmGSMLocation.tpp)
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationRaw "getGsmLocationRaw()"
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocation "getGsmLocation()"
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationTime "getGsmLocationTime()"
  * - Time functions (TinyGsmTime.tpp)
  *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
  *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
  * - NTP server functions (TinyGsmNTP.tpp)
  *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
  *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
@@ -638,7 +632,7 @@ class TinyGsmSim7000SSL
   }
 
   /*
-   * WiFi functions
+   * Wifi functions
    */
   // No functions of this type supported
 
@@ -726,7 +720,7 @@ class TinyGsmSim7000SSL
   // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
-   * Phone Call functions
+   * Phone call functions
    */
   // No functions of this type supported
 
@@ -741,7 +735,7 @@ class TinyGsmSim7000SSL
   // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
 
   /*
-   * GSM Location functions
+   * GSM location functions
    */
   // Follows all GSM-based location functions as inherited from
   // TinyGsmGSMLocation.tpp

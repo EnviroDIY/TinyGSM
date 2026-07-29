@@ -239,7 +239,7 @@ class TinyGsmEspressif
 
 
   /*
-   * WiFi functions
+   * Wifi functions
    */
  protected:
   bool networkConnectImpl(const char* ssid, const char* pwd) {
@@ -287,7 +287,7 @@ class TinyGsmEspressif
   // No functions of this type supported
 
   /*
-   * GSM Location functions
+   * GSM location functions
    */
   // No functions of this type supported
 

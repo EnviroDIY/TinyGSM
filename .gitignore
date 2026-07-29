@@ -86,3 +86,7 @@ docs/DOC_TEMPLATE_clients.dox_TEMPLATE
 docs/.doxybook/*
 docs/CapabilityDetection.md
 docs/ImplementationSummary_CapabilityDetection.md
+home/arduino/*
+continuous_integration/platformio_local.ini
+continuous_integration/generate_local_tests.py
+continuous_integration/parse_test_results.py

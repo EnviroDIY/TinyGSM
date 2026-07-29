@@ -113,7 +113,7 @@ void loop() {
   modem.setPhoneFunctionality(1, true);
 #endif
 
-  // Test generic network functions
+  // Test Generic network functions
   modem.getRegistrationStatus();
   modem.isNetworkConnected();
   modem.waitForNetwork();
