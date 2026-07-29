@@ -30,9 +30,7 @@
  *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::poweroff "poweroff()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
- * - Generic Network Functions (TinyGsmModem.tpp)
+ * - Generic network functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
@@ -53,11 +51,10 @@
  *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
  *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
  *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
- *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
- * - Phone Call functions (TinyGsmCalling.tpp)
+ * - Phone call functions (TinyGsmCalling.tpp)
  *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
  *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
  *     - @ref TinyGsmCalling<modemType>::callHangup "callHangup()"
@@ -69,10 +66,7 @@
  * - Time functions (TinyGsmTime.tpp)
  *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
  *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
  * - Battery functions (TinyGsmBattery.tpp)
- *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
  *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
  *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
  *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
@@ -383,7 +377,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   // No functions of this type supported
 
   /*
-   * WiFi functions
+   * Wifi functions
    */
   // No functions of this type supported
 
@@ -455,7 +449,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   }
 
   /*
-   * Phone Call functions
+   * Phone call functions
    */
  protected:
   // Returns true on pick-up, false on error/busy
@@ -556,7 +550,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   }
 
   /*
-   * GSM Location functions
+   * GSM location functions
    */
   // No functions of this type supported
 

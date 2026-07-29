@@ -36,41 +36,13 @@ You can also join our chat:
 
 - [TinyGSM](#tinygsm)
   - [Overview](#overview)
-    - [Arduino Client interface support](#arduino-client-interface-support)
-    - [TinyGSM is tiny](#tinygsm-is-tiny)
   - [Supported modems](#supported-modems)
-    - [Supported boards/modules](#supported-boardsmodules)
   - [Features](#features)
-    - [Data connections](#data-connections)
-      - [TCP (HTTP, MQTT, Blynk, ...)](#tcp-http-mqtt-blynk-)
-      - [UDP](#udp)
-      - [SSL/TLS (HTTPS, MQTTS)](#ssltls-https-mqtts)
-    - [USSD](#ussd)
-    - [SMS](#sms)
-    - [Voice Calls](#voice-calls)
-    - [Location](#location)
   - [Credits](#credits)
   - [Getting Started](#getting-started)
-    - [First Steps](#first-steps)
-    - [Writing your own code](#writing-your-own-code)
-    - [If you have any issues](#if-you-have-any-issues)
   - [How does it work?](#how-does-it-work)
   - [API Reference](#api-reference)
   - [Troubleshooting](#troubleshooting)
-    - [Ensure stable data \& power connection](#ensure-stable-data--power-connection)
-    - [Baud rates](#baud-rates)
-    - [Broken initial configuration](#broken-initial-configuration)
-    - [Failed connection or no data received](#failed-connection-or-no-data-received)
-    - [Diagnostics sketch](#diagnostics-sketch)
-    - [Web request formatting problems - "but it works with PostMan"](#web-request-formatting-problems---but-it-works-with-postman)
-    - [SoftwareSerial problems](#softwareserial-problems)
-    - [ESP32 Notes](#esp32-notes)
-      - [HardwareSerial](#hardwareserial)
-      - [HttpClient](#httpclient)
-    - [SAMD21](#samd21)
-    - [Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion](#goouuu-tech-iot-ga6-vs-ai-thinker-a6-confusion)
-    - [SIM800 and SSL](#sim800-and-ssl)
-    - [Which version of the SIM7000 code to use](#which-version-of-the-sim7000-code-to-use)
   - [License](#license)
 
 <!--! @endif -->
@@ -164,6 +136,9 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 Watch this repo for new updates! And of course, contributions are welcome ;)
 
 ## Features
+
+> [!TIP]
+> [There is a full table with all functions available by module.](docs/SupportedModuleFunctions.md)
 
 ### Data connections
 

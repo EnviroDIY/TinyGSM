@@ -32,7 +32,7 @@
  *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
- * - Generic Network Functions (TinyGsmModem.tpp)
+ * - Generic network functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
@@ -60,7 +60,6 @@
  * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
  *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
  *     - @ref TinyGsmSSL<modemType>::deleteCertificate "deleteCertificate()"
- *     - @ref TinyGsmSSL<modemType>::printCertificate "printCertificate()"
  *     - @ref TinyGsmSSL<modemType>::convertCertificate "convertCertificate()"
  *     - @ref TinyGsmSSL<modemType>::convertCACertificate "convertCACertificate()"
  *     - @ref TinyGsmSSL<modemType>::convertClientCertificates "convertClientCertificates()"
@@ -70,7 +69,7 @@
  *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
  *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
  *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
- * - GSM Location functions (TinyGsmGSMLocation.tpp)
+ * - GSM location functions (TinyGsmGSMLocation.tpp)
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationRaw "getGsmLocationRaw()"
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocation "getGsmLocation()"
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationTime "getGsmLocationTime()"
@@ -85,8 +84,6 @@
  * - Time functions (TinyGsmTime.tpp)
  *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
  *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
  * - NTP server functions (TinyGsmNTP.tpp)
  *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
  *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
@@ -95,12 +92,10 @@
  *     - @ref TinyGsmNTP<modemType>::TinyGsmIsValidNumber "TinyGsmIsValidNumber()"
  * - Battery functions (TinyGsmBattery.tpp)
  *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
- *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
- *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
  *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
  * - Temperature functions (TinyGsmTemperature.tpp)
  *     - @ref TinyGsmTemperature<modemType>::getTemperature "getTemperature()"
- * - Phone Call functions (TinyGsmCalling.tpp)
+ * - Phone call functions (TinyGsmCalling.tpp)
  *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
  *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
  *     - @ref TinyGsmCalling<modemType>::callHangup "callHangup()"
@@ -110,7 +105,7 @@
  *     - @ref TinyGsmSim7600::getNetworkMode "getNetworkMode()"
  *     - @ref TinyGsmSim7600::setNetworkMode "setNetworkMode()"
  *     - @ref TinyGsmSim7600::getNetworkSystemMode "getNetworkSystemMode()"
- * - Client related functions
+ * - SSL client functions
  *     - @ref TinyGsmSim7600::configureSSLContext "configureSSLContext()"
  *     - @ref TinyGsmSim7600::linkSSLContext "linkSSLContext()"
  *
@@ -593,7 +588,7 @@ class TinyGsmSim7600
   }
 
   /*
-   * WiFi functions
+   * Wifi functions
    */
   // No functions of this type supported
 
@@ -739,7 +734,7 @@ class TinyGsmSim7600
   }
 
   /*
-   * Phone Call functions
+   * Phone call functions
    */
  protected:
   bool callHangupImpl() {
@@ -758,7 +753,7 @@ class TinyGsmSim7600
   // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
 
   /*
-   * GSM Location functions
+   * GSM location functions
    */
   // Follows all GSM-based location functions as inherited from
   // TinyGsmGSMLocation.tpp
@@ -956,7 +951,7 @@ class TinyGsmSim7600
   }
 
   /*
-   * Client related functions
+   * SSL client functions
    */
  public:
   /**
@@ -1070,6 +1065,9 @@ class TinyGsmSim7600
     return waitResponse(5000L) == 1;
   }
 
+  /*
+   * Client related functions
+   */
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
                         int timeout_s) {

@@ -82,7 +82,7 @@ class TinyGsmWifi {
    */
 
   /*
-   * WiFi functions
+   * Wifi functions
    */
 
   bool networkConnectImpl(const char* ssid,

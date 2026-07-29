@@ -36,7 +36,7 @@ class TinyGsmCalling {
  public:
   /**
    * @anchor calling_functions
-   * @name Phone Call functions
+   * @name Phone call functions
    */
   /**@{*/
 
@@ -100,7 +100,7 @@ class TinyGsmCalling {
    */
 
   /*
-   * Phone Call functions
+   * Phone call functions
    */
  protected:
   bool callAnswerImpl() {

@@ -13,19 +13,49 @@
  * ========================================================================== */
 
 // Select your modem:
-#define TINY_GSM_MODEM_SIM7080
+#define TINY_GSM_MODEM_SIM800
+// #define TINY_GSM_MODEM_SIM808
+// #define TINY_GSM_MODEM_SIM868
+// #define TINY_GSM_MODEM_SIM900
+// #define TINY_GSM_MODEM_SIM7000
+// #define TINY_GSM_MODEM_SIM7000SSL
+// #define TINY_GSM_MODEM_SIM7080
+// #define TINY_GSM_MODEM_SIM5360
 // #define TINY_GSM_MODEM_SIM7600
+// #define TINY_GSM_MODEM_A7672X
+// #define TINY_GSM_MODEM_UBLOX
+// #define TINY_GSM_MODEM_SARAR4
+// #define TINY_GSM_MODEM_SARAR5
+// #define TINY_GSM_MODEM_M95
+// #define TINY_GSM_MODEM_BG95
+// #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
+// #define TINY_GSM_MODEM_A7
+// #define TINY_GSM_MODEM_M590
+// #define TINY_GSM_MODEM_MC60
+// #define TINY_GSM_MODEM_MC60E
+// #define TINY_GSM_MODEM_ESP32
 // #define TINY_GSM_MODEM_ESP8266
-
-#include <TinyGsmClient.h>
-#include <TinyGsmCapabilities.h>
+// #define TINY_GSM_MODEM_ESP8266_NONOS
+// #define TINY_GSM_MODEM_XBEE
+// #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
 // Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
+// Use Hardware Serial on Mega, Leonardo, Micro
+#if !defined(__AVR_ATmega328P__) && !defined(SerialAT)
 #define SerialAT Serial1
+
+// or Software Serial on Uno, Nano
+#elif !defined(SerialAT)
+#include <SoftwareSerial.h>
+SoftwareSerial SerialAT(2, 3);  // RX, TX
+#endif
+
+#include <TinyGsmClient.h>
+#include <TinyGsmCapabilities.h>
 
 // Create the modem object
 TinyGsm modem(SerialAT);

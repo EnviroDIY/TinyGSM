@@ -30,9 +30,8 @@
  *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::poweroff "poweroff()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
- * - Generic Network Functions (TinyGsmModem.tpp)
+ * - Generic network functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
@@ -53,15 +52,12 @@
  *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
  *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
  *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
- *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
  * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
- *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
  *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
- *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
- * - GSM Location functions (TinyGsmGSMLocation.tpp)
+ * - GSM location functions (TinyGsmGSMLocation.tpp)
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationRaw "getGsmLocationRaw()"
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocation "getGsmLocation()"
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationTime "getGsmLocationTime()"
@@ -71,17 +67,11 @@
  *     - @ref TinyGsmGPS<modemType>::getGPSraw "getGPSraw()"
  *     - @ref TinyGsmGPS<modemType>::getGPS "getGPS()"
  *     - @ref TinyGsmGPS<modemType>::getGPSTime "getGPSTime()"
- *     - @ref TinyGsmGPS<modemType>::setGNSSMode "setGNSSMode()"
- *     - @ref TinyGsmGPS<modemType>::getGNSSMode "getGNSSMode()"
  * - Time functions (TinyGsmTime.tpp)
  *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
  *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkUTCTime "getNetworkUTCTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkEpoch "getNetworkEpoch()"
  * - Battery functions (TinyGsmBattery.tpp)
- *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
  *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
- *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
  *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
  * - Temperature functions (TinyGsmTemperature.tpp)
  *     - @ref TinyGsmTemperature<modemType>::getTemperature "getTemperature()"
@@ -569,7 +559,7 @@ class TinyGsmSaraR4
   //  template.
 
   /*
-   * WiFi functions
+   * Wifi functions
    */
   // No functions of this type supported
 
@@ -638,7 +628,7 @@ class TinyGsmSaraR4
   }
 
   /*
-   * Phone Call functions
+   * Phone call functions
    */
   // No functions of this type supported
 
