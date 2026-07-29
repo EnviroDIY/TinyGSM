@@ -4,11 +4,15 @@ import re, mmap
 from string import Template
 
 # %%
+# Get repository root relative to this script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.dirname(script_dir)  # parent of docs directory
+src_dir = os.path.join(repo_root, "src")
+docs_dir = script_dir
+
 client_src_files = [
     os.path.join(dp, f)
-    for dp, dn, filenames in os.walk(
-        "C:\\Users\\sdamiano\\Documents\\GitHub\\EnviroDIY\\TinyGSM\\src"
-    )
+    for dp, dn, filenames in os.walk(src_dir)
     for f in filenames
     if "TinyGsmClient" in f and "TinyGsmClient.h" not in f
 ]
@@ -17,9 +21,7 @@ client_src_files = [
 # Delete any previously generated files
 prev_generated_files = [
     os.path.join(dp, f)
-    for dp, dn, filenames in os.walk(
-        "C:\\Users\\sdamiano\\Documents\\GitHub\\EnviroDIY\\TinyGSM\\docs"
-    )
+    for dp, dn, filenames in os.walk(docs_dir)
     for f in filenames
     if "clients_" in f and f.endswith(".dox")
 ]
@@ -75,43 +77,6 @@ for client_file in client_src_files:
         "client_class": client_class_name,
         "secure_client_class": secure_client_class_name,
     }
-
-    # src_template = "C:\\Users\\sdamiano\\Documents\\GitHub\\EnviroDIY\\TinyGSM\\docs\\DOC_TEMPLATE_clients.dox_TEMPLATE"
-    # destination = (
-    #     src_template.replace("DOC_TEMPLATE_", "")
-    #     .replace("clients_", "clients_" + modem_abbrev + "_")
-    #     .replace(".dox_TEMPLATE", "_" + modem_abbrev + ".dox")
-    # )
-
-    # # open the template file
-    # with open(src_template, "r", encoding="UTF-8") as template_file:
-    #     original = template_file.read()
-
-    #     # make substitutions
-    #     new_data = Template(original).substitute(sub_dict)
-
-    #     # write the new file
-    #     with open(destination, "w", encoding="UTF-8") as dest_file:
-    #         dest_file.write(new_data)
-
-    # if has_secure_client_class:
-    #     src_template = "C:\\Users\\sdamiano\\Documents\\GitHub\\EnviroDIY\\TinyGSM\\docs\\DOC_TEMPLATE_clients_secure_fxns.dox_TEMPLATE"
-    #     destination = (
-    #         src_template.replace("DOC_TEMPLATE_", "")
-    #         .replace("clients_", "clients_" + modem_abbrev + "_")
-    #         .replace(".dox_TEMPLATE", "_" + modem_abbrev + ".dox")
-    #     )
-
-    #     # open the template file
-    #     with open(src_template, "r", encoding="UTF-8") as template_file:
-    #         original = template_file.read()
-
-    #         # make substitutions
-    #         new_data = Template(original).substitute(sub_dict)
-
-    #         # write the new file
-    #         with open(destination, "w", encoding="UTF-8") as dest_file:
-    #             dest_file.write(new_data)
 
     if has_secure_ctor_macro:
         src_template = "C:\\Users\\sdamiano\\Documents\\GitHub\\EnviroDIY\\TinyGSM\\docs\\DOC_TEMPLATE_clients_secure_ctors.dox_TEMPLATE"

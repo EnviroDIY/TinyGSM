@@ -26,14 +26,14 @@ enum class TinyGSMDateTimeFormat : int8_t {
 
 /// Enum for the epoch start value.
 enum class TinyGSM_EpochStart : int8_t {
-  /// Use a Unix epoch, starting 1/1/1970 (946684800s behind of Y2K epoch,
-  /// 315878400ss behind of GPS epoch)
+  /// Use a Unix epoch, starting 1/1/1970 (946684800 seconds before the Y2K
+  /// epoch, 315964800 seconds before the GPS epoch)
   UNIX = 0,
-  /// Use an epoch starting 1/1/2000, as some RTC's and Arduinos do (946684800s
-  /// ahead of UNIX epoch, 630806400s ahead of GPS epoch)
+  /// Use an epoch starting 1/1/2000, as some RTCs and Arduinos do (946684800
+  /// seconds after the UNIX epoch, 630720000 seconds after the GPS epoch)
   Y2K = 1,
-  /// Use the GPS epoch starting Jan 5, 1980 (315878400s ahead of UNIX epoch,
-  /// 630806400s behind of Y2K epoch)
+  /// Use the GPS epoch starting Jan 6, 1980 (315964800 seconds after the UNIX
+  /// epoch, 630720000 seconds before the Y2K epoch)
   GPS = 2
 };
 

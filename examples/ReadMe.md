@@ -10,6 +10,7 @@ ___
   - [All Functions](#all-functions)
   - [AWS IoT Core](#aws-iot-core)
   - [Blynk Client](#blynk-client)
+  - [Capability Query](#capability-query)
   - [File Download](#file-download)
   - [HTTP Client](#http-client)
   - [HTTPS Client](#https-client)
@@ -48,6 +49,14 @@ This example connects a TinyGSM modem to Blynk so a device can exchange data and
 - [The Blynk client example on GitHub](https://github.com/EnviroDIY/TinyGSM/tree/master/examples/BlynkClient)
 
 <!--! @subpage example_blynk_client -->
+
+## Capability Query<!--! {#examples_capability_query} -->
+
+This example demonstrates compile-time modem capability detection using TinyGSM traits for multi-modem codebases.
+
+- [The capability query example on GitHub](https://github.com/EnviroDIY/TinyGSM/tree/master/examples/CapabilityQuery)
+
+<!--! @subpage example_capability_query -->
 
 ## File Download<!--! {#examples_file_download} -->
 

@@ -7,10 +7,10 @@ This is particularly useful when working with multiple modem types in the same c
 
 - Type-safe capability detection
 - Works correctly with multiple modem types
-- Compile-time evaluation with `if constexpr`
+- Compile-time evaluation (C++11 compatible)
 - No runtime overhead
 
-## Available Capability Detection Traits s<!--! {#example_capability_query_available} -->
+## Available Capability Detection Traits<!--! {#example_capability_query_available} -->
 
 - `TinyGsmCapabilities::has_ssl` - SSL/TLS secure connections
 - `TinyGsmCapabilities::can_specify_certs` - Certificate specification for SSL

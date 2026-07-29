@@ -8,10 +8,8 @@
  *   https://github.com/bakercp/CRC32
  *   or from http://librarymanager/all#CRC32+checksum
  *
- * @attention Downloading big files requires of knowledge of the TinyGSM
- * internals and some modem specifics, so this is for more experienced
- * developers.
- *
+ * @attention Downloading big files requires knowledge of the TinyGSM internals
+ * and some modem specifics, so this is for more experienced developers.
  *
  * This example downloads a file from a server and checks its CRC32 checksum.
  * It is a good example of how to download a file in chunks and check its

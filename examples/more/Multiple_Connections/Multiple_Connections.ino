@@ -90,9 +90,13 @@ const char gprsPass[] = "";
 const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
-// Server details
-const char server[]   = "vsh.pp.ua";
-const char resource[] = "/TinyGSM/logo.txt";
+// Server 0 details (SSL not required)
+const char server0[]   = "time.sodaq.net";
+const char resource0[] = "/";
+
+// Server 1 details (this server requires SSL, expect it to fail otherwise)
+const char server1[]   = "vsh.pp.ua";
+const char resource1[] = "/TinyGSM/logo.txt";
 
 #include <TinyGsmClient.h>
 
@@ -242,8 +246,8 @@ void loop() {
 #endif
 
   SerialMon.print("Connecting to ");
-  SerialMon.println(server);
-  if (!client0.connect(server, port0)) {
+  SerialMon.println(server0);
+  if (!client0.connect(server0, port0)) {
     SerialMon.println(" fail");
     delay(10000);
     return;
@@ -251,8 +255,8 @@ void loop() {
   SerialMon.println(" success");
 
   SerialMon.print("Connecting to ");
-  SerialMon.println(server);
-  if (!client1.connect(server, port1)) {
+  SerialMon.println(server1);
+  if (!client1.connect(server1, port1)) {
     SerialMon.println(" fail");
     delay(10000);
     return;
@@ -261,8 +265,8 @@ void loop() {
 
   // Make a HTTP GET request:
   SerialMon.println("Performing HTTP GET request...");
-  client0.print(String("GET ") + resource + " HTTP/1.1\r\n");
-  client0.print(String("Host: ") + server + "\r\n");
+  client0.print(String("GET ") + resource0 + " HTTP/1.1\r\n");
+  client0.print(String("Host: ") + server0 + "\r\n");
   client0.print("Connection: close\r\n\r\n");
   client0.println();
 
@@ -279,8 +283,8 @@ void loop() {
 
   // Make a HTTP GET request:
   SerialMon.println("Performing HTTP GET request...");
-  client1.print(String("GET ") + resource + " HTTP/1.1\r\n");
-  client1.print(String("Host: ") + server + "\r\n");
+  client1.print(String("GET ") + resource1 + " HTTP/1.1\r\n");
+  client1.print(String("Host: ") + server1 + "\r\n");
   client1.print("Connection: close\r\n\r\n");
   client1.println();
 

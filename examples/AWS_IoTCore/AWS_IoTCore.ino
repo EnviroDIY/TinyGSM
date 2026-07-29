@@ -16,8 +16,8 @@
  * rerun this program unless you have a new modem, reset your modem, or your
  * certificates change. Most modules store the certificates in flash, which has
  * a limited number of read/write cycles. To avoid wearing out the flash
- * unnecessarily, you should only run this program when necessarily, don't
- * re-write the certificates every time you want to connect to AWS IoT Core.
+ * unnecessarily, only run this program when necessary; do not re-write the
+ * certificates every time you want to connect to AWS IoT Core.
  *
  * For this example, you need to install PubSubClient library:
  *   https://github.com/knolleary/pubsubclient

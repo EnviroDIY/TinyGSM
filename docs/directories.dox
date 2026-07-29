@@ -9,12 +9,16 @@
 /**
  * @dir examples
  * @brief Contains all of the example sketches
+ */
+/**
  * @dir examples/more
- * @brief Furtner examples that are specific to certain modems or features
+ * @brief Further examples that are specific to certain modems or features
  */
 /**
  * @dir extras
  * @brief Has logos, test files, and helper and debugging sketches
+ */
+/**
  * @dir extras/tools
  * @brief Has helper and debugging sketches
  */
