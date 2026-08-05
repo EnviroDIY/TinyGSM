@@ -148,7 +148,7 @@ class TinyGsmSMS {
         result += "\\x";
         result += instr.substring(i, i + 4);
 #else
-        result += "?";
+        result += '?';
 #endif
       } else {
         buf[0] = instr[i + 2];

@@ -847,7 +847,7 @@ class TinyGsmModem {
   String getModemNameImpl() {
     String manufacturer = getModemManufacturer();
     String model        = getModemModel();
-    String name         = manufacturer + String(" ") + model;
+    String name         = manufacturer + ' ' + model;
     DBG("### Modem:", name);
     return name;
   }

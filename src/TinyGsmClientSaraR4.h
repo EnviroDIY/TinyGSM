@@ -459,12 +459,14 @@ class TinyGsmSaraR4
   String getModemNameImpl() {
     String manufacturer = getModemManufacturer();
     String model        = getModemModel();
-    String name         = manufacturer + String(" ") + model;
+    String name         = manufacturer + ' ' + model;
+#ifdef TINY_GSM_DEBUG
     DBG("### Modem:", name);
     if (!name.startsWith("u-blox SARA-R4") &&
         !name.startsWith("u-blox SARA-N4")) {
       DBG("### WARNING:  You are using the wrong TinyGSM modem!");
     }
+#endif
     return name;
   }
 
