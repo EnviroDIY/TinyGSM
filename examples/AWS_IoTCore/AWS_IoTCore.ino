@@ -39,7 +39,7 @@
 
 #define TINY_GSM_TCP_KEEP_ALIVE 180
 
-// Set serial for debug console (to the Serial Monitor, default speed 115200)
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
@@ -74,6 +74,10 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
 #include "aws_iot_config.h"
+
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
 
 // Define how you're planning to connect to the internet.
 // This is only needed for this example, not in other code.

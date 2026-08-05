@@ -11,6 +11,10 @@
 #include <TinyGsmClient.h>
 #include <TinyGsmCapabilities.h>
 
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
+
 TinyGsm modem(Serial);
 
 void setup() {

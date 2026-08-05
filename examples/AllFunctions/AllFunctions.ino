@@ -35,7 +35,7 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// Set serial for debug console (to the Serial Monitor, default speed 115200)
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
@@ -117,6 +117,10 @@ const int  port_ssl       = 443;
 
 #include <TinyGsmClient.h>
 #include <TinyGsmCapabilities.h>
+
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
 
 #if TINY_GSM_TEST_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
 #undef TINY_GSM_TEST_GPRS
@@ -200,23 +204,29 @@ void loop() {
 
   String modemInfo = modem.getModemInfo();
   DBG("Modem Info:", modemInfo);
+  (void)modemInfo;
 
   String name = modem.getModemName();
   DBG("Modem Name:", name);
+  (void)name;
 
   String manufacturer = modem.getModemManufacturer();
   DBG("Modem Manufacturer:", manufacturer);
+  (void)manufacturer;
 
   String hw_ver = modem.getModemModel();
   DBG("Modem Hardware Version:", hw_ver);
+  (void)hw_ver;
 
   String fv_ver = modem.getModemRevision();
   DBG("Modem Firmware Version:", fv_ver);
+  (void)fv_ver;
 
 #if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) && \
     !defined(TINY_GSM_MODEM_ESP8266_NONOS)
   String mod_sn = modem.getModemSerialNumber();
   DBG("Modem Serial Number (may be SIM CCID):", mod_sn);
+  (void)mod_sn;
 #endif
 
   // Display modem capabilities using compile-time detection
@@ -274,36 +284,44 @@ void loop() {
 
   bool res = modem.isGprsConnected();
   DBG("GPRS status:", res ? "connected" : "not connected");
+  (void)res;
 
   String ccid = modem.getSimCCID();
   DBG("CCID:", ccid);
+  (void)ccid;
 
   String imei = modem.getIMEI();
   DBG("IMEI:", imei);
 
   String imsi = modem.getIMSI();
   DBG("IMSI:", imsi);
+  (void)imsi;
 
   String cop = modem.getOperator();
   DBG("Operator:", cop);
+  (void)cop;
 
   // String prov = modem.getProvider();
   // DBG("Provider:", prov);
 
   IPAddress local = modem.localIP();
   DBG("Local IP:", local);
+  (void)local;
 
   int csq = modem.getSignalQuality();
   DBG("Signal quality:", csq);
+  (void)csq;
 #endif
 
 #if TINY_GSM_TEST_USSD && defined TINY_GSM_MODEM_HAS_SMS && \
     !defined(TINY_GSM_MODEM_SARAR4) && !defined(TINY_GSM_MODEM_XBEE)
   String ussd_balance = modem.sendUSSD("*111#");
   DBG("Balance (USSD):", ussd_balance);
+  (void)ussd_balance;
 
   String ussd_phone_num = modem.sendUSSD("*161#");
   DBG("Phone number (USSD):", ussd_phone_num);
+  (void)ussd_phone_num;
 #endif
 
 #if TINY_GSM_TEST_TCP && defined TINY_GSM_MODEM_HAS_TCP
@@ -599,6 +617,8 @@ void loop() {
   DBG("GPS/GNSS Based Location String:", gps_raw);
   DBG("Disabling GPS");
   modem.disableGPS();
+#else
+  (void)gps_raw;
 #endif
 #endif
 
@@ -649,6 +669,7 @@ void loop() {
 #if TINY_GSM_TEST_TEMPERATURE && defined TINY_GSM_MODEM_HAS_TEMPERATURE
   float temp = modem.getTemperature();
   DBG("Chip temperature:", temp);
+  (void)temp;
 #endif
 
 #if TINY_GSM_POWERDOWN

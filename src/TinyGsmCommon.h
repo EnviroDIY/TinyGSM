@@ -200,7 +200,8 @@ uint32_t TinyGsmAutoBaud(T& at_serial, uint32_t minimum = 9600,
 
     DBG("Trying baud rate", rate, "...");
     at_serial.end();
-#if !defined(ARDUINO_ARCH_PIC32) && !defined(ARDUINO_ARCH_ARC32)
+#if !defined(ARDUINO_ARCH_PIC32) && !defined(ARDUINO_ARCH_ARC32) && \
+    !defined(ARDUINO_NRF52840_FEATHER)
     unsigned long origTimeout = at_serial.getTimeout();
 #endif
     at_serial.setTimeout(100);  // avoid 1s default blocking wait
@@ -211,7 +212,8 @@ uint32_t TinyGsmAutoBaud(T& at_serial, uint32_t minimum = 9600,
       String input = at_serial.readString();
       if (input.indexOf("OK") >= 0) {
         DBG("Modem responded at rate", rate);
-#if !defined(ARDUINO_ARCH_PIC32) && !defined(ARDUINO_ARCH_ARC32)
+#if !defined(ARDUINO_ARCH_PIC32) && !defined(ARDUINO_ARCH_ARC32) && \
+    !defined(ARDUINO_NRF52840_FEATHER)
         at_serial.setTimeout(origTimeout);  // reset timeout
 #else
         at_serial.setTimeout(1000L);  // reset timeout, assuming 1s default
@@ -219,7 +221,8 @@ uint32_t TinyGsmAutoBaud(T& at_serial, uint32_t minimum = 9600,
         return rate;
       }
     }
-#if !defined(ARDUINO_ARCH_PIC32) && !defined(ARDUINO_ARCH_ARC32)
+#if !defined(ARDUINO_ARCH_PIC32) && !defined(ARDUINO_ARCH_ARC32) && \
+    !defined(ARDUINO_NRF52840_FEATHER)
     at_serial.setTimeout(origTimeout);  // reset timeout
 #else
     at_serial.setTimeout(1000L);  // reset timeout, assuming 1s default

@@ -76,6 +76,10 @@ if not os.path.exists(artifact_dir):
     print(f"Creating the directory for artifacts: {artifact_path}")
     os.makedirs(artifact_dir)
 
+# %%
+# Set the compiler list
+compiler_list = ["arduino-cli", "pio"]
+
 
 # %%
 # Get the examples to build
@@ -291,7 +295,8 @@ for match in re.finditer(pattern, client_file_contents):
 
 # %%
 # expand the combination of boards, modems, and examples into a job matrix
-cart_join = list(product(*[examples_to_build, boards, modem_list]))
+cart_join = list(product(*[compiler_list, examples_to_build, boards, modem_list]))
+print(f"Total possible combinations: {len(cart_join)}")
 
 
 # %%
@@ -315,20 +320,21 @@ unsecured_modems = [
 # a list of known failures to skip in the job matrix
 matrix_exclusions = [
     {
-        "example": os.path.join("examples", "BlynkClient"),
+        "compilers": compiler_list,
+        "examples": [os.path.join("examples", "BlynkClient")],
         "boards": [
             "nona4809",
             "nano_nora",
             "nano_every",
             "due",
             "dueUSB",
-        ],  # not supported by the Blynk library
+        ],  # these processors are not supported by the Blynk library
         "modems": deepcopy(modem_list),
     },
     {
-        "example": os.path.join("examples", "BlynkClient"),
+        "compilers": compiler_list,
+        "examples": [os.path.join("examples", "BlynkClient")],
         "boards": boards,
-        # TinyGSM wifi modems are not supported by the Blynk library
         "modems": [
             modem
             for modem in modem_list
@@ -337,39 +343,48 @@ matrix_exclusions = [
                 "TINY_GSM_MODEM_ESP32",
                 "TINY_GSM_MODEM_ESP8266",
                 "TINY_GSM_MODEM_ESP8266_NONOS",
-            ]
+            ]  # TinyGSM wifi modems are not supported by the Blynk library
         ],
     },
     {
-        "example": os.path.join("examples", "BlynkClient"),
-        "boards": ["leonardo", "feather32u4", "yun"],  # 32u4
+        "compilers": compiler_list,
+        "examples": [os.path.join("examples", "BlynkClient")],
+        "boards": ["leonardo", "feather32u4", "yun"],
         "modems": ["TINY_GSM_MODEM_XBEE"],
-        # too big for 32u4 boards
+        # The XBee is a few bytes too big for 32u4 boards
     },
     {
-        "example": os.path.join("examples", "AllFunctions"),
+        "compilers": compiler_list,
+        "examples": [
+            os.path.join("examples", "AllFunctions"),
+            os.path.join("extras", "tools", "test_build"),
+        ],
         "boards": [
             "uno",
             "leonardo",
             "yun",
             "feather328p",
             "feather32u4",
-        ],  # doesn't fit on 328p or 32u
+        ],  # doesn't fit on 328p or 32u4
         "modems": deepcopy(modem_list),
     },
     {
-        "example": os.path.join("extras", "tools", "test_build"),
+        "compilers": compiler_list,
+        "examples": [
+            os.path.join("extras", "tools", "test_build"),
+        ],
         "boards": [
-            "uno",
+            "uno_pic32",
             "leonardo",
             "yun",
             "feather328p",
             "feather32u4",
-        ],  # doesn't fit on 328p or 32u
-        "modems": deepcopy(modem_list),
+        ],  # doesn't fit
+        "modems": ["TINY_GSM_MODEM_SARAR5"],
     },
     {
-        "example": os.path.join("examples", "AWS_IoTCore"),
+        "compilers": compiler_list,
+        "examples": [os.path.join("examples", "AWS_IoTCore")],
         "boards": [
             "uno",
             "leonardo",
@@ -377,45 +392,159 @@ matrix_exclusions = [
             "feather328p",
             "feather32u4",
         ],  # doesn't fit on 328p or 32u
-        # Exclude only SSL-capable modems on memory-constrained boards.
         "modems": [modem for modem in modem_list if modem not in unsecured_modems],
     },
     {
-        "example": os.path.join("extras", "tools", "AT_Debug"),
+        "compilers": compiler_list,
+        "examples": [
+            os.path.join("examples", "HttpsClient"),
+            os.path.join("examples", "AWS_IoTCore"),
+        ],
         "boards": boards,
-        "modems": deepcopy(modem_list),
+        "modems": [modem for modem in modem_list if modem in unsecured_modems],
+        # Exclude SSL-incapable modems on SSL required examples.
     },
     {
-        "example": os.path.join("extras", "tools", "AT_Spy"),
+        "compilers": compiler_list,
+        "examples": [
+            os.path.join("extras", "tools", "AT_Debug"),
+            os.path.join("extras", "tools", "AT_Spy"),
+        ],  # never build these examples in CI, they are for debugging only
         "boards": boards,
         "modems": deepcopy(modem_list),
     },
 ]
-for example in [
-    os.path.join("examples", "HttpsClient"),
-    os.path.join("examples", "AWS_IoTCore"),
-]:
-    matrix_exclusions.append(
-        {
-            "example": example,
-            "boards": boards,
-            "modems": [modem for modem in modem_list if modem in unsecured_modems],
-        }
-    )
 
 # expand the matrix exclusions to a list of tuples for easier filtering
 expanded_matrix_exclusions = []
-for known_failure in matrix_exclusions:
-    b_m_x = list(product(*[known_failure["boards"], known_failure["modems"]]))
-    for i in range(len(b_m_x)):
+for exclusion in matrix_exclusions:
+    exclusion_list = list(
+        product(
+            *[
+                exclusion["compilers"],
+                exclusion["examples"],
+                exclusion["boards"],
+                exclusion["modems"],
+            ]
+        )
+    )
+    for i in range(len(exclusion_list)):
         expanded_matrix_exclusions.append(
-            (known_failure["example"], b_m_x[i][0], b_m_x[i][1])
+            (
+                exclusion_list[i][0],
+                exclusion_list[i][1],
+                exclusion_list[i][2],
+                exclusion_list[i][3],
+            )
         )
 
-# %%
 # filter out the known failures from the job matrix
 expanded_matrix_exclusions_set = set(expanded_matrix_exclusions)
-filtered_matrix = [e for e in cart_join if e not in expanded_matrix_exclusions_set]
+print(f"Matrix exclusions: {len(expanded_matrix_exclusions_set)}")
+
+# %%
+# eh, minimize the matrix instead of maximizing
+matrix_inclusions = [
+    {
+        "compilers": compiler_list,
+        "examples": [os.path.join("extras", "tools", "test_build")],
+        "boards": [
+            board
+            for board in boards
+            if board
+            not in [
+                "uno",
+                "leonardo",
+                "yun",
+                "feather328p",
+                "feather32u4",
+            ]  # doesn't fit on 328p or 32u
+        ],
+        "modems": deepcopy(modem_list),
+    },
+    {
+        "compilers": compiler_list,
+        "examples": [
+            os.path.join("examples", "WebClient"),
+            os.path.join("examples", "MqttClient"),
+        ],
+        "boards": [  # boards too small for the bigger test build
+            "uno",
+            "leonardo",
+            "yun",
+            "feather328p",
+            "feather32u4",
+        ],
+        "modems": deepcopy(modem_list),
+    },
+    {
+        "compilers": compiler_list,
+        "examples": [
+            os.path.join("examples", "WebClient"),
+            os.path.join("examples", "MqttClient"),
+        ],
+        "boards": [  # boards too small for the bigger test build
+            "uno_pic32",
+        ],
+        "modems": ["TINY_GSM_MODEM_SARAR5"],
+    },
+    {
+        "compilers": compiler_list,
+        "examples": examples_to_build,
+        "boards": [
+            "mayfly",
+            "stonefly",
+            "mega",
+            "zeroUSB",
+            "uno_r4_wifi",
+            "nodemcu",
+            "esp32dev",
+            "esp32-c3-devkitm-1",
+            "esp32-c6-devkitm-1",
+            "esp32-s3-devkitm-1",
+        ],
+        "modems": deepcopy(modem_list),
+    },
+]
+
+# expand the matrix inclusions to a list of tuples for easier filtering
+expanded_matrix_inclusions = []
+for inclusion in matrix_inclusions:
+    inclusion_list = list(
+        product(
+            *[
+                inclusion["compilers"],
+                inclusion["examples"],
+                inclusion["boards"],
+                inclusion["modems"],
+            ]
+        )
+    )
+    for i in range(len(inclusion_list)):
+        expanded_matrix_inclusions.append(
+            (
+                inclusion_list[i][0],
+                inclusion_list[i][1],
+                inclusion_list[i][2],
+                inclusion_list[i][3],
+            )
+        )
+
+# remove duplicates from the inclusions list
+expanded_matrix_inclusions_set = set(expanded_matrix_inclusions)
+print(f"Expanded matrix inclusions: {len(expanded_matrix_inclusions_set)}")
+
+# %%
+# decide on the filtered matrix to use for the job matrix
+filtered_matrix = [
+    e
+    for e in cart_join
+    if e not in expanded_matrix_exclusions_set and e in expanded_matrix_inclusions_set
+]
+filtered_matrix = sorted(
+    filtered_matrix, key=lambda x: (x[2], x[3], x[1], x[0])
+)  # sort by board, modem, example, compiler
+print(f"Final filtered matrix: {len(filtered_matrix)}")
 
 
 # %%
@@ -520,18 +649,33 @@ def create_pio_ci_compile_command(
     return " ".join(pio_command_args)
 
 
-def get_filename_for_log(job: dict) -> str:
-    if "job_type" in job:
-        job_type = job["job_type"]
+def get_filename_slug(job_key, value) -> str:
+    if job_key in ["compiler", "board", "flag"]:
+        return value.replace("_", "-")
+    if job_key == "modem":
+        return value.replace("TINY_GSM_MODEM_", "").replace("_", "-")
+    if job_key == "example":
+        return value.rsplit(os.path.sep)[-1].replace("_", "-")
     else:
-        job_type = "arduino" if "arduino-cli" in job["command"][0] else "pio"
-    m_name = job["modem"].replace("TINY_GSM_MODEM_", "")
-    extension = "json" if job_type == "arduino" else "log"
-    ex_name = job["example"].rsplit(os.path.sep)[-1]
+        raise ValueError(
+            f"Invalid job key: {job_key}. Must be one of ['compiler', 'modem', 'board', 'example']"
+        )
+
+
+def get_filename_for_log(job: dict) -> str:
+    if "compiler" in job:
+        compiler = job["compiler"]
+    else:
+        compiler = "arduino-cli" if "arduino-cli" in job["command"][0] else "pio"
+    c_name = get_filename_slug("compiler", compiler)
+    m_name = get_filename_slug("modem", job["modem"])
+    b_name = get_filename_slug("board", job["board"])
+    ex_name = get_filename_slug("example", job["example"])
+    extension = "json" if compiler == "arduino-cli" else "log"
     return os.path.abspath(
         os.path.join(
             artifact_path,
-            f"{job_type}_{m_name}_{job['board']}_{ex_name}.{extension}",
+            f"{c_name}_{m_name}_{b_name}_{ex_name}.{extension}",
         )
     )
 
@@ -540,13 +684,13 @@ def get_job_info_from_filename(filename: str) -> dict:
     name_parts = os.path.basename(filename).split("_")
     if len(name_parts) == 3:
         return {
-            "job_type": name_parts[0],
+            "compiler": name_parts[0],
             "board": name_parts[1],
             "example": name_parts[2].rsplit(".", 1)[0],
         }
     else:
         return {
-            "job_type": name_parts[0],
+            "compiler": name_parts[0],
             "modem": name_parts[1],
             "board": name_parts[2],
             "example": name_parts[3].rsplit(".", 1)[0],
@@ -575,147 +719,145 @@ def group_and_log_commands(
     return command_list
 
 
-def create_command_list_from_matrix(
-    matrix_item: tuple, create_command_function, title_by: str | List[str], **kwargs
-) -> List[str]:
-    example, board, modem = matrix_item
-    if create_command_function == create_arduino_cli_compile_command:
-        if board in pio_to_acli.keys() and not board in acli_skip_boards:
-            fqbn = pio_to_acli[board]["fqbn"]
-            build_command = create_command_function(
-                code_subfolder=example, fqbn=fqbn, **kwargs
-            )
-            output_file_name = get_filename_for_log(
-                {
-                    "job_type": "arduino",
-                    "modem": modem,
-                    "board": board,
-                    "example": example,
-                }
-            )
-        else:
-            return [
-                f"echo 'Skipping {example} for {board} because no matching Arduino FQBN was found.'"
-            ]
-    elif create_command_function == create_pio_ci_compile_command:
+def create_command_list_from_matrix(matrix_item: tuple, **kwargs):
+    if len(matrix_item) != 4:
+        raise ValueError(
+            "Matrix item must be a tuple of length 4 (compiler, example, board, modem)"
+        )
+    compiler, example, board, modem = matrix_item
+    job_dict = {
+        "compiler": compiler,
+        "modem": modem,
+        "board": board,
+        "example": example,
+    }
+    output_file_name = get_filename_for_log(job_dict)
+    if compiler == "arduino-cli":
+        if board not in pio_to_acli.keys() or board in acli_skip_boards:
+            # return [
+            #     f"echo 'Skipping {example} for {board} because no matching Arduino FQBN was found.'"
+            # ]
+            return None
+        fqbn = pio_to_acli[board]["fqbn"]
+        build_command = create_arduino_cli_compile_command(
+            code_subfolder=example, fqbn=fqbn, **kwargs
+        )
+    elif compiler == "pio":
         if board in pio_skip_boards:
-            return [
-                f"echo 'Skipping {example} for {board} because it is in the list of boards to skip for PlatformIO.'"
-            ]
+            # return [
+            #     f"echo 'Skipping {example} for {board} because it is in the list of boards to skip for PlatformIO.'"
+            # ]
+            return None
         if board in board_to_pio_env.keys():
             pio_board_or_env = board_to_pio_env[board]
             use_pio_config_file = True
         else:
             pio_board_or_env = board
             use_pio_config_file = False
-        build_command = create_command_function(
+        build_command = create_pio_ci_compile_command(
             code_subfolder=example,
             pio_board_or_env=pio_board_or_env,
             use_pio_config_file=use_pio_config_file,
             **kwargs,
         )
-        output_file_name = get_filename_for_log(
-            {"job_type": "pio", "modem": modem, "board": board, "example": example}
-        )
     else:
-        raise ValueError("Invalid command function provided.")
+        raise ValueError("Invalid compiler provided.")
 
     example_name = f"{os.path.split(example)[-1]}"
     example_full_path = os.path.join(workspace_path, example, example_name + ".ino")
     sed_comment = f"sed -i 's/#define TINY_GSM_MODEM_/\\/\\/ #define TINY_GSM_MODEM_/g' \"{example_full_path}\""
     sed_addition = f"sed -i '1i\\\n#define {modem}\\\n' \"{example_full_path}\""
 
-    group_title = ""
-    if type(title_by) == str:
-        title_by = [title_by]
-    if "example" in title_by:
-        group_title += example_name
-    if "board" in title_by:
-        if len(group_title) > 0:
-            group_title += " - "
-        group_title += board
-    if "modem" in title_by:
-        if len(group_title) > 0:
-            group_title += " - "
-        group_title += modem
+    job_dict["output_file_name"] = output_file_name
+    job_dict["build_commands"] = [sed_comment, sed_addition, build_command]
 
-    commands_with_log: List[str] = group_and_log_commands(
-        commands=[sed_comment, sed_addition, build_command],
-        group_title=f"{group_title}",
-        output_filename=output_file_name,
+    return deepcopy(job_dict)
+
+
+# %%
+# convert the matrix into a list of command for each board and modem combination
+complete_command_matrix: List[dict] = []
+for matrix_item in filtered_matrix:
+    command_block = create_command_list_from_matrix(matrix_item=matrix_item)
+    if command_block is not None:
+        complete_command_matrix.append(command_block)
+
+
+# %%
+# group the commands by how we want the collapsing in the logs to work
+log_groupers = ["compiler", "board", "example", "modem"]
+grouped_command_matrix: dict[str, dict[str, str | List[str]]] = {}
+for matrix_item in complete_command_matrix:
+    l_names = []
+    for grouper in log_groupers:
+        if grouper not in matrix_item.keys():
+            raise ValueError(
+                f"Matrix item {matrix_item} does not have the key {grouper}"
+            )
+        elif matrix_item[grouper] is None:
+            raise ValueError(
+                f"Matrix item {matrix_item} has a None value for the key {grouper}"
+            )
+        else:
+            l_names.append(get_filename_slug(grouper, matrix_item[grouper]))
+    l_key = "-".join(l_names)
+    l_command_list = group_and_log_commands(
+        matrix_item["build_commands"],
+        group_title=l_key,
+        output_filename=matrix_item["output_file_name"],
     )
-    return commands_with_log
+    if l_key not in grouped_command_matrix.keys():
+        l_dict: dict[str, str | List[str]] = {
+            "log_group": l_key,
+            "group_commands": l_command_list,
+        }
+        for grouper in log_groupers:
+            l_dict[grouper] = matrix_item[grouper]
+        grouped_command_matrix[l_key] = l_dict
+    else:
+        grouped_command_matrix[l_key]["group_commands"] += l_command_list  # type: ignore
+print(f"Total log groups: {len(grouped_command_matrix)}")
 
 
 # %%
-# Create job info for the examples
-# Use one job per board/modem with one command per example
-print(
-    f"Per compiler tests: {len(filtered_matrix)}  (filtered from {len(cart_join)} total combinations)"
-)
-print(f"Total tests: {len(filtered_matrix)*2}")
-
-
-# %%
-# set up outputs
-arduino_job_matrix = []
-pio_job_matrix = []
+# group the commands into jobs
 start_job_commands: List[str] = ["status=0"]
-end_job_commands: List[str] = [
-    "\n\necho ::group::outputs",
-    "ls -l -h",
-    "echo ::endgroup::",
-    "\n\nexit $status",
-]
-
-
-# %%
-for board in boards:
-    b_matrix = [item for item in filtered_matrix if item[1] == board]
-    arduino_ex_commands = []
-    pio_ex_commands = []
-    for modem in modem_list:
-        m_matrix = [item for item in b_matrix if item[2] == modem]
-        for matrix_item in m_matrix:
-            arduino_ex_commands += create_command_list_from_matrix(
-                matrix_item=matrix_item,
-                create_command_function=create_arduino_cli_compile_command,
-                title_by=["example", "modem"],
+end_job_commands: List[str] = ["\n\nexit $status"]
+job_groupers = ["compiler", "board"]
+grouped_job_matrix = {}
+for l_key, group_dict in grouped_command_matrix.items():
+    j_names = []
+    for grouper in job_groupers:
+        if grouper not in group_dict.keys():
+            raise ValueError(
+                f"Matrix item {group_dict} does not have the key {grouper}"
             )
-            pio_ex_commands += create_command_list_from_matrix(
-                matrix_item=matrix_item,
-                create_command_function=create_pio_ci_compile_command,
-                title_by=["example", "modem"],
+        elif group_dict[grouper] is None:
+            raise ValueError(
+                f"Matrix item {group_dict} has a None value for the key {grouper}"
             )
-    if len(arduino_ex_commands) > 0:
-        arduino_job_matrix.append(
-            {
-                "job_name": f"Arduino - {board}",
-                "job_tag": f"arduino_{board}".lower(),
-                "command": "\n".join(
-                    start_job_commands + arduino_ex_commands + end_job_commands
-                ),
-            }
-        )
-    if len(pio_ex_commands) > 0:
-        pio_job_matrix.append(
-            {
-                "job_name": f"PlatformIO - {board}",
-                "job_tag": f"pio_{board}".lower(),
-                "command": "\n".join(
-                    start_job_commands + pio_ex_commands + end_job_commands
-                ),
-            }
-        )
-
-# %%
-print(f"Total jobs: {len(arduino_job_matrix)+len(pio_job_matrix)}")
+        else:
+            j_names.append(get_filename_slug(grouper, group_dict[grouper]))
+    job_name = " - ".join(j_names)
+    job_tag = "-".join(j_names)
+    if job_tag not in grouped_job_matrix.keys():
+        j_dict: dict[str, str | List[str]] = {
+            "job_name": job_name,
+            "job_tag": job_tag.lower(),
+            "job_command": group_dict["group_commands"],
+        }
+        for grouper in log_groupers:
+            j_dict[grouper] = group_dict[grouper]
+        grouped_job_matrix[job_tag] = j_dict
+    else:
+        grouped_job_matrix[job_tag]["job_command"] += group_dict["group_commands"]
+print(f"Total jobs: {len(grouped_job_matrix)}")
 
 
 # %%
 # Convert commands in the matrix into bash scripts
-for matrix_job in arduino_job_matrix + pio_job_matrix:
-    bash_file_name = matrix_job["job_name"].replace(" ", "") + ".sh"
+for job_tag, matrix_job in grouped_job_matrix.items():
+    bash_file_name = job_tag + ".sh"
     print(f"Writing bash file to {os.path.join(artifact_path, bash_file_name)}")
     bash_out = open(os.path.join(artifact_path, bash_file_name), "w+")
     bash_out.write("#!/bin/bash\n\n")
@@ -728,15 +870,29 @@ if [ "$RUNNER_DEBUG" = "1" ]; then
 fi
 
 """)
-    bash_out.write(matrix_job["command"])
+    bash_out.write("\n".join(matrix_job["job_command"]))
     bash_out.close()
     matrix_job["script"] = os.path.join(artifact_path, bash_file_name)
 
 # Remove the command from the dictionaries before outputting them
-for items in arduino_job_matrix + pio_job_matrix:
-    if "command" in items:
-        del items["command"]
-
+arduino_job_matrix = [
+    {
+        vk: vv
+        for vk, vv in v.items()
+        if vk == "job_name" or vk == "job_tag" or vk == "script"
+    }
+    for k, v in grouped_job_matrix.items()
+    if v["compiler"] == "arduino-cli"
+]
+pio_job_matrix = [
+    {
+        vk: vv
+        for vk, vv in v.items()
+        if vk == "job_name" or vk == "job_tag" or vk == "script"
+    }
+    for k, v in grouped_job_matrix.items()
+    if v["compiler"] == "pio"
+]
 
 # %%
 # Write out output

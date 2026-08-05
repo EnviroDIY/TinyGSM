@@ -57,6 +57,10 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #include <TinyGsmClient.h>
 #include <TinyGsmCapabilities.h>
 
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
+
 // Create the modem object
 TinyGsm modem(SerialAT);
 
