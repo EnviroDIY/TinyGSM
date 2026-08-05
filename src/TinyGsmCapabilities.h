@@ -38,6 +38,17 @@ class TinyGsmBluetooth;
 template <class modemType, class tcpConfig>
 class TinyGsmTCP;
 
+// Forward declarations of modem types
+class TinyGsmSim800;
+class TinyGsmSim808;
+class TinyGsmUBLOX;
+class TinyGsmSaraR4;
+class TinyGsmSaraR5;
+class TinyGsmSequansMonarch;
+class TinyGsmESP8266;
+class TinyGsmESP8266NonOS;
+class TinyGsmXBee;
+
 /**
  * @brief Namespace for TinyGSM capability detection traits.
  *
@@ -99,20 +110,21 @@ struct is_base_of {
 
 /**
  * @brief Detect if a modem type has SSL/TLS support
+ * @note Default implementation checks for TinyGsmSSL base class
  */
 template <typename T>
 struct has_ssl : is_base_of<TinyGsmSSL<T>, T> {};
 
 /**
  * @brief Detect if a modem type can specify certificates
- * @note If SSL is supported, certificate specification is also supported
+ * @note Default implementation checks for TinyGsmSSL base class
  */
 template <typename T>
 struct can_specify_certs : is_base_of<TinyGsmSSL<T>, T> {};
 
 /**
  * @brief Detect if a modem type can load certificates
- * @note If SSL is supported, certificate loading is also supported
+ * @note Default implementation checks for TinyGsmSSL base class
  */
 template <typename T>
 struct can_load_certs : is_base_of<TinyGsmSSL<T>, T> {};
@@ -189,6 +201,71 @@ struct has_bluetooth : is_base_of<TinyGsmBluetooth<T>, T> {};
  */
 template <typename T>
 struct has_tcp : true_type {};
+
+// ============================================================================
+// Specializations for modems with non-standard SSL support
+// ============================================================================
+
+// Modems that have SSL but don't inherit from TinyGsmSSL
+// (They use TINY_GSM_MODEM_HAS_SSL but don't have certificate management)
+
+template <>
+struct has_ssl<TinyGsmSim800> : true_type {};
+template <>
+struct can_specify_certs<TinyGsmSim800> : false_type {};
+template <>
+struct can_load_certs<TinyGsmSim800> : false_type {};
+
+template <>
+struct has_ssl<TinyGsmSim808> : true_type {};
+template <>
+struct can_specify_certs<TinyGsmSim808> : false_type {};
+template <>
+struct can_load_certs<TinyGsmSim808> : false_type {};
+
+template <>
+struct has_ssl<TinyGsmUBLOX> : true_type {};
+template <>
+struct can_specify_certs<TinyGsmUBLOX> : false_type {};
+template <>
+struct can_load_certs<TinyGsmUBLOX> : false_type {};
+
+template <>
+struct has_ssl<TinyGsmSaraR4> : true_type {};
+template <>
+struct can_specify_certs<TinyGsmSaraR4> : false_type {};
+template <>
+struct can_load_certs<TinyGsmSaraR4> : false_type {};
+
+template <>
+struct has_ssl<TinyGsmSaraR5> : true_type {};
+template <>
+struct can_specify_certs<TinyGsmSaraR5> : false_type {};
+template <>
+struct can_load_certs<TinyGsmSaraR5> : false_type {};
+
+template <>
+struct has_ssl<TinyGsmSequansMonarch> : true_type {};
+template <>
+struct can_specify_certs<TinyGsmSequansMonarch> : false_type {};
+template <>
+struct can_load_certs<TinyGsmSequansMonarch> : false_type {};
+
+template <>
+struct has_ssl<TinyGsmESP8266NonOS> : true_type {};
+template <>
+struct can_specify_certs<TinyGsmESP8266NonOS> : false_type {};
+template <>
+struct can_load_certs<TinyGsmESP8266NonOS> : false_type {};
+
+// Modems that inherit from TinyGsmSSL but can't load certificates
+// (They have certificate functions but uploading is done externally)
+
+template <>
+struct can_load_certs<TinyGsmESP8266> : false_type {};
+
+template <>
+struct can_load_certs<TinyGsmXBee> : false_type {};
 
 }  // namespace TinyGsmCapabilities
 
