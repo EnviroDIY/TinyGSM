@@ -18,25 +18,38 @@
  *     - @ref TinyGsmModem<modemType, modemConfig>::init "init()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::sendAT "sendAT()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::setBaud "setBaud()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud
+ * "forceModemBaud()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse
+ * "waitResponse()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo
+ * "getModemInfo()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName
+ * "getModemName()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer
+ * "getModemManufacturer()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel
+ * "getModemModel()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision
+ * "getModemRevision()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber
+ * "getModemSerialNumber()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault
+ * "factoryDefault()"
  * - Power functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::poweroff "poweroff()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
  * - Generic network functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality "getSignalQuality()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus
+ * "getRegistrationStatus()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected
+ * "isNetworkConnected()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork
+ * "waitForNetwork()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality
+ * "getSignalQuality()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::getLocalIP "getLocalIP()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::localIP "localIP()"
  * - Utilities (TinyGsmModem.tpp)
@@ -58,7 +71,8 @@
  *     - @ref TinyGsmWifi<modemType>::networkDisconnect "networkDisconnect()"
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux
+ * "findFirstUnassignedMux()"
  * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
  *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
  *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
@@ -347,7 +361,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     /// @copydoc GsmClient::write(const char*)
     size_t write(const char* str) {
       if (str == nullptr) return 0;
-      return write((const uint8_t*)str, strlen(str));
+      return write(reinterpret_cast<const uint8_t*>(str), strlen(str));
     }
 
     /// @copydoc GsmClient::available()
@@ -462,21 +476,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    * @brief Construct a modem wrapper around a stream transport.
    * @param stream Stream used to communicate with the modem.
    */
-  explicit TinyGsmXBee(Stream& stream)
-      : stream(stream),
-        guardTime(TINY_GSM_XBEE_GUARD_TIME),
-        beeType(XBEE_UNKNOWN),
-        resetPin(-1),
-        savedIP(IPAddress(0, 0, 0, 0)),
-        savedHost(""),
-        savedHostIP(IPAddress(0, 0, 0, 0)),
-        savedOperatingIP(IPAddress(0, 0, 0, 0)),
-        inCommandMode(false),
-        lastCommandModeMillis(0),
-        lastHostLookupMillis(0) {
-    // Start not knowing what kind of bee it is
-    // Start with the default guard time of 1 second
-    memset(sockets, 0, sizeof(sockets));
+  explicit TinyGsmXBee(Stream& stream) : TinyGsmXBee(stream, -1) {
+    // Delegate to main constructor
   }
 
   /**
@@ -561,27 +562,42 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   }
 
   String getModemNameImpl() {
-    return getBeeName();
+    String result;
+    result.reserve(26);
+    result =
+        (const __FlashStringHelper*)TinyGsmXBeeModemConfig::MODEM_MANUFACTURER;
+    result += ' ';
+    result += getModemModelImpl();
+    return result;
   }
 
   String getModemModelImpl() {
+    PGM_P suffix;
     switch (beeType) {
-      case XBEE_S6B_WIFI: return "XBee Wi-Fi";
-      case XBEE_LTE1_VZN: return "XBee Cellular LTE Cat 1";
-      case XBEE_3G: return "XBee Cellular 3G";
-      case XBEE3_LTE1_ATT: return "XBee3 Cellular LTE CAT 1";
-      case XBEE3_LTEM_ATT: return "XBee3 Cellular LTE-M";
-      case XBEE3_LTEM3: return "XBee3 Cellular LTE-M3";
-      default: return "XBee Unknown";
+      case XBEE_S6B_WIFI: suffix = PSTR(" Wi-Fi"); break;
+      case XBEE_LTE1_VZN: suffix = PSTR(" Cellular LTE Cat 1"); break;
+      case XBEE_3G: suffix = PSTR(" Cellular 3G"); break;
+      case XBEE3_LTE1_ATT: suffix = PSTR("3 Cellular LTE CAT 1"); break;
+      case XBEE3_LTEM_ATT: suffix = PSTR("3 Cellular LTE-M"); break;
+      case XBEE3_LTEM3: suffix = PSTR("3 Cellular LTE-M3"); break;
+      default: suffix = PSTR(" Unknown");
     }
+    String result;
+    result.reserve(30);
+    result = (const __FlashStringHelper*)TinyGsmXBeeModemConfig::MODEM_MODEL;
+    result += (const __FlashStringHelper*)suffix;
+    return result;
   }
+
   // Gets the modem serial number
   String getModemSerialNumberImpl() {
-    String xbeeSnLow =
-        sendATGetString(GF("SL"));  // Request Module MAC/Serial Number Low
-    String xbeeSnHigh =
+    String result;
+    result.reserve(24);
+    result = sendATGetString(GF("SL"));  // Request Module MAC/Serial Number Low
+    result += ' ';
+    result +=
         sendATGetString(GF("SH"));  // Request Module MAC/Serial Number High
-    return xbeeSnLow + String(" ") + xbeeSnHigh;
+    return result;
   }
 
   // Gets the modem hardware version
@@ -596,9 +612,12 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
   // Gets the modem combined version
   String getModemRevisionImpl() {
-    String hw_ver = getModemHardwareVersion();
-    String fw_ver = getModemFirmwareVersion();
-    return hw_ver + String(" ") + fw_ver;
+    String result;
+    result.reserve(24);
+    result = getModemHardwareVersion();
+    result += ' ';
+    result += getModemFirmwareVersion();
+    return result;
   }
 
   bool setBaudImpl(uint32_t baud) {
@@ -716,15 +735,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    * @return The name of the current XBee module.
    */
   String getBeeName() {
-    switch (beeType) {
-      case XBEE_S6B_WIFI: return "Digi XBee Wi-Fi";
-      case XBEE_LTE1_VZN: return "Digi XBee Cellular LTE Cat 1";
-      case XBEE_3G: return "Digi XBee Cellular 3G";
-      case XBEE3_LTE1_ATT: return "Digi XBee3 Cellular LTE CAT 1";
-      case XBEE3_LTEM_ATT: return "Digi XBee3 Cellular LTE-M";
-      case XBEE3_LTEM3: return "XBee3 Cellular LTE-M3";
-      default: return "Digi XBee Unknown";
-    }
+    return getModemNameImpl();
   }
 
   /*
@@ -843,90 +854,76 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    * Generic network functions
    */
  protected:
+  XBeeRegStatus parseWifiRegStatus(int16_t code) {
+    // 0x00 Successfully joined an access point, established IP addresses and
+    // IP listening sockets
+    if (code == 0x00) return REG_OK;
+    // 0x01 Wi-Fi transceiver initialization in progress.
+    // 0x02 Wi-Fi transceiver initialized, but not yet scanning for access
+    // point.
+    // 0x40 Waiting for WPA or WPA2 Authentication.
+    // 0x41 Device joined a network and is waiting for IP configuration to
+    // complete
+    // 0x42 Device is joined, IP is configured, and listening sockets are being
+    // set up.
+    // 0xFF Device is currently scanning for the configured SSID.
+    if (code == 0x01 || code == 0x02 || code == 0x40 || code == 0x41 ||
+        code == 0x42 || code == 0xFF)
+      return REG_SEARCHING;
+    // 0x13 Disconnecting from access point.
+    if (code == 0x13) {
+      restart();  // S6B tends to get stuck "disconnecting"
+      return REG_UNREGISTERED;
+    }
+    // 0x23 SSID not configured.
+    if (code == 0x23) return REG_UNREGISTERED;
+    // 0x24 Encryption key invalid (either NULL or invalid length for WEP).
+    // 0x27 SSID was found, but join failed.
+    if (code == 0x24 || code == 0x27) return REG_DENIED;
+    return REG_UNKNOWN;
+  }
+
+  XBeeRegStatus parseCellularRegStatus(int16_t code) {
+    // 0x00 Connected to the Internet.
+    if (code == 0x00) return REG_OK;
+    // 0x22 Registering to cellular network.
+    // 0x23 Connecting to the Internet.
+    // 0xFF Initializing.
+    if (code == 0x22 || code == 0x23 || code == 0xFF) return REG_SEARCHING;
+    // 0x25 Cellular network registration denied.
+    if (code == 0x25) return REG_DENIED;
+    // 0x2A Airplane mode.
+    if (code == 0x2A) {
+      sendAT(GF("AM0"));  // Turn off airplane mode
+      waitResponse();
+      writeChanges();
+      return REG_UNKNOWN;
+    }
+    // 0x2F Bypass mode active.
+    if (code == 0x2F) {
+      sendAT(GF("AP0"));  // Set back to transparent mode
+      waitResponse();
+      writeChanges();
+      return REG_UNKNOWN;
+    }
+    // 0x24 The cellular component is missing, corrupt, or otherwise in error.
+    // 0x2B USB Direct active.
+    // 0x2C Cellular component is in PSM (power save mode).
+    // All other codes default to REG_UNKNOWN
+    return REG_UNKNOWN;
+  }
+
   XBeeRegStatus getRegistrationStatusImpl() {
     XBEE_COMMAND_START_DECORATOR(5, REG_UNKNOWN)
 
-    if (!inCommandMode) return REG_UNKNOWN;  // Return immediately
-
-    if (beeType == XBEE_UNKNOWN)
-      getSeries();  // Need to know the bee type to interpret response
+    if (!inCommandMode) return REG_UNKNOWN;
+    if (beeType == XBEE_UNKNOWN) getSeries();
 
     sendAT(GF("AI"));
     int16_t       intRes = readResponseInt(10000L);
-    XBeeRegStatus stat   = REG_UNKNOWN;
-
-    switch (beeType) {
-      case XBEE_S6B_WIFI: {
-        switch (intRes) {
-          case 0x00:  // 0x00 Successfully joined an access point, established
-                      // IP addresses and IP listening sockets
-            stat = REG_OK;
-            break;
-          case 0x01:  // 0x01 Wi-Fi transceiver initialization in progress.
-          case 0x02:  // 0x02 Wi-Fi transceiver initialized, but not yet
-                      // scanning for access point.
-          case 0x40:  // 0x40 Waiting for WPA or WPA2 Authentication.
-          case 0x41:  // 0x41 Device joined a network and is waiting for IP
-                      // configuration to complete
-          case 0x42:  // 0x42 Device is joined, IP is configured, and listening
-                      // sockets are being set up.
-          case 0xFF:  // 0xFF Device is currently scanning for the configured
-                      // SSID.
-            stat = REG_SEARCHING;
-            break;
-          case 0x13:    // 0x13 Disconnecting from access point.
-            restart();  // Restart the device; the S6B tends to get stuck
-                        // "disconnecting"
-            stat = REG_UNREGISTERED;
-            break;
-          case 0x23:  // 0x23 SSID not configured.
-            stat = REG_UNREGISTERED;
-            break;
-          case 0x24:  // 0x24 Encryption key invalid (either NULL or invalid
-                      // length for WEP).
-          case 0x27:  // 0x27 SSID was found, but join failed.
-            stat = REG_DENIED;
-            break;
-          default: stat = REG_UNKNOWN; break;
-        }
-        break;
-      }
-      default: {  // Cellular XBee's
-        switch (intRes) {
-          case 0x00:  // 0x00 Connected to the Internet.
-            stat = REG_OK;
-            break;
-          case 0x22:  // 0x22 Registering to cellular network.
-          case 0x23:  // 0x23 Connecting to the Internet.
-          case 0xFF:  // 0xFF Initializing.
-            stat = REG_SEARCHING;
-            break;
-          case 0x24:  // 0x24 The cellular component is missing, corrupt, or
-                      // otherwise in error.
-          case 0x2B:  // 0x2B USB Direct active.
-          case 0x2C:  // 0x2C Cellular component is in PSM (power save mode).
-            stat = REG_UNKNOWN;
-            break;
-          case 0x25:  // 0x25 Cellular network registration denied.
-            stat = REG_DENIED;
-            break;
-          case 0x2A:            // 0x2A Airplane mode.
-            sendAT(GF("AM0"));  // Turn off airplane mode
-            waitResponse();
-            writeChanges();
-            stat = REG_UNKNOWN;
-            break;
-          case 0x2F:            // 0x2F Bypass mode active.
-            sendAT(GF("AP0"));  // Set back to transparent mode
-            waitResponse();
-            writeChanges();
-            stat = REG_UNKNOWN;
-            break;
-          default: stat = REG_UNKNOWN; break;
-        }
-        break;
-      }
-    }
+    XBeeRegStatus stat   = (beeType == XBEE_S6B_WIFI)
+          ? parseWifiRegStatus(intRes)
+          : parseCellularRegStatus(intRes);
 
     XBEE_COMMAND_END_DECORATOR
     return stat;
@@ -1416,13 +1413,22 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         changesMade |= changeSettingIfNeeded(GF("$0"), GF(";;"));
       } else if (sslAuthMode == SSLAuthMode::CA_VALIDATION &&
                  CAcertName != nullptr) {
-        String newTLSProfile = String(CAcertName) + ";;";
+        String newTLSProfile;
+        newTLSProfile.reserve(strlen(CAcertName) + 3);
+        newTLSProfile = CAcertName;
+        newTLSProfile += GF(";;");
         changesMade |= changeSettingIfNeeded(GF("$0"), newTLSProfile);
       } else if (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION &&
                  CAcertName != nullptr && clientCertName != nullptr &&
                  clientKeyName != nullptr) {
-        String newTLSProfile = String(CAcertName) + ";" + clientCertName + ";" +
-            clientKeyName;
+        String newTLSProfile;
+        newTLSProfile.reserve(strlen(CAcertName) + strlen(clientCertName) +
+                              strlen(clientKeyName) + 3);
+        newTLSProfile = CAcertName;
+        newTLSProfile += ';';
+        newTLSProfile += clientCertName;
+        newTLSProfile += ';';
+        newTLSProfile += clientKeyName;
         changesMade |= changeSettingIfNeeded(GF("$0"), newTLSProfile);
       } else {
         success = false;
@@ -1461,8 +1467,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       return modemConnect(hostIP, port, mux);
     }
 
-    bool retVal  = false;
-    bool success = true;
+    bool retVal = false;
 
     // If this is a new host name, replace the saved host and wipe out the saved
     // host IP
@@ -1480,8 +1485,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         beeType != XBEE_3G) {
       // the newer cellular modules can look up the address on the fly
       // this is definitely the better option
-      bool ssl = sockets[mux]->is_secure;
-      success &= configureConnection(host, port, ssl);
+      bool ssl     = sockets[mux]->is_secure;
+      bool success = configureConnection(host, port, ssl);
       DBG("Attempting to ping the host");
       sendAT(GF("PG"), host);
       readResponseString(2500L);
@@ -1536,11 +1541,11 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       String host;
       host.reserve(16);
       host += ip[0];
-      host += ".";
+      host += '.';
       host += ip[1];
-      host += ".";
+      host += '.';
       host += ip[2];
-      host += ".";
+      host += '.';
       host += ip[3];
       bool ssl = sockets[mux]->is_secure;
       success &= configureConnection(host.c_str(), port, ssl);
@@ -1620,6 +1625,37 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     return len;
   }
 
+  // Helper function to handle cellular connection status for 0x28/0xFF cases
+  bool handleUnknownCellularStatus(IPAddress od) {
+    IPAddress nullIP = IPAddress(0, 0, 0, 0);
+    // If we previously had an operating destination and we no longer
+    // do, the socket must have closed
+    if (od == nullIP && savedOperatingIP != nullIP) {
+      savedOperatingIP           = od;
+      sockets[0]->sock_connected = false;
+      DBG("Got no operating IP, we're not connected");
+      return false;
+    }
+    // else if the operating destination exists, but is wrong
+    // we need to close and re-open
+    if (od != nullIP && od != savedIP) {
+      DBG("We're connected to the wrong endpoint", od, "not", savedIP);
+      sockets[0]->stop();
+      return false;
+    }
+    // else if the operating destination exists and matches, we're good to go
+    if (od != nullIP && od == savedIP) {
+      DBG("Got new IP of", od, "we should be good");
+      savedOperatingIP = od;
+      return true;
+    }
+    // If we never had an operating destination, then sock may be
+    // open but data never sent - this is the dreaded "we don't know"
+    DBG("We have no idea if we're connected");
+    savedOperatingIP = od;
+    return true;
+  }
+
   // NOTE:  The CI command returns the status of the TCP connection as open only
   // after data has been sent on the socket.  If it returns 0xFF the socket may
   // really be open, but no data has yet been sent.  We return this unknown
@@ -1675,84 +1711,47 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
         XBEE_COMMAND_END_DECORATOR
 
-        switch (ci) {
-          // 0x00 = The socket is definitely open
-          case 0x00: {
-            savedOperatingIP = od;
-            // but it's possible the socket is set to the wrong place
-            if (od != IPAddress(0, 0, 0, 0) && od != savedIP) {
-              sockets[0]->stop();
-              return false;
-            }
-            return true;
-          }
-
-          // 0x28 = "Unknown."
-          // 0xFF = No known status - always returned prior to sending data
-          case 0x28:
-          case 0xFF: {
-            DBG("Got 0x28 or 0xFF, we don't know if we're connected");
-            // If we previously had an operating destination and we no longer
-            // do, the socket must have closed
-            if (od == IPAddress(0, 0, 0, 0) &&
-                savedOperatingIP != IPAddress(0, 0, 0, 0)) {
-              savedOperatingIP           = od;
-              sockets[0]->sock_connected = false;
-              DBG("Got no operating IP, we're not connected");
-              return false;
-            } else if (od != IPAddress(0, 0, 0, 0) && od != savedIP) {
-              // else if the operating destination exists, but is wrong
-              // we need to close and re-open
-              DBG("We're connected to the wrong endpoint", od, "not", savedIP);
-              sockets[0]->stop();
-              return false;
-            } else if (od != IPAddress(0, 0, 0, 0) && od == savedIP) {
-              // else if the operating destination exists and matches, we're
-              // good to go
-              DBG("Got new IP of", od, "we should be good");
-              savedOperatingIP = od;
-              return true;
-            } else {
-              // If we never had an operating destination, then sock may be
-              // open but data never sent - this is the dreaded "we don't
-              // know"
-              DBG("We have no idea if we're connected");
-              savedOperatingIP = od;
-              return true;
-            }
-          }
-
-          // 0x21 = User closed
-          // 0x27 = Connection lost
-          // If the connection is lost or timed out on our side,
-          // we force close so it can reopen
-          case 0x21:
-          case 0x27: {
-            sendAT(GF("TM"));  // Get socket timeout
-            String timeoutUsed = readResponseString(5000L);
-            sendAT(GF("TM"), timeoutUsed);  // Re-set socket timeout
-            waitResponse(5000L);            // This response can be slow
-          }
-
-          // 0x02 = Invalid parameters (bad IP/host)
-          // 0x12 = DNS query lookup failure
-          // 0x25 = Unknown server - DNS lookup failed (0x22 for UDP socket!)
-          // fall through
-          case 0x02:
-          case 0x12:
-          case 0x25: {
-            savedIP = IPAddress(0, 0, 0, 0);  // force a lookup next time!
-          }
-
-          // If it's anything else (inc 0x02, 0x12, and 0x25)...
-          // it's definitely NOT connected
-          // fall through
-          default: {
-            sockets[0]->sock_connected = false;
-            savedOperatingIP           = od;
+        // 0x00 = The socket is definitely open
+        if (ci == 0x00) {
+          savedOperatingIP = od;
+          // but it's possible the socket is set to the wrong place
+          if (od != IPAddress(0, 0, 0, 0) && od != savedIP) {
+            sockets[0]->stop();
             return false;
           }
+          return true;
         }
+
+        // 0x28 = "Unknown."
+        // 0xFF = No known status - always returned prior to sending data
+        if (ci == 0x28 || ci == 0xFF) {
+          DBG("Got 0x28 or 0xFF, we don't know if we're connected");
+          return handleUnknownCellularStatus(od);
+        }
+
+        // 0x21 = User closed
+        // 0x27 = Connection lost
+        // If the connection is lost or timed out on our side,
+        // we force close so it can reopen
+        if (ci == 0x21 || ci == 0x27) {
+          sendAT(GF("TM"));  // Get socket timeout
+          String timeoutUsed = readResponseString(5000L);
+          sendAT(GF("TM"), timeoutUsed);  // Re-set socket timeout
+          waitResponse(5000L);            // This response can be slow
+        }
+
+        // 0x02 = Invalid parameters (bad IP/host)
+        // 0x12 = DNS query lookup failure
+        // 0x25 = Unknown server - DNS lookup failed (0x22 for UDP socket!)
+        if (ci == 0x02 || ci == 0x12 || ci == 0x25) {
+          savedIP = IPAddress(0, 0, 0, 0);  // force a lookup next time!
+        }
+
+        // If it's anything else (inc 0x02, 0x12, and 0x25)...
+        // it's definitely NOT connected
+        sockets[0]->sock_connected = false;
+        savedOperatingIP           = od;
+        return false;
       }
     }
   }
