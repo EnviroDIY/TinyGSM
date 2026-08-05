@@ -1460,9 +1460,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
                     int timeout_s = TinyGsmXBeeTcpConfig::kConnectTimeoutS) {
     // check if the host is an IP address already - if so, we can skip the DNS
     // lookup and just connect
-    IPAddress hostIP          = IPAddress(0, 0, 0, 0);
-    bool      converted_to_ip = hostIP.fromString(host);
-    if (converted_to_ip && hostIP != IPAddress(0, 0, 0, 0)) {
+    IPAddress hostIP = TinyGsmIpFromString(String(host));
+    if (hostIP != IPAddress(0, 0, 0, 0)) {
       DBG("Host is already an IP address; connecting directly");
       return modemConnect(hostIP, port, mux);
     }
