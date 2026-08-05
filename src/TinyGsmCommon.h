@@ -200,7 +200,9 @@ uint32_t TinyGsmAutoBaud(T& at_serial, uint32_t minimum = 9600,
 
     DBG("Trying baud rate", rate, "...");
     at_serial.end();
+#if !defined(ARDUINO_ARCH_PIC32) && !defined(ARDUINO_ARCH_ARC32)
     unsigned long origTimeout = at_serial.getTimeout();
+#endif
     at_serial.setTimeout(100);  // avoid 1s default blocking wait
     at_serial.begin(rate);
     delay(10);
@@ -209,11 +211,19 @@ uint32_t TinyGsmAutoBaud(T& at_serial, uint32_t minimum = 9600,
       String input = at_serial.readString();
       if (input.indexOf("OK") >= 0) {
         DBG("Modem responded at rate", rate);
+#if !defined(ARDUINO_ARCH_PIC32) && !defined(ARDUINO_ARCH_ARC32)
         at_serial.setTimeout(origTimeout);  // reset timeout
+#else
+        at_serial.setTimeout(1000L);  // reset timeout, assuming 1s default
+#endif
         return rate;
       }
     }
+#if !defined(ARDUINO_ARCH_PIC32) && !defined(ARDUINO_ARCH_ARC32)
     at_serial.setTimeout(origTimeout);  // reset timeout
+#else
+    at_serial.setTimeout(1000L);  // reset timeout, assuming 1s default
+#endif
   }
   at_serial.begin(minimum);
   return 0;
