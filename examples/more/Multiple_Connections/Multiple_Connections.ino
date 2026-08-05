@@ -32,7 +32,7 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// Set serial for debug console (to the Serial Monitor, default speed 115200)
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
@@ -100,6 +100,10 @@ const char resource1[] = "/TinyGSM/logo.txt";
 
 #include <TinyGsmClient.h>
 
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
+
 // Just in case someone defined the wrong thing..
 #if TINY_GSM_USE_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
 #undef TINY_GSM_USE_GPRS
@@ -163,6 +167,7 @@ void setup() {
   pinMode(_modemPowerPin, OUTPUT);
   pinMode(_modemSleepRqPin, OUTPUT);
   pinMode(_modemStatusPin, INPUT);
+
   // wake settings
   uint32_t _wakeDelay_ms = 1000L;  // SIM7080G
   uint32_t _wakePulse_ms = 1100L;  // SIM7080G

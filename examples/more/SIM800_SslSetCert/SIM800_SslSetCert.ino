@@ -22,7 +22,11 @@
 
 #include <TinyGsmClient.h>
 
-// Set serial for debug console (to the Serial Monitor, speed 115200)
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
+
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Use Hardware Serial for AT commands

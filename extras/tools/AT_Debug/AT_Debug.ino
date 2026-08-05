@@ -37,7 +37,7 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// Set serial for debug console (to the Serial Monitor, speed 115200)
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
@@ -52,6 +52,10 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
 
 #include <TinyGsmClient.h>
+
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
 
 // Module baud rate
 uint32_t rate = 0;  // Set to 0 for Auto-Detect
