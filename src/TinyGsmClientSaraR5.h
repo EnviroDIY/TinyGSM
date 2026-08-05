@@ -443,13 +443,15 @@ class TinyGsmSaraR5
   String getModemNameImpl() {
     String manufacturer = getModemManufacturer();
     String model        = getModemModel();
-    String name         = manufacturer + String(" ") + model;
+    String name         = manufacturer + ' ' + model;
+#ifdef TINY_GSM_DEBUG
     if (name.startsWith("u-blox SARA-R4") ||
         name.startsWith("u-blox SARA-N4")) {
       DBG("### WARNING:  You are using the wrong TinyGSM modem!");
     } else if (name.startsWith("u-blox SARA-N2")) {
       DBG("### SARA N2 NB-IoT modems not supported!");
     }
+#endif
     return name;
   }
 

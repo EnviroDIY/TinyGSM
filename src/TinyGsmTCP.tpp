@@ -828,11 +828,11 @@ class GsmClient : public Client {
     String host;
     host.reserve(16);
     host += ip[0];
-    host += ".";
+    host += '.';
     host += ip[1];
-    host += ".";
+    host += '.';
     host += ip[2];
-    host += ".";
+    host += '.';
     host += ip[3];
     return host;
   }

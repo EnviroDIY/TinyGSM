@@ -309,7 +309,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
     model.trim();
     streamSkipUntil('\n');  // skip the revision
     waitResponse();         // wait for the OK
-    return factory + String(" ") + model;
+    return factory + ' ' + model;
   }
 
   // This is extracted from the modem info
