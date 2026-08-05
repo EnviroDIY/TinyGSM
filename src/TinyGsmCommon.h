@@ -63,7 +63,7 @@
 #elif defined(ARDUINO_ARCH_SAMD)
 #define TINY_GSM_RX_BUFFER 256
 #else
-#define TINY_GSM_RX_BUFFER 64  // Conservative default
+#define TINY_GSM_RX_BUFFER 64
 #endif
 #endif
 
