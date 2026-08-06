@@ -8,7 +8,8 @@
  *
  * @defgroup espressif_esp32 Espressif ESP32 AT Modem Family
  * @ingroup espressif_at
- * @brief Manufacturer: Espressif. Models: ESP32 (AT firmware).
+ * @brief Manufacturer: Espressif. Models: ESP32 (AT firmware, version
+ * >= 3.2.0.0).
  *
  * # Supported Public Functions
  *

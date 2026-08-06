@@ -8,7 +8,11 @@
  *
  * @defgroup espressif_esp8266 Espressif ESP8266 AT Modem Family
  * @ingroup espressif_at
- * @brief Manufacturer: Espressif. Models: ESP8266 (AT firmware).
+ * @brief Manufacturer: Espressif. Models: ESP8266 (AT firmware version
+ * ~2.3.0.0).
+ *
+ * Documentation for the ESP8266 AT firmware can be found here:
+ * https://docs.espressif.com/projects/esp-at/en/release-v2.3.0.0_esp8266/Get_Started/index.html
  *
  * # Supported Public Functions
  *
