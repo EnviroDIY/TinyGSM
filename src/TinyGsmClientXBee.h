@@ -169,6 +169,10 @@ enum XBeeRegStatus {
 struct TinyGsmXBeeModemConfig : public TinyGsmModemConfigPreset<XBeeRegStatus> {
   /// The newline character(s) used in AT commands.
   static constexpr char GSM_NL[] TINY_GSM_PROGMEM = "\r";
+  /// The OK string.
+  static constexpr char GSM_OK[] TINY_GSM_PROGMEM = "OK\r";
+  /// The ERROR string
+  static constexpr char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR\r";
   /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Digi";
   /// The modem model
@@ -176,6 +180,8 @@ struct TinyGsmXBeeModemConfig : public TinyGsmModemConfigPreset<XBeeRegStatus> {
 };
 
 constexpr char TinyGsmXBeeModemConfig::GSM_NL[];
+constexpr char TinyGsmXBeeModemConfig::GSM_OK[];
+constexpr char TinyGsmXBeeModemConfig::GSM_ERROR[];
 constexpr char TinyGsmXBeeModemConfig::MODEM_MANUFACTURER[];
 constexpr char TinyGsmXBeeModemConfig::MODEM_MODEL[];
 
