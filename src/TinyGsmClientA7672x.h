@@ -5,7 +5,9 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2022 Giovanni de Rosso Unruh
  * @date       Oct 2022
- *
+ */
+/* clang-format off */
+/**
  * @defgroup simcom_a7672x SIMCom A7672x Modem Family
  * @brief Manufacturer: SIMCom. Models: A7672x.
  *
@@ -122,6 +124,7 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTA7672X_H_
 #define SRC_TINYGSMCLIENTA7672X_H_

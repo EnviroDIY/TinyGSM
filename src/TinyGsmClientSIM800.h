@@ -5,7 +5,9 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
- *
+ */
+/* clang-format off */
+/**
  * @defgroup simcom_sim800 SIMCom SIM800/SIM900 Modem Family
  * @brief Manufacturer: SIMCom. Models: SIM800 series, SIM900.
  *
@@ -111,6 +113,7 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTSIM800_H_
 #define SRC_TINYGSMCLIENTSIM800_H_

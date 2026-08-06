@@ -4,11 +4,12 @@
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
- * @date       Nov 2016
+ * @date       Oct 2017
  *
  * MC60 support added by Tamas Dajka 2017.10.15 - with fixes by Sara Damiano
- *
- *
+ */
+/* clang-format off */
+/***
  * @defgroup quectel_mc60 Quectel MC60 Modem Family
  * @brief Manufacturer: Quectel. Models: MC60, MC60E.
  *
@@ -98,6 +99,7 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTMC60_H_
 #define SRC_TINYGSMCLIENTMC60_H_

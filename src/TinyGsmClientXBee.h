@@ -6,7 +6,9 @@
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy, XBee module by Sara
  * Damiano
  * @date       Nov 2016
- *
+ */
+/* clang-format off */
+/**
  * @defgroup digi_xbee Digi XBee Modem Family
  * @brief Manufacturer: Digi. Models: XBee cellular modules supported by
  * TinyGSM.
@@ -104,6 +106,8 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
+
 #ifndef SRC_TINYGSMCLIENTXBEE_H_
 #define SRC_TINYGSMCLIENTXBEE_H_
 #pragma message("TinyGSM:  TinyGsmClientXBee")

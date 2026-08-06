@@ -5,7 +5,9 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
- *
+ */
+/* clang-format off */
+/**
  * @defgroup espressif_esp8266 Espressif ESP8266 AT Modem Family
  * @ingroup espressif_at
  * @brief Manufacturer: Espressif. Models: ESP8266 (AT firmware version
@@ -86,6 +88,7 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTESP8266_H_
 #define SRC_TINYGSMCLIENTESP8266_H_

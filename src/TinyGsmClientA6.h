@@ -5,7 +5,9 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
- *
+ */
+/* clang-format off */
+/**
  * @defgroup aithinker_a6 Ai-Thinker A6/A7 Modem Family
  * @brief Manufacturer: Ai-Thinker. Models: A6, A7.
  *
@@ -96,6 +98,8 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
+
 #ifndef SRC_TINYGSMCLIENTA6_H_
 #define SRC_TINYGSMCLIENTA6_H_
 #pragma message("TinyGSM:  TinyGsmClientA6")

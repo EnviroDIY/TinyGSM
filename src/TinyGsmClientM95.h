@@ -6,7 +6,9 @@
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy, (c)2017 Replicade Ltd.
  * <http://www.replicade.com>
  * @date       Nov 2016
- *
+ */
+/* clang-format off */
+/**
  * @defgroup quectel_m95 Quectel M95 Modem Family
  * @brief Manufacturer: Quectel. Models: M95.
  *
@@ -97,6 +99,7 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTM95_H_
 #define SRC_TINYGSMCLIENTM95_H_
