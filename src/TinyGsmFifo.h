@@ -166,9 +166,9 @@ class TinyGsmFifo {
     return (i + n) % N;
   }
 
-  T   _b[N]{};  /// The buffer, containing 'N' items of type 'T'
-  int _w = 0;   /// The write position in the buffer
-  int _r = 0;   /// The read position in the buffer
+  T   _b[N]{};  ///< The buffer, containing 'N' items of type 'T'
+  int _w = 0;   ///< The write position in the buffer
+  int _r = 0;   ///< The read position in the buffer
 };
 
 #endif

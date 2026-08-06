@@ -760,7 +760,7 @@ class TinyGsmModem {
     return thisModem().waitResponse() == 1;
   }
 
-  bool setDefaultBaudImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool setDefaultBaudImpl(uint32_t baud) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   bool testATImpl(uint32_t timeout_ms) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {

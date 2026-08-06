@@ -79,11 +79,11 @@ for client_file in client_src_files:
     }
 
     if has_secure_ctor_macro:
-        src_template = "C:\\Users\\sdamiano\\Documents\\GitHub\\EnviroDIY\\TinyGSM\\docs\\DOC_TEMPLATE_clients_secure_ctors.dox_TEMPLATE"
-        destination = (
-            src_template.replace("DOC_TEMPLATE_", "")
-            .replace("clients_", "clients_" + modem_abbrev + "_")
-            .replace(".dox_TEMPLATE", "_" + modem_abbrev + ".dox")
+        template_name = "DOC_TEMPLATE_clients_secure_ctors.dox_TEMPLATE"
+        src_template = os.path.join(docs_dir, template_name)
+        destination = os.path.join(
+            docs_dir,
+            f"clients_{modem_abbrev}_secure_ctors_{modem_abbrev}.dox",
         )
 
         # open the template file
@@ -96,5 +96,4 @@ for client_file in client_src_files:
             # write the new file
             with open(destination, "w", encoding="UTF-8") as dest_file:
                 dest_file.write(new_data)
-
 # %%

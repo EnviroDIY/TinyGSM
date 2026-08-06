@@ -63,7 +63,7 @@ class TinyGsmBluetooth {
    *
    * @param visible True to make the modem visible over Bluetooth, false to make
    * it invisible.
-   * @return True if the Bluetooth visibility was successfully changed., false
+   * @return True if the Bluetooth visibility was successfully changed, false
    * otherwise.
    */
   bool setBluetoothVisibility(bool visible) {

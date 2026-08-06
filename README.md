@@ -250,7 +250,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
   3. Ensure that GSM antenna is firmly attached
   4. Ensure that you have a stable power supply to the module of at least **2A**.
   5. Check if serial connection is working (Hardware Serial is recommended)
-     Send an `AT` command using [this sketch](tools/AT_Debug/AT_Debug.ino)
+     Send an `AT` command using [this sketch](extras/tools/AT_Debug/AT_Debug.ino)
   6. Try out the [WebClient](https://github.com/vshymanskyy/TinyGSM/blob/master/examples/WebClient/WebClient.ino) example
 
 ### Writing your own code
@@ -280,7 +280,7 @@ The general flow of your code should be:
 - Wait for the module to be ready (could be as much as 6s, depending on the module)
 - Initialize the modem
   - `modem.init()` or `modem.restart()`
-  - restart generally takes longer than init but ensures the module doesn't have lingering connections
+  - Restart generally takes longer than init but ensures the module doesn't have lingering connections
 - Unlock your SIM, if necessary:
   - `modem.simUnlock(GSM_PIN)`
 - If using a **WiFi** module, specify your SSID information:
@@ -289,7 +289,7 @@ The general flow of your code should be:
 - Wait for network registration to be successful
   - `modem.waitForNetwork(600000L)`
   - New sim/tower combinations may take a _long_ time to connect.
-- If using cellular, establish the GPRS or EPS data connection _after_ your are successfully registered on the network
+- If using cellular, establish the GPRS or EPS data connection _after_ you are successfully registered on the network
   - `modem.gprsConnect(apn, gprsUser, gprsPass)` (or simply `modem.gprsConnect(apn)`)
   - The same command is used for both GPRS or EPS connection
   - If using a **Digi** brand cellular XBee, you must specify your GPRS/EPS connection information _before_ waiting for the network.  This is true ONLY for _Digi cellular XBees_!  _For all other cellular modules, use the GPRS connect function after network registration._
@@ -427,7 +427,7 @@ Here are some tips for writing layer 7 (particularly HTTP request) manually:
 - Use `client.print("...")`, or `client.write(buf, #)`, or even `client.write(String("..."))`, not `client.write("...")` to help prevent text being sent out one character at a time (typewriter style)
 - Enclose the entirety of each header or line within a single string or print statement
 
-use this:
+Use this:
 
 ```cpp
 // NOTE: buffer must be large enough to hold the full request line;
