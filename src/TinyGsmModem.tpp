@@ -730,19 +730,15 @@ class TinyGsmModem {
         return IPAddress(0, 0, 0, 0);  // Invalid character before 4th octet
       }
     }
-    
+
     // Validate: must have exactly 3 dots (Part must equal 3)
-    if (Part != 3) {
-      return IPAddress(0, 0, 0, 0);
-    }
-    
+    if (Part != 3) { return IPAddress(0, 0, 0, 0); }
+
     // Validate: each octet must be 0-255
     for (int i = 0; i < 4; i++) {
-      if (Parts[i] < 0 || Parts[i] > 255) {
-        return IPAddress(0, 0, 0, 0);
-      }
+      if (Parts[i] < 0 || Parts[i] > 255) { return IPAddress(0, 0, 0, 0); }
     }
-    
+
     return IPAddress(Parts[0], Parts[1], Parts[2], Parts[3]);
   }
   /**@}*/
