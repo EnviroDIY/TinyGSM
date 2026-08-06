@@ -875,8 +875,9 @@ class TinyGsmSequansMonarch
       }
     }
     waitResponse();  // Should be an OK at the end
-    return sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount]
-        ->sock_connected;
+    GsmClientSequansMonarch* thisSock =
+        sockets[mux % TinyGsmSequansMonarchTcpConfig::kMuxCount];
+    return thisSock ? thisSock->sock_connected : false;
   }
 
   /*
