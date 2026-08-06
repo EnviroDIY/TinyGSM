@@ -868,7 +868,7 @@ class TinyGsmModem {
     thisModem().sendAT(GF("+CGMI"));  // 3GPP TS 27.007 standard
     String res;
     if (thisModem().waitResponse(1000L, res) != 1) {
-      return String(ModemConfig::MODEM_MANUFACTURER);
+      return String(GFP(ModemConfig::MODEM_MANUFACTURER));
     }
     thisModem().cleanResponseString(res);
     return res;
@@ -879,7 +879,7 @@ class TinyGsmModem {
     thisModem().sendAT(GF("+CGMM"));  // 3GPP TS 27.007 standard
     String res;
     if (thisModem().waitResponse(1000L, res) != 1) {
-      return String(ModemConfig::MODEM_MODEL);
+      return String(GFP(ModemConfig::MODEM_MODEL));
     }
     thisModem().cleanResponseString(res);
     return res;

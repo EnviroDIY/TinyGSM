@@ -318,7 +318,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
     streamSkipUntil('\n');  // skip the model
     streamSkipUntil('\n');  // skip the revision
     if (waitResponse() == 1) { return factory; }
-    return ModemConfig::MODEM_MANUFACTURER;
+    return String(GFP(ModemConfig::MODEM_MANUFACTURER));
   }
 
   // This is extracted from the modem info
@@ -329,7 +329,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
     model.trim();
     streamSkipUntil('\n');  // skip the revision
     if (waitResponse() == 1) { return model; }
-    return ModemConfig::MODEM_MODEL;
+    return String(GFP(ModemConfig::MODEM_MODEL));
   }
 
   // Gets the modem firmware version
