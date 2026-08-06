@@ -125,12 +125,12 @@ class TinyGsmEspressif
 
   // Gets the modem hardware version
   String getModemManufacturerImpl() {
-    return ModemConfig::MODEM_MANUFACTURER;
+    return String(GFP(ModemConfig::MODEM_MANUFACTURER));
   }
 
   // Gets the modem hardware version
   String getModemModelImpl() {
-    String model = ModemConfig::MODEM_MODEL;
+    String model = String(GFP(ModemConfig::MODEM_MODEL));
     thisModem().sendAT(GF("+GMR"));
     thisModem().streamSkipUntil('\n');  // skip the AT version
     thisModem().streamSkipUntil('\n');  // skip the SDK version
