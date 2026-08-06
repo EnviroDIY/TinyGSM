@@ -5,7 +5,9 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2019 Michael Krumpus
  * @date       Jan 2019
- *
+ */
+/* clang-format off */
+/**
  * @defgroup sequans_monarch Sequans Monarch Modem Family
  * @brief Manufacturer: Sequans. Models: Monarch.
  *
@@ -87,6 +89,7 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTSEQUANSMONARCH_H_
 #define SRC_TINYGSMCLIENTSEQUANSMONARCH_H_

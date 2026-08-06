@@ -5,7 +5,9 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
- *
+ */
+/* clang-format off */
+/**
  * @defgroup ublox_cellular u-blox Cellular Modem Family
  * @brief Manufacturer: u-blox. Models: cellular modules supported by
  * TinyGsmUBLOX.
@@ -101,6 +103,8 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
+
 #ifndef SRC_TINYGSMCLIENTUBLOX_H_
 #define SRC_TINYGSMCLIENTUBLOX_H_
 #pragma message("TinyGSM:  TinyGsmClientUBLOX")

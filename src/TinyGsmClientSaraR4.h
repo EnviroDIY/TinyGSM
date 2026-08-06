@@ -5,7 +5,9 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
- *
+ */
+/* clang-format off */
+/**
  * @defgroup ublox_sara_r4 u-blox SARA-R4 Modem Family
  * @brief Manufacturer: u-blox. Models: SARA-R4.
  *
@@ -97,6 +99,7 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTSARAR4_H_
 #define SRC_TINYGSMCLIENTSARAR4_H_

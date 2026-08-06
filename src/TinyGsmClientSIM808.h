@@ -5,7 +5,9 @@
  * @license  LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date     Nov 2016
- *
+ */
+/* clang-format off */
+/**
  * @defgroup simcom_sim808 SIMCom SIM808/SIM868 Modem Family
  * @ingroup simcom_sim800
  * @brief Manufacturer: SIMCom. Models: SIM808, SIM868.
@@ -122,6 +124,7 @@
  * after a successful connection.
  * - Note: This module inherits TCP/SSL behavior from TinyGsmClientSIM800.h.
  */
+/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTSIM808_H_
 #define SRC_TINYGSMCLIENTSIM808_H_

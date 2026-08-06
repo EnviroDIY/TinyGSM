@@ -5,7 +5,9 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
- *
+ */
+/* clang-format off */
+/**
  * @defgroup simcom_sim5360 SIMCom SIM53xx/SIM71xx Modem Family
  * @brief Manufacturer: SIMCom. Models: SIM5320, SIM5360, SIM5300, SIM7100.
  *
@@ -109,6 +111,7 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTSIM5360_H_
 #define SRC_TINYGSMCLIENTSIM5360_H_

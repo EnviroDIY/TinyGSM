@@ -5,7 +5,9 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
- *
+ */
+/* clang-format off */
+/**
  * @defgroup neoway_m590 Neoway M590 Modem Family
  * @brief Manufacturer: Neoway. Models: M590.
  *
@@ -84,6 +86,8 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
+
 #ifndef SRC_TINYGSMCLIENTM590_H_
 #define SRC_TINYGSMCLIENTM590_H_
 #pragma message("TinyGSM:  TinyGsmClientM590")

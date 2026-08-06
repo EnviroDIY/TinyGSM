@@ -5,7 +5,9 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
- *
+ */
+/* clang-format off */
+/**
  * @defgroup simcom_sim7000ssl SIMCom SIM7000 SSL Modem Family
  * @brief Manufacturer: SIMCom. Models: SIM7000 (SSL toolkit).
  * @ingroup simcom_sim70xx
@@ -128,6 +130,7 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTSIM7000SSL_H_
 #define SRC_TINYGSMCLIENTSIM7000SSL_H_

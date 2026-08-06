@@ -5,7 +5,9 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
- *
+ */
+/* clang-format off */
+/**
  * @defgroup simcom_sim7600 SIMCom SIM7500/SIM7600/SIM7800 Modem Family
  * @brief Manufacturer: SIMCom. Models: SIM7500, SIM7600, SIM7800.
  *
@@ -129,6 +131,7 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTSIM7600_H_
 #define SRC_TINYGSMCLIENTSIM7600_H_

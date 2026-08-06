@@ -5,7 +5,9 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Apr 2018, Aug 2023 (SSL)
- *
+ */
+/* clang-format off */
+/**
  * @defgroup quectel_bg96 Quectel BG95/BG96 Modem Family
  * @brief Manufacturer: Quectel. Models: BG95, BG96.
  *
@@ -118,6 +120,7 @@
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
+/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTBG96_H_
 #define SRC_TINYGSMCLIENTBG96_H_
