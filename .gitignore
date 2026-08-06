@@ -80,13 +80,11 @@ continuous_integration/arduino_cli_local.yaml
 clang-format-all.py
 runDoxygen.bat
 compile_commands.json
-docs/DOC_TEMPLATE_clients_secure_fxns copy.dox_TEMPLATE
-docs/DOC_TEMPLATE_clients_secure_fxns.dox_TEMPLATE
-docs/DOC_TEMPLATE_clients.dox_TEMPLATE
+docs/DOC_TEMPLATE_*
 docs/.doxybook/*
-docs/CapabilityDetection.md
-docs/ImplementationSummary_CapabilityDetection.md
 home/arduino/*
+docs/create_client_dox.py
+DoxygenLayout.xml
 continuous_integration/platformio_local.ini
 continuous_integration/generate_local_tests.py
 continuous_integration/parse_test_results.py
