@@ -624,8 +624,10 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
     if (waitResponse(timeout_ms, GF("+CIPNUM:")) != 1) { return false; }
     int8_t newMux = streamGetIntBefore('\n');
 
-    int8_t rsp = waitResponse((timeout_ms - (millis() - startMillis)),
-                              GF("CONNECT OK\r\n"), GF("CONNECT FAIL\r\n"),
+    uint32_t elapsed = millis() - startMillis;
+    if (elapsed >= timeout_ms) { return false; }
+    int8_t rsp = waitResponse(timeout_ms - elapsed, GF("CONNECT OK\r\n"),
+                              GF("CONNECT FAIL\r\n"),
                               GF("ALREADY CONNECT\r\n"));
     if (waitResponse() != 1) { return false; }
     *mux = newMux;
