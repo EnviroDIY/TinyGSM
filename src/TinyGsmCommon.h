@@ -76,8 +76,8 @@
  * they don't always issue a URC to notify the host that data is available.
  *
  * @important This is a library-wide setting.  It applies to all modems and all
- * clients.  If you need different buffer sizes for different modems, you will
- * need to modify the library.
+ * clients.  If you need a different check interval for different modems, you
+ * will need to modify the library.
  */
 #if !defined(TINY_GSM_UNREAD_CHECK_MS)
 #define TINY_GSM_UNREAD_CHECK_MS 500

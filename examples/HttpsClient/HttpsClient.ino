@@ -10,8 +10,8 @@
  *   https://github.com/arduino-libraries/ArduinoHttpClient
  *   or from http://librarymanager/all#ArduinoHttpClient
  *
- * SSL/TLS is not yet supported on the Quectel modems
- * The A6/A7/A20 and M590 are not capable of SSL/TLS
+ * Check the tables of supported functionalities to ensure your modem supports
+ * HTTPS.  If it does not, this example will not work.
  *
  * For more HTTP API examples, see ArduinoHttpClient library
  *

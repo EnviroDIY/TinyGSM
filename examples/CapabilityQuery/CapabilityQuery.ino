@@ -73,8 +73,9 @@ void setup() {
   SerialMon.println(F("===========================================\n"));
 
   // Print the modem type
-  SerialMon.println(F("Modem: SIM7080"));
-  SerialMon.println();
+  SerialMon.print(F("Modem: "));
+  SerialMon.print(modem.getModemName());
+  SerialMon.println('\n');
 
   // Query capabilities using compile-time traits
   // Note: These traits are evaluated at compile time, even with C++11

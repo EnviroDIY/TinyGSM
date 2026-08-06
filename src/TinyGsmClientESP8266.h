@@ -72,14 +72,13 @@
  *   - You can reduce the risk of losing data by setting this library's buffer
  * to be as large as possible; this will increase the memory footprint of your
  * program.
- *   - Change the buffer size by defining TINY_GSM_RX_BUFFER_SIZE in your sketch
- * before including any TinyGSM header file.
- *   - Change the buffer size by defining TINY_GSM_RX_BUFFER_SIZE in your sketch
+ *   - Change the buffer size by defining TINY_GSM_RX_BUFFER in your sketch
  * before including any TinyGSM header file.
  * - Socket Numbering:
- *   - The modem does not allow you to specify the multiplexing channel.
- *   - The modem will automatically assign a channel when the client connects to
- * a server.
+ *   - The modem uses user-specified MUX channel numbers for socket connections.
+ *   - If you attempt to create a new client with a channel number that is
+ * already in use and other unused channels are available, this library will
+ * select the next available one.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */

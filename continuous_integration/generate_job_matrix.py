@@ -31,9 +31,8 @@ if "GITHUB_WORKSPACE" in os.environ.keys():
 else:
     workspace_dir = os.getcwd()
 
-if "\\continuous_integration" in workspace_dir:
-    workspace_dir = workspace_dir.replace("\\continuous_integration", "")
-
+if os.path.basename(os.path.normpath(workspace_dir)) == "continuous_integration":
+    workspace_dir = os.path.dirname(workspace_dir)
 workspace_path = os.path.abspath(os.path.realpath(workspace_dir))
 print(f"Workspace Path: {workspace_path}")
 
