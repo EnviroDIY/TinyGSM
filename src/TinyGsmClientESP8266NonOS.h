@@ -8,7 +8,11 @@
  *
  * @defgroup espressif_esp8266_nonos Espressif ESP8266 Non-OS Modem Family
  * @ingroup espressif_at
- * @brief Manufacturer: Espressif. Models: ESP8266 (Non-OS AT firmware).
+ * @brief Manufacturer: Espressif. Models: ESP8266 (Non-OS AT firmware, version
+ * ~1.7.4).
+ *
+ * @warning This is an outdated modem firmware.  Please update your module to
+ * the latest version.
  *
  * # Supported Public Functions
  *
