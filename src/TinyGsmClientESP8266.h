@@ -323,32 +323,61 @@ class TinyGsmESP8266
       setCACertName(CAcertName.c_str());
     }
 
-    /// @copydoc GsmSecureClient::setClientCertName(const char*)
-    /// @warning The client certificate name must be either "client_cert.0" or
-    /// "client_cert.1".
+    /**
+     * @copydoc GsmSecureClient::setClientCertName(const char*)
+     * @warning The client certificate name must be either "client_cert.0" or
+     * "client_cert.1".
+     * @note The client certificate number and the client private key number
+     * must be the same for a given connection.  Calling either
+     * setClientCertName() or setPrivateKeyName() will set the other
+     * to the equivalent name with the same number.
+     */
     void setClientCertName(const char* clientCertName) override {
       this->clientCertName = clientCertName;
       // parse the certificate name into a number and namespace
       char*   cert_namespace = new char[14]();
       uint8_t certNumber     = 0;
       at->parseCertificateName(clientCertName, cert_namespace, certNumber);
+      // set the private key number
       pki_number = certNumber;
+      // generate the matching client private key name from the certificate
+      // number and type
+      char* cert_name      = new char[16]();
+      char* cert_namespace = new char[14]();
+      at->getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
+                             cert_namespace);
+      clientKeyName = cert_name;
     }
     /// @copydoc GsmClientSecureESP8266::setClientCertName(const char*)
     virtual void setClientCertName(String clientCertName) {
       setClientCertName(clientCertName.c_str());
     }
 
-    /// @copydoc GsmSecureClient::setPrivateKeyName(const char*)
-    /// @warning The private key name must be either "client_key.0" or
-    /// "client_key.1".
+    /**
+     * @copydoc GsmSecureClient::setPrivateKeyName(const char*)
+     * @warning The private key name must be either "client_key.0" or
+     * "client_key.1".
+     * @note The client certificate number and the client private key number
+     * must be the same for a given connection.  Calling either
+     * setClientCertName() or setPrivateKeyName() will set the other
+     * to the equivalent name with the same number.
+     */
     void setPrivateKeyName(const char* clientKeyName) override {
       this->clientKeyName = clientKeyName;
       // parse the certificate name into a number and namespace
       char*   cert_namespace = new char[14]();
       uint8_t certNumber     = 0;
       at->parseCertificateName(clientKeyName, cert_namespace, certNumber);
+      // set the private key number
       pki_number = certNumber;
+      // generate the matching client certificate name from the private key
+      // number and type
+      char* cert_name      = new char[16]();
+      char* cert_namespace = new char[14]();
+      at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
+                             cert_name, cert_namespace);
+      // set the client certificate name
+      clientCertName = cert_name;
     }
     /// @copydoc GsmClientSecureESP8266::setPrivateKeyName(const char*)
     virtual void setPrivateKeyName(String clientKeyName) {
@@ -372,26 +401,34 @@ class TinyGsmESP8266
     /**
      * @brief Set the client certificate number to use for this connection
      * @param certNumber The client certificate number, must be 0 or 1.
+     * @note The client certificate number and the client private key number
+     * must be the same for a given connection.  Calling either
+     * setClientCertificateNumber() or setPrivateKeyNumber() will set the other
+     * to the same number.
      */
     void setClientCertificateNumber(uint8_t certNumber) {
       pki_number           = certNumber;
+      // generate and set the name for the client certificate from the number
       char* cert_name      = new char[16]();
       char* cert_namespace = new char[14]();
       at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
                              cert_name, cert_namespace);
-      CAcertName = cert_name;
+      clientCertName = cert_name;
+      // generate and set the name for the client private key from the number
+      at->getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
+                             cert_namespace);
+      clientKeyName = cert_name;
     }
     /**
-     * @brief Set the private key number to use for this connection
-     * @param keyNumber The private key number, must be 0 or 1.
+     * @brief Set the client private key number to use for this connection
+     * @param keyNumber The client private key number, must be 0 or 1.
+     * @note The client certificate number and the client private key number
+     * must be the same for a given connection.  Calling either
+     * setClientCertificateNumber() or setPrivateKeyNumber() will set the other
+     * to the same number.
      */
     void setPrivateKeyNumber(uint8_t keyNumber) {
-      pki_number           = keyNumber;
-      char* cert_name      = new char[16]();
-      char* cert_namespace = new char[14]();
-      at->getCertificateName(CertificateType::CLIENT_KEY, keyNumber, cert_name,
-                             cert_namespace);
-      CAcertName = cert_name;
+      setClientCertificateNumber(keyNumber);
     }
 
    protected:
