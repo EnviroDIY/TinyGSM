@@ -823,7 +823,7 @@ class TinyGsmA7672x
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
                         int timeout_s) {
-    int8_t   rsp;
+    bool     rsp;
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
 
@@ -869,8 +869,8 @@ class TinyGsmA7672x
       // The reply is OK or ERROR followed by +CCHOPEN: <session_id>,<err> where
       // <session_id> is the mux number and <err> should be 0 if there's no
       // error
-      rsp = waitResponse(timeout_ms);  // capture the OK or ERROR
-      rsp &= waitResponse(timeout_ms, GF("+CCHOPEN:")) != 1;
+      rsp = waitResponse(timeout_ms) == 1;  // capture the OK or ERROR
+      rsp &= waitResponse(timeout_ms, GF("+CCHOPEN:")) == 1;
       // TODO: verify this
     } else {
       // TODO: Should NETOPEN be called once during the GPRS connection process
@@ -889,8 +889,8 @@ class TinyGsmA7672x
       // error
       // There may also be an ERROR returned after the +CIPOPEN: line if the PDP
       // context wasn't activated first. We ignore this case.
-      rsp = waitResponse(timeout_ms);  // capture the OK or ERROR
-      if (rsp) { rsp &= waitResponse(timeout_ms, GF("+CIPOPEN:")) != 1; }
+      rsp = waitResponse(timeout_ms) == 1;  // capture the OK or ERROR
+      if (rsp) { rsp &= waitResponse(timeout_ms, GF("+CIPOPEN:")) == 1; }
     }
 
     // Since both CIPOPEN and CCHOPEN return the same response, we can handle it
