@@ -92,7 +92,7 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
   - Previously tested by current maintainer; updates not all tested because I fried mine.
 - SIMCom SIM7070/SIM7080/SIM7090 CAT-M1/NB-IoT Module
   - Tested by the current maintainer; currently her primary cellular module
-- SIMCom A7672X CAT-M1 Module
+- SIMCom A7672x CAT-M1 Module
   - Accepted as pull request, though I have concerns about the implementation. Not personally tested by the maintainer.
 - AI-Thinker A6, A6C, A7, A20
   - Previously tested by original author
@@ -159,7 +159,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
   - SIM7000 - 8 possible without SSL, only 2 with
   - SIM 7070/7080/7090 - 12
   - SIM 7500/7600/7800 - 10
-  - SIM A7672X - 10
+  - SIM A7672x - 10
   - u-blox 2G/3G - 7
   - u-blox SARA R4/N4 - 7
   - Digi XBee - _only 1 connection supported!_
@@ -171,12 +171,12 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 #### SSL/TLS (HTTPS, MQTTS)
 
 - Connecting:
-  - SIM800, SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672X, u-Blox, XBee _cellular_, ESP8266, ESP32, Sequans Monarch and Quectel BG95 and BG96
+  - SIM800, SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672x, u-Blox, XBee _cellular_, ESP8266, ESP32, Sequans Monarch and Quectel BG95 and BG96
   - Note:  **only some device models or firmware revisions have this feature** (SIM8xx R14.18, A7, etc.)
 - Selecting certificates for the connection based on files uploaded to the module:
-  - SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672X, ESP8266, ESP32, Sequans Monarch
+  - SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672x, ESP8266, ESP32, Sequans Monarch
 - Uploading new certificates to the module;
-  - SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672X, ESP32, Quectel BG96
+  - SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672x, ESP32, Quectel BG96
 - No SSL functionality is yet in the library for:
   - SIM 5360/5320/7100
 - SSL is not possible on:
@@ -233,7 +233,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
   - [replicadeltd](https://github.com/replicadeltd)
 - UBLOX SARA-R5
   - [Sebastian Bergner](https://github.com/sebastianbergner)
-- SIMCOM A7672X
+- SIMCOM A7672x
   - [Giovanni de Rosso Unruh](https://github.com/giovannirosso)
 - Other Contributors:
   - <https://github.com/vshymanskyy/TinyGSM/graphs/contributors>
