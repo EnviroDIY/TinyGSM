@@ -33,7 +33,7 @@
  *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
  * - Power functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::poweroff "poweroff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::powerOff "powerOff()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"

@@ -100,7 +100,7 @@ void loop() {
 
   // Test Power functions
   modem.restart();
-  modem.poweroff();
+  modem.powerOff();
 #if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) &&    \
     !defined(TINY_GSM_MODEM_ESP8266_NONOS) && !defined(TINY_GSM_MODEM_A6) && \
     !defined(TINY_GSM_MODEM_UBLOX) && !defined(TINY_GSM_MODEM_SARAR4) &&     \

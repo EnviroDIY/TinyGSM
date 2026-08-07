@@ -209,7 +209,7 @@ getModemRevision	KEYWORD2
 getModemSerialNumber	KEYWORD2
 factoryDefault	KEYWORD2
 restart	KEYWORD2
-poweroff	KEYWORD2
+powerOff	KEYWORD2
 radioOff	KEYWORD2
 sleepEnable	KEYWORD2
 setPhoneFunctionality	KEYWORD2

@@ -703,7 +703,7 @@ void loop() {
 
   // Try to power-off (modem may decide to restart automatically)
   // To turn off modem completely, please use Reset/Enable pins
-  modem.poweroff();
+  modem.powerOff();
   DBG("Poweroff.");
 #endif
 
