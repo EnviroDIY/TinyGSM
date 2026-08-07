@@ -562,8 +562,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   String getModemNameImpl() {
     String result;
     result.reserve(26);
-    result =
-        (const __FlashStringHelper*)TinyGsmXBeeModemConfig::MODEM_MANUFACTURER;
+    result = GFP(TinyGsmXBeeModemConfig::MODEM_MANUFACTURER);
     result += ' ';
     result += getModemModelImpl();
     return result;
@@ -582,8 +581,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     }
     String result;
     result.reserve(30);
-    result = (const __FlashStringHelper*)TinyGsmXBeeModemConfig::MODEM_MODEL;
-    result += (const __FlashStringHelper*)suffix;
+    result = GFP(TinyGsmXBeeModemConfig::MODEM_MODEL);
+    result += GFP(suffix);
     return result;
   }
 
