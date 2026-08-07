@@ -21,6 +21,7 @@
  * @brief Parent class for the Espressif ESP8266 and ESP32 modules
  *
  * @tparam EspressifType The derived class type (ESP8266 or ESP32)
+ * @tparam EspressifModemConfig The modem config type (ESP8266 or ESP32)
  */
 template <class EspressifType, class EspressifModemConfig>
 class TinyGsmEspressif
