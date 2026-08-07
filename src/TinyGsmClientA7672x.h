@@ -98,12 +98,12 @@
  * - Temperature functions (TinyGsmTemperature.tpp)
  *     - @ref TinyGsmTemperature<modemType>::getTemperature "getTemperature()"
  * - Generic network functions
- *     - @ref TinyGsmA7672X::getLocalIPSecure "getLocalIPSecure()"
+ *     - @ref TinyGsmA7672x::getLocalIPSecure "getLocalIPSecure()"
  * - Phone call functions
- *     - @ref TinyGsmA7672X::setGsmBusy "setGsmBusy()"
+ *     - @ref TinyGsmA7672x::setGsmBusy "setGsmBusy()"
  * - SSL client functions
- *     - @ref TinyGsmA7672X::configureSSLContext "configureSSLContext()"
- *     - @ref TinyGsmA7672X::linkSSLContext "linkSSLContext()"
+ *     - @ref TinyGsmA7672x::configureSSLContext "configureSSLContext()"
+ *     - @ref TinyGsmA7672x::linkSSLContext "linkSSLContext()"
  *
  * # Connection Information
  *
@@ -157,7 +157,7 @@ enum A7672xRegStatus {
 
 /// Basic modem configurations for the A7672x modem family
 /// @ingroup simcom_a7672x
-struct TinyGsmA7672XModemConfig
+struct TinyGsmA7672xModemConfig
     : public TinyGsmModemConfigPreset<A7672xRegStatus> {
   /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
@@ -165,8 +165,8 @@ struct TinyGsmA7672XModemConfig
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "A7672x";
 };
 
-constexpr char TinyGsmA7672XModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmA7672XModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmA7672xModemConfig::MODEM_MANUFACTURER[];
+constexpr char TinyGsmA7672xModemConfig::MODEM_MODEL[];
 
 /**
  * @brief TCP behavior and limits for the A7672x modem family.
@@ -202,32 +202,32 @@ struct TinyGsmA7672xTcpConfig
  * modem with GPS and SSL support.
  * @ingroup simcom_a7672x
  */
-class TinyGsmA7672X
-    : public TinyGsmModem<TinyGsmA7672X, TinyGsmA7672XModemConfig>,
-      public TinyGsmGPRS<TinyGsmA7672X>,
-      public TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>,
-      public TinyGsmSSL<TinyGsmA7672X>,
-      public TinyGsmCalling<TinyGsmA7672X>,
-      public TinyGsmSMS<TinyGsmA7672X>,
-      public TinyGsmGSMLocation<TinyGsmA7672X>,
-      public TinyGsmTime<TinyGsmA7672X>,
-      public TinyGsmNTP<TinyGsmA7672X>,
-      public TinyGsmBattery<TinyGsmA7672X>,
-      public TinyGsmTemperature<TinyGsmA7672X> {
-  friend class TinyGsmModem<TinyGsmA7672X, TinyGsmA7672XModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmA7672X>;
-  friend class TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672xTcpConfig>;
-  friend class GsmClient<TinyGsmA7672X, TinyGsmA7672xTcpConfig>;
-  friend class TinyGsmSSL<TinyGsmA7672X>;
-  friend class TinyGsmCalling<TinyGsmA7672X>;
-  friend class TinyGsmSMS<TinyGsmA7672X>;
-  friend class TinyGsmGSMLocation<TinyGsmA7672X>;
-  friend class TinyGsmTime<TinyGsmA7672X>;
-  friend class TinyGsmNTP<TinyGsmA7672X>;
-  friend class TinyGsmBattery<TinyGsmA7672X>;
-  friend class TinyGsmTemperature<TinyGsmA7672X>;
+class TinyGsmA7672x
+    : public TinyGsmModem<TinyGsmA7672x, TinyGsmA7672xModemConfig>,
+      public TinyGsmGPRS<TinyGsmA7672x>,
+      public TinyGsmTCP<TinyGsmA7672x, TinyGsmA7672xTcpConfig>,
+      public TinyGsmSSL<TinyGsmA7672x>,
+      public TinyGsmCalling<TinyGsmA7672x>,
+      public TinyGsmSMS<TinyGsmA7672x>,
+      public TinyGsmGSMLocation<TinyGsmA7672x>,
+      public TinyGsmTime<TinyGsmA7672x>,
+      public TinyGsmNTP<TinyGsmA7672x>,
+      public TinyGsmBattery<TinyGsmA7672x>,
+      public TinyGsmTemperature<TinyGsmA7672x> {
+  friend class TinyGsmModem<TinyGsmA7672x, TinyGsmA7672xModemConfig>;
+  friend class TinyGsmGPRS<TinyGsmA7672x>;
+  friend class TinyGsmTCP<TinyGsmA7672x, TinyGsmA7672xTcpConfig>;
+  friend class GsmClient<TinyGsmA7672x, TinyGsmA7672xTcpConfig>;
+  friend class TinyGsmSSL<TinyGsmA7672x>;
+  friend class TinyGsmCalling<TinyGsmA7672x>;
+  friend class TinyGsmSMS<TinyGsmA7672x>;
+  friend class TinyGsmGSMLocation<TinyGsmA7672x>;
+  friend class TinyGsmTime<TinyGsmA7672x>;
+  friend class TinyGsmNTP<TinyGsmA7672x>;
+  friend class TinyGsmBattery<TinyGsmA7672x>;
+  friend class TinyGsmTemperature<TinyGsmA7672x>;
 
-  using ModemConfig = TinyGsmA7672XModemConfig;
+  using ModemConfig = TinyGsmA7672xModemConfig;
 
   /*
    * Inner Client
@@ -235,19 +235,19 @@ class TinyGsmA7672X
  public:
   /// Inner client
   /// @ingroup simcom_a7672x
-  class GsmClientA7672X
-      : public GsmClient<TinyGsmA7672X, TinyGsmA7672xTcpConfig> {
-    friend class TinyGsmA7672X;
+  class GsmClientA7672x
+      : public GsmClient<TinyGsmA7672x, TinyGsmA7672xTcpConfig> {
+    friend class TinyGsmA7672x;
 
    public:
-    using GsmClient<TinyGsmA7672X, TinyGsmA7672xTcpConfig>::connect;
-    using GsmClient<TinyGsmA7672X, TinyGsmA7672xTcpConfig>::stop;
+    using GsmClient<TinyGsmA7672x, TinyGsmA7672xTcpConfig>::connect;
+    using GsmClient<TinyGsmA7672x, TinyGsmA7672xTcpConfig>::stop;
 
     /**
      * @brief Create a new TCP client.  This must be initialized with a modem
      * before it can be used.
      */
-    GsmClientA7672X() {
+    GsmClientA7672x() {
       is_secure = false;
     }
     /**
@@ -262,7 +262,7 @@ class TinyGsmA7672X
      * getMux() function to get the assigned multiplexing channel number after a
      * successful connection.
      */
-    explicit GsmClientA7672X(TinyGsmA7672X& modem, uint8_t mux = 0) {
+    explicit GsmClientA7672x(TinyGsmA7672x& modem, uint8_t mux = 0) {
       init(&modem, mux);
       is_secure = false;
     }
@@ -271,9 +271,9 @@ class TinyGsmA7672X
      * @brief Initialize the TCP client with a modem and optionally a
      * multiplexing channel.
      * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientA7672X::GsmClientA7672X(TinyGsmA7672X&, uint8_t)
+     * @copydetails GsmClientA7672x::GsmClientA7672x(TinyGsmA7672x&, uint8_t)
      */
-    bool init(TinyGsmA7672X* modem, uint8_t mux = 0) {
+    bool init(TinyGsmA7672x* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_available = 0;
       prev_check     = 0;
@@ -338,14 +338,14 @@ class TinyGsmA7672X
  public:
   /// Inner secure client
   /// @ingroup simcom_a7672x
-  class GsmClientSecureA7672X : public GsmClientA7672X, public GsmSecureClient {
-    friend class TinyGsmA7672X;
+  class GsmClientSecureA7672x : public GsmClientA7672x, public GsmSecureClient {
+    friend class TinyGsmA7672x;
 
    public:
-    using GsmClientA7672X::connect;
-    using GsmClientA7672X::stop;
+    using GsmClientA7672x::connect;
+    using GsmClientA7672x::stop;
 
-    TINY_GSM_SECURE_CLIENT_CTORS(A7672X)
+    TINY_GSM_SECURE_CLIENT_CTORS(A7672x)
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
       stop(TinyGsmA7672xTcpConfig::kStopTimeoutS * 1000L);
@@ -382,7 +382,7 @@ class TinyGsmA7672X
    * @brief Construct a modem wrapper around a stream transport.
    * @param stream Stream used to communicate with the modem.
    */
-  explicit TinyGsmA7672X(Stream& stream) : stream(stream) {
+  explicit TinyGsmA7672x(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -392,7 +392,7 @@ class TinyGsmA7672X
  protected:
   bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
-    DBG(GF("### TinyGSM Compiled Module:  A7672X"));
+    DBG(GF("### TinyGSM Compiled Module:  A7672x"));
 
     if (!testAT(2000)) { return false; }
 
@@ -851,8 +851,8 @@ class TinyGsmA7672X
       // mode and certificate names. This isn't really "safe" but since we've
       // already checked that the socket is a secure one, we're pretty sure of
       // the type and it should work.
-      const GsmClientSecureA7672X* thisClient =
-          static_cast<const GsmClientSecureA7672X*>(sockets[mux]);
+      const GsmClientSecureA7672x* thisClient =
+          static_cast<const GsmClientSecureA7672x*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
 
       // TODO: Should CCHSTART be called once during the GPRS connection process
@@ -1008,11 +1008,11 @@ class TinyGsmA7672X
       // set the sock available for both sockets (if they exist)
       if (mux == 1) {
         result                = len_on_1;
-        GsmClientA7672X* sock = sockets[mux];
+        GsmClientA7672x* sock = sockets[mux];
         if (sock) { sock->sock_available = len_on_1; }
       } else if (mux == 0) {
         result                = len_on_0;
-        GsmClientA7672X* sock = sockets[mux];
+        GsmClientA7672x* sock = sockets[mux];
         if (sock) { sock->sock_available = len_on_0; }
       } else {
         DBG("### ERROR: Invalid mux number");
@@ -1154,10 +1154,13 @@ class TinyGsmA7672X
   Stream& stream;
 
  protected:
-  GsmClientA7672X* sockets[TinyGsmA7672xTcpConfig::kMuxCount];
+  GsmClientA7672x* sockets[TinyGsmA7672xTcpConfig::kMuxCount];
   // TODO(SRGD): I suspect we need to have two separate socket arrays, a secure
   // and not secure one
 };
+
+/// Typedef for backward compatibility
+typedef TinyGsmA7672x TinyGsmA7672X;
 
 // cspell:words CCHSEND
 

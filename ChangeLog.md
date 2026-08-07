@@ -112,7 +112,7 @@ gsmClient.endWrite(strlen(request));
 
 - Added support for SSL for the Quectel BG95 and BG96 from [Aurelien BOUIN](https://github.com/aurelihein) and [George O'Connor](https://github.com/georgeman93)
 - Added support for UBLOX SARA-R5 from [Sebastian Bergner](https://github.com/sebastianbergner)
-- Added support for SIMCOM A7672X from [Giovanni de Rosso Unruh](https://github.com/giovannirosso)
+- Added support for SIMCOM A7672x from [Giovanni de Rosso Unruh](https://github.com/giovannirosso)
 - Added SIM5320 GPS location from [Bengarman](https://github.com/Bengarman)
 - Added functions `getModemSerialNumber`, `getModemModel`, and `getModemRevision`.
 - Added deep debugging option
