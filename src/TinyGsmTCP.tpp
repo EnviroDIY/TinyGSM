@@ -718,8 +718,7 @@ class GsmClient : public Client {
   }
 
   /**
-   * @brief Flush the client's receive buffer (ie, wait for all data to be
-   * sent).
+   * @brief Flush the client's send buffer (ie, wait for all data to be sent).
    */
   void flush() override {
     at->stream.flush();
