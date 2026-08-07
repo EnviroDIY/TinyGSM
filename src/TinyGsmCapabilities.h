@@ -87,11 +87,10 @@ typedef integral_constant<bool, true>  true_type;
 typedef integral_constant<bool, false> false_type;
 
 /**
- * @brief Custom is_base_of implementation (simplified)
- * Tests if Base is a base class of Derived
+ * @brief Helper for is_base_of - computes inheritance relationship
  */
 template <typename Base, typename Derived>
-struct is_base_of {
+struct is_base_of_impl {
  private:
   // Use sizeof trick to determine inheritance at compile time
   // If Derived* can be converted to Base*, inheritance exists
@@ -107,6 +106,14 @@ struct is_base_of {
  public:
   static const bool value = sizeof(test(getDerived())) == sizeof(yes);
 };
+
+/**
+ * @brief Custom is_base_of implementation (simplified)
+ * Tests if Base is a base class of Derived
+ */
+template <typename Base, typename Derived>
+struct is_base_of
+    : integral_constant<bool, is_base_of_impl<Base, Derived>::value> {};
 
 /**
  * @brief Detect if a modem type has SSL/TLS support
