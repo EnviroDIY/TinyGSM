@@ -754,22 +754,22 @@ class TinyGsmSequansMonarch
           sendLength = const_cast<uint8_t*>(buff) + len - txPtr;
         }
 
-        sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
-        send_success &= waitResponse(10000L, GF("\r\n> ")) == 1;
+        sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)sendLength);
+        send_success = waitResponse(10000L, GF("\r\n> ")) == 1;
         if (!send_success) {
           send_attempts++;
           continue;
         }
         // Translate bytes into char to be able to send them as an hex string
         char char_command[3];
-        for (size_t i = 0; i < len; i++) {
+        for (size_t i = 0; i < sendLength; i++) {
           memset(&char_command, 0, sizeof(char_command));
           sprintf(&char_command[0], "%02X",
-                  reinterpret_cast<const uint8_t*>(buff)[i]);
+                  reinterpret_cast<const uint8_t*>(txPtr)[i]);
           stream.write(char_command, sizeof(char_command));
         }
         stream.flush();
-        send_success &= waitResponse() != 1;
+        send_success = waitResponse() == 1;
         bytesSent += sendLength;  // bump up number of bytes sent
         txPtr += sendLength;      // bump up the pointer
         send_attempts++;
