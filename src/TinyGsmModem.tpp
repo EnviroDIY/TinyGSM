@@ -461,8 +461,17 @@ class TinyGsmModem {
   /**
    * @brief Power off the module
    * @return True if the module was successfully powered down, false otherwise.
+   * @deprecated Use powerOff() instead. This function name will be removed in a
+   * future version.
    */
-  bool poweroff() {
+  bool poweroff() __attribute__((__deprecated__("Use powerOff() instead"))) {
+    return thisModem().powerOffImpl();
+  }
+  /**
+   * @brief Power off the module
+   * @return True if the module was successfully powered down, false otherwise.
+   */
+  bool powerOff() {
     return thisModem().powerOffImpl();
   }
   /**

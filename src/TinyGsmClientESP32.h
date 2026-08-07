@@ -33,7 +33,7 @@
  *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
  * - Power functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::poweroff "poweroff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::powerOff "powerOff()"
  * - Generic network functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"

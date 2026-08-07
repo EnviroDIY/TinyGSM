@@ -324,6 +324,7 @@ def collect_wrappers(
         is_unsupported = (
             "TINY_GSM_ATTR_NOT_AVAILABLE" in signature
             or "TINY_GSM_ATTR_NOT_IMPLEMENTED" in signature
+            or "__attribute__((__deprecated__" in signature
         )
         group = pending_group or current_group or "Other functions"
         if pending_group:
@@ -406,8 +407,9 @@ def collect_impl_entries(text: str, class_name: str) -> dict[str, bool]:
         is_unsupported = (
             "TINY_GSM_ATTR_NOT_AVAILABLE" in signature
             or "TINY_GSM_ATTR_NOT_IMPLEMENTED" in signature
+            or "__attribute__((__deprecated__" in signature
         )
-        entries[name.lower()] = not is_unsupported
+        entries[name] = not is_unsupported
 
     for raw_line in body.splitlines():
         line = raw_line.rstrip()
@@ -470,23 +472,21 @@ def collect_recursive(
         return []
 
     entries: dict[str, FunctionEntry] = {}
-    used_lower: set[str] = set()
+    used: set[str] = set()
 
     for base in info.base_names:
         for entry in collect_recursive(base, index, visited):
-            lower_name = entry.name.lower()
             entries[entry.name] = entry
-            used_lower.add(lower_name)
+            used.add(entry.name)
 
     text = read_text(info.path)
     for entry in collect_wrappers(text, class_name, info.class_ref, info.path.name):
-        lower_name = entry.name.lower()
-        if lower_name in used_lower:
+        if entry.name in used:
             continue
         existing = entries.get(entry.name)
         if existing is None:
             entries[entry.name] = entry
-            used_lower.add(lower_name)
+            used.add(entry.name)
         else:
             existing.supported = entry.supported
 
@@ -517,8 +517,8 @@ def collect_impl_recursive(
 
 def wrapper_impl_name(wrapper_name: str) -> str | None:
     if wrapper_name == "begin":
-        return "initimpl"
-    return f"{wrapper_name}impl".lower()
+        return "initImpl"
+    return f"{wrapper_name}Impl"
 
 
 def format_list(items: list[FunctionEntry], indent: str = " *     - ") -> list[str]:
@@ -647,7 +647,9 @@ def main() -> None:
 
     client_function_frames = {}
     for key, val in client_functions.items():
-        client_function_frames[key] = pd.DataFrame.from_dict(val)
+        client_function_frames[key] = pd.DataFrame.from_dict(
+            val  # pyright: ignore[reportArgumentType]
+        )
     client_function_frame = pd.concat(client_function_frames, axis=0)
     client_function_frame["client_file"] = client_function_frame.index.get_level_values(
         0
@@ -701,6 +703,9 @@ def main() -> None:
     client_function_t = client_function_t.drop(columns=["sort_a", "sort_b"]).sort_index(
         axis=1
     )
+    client_function_t = client_function_t.loc[
+        client_function_t["name"] != "poweroff"
+    ].copy()
 
     group_tables = {}
     for group_name, group_df in client_function_t.groupby("group", sort=False):
