@@ -714,7 +714,24 @@ class GsmClient : public Client {
    * @return int The next byte, or -1 if no data is available.
    */
   int peek() override {
-    return rx.peek();
+    if (at == nullptr) { return -1; }
+    TINY_GSM_YIELD();
+    // If data is already in the FIFO, peek at it
+    if (rx.size() > 0) { return rx.peek(); }
+    // For modes that use the modem buffer, try to refill the FIFO
+    // if the modem has available data
+    if (TcpConfig::kBufferMode != TinyGsmTcpBufferMode::NoModemBuffer &&
+        sock_available > 0) {
+      is_mid_send = false;  // Any calls to the AT when mid-send will cause
+                            // the send to fail
+      at->maintain();       // clear the modem stream/parse URCs
+      // Pull one byte (or more if available) from the modem into the FIFO
+      at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+      // Now peek at the FIFO again
+      return rx.peek();
+    }
+    // No data available
+    return -1;
   }
 
   /**
