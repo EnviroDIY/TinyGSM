@@ -97,8 +97,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 // #define CALL_TARGET "+380xxxxxxxxx"
 
 // Your GPRS credentials, if any
-const char apn[] = "YourAPN";
-// const char apn[] = "ibasis.iot";
+const char apn[]      = "YourAPN";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
 
@@ -146,7 +145,10 @@ TinyGsm modem(SerialAT);
 void setup() {
   // Set console baud rate
   SerialMon.begin(115200);
+  while (!SerialMon && millis() < 10000L) {}
   delay(10);
+
+  SerialMon.println("Wait...");
 
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
@@ -154,6 +156,12 @@ void setup() {
 
   DBG("Wait...");
   delay(500L);
+
+  SerialMon.println("All functions example for TinyGSM...");
+  SerialMon.println("The current version of TinyGSM is " TINYGSM_VERSION);
+  SerialMon.print("The configured modem is ");
+  SerialMon.println(modem.getConfiguredModem());
+  SerialMon.println("=====================================");
 
   DBG("Looking for modem at", TARGET_BAUD, "baud and setting baud rate to",
       TARGET_BAUD, "if it is not already the baud rate of the modem.");
@@ -172,6 +180,7 @@ void setup() {
     targetBaud = maximum;
   }
 
+#if !defined(TINY_GSM_MODEM_XBEE)
   // Set GSM module baud rate
   uint32_t found_baud = TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN,
                                         GSM_AUTOBAUD_MAX);
@@ -188,6 +197,9 @@ void setup() {
     DBG("Attempting to force baud rate to", targetBaud);
     modem.forceModemBaud(SerialAT, targetBaud);
   }
+#else
+  SerialAT.begin(targetBaud);
+#endif
 }
 
 void loop() {

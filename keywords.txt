@@ -200,6 +200,7 @@ setDefaultBaud	KEYWORD2
 forceModemBaud	KEYWORD2
 testAT	KEYWORD2
 waitResponse	KEYWORD2
+getConfiguredModem	KEYWORD2
 getModemInfo	KEYWORD2
 getModemName	KEYWORD2
 getModemManufacturer	KEYWORD2

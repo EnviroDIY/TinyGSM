@@ -74,7 +74,7 @@ void setup() {
 
   // Print the modem type
   SerialMon.print(F("Modem: "));
-  SerialMon.print(modem.getModemName());
+  SerialMon.print(modem.getConfiguredModem());
   SerialMon.println('\n');
 
   // Query capabilities using compile-time traits

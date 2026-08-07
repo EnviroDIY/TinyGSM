@@ -21,6 +21,7 @@
  *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getConfiguredModem "getConfiguredModem()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
