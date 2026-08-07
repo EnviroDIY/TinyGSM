@@ -196,8 +196,9 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
     using GsmClient<TinyGsmA6, TinyGsmA6TcpConfig>::stop;
 
     /**
-     * @brief Create a new TCP client.  This must be initialized with a modem
-     * before it can be used.
+     * @brief Create a new TCP client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
      */
     GsmClientA6() {
       is_secure = false;
@@ -232,6 +233,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
+      if (at == nullptr) { return 0; }
       stop(TinyGsmA6TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
@@ -245,6 +247,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
     }
 
     void stop(uint32_t maxWaitMs) override {
+      if (at == nullptr) { return; }
       is_mid_send = false;
       TINY_GSM_YIELD();
       at->sendAT(GF("+CIPCLOSE="), mux);

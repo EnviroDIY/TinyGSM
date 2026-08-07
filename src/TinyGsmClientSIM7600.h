@@ -270,8 +270,9 @@ class TinyGsmSim7600
     using GsmClient<TinyGsmSim7600, TinyGsmSim7600TcpConfig>::stop;
 
     /**
-     * @brief Create a new TCP client.  This must be initialized with a modem
-     * before it can be used.
+     * @brief Create a new TCP client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
      */
     GsmClientSim7600() {
       is_secure = false;
@@ -333,6 +334,7 @@ class TinyGsmSim7600
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
+      if (at == nullptr) { return 0; }
       stop(TinyGsmSim7600TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
@@ -341,6 +343,7 @@ class TinyGsmSim7600
     }
 
     void stop(uint32_t maxWaitMs) override {
+      if (at == nullptr) { return; }
       is_mid_send = false;
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux);
@@ -375,6 +378,7 @@ class TinyGsmSim7600
     TINY_GSM_SECURE_CLIENT_CTORS(Sim7600)
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
+      if (at == nullptr) { return 0; }
       stop(TinyGsmSim7600TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
@@ -393,6 +397,7 @@ class TinyGsmSim7600
     }
 
     void stop(uint32_t maxWaitMs) override {
+      if (at == nullptr) { return; }
       is_mid_send = false;
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CCHCLOSE="), mux);

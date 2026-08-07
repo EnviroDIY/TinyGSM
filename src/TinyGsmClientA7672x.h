@@ -265,8 +265,9 @@ class TinyGsmA7672x
     using GsmClient<TinyGsmA7672x, TinyGsmA7672xTcpConfig>::stop;
 
     /**
-     * @brief Create a new TCP client.  This must be initialized with a modem
-     * before it can be used.
+     * @brief Create a new TCP client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
      */
     GsmClientA7672x() {
       is_secure = false;
@@ -328,6 +329,7 @@ class TinyGsmA7672x
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
+      if (at == nullptr) { return 0; }
       stop(TinyGsmA7672xTcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
@@ -336,6 +338,7 @@ class TinyGsmA7672x
     }
 
     void stop(uint32_t maxWaitMs) override {
+      if (at == nullptr) { return; }
       is_mid_send = false;
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux);
@@ -369,6 +372,7 @@ class TinyGsmA7672x
     TINY_GSM_SECURE_CLIENT_CTORS(A7672x)
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
+      if (at == nullptr) { return 0; }
       stop(TinyGsmA7672xTcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
@@ -387,6 +391,7 @@ class TinyGsmA7672x
     }
 
     void stop(uint32_t maxWaitMs) override {
+      if (at == nullptr) { return; }
       is_mid_send = false;
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CCHCLOSE="), mux);  //, GF(",1"));  // Quick close

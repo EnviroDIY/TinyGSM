@@ -304,6 +304,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
      * any connection.
      */
     int connect(const char* host, uint16_t port, int timeout_s) override {
+      if (at == nullptr) { return 0; }
       // NOTE:  Not calling stop() or yield() here
       at->streamClear();  // Empty anything in the buffer before starting
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -316,6 +317,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     /// @copydoc GsmClient::connect(IPAddress, uint16_t, int)
     virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
+      if (at == nullptr) { return 0; }
       if (timeout_s != 0) {
         DBG("Timeout [", timeout_s, "] doesn't apply here.");
       }
@@ -339,6 +341,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
      * more nicely with libraries like PubSubClient.
      */
     void stop(uint32_t maxWaitMs) override {
+      if (at == nullptr) { return; }
       at->streamClear();  // Empty anything in the buffer
       // empty the saved currently-in-use destination address
       at->modemStop(maxWaitMs);
