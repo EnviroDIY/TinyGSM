@@ -1276,8 +1276,8 @@ class TinyGsmESP32
 
   bool modemGetConnectedImpl(uint8_t mux) {
     sendAT(GF("+CIPSTATE?"));
-    bool verified_connections[TinyGsmESP32TcpConfig::kMuxCount] = {0, 0, 0, 0,
-                                                                   0};
+    // initialize the connection array assuming no connections are active
+    bool verified_connections[TinyGsmESP32TcpConfig::kMuxCount] = {0};
     for (int muxNo = 0; muxNo < TinyGsmESP32TcpConfig::kMuxCount; muxNo++) {
       uint8_t has_status = waitResponse(GF("+CIPSTATE:"),
                                         GFP(ModemConfig::GSM_OK),
@@ -1289,7 +1289,10 @@ class TinyGsmESP32
         streamSkipUntil(',');   // Skip remote port
         streamSkipUntil(',');   // Skip local port
         streamSkipUntil('\n');  // Skip client/server type
-        verified_connections[returned_mux] = 1;
+        if (returned_mux >= 0 &&
+            returned_mux < TinyGsmESP32TcpConfig::kMuxCount) {
+          verified_connections[returned_mux] = 1;
+        }
       } else {
         break;
       };  // once we get to the ok or error, stop
