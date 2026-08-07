@@ -1703,10 +1703,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
           streamSkipUntil('\r');  // final carriage return
         }
 
-        XBEE_COMMAND_END_DECORATOR
-
         // 0x00 = The socket is definitely open
         if (ci == 0x00) {
+          // exit command mode before returning
+          XBEE_COMMAND_END_DECORATOR
           savedOperatingIP = od;
           // but it's possible the socket is set to the wrong place
           if (od != IPAddress(0, 0, 0, 0) && od != savedIP) {
@@ -1720,7 +1720,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         // 0xFF = No known status - always returned prior to sending data
         if (ci == 0x28 || ci == 0xFF) {
           DBG("Got 0x28 or 0xFF, we don't know if we're connected");
-          return handleUnknownCellularStatus(od);
+          bool retVal = handleUnknownCellularStatus(od);
+          XBEE_COMMAND_END_DECORATOR
+          return retVal;
         }
 
         // 0x21 = User closed
@@ -1740,6 +1742,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         if (ci == 0x02 || ci == 0x12 || ci == 0x25) {
           savedIP = IPAddress(0, 0, 0, 0);  // force a lookup next time!
         }
+
+        // exit command mode
+        XBEE_COMMAND_END_DECORATOR
 
         // If it's anything else (inc 0x02, 0x12, and 0x25)...
         // it's definitely NOT connected
