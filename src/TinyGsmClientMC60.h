@@ -9,7 +9,7 @@
  * MC60 support added by Tamas Dajka 2017.10.15 - with fixes by Sara Damiano
  */
 /* clang-format off */
-/***
+/**
  * @defgroup quectel_mc60 Quectel MC60 Modem Family
  * @brief Manufacturer: Quectel. Models: MC60, MC60E.
  *
@@ -99,6 +99,10 @@
  * a server.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
+ *
+ * @todo In `modemEndSendImpl()`: verify len/ack
+ * @todo In `modemReadImpl()`: Does this even work????
+ * @todo In `handleURCs()`: QIRD? or QIRDI?
  */
 /* clang-format on */
 

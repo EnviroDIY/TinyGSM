@@ -120,6 +120,11 @@
  * select the next available one.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
+ *
+ * @todo In operator `GsmClientBG96::read()`: Read directly into user buffer?
+ * @todo In `modemEndSendImpl()`: Wait for ACK? (AT+QISEND=id,0 or
+ * AT+QSSLSEND=id,0)
+ * @todo In `modemGetConnectedImpl()`: Verify mux
  */
 /* clang-format on */
 

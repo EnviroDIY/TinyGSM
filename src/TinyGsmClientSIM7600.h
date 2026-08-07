@@ -131,6 +131,21 @@
  * select the next available one.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
+ *
+ * @todo In GsmClientSim7600 constructor: Ensure the secure socket mux isn't out
+ * of range
+ * @todo In `gprsDisconnectImpl()`: Should CCHSTOP come before NETCLOSE?  Is it
+ * needed in addition to NETCLOSE?
+ * @todo In `getGPSImpl()`: Can 1 be returned
+ * @todo In `GsmClientSecureSim7600::connect()`: Should we specify the
+ * client_type as 2=SSL/TLS?
+ * @todo In `GsmClientSecureSim7600::connect()`: verify CCHOPEN
+ * @todo In `modemSendImpl()`: make sure requested and confirmed bytes match
+ * @todo In `modemReadImpl()` (SSL path): validate mux/cid (connection id)
+ * @todo In `modemReadImpl()` (non-SSL path): validate mux/cid (connection id)
+ * @todo In `modemGetAvailableImpl()`: validate mux
+ * @todo In `modemGetConnectedImpl()`: I think this only returns the TCP socket
+ * connection status, not the SSL connection status
  */
 /* clang-format on */
 

@@ -98,6 +98,10 @@
  * a server.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
+ *
+ * @todo In `gprsConnectImpl()`: wait AT+CGATT?
+ * @todo In `dtmfSendImpl()`: correctly handle the duration parameter
+ * @todo In `modemGetConnectedImpl()`: correctly read the mux number
  */
 /* clang-format on */
 

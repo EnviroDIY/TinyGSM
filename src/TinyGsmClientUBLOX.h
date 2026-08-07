@@ -103,6 +103,8 @@
  * a server.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
+ *
+ * @todo In `restartImpl()`: Verify delay timing here
  */
 /* clang-format on */
 

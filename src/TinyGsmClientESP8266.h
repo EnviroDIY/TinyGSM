@@ -88,6 +88,8 @@
  * select the next available one.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
+ *
+ * @todo In `handleURCs()`: deal with buffer overflow
  */
 /* clang-format on */
 

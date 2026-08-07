@@ -86,6 +86,11 @@
  * a server.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
+ *
+ * @todo In `gprsConnectImpl()`: configure DNS settings if needed
+ * @todo In `gprsDisconnectImpl()`: There is no command in AT command set
+ * @todo In `modemConnectImpl()`: no need for loop?
+ * @todo In `handleURCs()`: deal with buffer overflow
  */
 /* clang-format on */
 

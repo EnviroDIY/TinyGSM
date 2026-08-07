@@ -130,6 +130,9 @@
  * select the next available one.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
+ *
+ * @todo In `configureSSLContext()`: Skip verifying the context number?
+ * @todo In `modemConnectImpl()` (SSL path): validate mux
  */
 /* clang-format on */
 
