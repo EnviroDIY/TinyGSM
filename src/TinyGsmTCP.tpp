@@ -436,6 +436,10 @@ class GsmClient : public Client {
   friend class TinyGsmTCP<modemType, tcpConfig>;
 
  public:
+  // Restore the Print overloads hidden by the write() declarations below,
+  // in particular Print::write(const char*, size_t).
+  using Print::write;
+
   /**
    * @anchor client_like_functions
    * @name Functions implementing the Arduino Client interface
@@ -553,16 +557,6 @@ class GsmClient : public Client {
    */
   size_t write(uint8_t c) override {
     return write(&c, 1);
-  }
-
-  /**
-   * @brief Writes a null-terminated string of data to the modem for sending
-   * @param str The null-terminated string to send
-   * @return The number of bytes written
-   */
-  virtual size_t write(const char* str) {
-    if (str == nullptr) return 0;
-    return write(reinterpret_cast<const uint8_t*>(str), strlen(str));
   }
 
   /**

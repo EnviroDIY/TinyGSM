@@ -254,10 +254,12 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    public:
     using GsmClient<TinyGsmXBee, TinyGsmXBeeTcpConfig>::connect;
     using GsmClient<TinyGsmXBee, TinyGsmXBeeTcpConfig>::stop;
+    using Print::write;
 
     /**
-     * @brief Create a new TCP client.  This must be initialized with a modem
-     * before it can be used.
+     * @brief Create a new TCP client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
      */
     GsmClientXBee() {
       is_secure = false;
@@ -347,6 +349,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     /// @copydoc GsmClient::write(const uint8_t*, size_t)
     size_t write(const uint8_t* buf, size_t size) override {
+      if (at == nullptr) { return 0; }
       TINY_GSM_YIELD();
       return at->modemSend(buf, size, mux);
     }
@@ -354,12 +357,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     /// @copydoc GsmClient::write(uint8_t)
     size_t write(uint8_t c) override {
       return write(&c, 1);
-    }
-
-    /// @copydoc GsmClient::write(const char*)
-    size_t write(const char* str) {
-      if (str == nullptr) return 0;
-      return write(reinterpret_cast<const uint8_t*>(str), strlen(str));
     }
 
     /// @copydoc GsmClient::available()
