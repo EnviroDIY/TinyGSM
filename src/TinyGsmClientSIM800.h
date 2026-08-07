@@ -160,7 +160,7 @@ enum SIM800RegStatus {
 struct TinyGsmSim800ModemConfig
     : public TinyGsmModemConfigPreset<SIM800RegStatus> {
   /// The modem manufacturer
-  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "unknown";
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
 #if defined(TINY_GSM_MODEM_SIM808)
   /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM808";
