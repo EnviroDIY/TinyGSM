@@ -328,9 +328,11 @@ class TinyGsmTCP {
       bool   send_success  = false;
       while (send_attempts < 3 && !send_success) {
         size_t sendLength = thisModem().modemWaitForSend(mux);
-        if (sendLength == 0) {
+        if (sendLength < TcpConfig::kMinFreeTxBuffer) {
           send_attempts++;
-          DBG(GF("### No available send buffer on attempt"), send_attempts);
+          DBG(GF("### Insufficient send buffer ("), sendLength,
+              GF("of required"), TcpConfig::kMinFreeTxBuffer,
+              GF(") on attempt"), send_attempts);
           continue;
         }
         // Ensure the program doesn't read past the allocated memory
