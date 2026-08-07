@@ -11,20 +11,20 @@
 // This example is specific to SIM8xx
 #define TINY_GSM_MODEM_SIM800
 
-// Select your certificate:
-#include "DSTRootCAX3.h"      // Expired 2021-09-30
-#include "DSTRootCAX3.der.h"  // Expired 2021-09-30
-// #include "COMODORSACertificationAuthority.h"
-
-// Select the file you want to write into
-// (the file is stored on the modem)
-#define CERT_FILE "C:\\USER\\CERT.CRT"
-
 #include <TinyGsmClient.h>
 
 #if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
 #include <Adafruit_TinyUSB.h>  // for Serial
 #endif
+
+// Select your certificate:
+#include "DSTRootCAX3.h"  // Expired 2021-09-30
+// #include "DSTRootCAX3.der.h"  // Expired 2021-09-30
+// #include "COMODORSACertificationAuthority.h"
+
+// Select the file you want to write into
+// (the file is stored on the modem)
+#define CERT_FILE "C:\\USER\\CERT.CRT"
 
 // Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
