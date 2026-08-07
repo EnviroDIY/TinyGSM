@@ -812,6 +812,15 @@ class TinyGsmModem {
 #endif
     uint8_t  index       = 0;
     uint32_t startMillis = millis();
+#if defined TINY_GSM_DEBUG
+    const String verbosePrefix1 = String(GFP(ModemConfig::GSM_VERBOSE));
+    const String verbosePrefix2 = String(GFP(ModemConfig::GSM_VERBOSE_2));
+    // check how long the new line is
+    // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
+    const String atnlString  = String(GFP(ModemConfig::GSM_NL));
+    const int    len_atnl    = atnlString.length();
+    const char   last_atnl_c = len_atnl > 0 ? atnlString[len_atnl - 1] : '\n';
+#endif
     do {
       TINY_GSM_YIELD();
       while (thisModem().stream.available() > 0) {
@@ -827,16 +836,8 @@ class TinyGsmModem {
           }
         }
 #if defined TINY_GSM_DEBUG
-        const String verbosePrefix1 = String(GFP(ModemConfig::GSM_VERBOSE));
-        const String verbosePrefix2 = String(GFP(ModemConfig::GSM_VERBOSE_2));
         if ((data.endsWith(verbosePrefix1)) ||
             (data.endsWith(verbosePrefix2))) {
-          // check how long the new line is
-          // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
-          const String atnlString  = String(GFP(ModemConfig::GSM_NL));
-          const int    len_atnl    = atnlString.length();
-          const char   last_atnl_c = len_atnl > 0 ? atnlString[len_atnl - 1]
-                                                  : '\n';
           // Read out the verbose message, until the last character of the new
           // line
           data += thisModem().stream.readStringUntil(last_atnl_c);
