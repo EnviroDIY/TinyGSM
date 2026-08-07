@@ -112,8 +112,10 @@ class TinyGsmTCP {
 
   /**
    * @brief Find the number of the first unassigned mux socket
-   * @return The mux number of the first unassigned socket, or -1 if all sockets
-   * are assigned
+   * @return The mux number of the first unassigned socket, or 255 (0xFF,
+   * static_cast<uint8_t>(-1)) if all sockets are assigned
+   * @note This returns an unsigned int instead of a signed int to be easily
+   * comparable with the socket mux value, which is also unsigned.
    */
   uint8_t findFirstUnassignedMux() {
     // Try to iterate through the assigned client sockets to find the next spot
