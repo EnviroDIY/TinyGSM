@@ -629,7 +629,7 @@ def create_pio_ci_compile_command(
     ):  # these CANNOT be used with a pio config file
         pio_command_args += [
             "--project-option",
-            f'"build_flags = {' '.join(extra_flags)}"',
+            f"\"build_flags = {' '.join(extra_flags)}\"",
         ]
     else:
         if len(extra_flags) > 0 and use_pio_config_file and not use_run:
