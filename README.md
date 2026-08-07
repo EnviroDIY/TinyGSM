@@ -430,13 +430,9 @@ Here are some tips for writing layer 7 (particularly HTTP request) manually:
 Use this:
 
 ```cpp
-// NOTE: buffer must be large enough to hold the full request line;
-// consider using strncat or checking your_url_host length first
 char buffer[128] = "";
-strcat(buffer, "GET ");
-strcat(buffer, your_url_host);
-strcat(buffer, " HTTP/1.1\r\n");
-client.write(buffer, strlen(buffer));
+int len = snprintf(buffer, sizeof(buffer), "GET %s HTTP/1.1\r\n", your_url_host);
+client.write((uint8_t*)buffer, len);
 ```
 
 or this:
