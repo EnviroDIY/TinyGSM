@@ -525,6 +525,7 @@ class GsmClient : public Client {
    * @return The number of bytes written
    */
   size_t write(const uint8_t* buf, size_t size) override {
+    if (at == nullptr) { return 0; }
     if (is_mid_send) {
       // if we're in the middle of a write, pass directly to the stream
       return at->stream.write(buf, size);
@@ -567,6 +568,7 @@ class GsmClient : public Client {
    * @return int The number of bytes available in the client's receive buffer.
    */
   int available() override {
+    if (at == nullptr) { return 0; }
     is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                           // send to fail
     TINY_GSM_YIELD();
@@ -607,6 +609,7 @@ class GsmClient : public Client {
    * @return int The number of bytes actually read.
    */
   int read(uint8_t* buf, size_t size) override {
+    if (at == nullptr) { return 0; }
     TINY_GSM_YIELD();
     is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                           // send to fail

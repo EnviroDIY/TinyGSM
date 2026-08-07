@@ -197,8 +197,9 @@ class TinyGsmESP8266
     using GsmClient<TinyGsmESP8266, TinyGsmESP8266TcpConfig>::stop;
 
     /**
-     * @brief Create a new TCP client.  This must be initialized with a modem
-     * before it can be used.
+     * @brief Create a new TCP client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
      */
     GsmClientESP8266() {
       is_secure = false;
@@ -255,6 +256,7 @@ class TinyGsmESP8266
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
+      if (at == nullptr) { return 0; }
       is_mid_send = false;
       if (mux < TinyGsmESP8266TcpConfig::kMuxCount &&
           at->sockets[mux] != nullptr) {
@@ -267,6 +269,7 @@ class TinyGsmESP8266
     }
 
     void stop(uint32_t maxWaitMs) override {
+      if (at == nullptr) { return; }
       is_mid_send = false;
       TINY_GSM_YIELD();
       at->sendAT(GF("+CIPCLOSE="), mux);

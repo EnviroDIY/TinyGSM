@@ -208,8 +208,9 @@ class TinyGsmESP32
     using GsmClient<TinyGsmESP32, TinyGsmESP32TcpConfig>::stop;
 
     /**
-     * @brief Create a new TCP client.  This must be initialized with a modem
-     * before it can be used.
+     * @brief Create a new TCP client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
      */
     GsmClientESP32() {
       is_secure = false;
@@ -272,6 +273,7 @@ class TinyGsmESP32
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
+      if (at == nullptr) { return 0; }
       is_mid_send = false;
       if (mux < TinyGsmESP32TcpConfig::kMuxCount &&
           at->sockets[mux] != nullptr) {
@@ -303,6 +305,7 @@ class TinyGsmESP32
     }
 
     void stop(uint32_t maxWaitMs) override {
+      if (at == nullptr) { return; }
       is_mid_send = false;
       TINY_GSM_YIELD();
       if (sock_connected || sock_available) {
