@@ -312,7 +312,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     }
     /// @copydoc GsmClient::connect(const char*, uint16_t)
     int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 75);
+      return connect(host, port, TinyGsmXBeeTcpConfig::kConnectTimeoutS);
     }
 
     /// @copydoc GsmClient::connect(IPAddress, uint16_t, int)
