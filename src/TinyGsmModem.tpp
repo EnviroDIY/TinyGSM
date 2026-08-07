@@ -363,6 +363,19 @@ class TinyGsmModem {
   }
 
   /**
+   * @brief Gets the configured modem manufacture and model based on the
+   * compile-time traits.
+   *
+   * @remark This does **not** query the modem for its actual manufacture and
+   * model, but rather returns the values that were set at compile time.
+   * @return *String* The configured modem manufacture and model based on the
+   * compile-time traits.
+   */
+  String getConfiguredModem() {
+    return thisModem().getConfiguredModemImpl();
+  }
+
+  /**
    * @brief Asks for modem information via the 3GPP TS 27.007 standard ATI
    * command
    *
@@ -846,6 +859,10 @@ class TinyGsmModem {
     return index;
   }
 
+  String getConfiguredModemImpl() {
+    return String(GFP(ModemConfig::MODEM_MANUFACTURER)) + ' ' +
+        String(GFP(ModemConfig::MODEM_MODEL));
+  }
 
   String getModemInfoImpl() {
     thisModem().sendAT('I');  // 3GPP TS 27.007

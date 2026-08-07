@@ -71,6 +71,10 @@ gsmClient.endWrite(strlen(request));
   - Implemented use of these for all modules.
 - Implemented a function (`moveCharsFromStreamToFifo`) for transferring a stream of characters from the modem stream into the fifo.
   - Implemented use of this function for all modules.
+- Added compile-time modem capability detection for networking, GPS, SSL, SMS, calling, battery, temperature, Bluetooth, and more and an example demonstrating its use.
+- Added a function getConfiguredModem() to return information about the compiled modem *without* communicating with the modem.
+- Added complete Doxygen style documentation to all functions and created scripts to update the internal lists of available functions for each modem.
+- Added new `powerOff()` function as the preferred naming convention; deprecated `poweroff()` in favor of the new camelCase naming.
 
 ### Removed
 
@@ -84,6 +88,7 @@ gsmClient.endWrite(strlen(request));
 - Fixes to stop logic on Espressif and SIM7080
 - Modified HTTP examples to attempt to connect to a site that doesn't require SSL.
   - @vshymanskyy's host of his primary example which displays the TinyGSM logo now requires SSL.
+- The Arduino keywords file now contains all relevant key words based on doxygen.
 
 ***
 

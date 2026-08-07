@@ -88,3 +88,4 @@ DoxygenLayout.xml
 continuous_integration/platformio_local.ini
 continuous_integration/generate_local_tests.py
 continuous_integration/parse_test_results.py
+src/wakeUp.h

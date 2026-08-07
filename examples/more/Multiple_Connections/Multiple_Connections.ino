@@ -144,12 +144,8 @@ const int     port1 = 80;
 void setup() {
   // Set console baud rate
   SerialMon.begin(115200);
-  while (!SerialMon) {}
+  while (!SerialMon && millis() < 10000L) {}
   delay(10);
-
-  // !!!!!!!!!!!
-  // Set your reset, enable, power pins here
-  // !!!!!!!!!!!
 
   SerialMon.println("Wait...");
 
@@ -159,38 +155,6 @@ void setup() {
 
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
-  // pins
-  int8_t _modemPowerPin   = 18;  // Mayfly 1.1
-  int8_t _modemSleepRqPin = 23;  // Mayfly 1.1
-  int8_t _modemStatusPin  = 19;  // Mayfly 1.1
-  // set pin modes
-  pinMode(_modemPowerPin, OUTPUT);
-  pinMode(_modemSleepRqPin, OUTPUT);
-  pinMode(_modemStatusPin, INPUT);
-
-  // wake settings
-  uint32_t _wakeDelay_ms = 1000L;  // SIM7080G
-  uint32_t _wakePulse_ms = 1100L;  // SIM7080G
-  bool _wakeLevel = HIGH;  // SIM7080G is low, but EnviroDIY LTE Bee inverts it
-
-  // start with the modem powered off
-  DBG(F("Starting with modem powered down. Wait..."));
-  digitalWrite(_modemSleepRqPin, !_wakeLevel);
-  digitalWrite(_modemPowerPin, LOW);
-  delay(5000L);
-
-  // power the modem
-  DBG(F("Powering modem with pin"), _modemPowerPin, F("and waiting"),
-      _wakeDelay_ms, F("ms for power up."));
-  digitalWrite(_modemPowerPin, HIGH);
-  delay(_wakeDelay_ms);  // SIM7080G wake delay
-
-  // wake the modem
-  DBG(F("Sending a"), _wakePulse_ms, F("ms"), _wakeLevel ? F("HIGH") : F("LOW"),
-      F("wake-up pulse on pin"), _modemSleepRqPin);
-  digitalWrite(_modemSleepRqPin, _wakeLevel);
-  delay(_wakePulse_ms);  // >1s
-  digitalWrite(_modemSleepRqPin, !_wakeLevel);
   // !!!!!!!!!!!
 
   // Restart takes quite some time
