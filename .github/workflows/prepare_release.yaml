@@ -35,6 +35,9 @@ jobs:
         with:
           workflow: ${{ matrix.req_workflow }}
           sha: ${{ github.sha || github.event.pull_request.head.sha || github.event.pull_request.head.ref }} # optional
+          # Allow success, cancelled, or skipped conclusion
+          # Allow canceled because sometimes a CI check is accidentally started after a commit that only changes versioning and then canceled,
+          # and we don't want to block the release for that.
           allowed-conclusions: |
             success
             cancelled
