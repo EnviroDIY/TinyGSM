@@ -24,6 +24,7 @@ reviews:
   collapse_walkthrough: true
   path_filters:
     - '!**/dependencies.json'
+    - '!**/example_dependencies.json'
     - '!**/cspell.json'
   path_instructions:
     - path: '**/*.md'
@@ -69,6 +70,11 @@ reviews:
     - path: '**/*.cpp'
       instructions: >-
         This is a header-only library, there should not be any .cpp files. If you see a .cpp file, it should be removed.
+    - path: 'extras/tools/test_build/test_build.ino'
+      instructions: >-
+        This is compiler test, not a user example.
+        It is intended to be used to test the library with different compilers and platforms, and should not be used as a reference for users.
+        Check that the code contains all functions and features of the library.
   tools:
     shellcheck:
       enabled: true
