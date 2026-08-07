@@ -16,9 +16,6 @@ on:
 
 name: Create a New Release
 
-env:
-  PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
-
 jobs:
   wait_for_checks:
     if: ${{ github.event_name != 'workflow_dispatch' }}
@@ -40,7 +37,9 @@ jobs:
           sha: ${{ github.sha || github.event.pull_request.head.sha || github.event.pull_request.head.ref }} # optional
           allowed-conclusions: |
             success
+            cancelled
             skipped
+
   release:
     name: Prepare a new release
     needs: [wait_for_checks]
@@ -48,6 +47,7 @@ jobs:
       always() &&
       (needs.wait_for_checks.result == 'success' || needs.wait_for_checks.result == 'skipped')
     uses: EnviroDIY/workflows/.github/workflows/prepare_release.yaml@main
-    secrets: inherit
+    secrets:
+      PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
     with:
-      include_dependencies: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.include_dependencies == 'true' }}
+      include_dependencies: ${{ ( true ) || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true') }}
