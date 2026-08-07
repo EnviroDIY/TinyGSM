@@ -106,6 +106,9 @@
  * a server.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
+ *
+ * @todo In operator `GsmClientXBee::read()`: Read directly into user buffer?
+ * @todo In `enterCommandMode()`: optimize this
  */
 /* clang-format on */
 

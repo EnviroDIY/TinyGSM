@@ -124,6 +124,27 @@
  * select the next available one.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
+ *
+ * @todo In GsmClientA7672x constructor: Ensure the secure socket mux isn't out
+ * of range
+ * @todo In `getLocalIPSecure()`: figure out when to use each command properly
+ * @todo In `deleteCertificateImpl()`: test
+ * @todo In `connect()` (secure path): Shouldn't CCHSET be called only once
+ * during the init or during the GPRS connection process?
+ * @todo In `connect()` (secure path): Should CCHSTART be called once during the
+ * GPRS connection process instead of repeatly here?
+ * @todo In `connect()` (secure path): verify the socket returned by CCHOPEN
+ * @todo In `connect()` (non-secure path): Should NETOPEN be called once during
+ * the GPRS connection process instead of repeatly here?
+ * @todo In `modemSendImpl()`: make sure requested and confirmed bytes match
+ * @todo In `modemSendImpl()`: validate mux/cid (connection id)
+ * @todo In `modemSendImpl()`: validate mux/cid (connection id) (second
+ * validation)
+ * @todo In `modemReadImpl()`: Validate mux
+ * @todo In `modemGetConnectedImpl()`: Does this work?  It's not the right
+ * command by the manual
+ * @todo In `handleURCs()`: This is a problem, we can't issue a
+ * sendAT/waitResponse here.
  */
 /* clang-format on */
 

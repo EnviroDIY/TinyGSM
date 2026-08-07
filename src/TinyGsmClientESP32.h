@@ -96,6 +96,11 @@
  * a server.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
+ *
+ * @todo In `GsmClientSecureESP32::connect()`: Implement PSK and PSK Identity as
+ * they're now supported by newer firmware.
+ * @todo In `handleURCs()`: I'm not sure if each +IPD URC reports the amount
+ * newly received or the total now in the buffer. It appears to be the latter.
  */
 /* clang-format on */
 

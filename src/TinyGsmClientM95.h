@@ -99,6 +99,9 @@
  * a server.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
+ *
+ * @todo In `modemEndSendImpl()`: get len/ack properly
+ * @todo In `modemReadImpl()`: Does this even work????
  */
 /* clang-format on */
 
