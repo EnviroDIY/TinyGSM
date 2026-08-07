@@ -690,12 +690,11 @@ class TinyGsmSim7600
     // Note: On the LTE models, this single command closes all sockets and the
     // service and deactivates the PDP context
     sendAT(GF("+NETCLOSE"));
-    waitResponse(60000L, GF("+NETCLOSE: 0"));
+    if (waitResponse(60000L, GF("+NETCLOSE: 0")) != 1) { return false; }
 
-    // We assume this works, so we can do SSL disconnect too
-    // stop the SSL client
+    // We assume this works, so we can do SSL disconnect to stop the SSL client
     sendAT(GF("+CCHSTOP"));
-    return (waitResponse(60000L, GF("+CCHSTOP: 0")) != 1);
+    return (waitResponse(60000L, GF("+CCHSTOP: 0")) == 1);
 
     // TODO: Should CCHSTOP come before NETCLOSE?  Is it needed in addition to
     // NETCLOSE?
