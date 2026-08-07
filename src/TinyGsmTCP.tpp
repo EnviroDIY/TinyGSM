@@ -798,8 +798,11 @@ class GsmClient : public Client {
           GF("that can be sent at once by this modem!"));
       return false;
     }
-    is_mid_send = true;
-    return at->modemBeginSend(size, mux);
+    if (!at->modemBeginSend(size, mux)) {
+      is_mid_send = false;
+      return false;
+    }
+    return true;
   }
   /**
    * @brief Conclude a write to the module
