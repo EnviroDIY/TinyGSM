@@ -297,10 +297,17 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
 
       uint8_t oldMux = mux;
       sock_connected = at->modemConnect(host, port, &mux, timeout_s);
+      
+      // Validate mux before any access to sockets array
+      if (!(mux < TinyGsmUBLOXTcpConfig::kMuxCount)) {
+        DBG(GF("ERROR: Modem returned invalid mux"), mux,
+            GF("(max:"), static_cast<int>(TinyGsmUBLOXTcpConfig::kMuxCount - 1), GF(")"));
+        return 0;  // Return failure when mux is out of range
+      }
+      
       if (mux != oldMux) {
         DBG(GF("###  Mux number changed from"), oldMux, GF("to"), mux);
-        if (!(mux < TinyGsmUBLOXTcpConfig::kMuxCount &&
-              (at->sockets[mux] == nullptr || at->sockets[mux] == this))) {
+        if (!(at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
           DBG(GF("WARNING: This new mux number had already been assigned to a "
                  "different client, attempting to move it!"));
           uint8_t next_empty_mux = at->findFirstUnassignedMux();
