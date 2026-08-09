@@ -319,7 +319,7 @@ class TinyGsmESP8266
       ca_number = certNumber;
     }
     /// @copydoc GsmClientSecureESP8266::setCACertName(const char*)
-    virtual void setCACertName(String CAcertName) {
+    void setCACertName(String CAcertName) override {
       setCACertName(CAcertName.c_str());
     }
 
@@ -342,14 +342,13 @@ class TinyGsmESP8266
       pki_number = certNumber;
       // generate the matching client private key name from the certificate
       // number and type
-      char* cert_name      = new char[16]();
-      char* cert_namespace = new char[14]();
+      char* cert_name = new char[16]();
       at->getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
                              cert_namespace);
       clientKeyName = cert_name;
     }
     /// @copydoc GsmClientSecureESP8266::setClientCertName(const char*)
-    virtual void setClientCertName(String clientCertName) {
+    void setClientCertName(String clientCertName) override {
       setClientCertName(clientCertName.c_str());
     }
 
@@ -372,15 +371,14 @@ class TinyGsmESP8266
       pki_number = certNumber;
       // generate the matching client certificate name from the private key
       // number and type
-      char* cert_name      = new char[16]();
-      char* cert_namespace = new char[14]();
+      char* cert_name = new char[16]();
       at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
                              cert_name, cert_namespace);
       // set the client certificate name
       clientCertName = cert_name;
     }
     /// @copydoc GsmClientSecureESP8266::setPrivateKeyName(const char*)
-    virtual void setPrivateKeyName(String clientKeyName) {
+    void setPrivateKeyName(String clientKeyName) override {
       setPrivateKeyName(clientKeyName.c_str());
     }
 
