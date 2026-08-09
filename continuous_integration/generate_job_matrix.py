@@ -308,12 +308,14 @@ def dict_product(options):
 
 
 def remove_duplicate_dicts(list_with_dup_dicts):
-    # remove duplicates based on all keys except "compiler_flags"
+    # remove duplicates based on all keys except "job_group"
     seen = set()
     deduped_list = []
 
     for d in list_with_dup_dicts:
-        json_str = json.dumps({k: v for k, v in d.items() if k != "job_group"})
+        json_str = json.dumps(
+            {k: v for k, v in d.items() if k != "job_group"}, sort_keys=True
+        )
         if json_str not in seen:
             seen.add(json_str)
             deduped_list.append(d)
@@ -356,6 +358,7 @@ unsecured_modems_list = [
     "TINY_GSM_MODEM_MC60E",
 ]
 unsecured_modems = [[modem] for modem in unsecured_modems_list]
+secured_modems = [modem for modem in modem_list if modem not in unsecured_modems]
 
 # a list of known failures to skip in the job matrix
 matrix_exclusions = [
@@ -377,22 +380,17 @@ matrix_exclusions = [
         "example": [os.path.join("example", "BlynkClient")],
         "board": boards,
         "inline_flags": [
-            modem
-            for modem in modem_list
-            if modem
-            in [
-                "TINY_GSM_MODEM_ESP32",
-                "TINY_GSM_MODEM_ESP8266",
-                "TINY_GSM_MODEM_ESP8266_NONOS",
-            ]  # TinyGSM wifi modems are not supported by the Blynk library
-        ],
+            ["TINY_GSM_MODEM_ESP32"],
+            ["TINY_GSM_MODEM_ESP8266"],
+            ["TINY_GSM_MODEM_ESP8266_NONOS"],
+        ],  # TinyGSM wifi modems are not supported by the Blynk library
         "compiler_flags": [[]],
     },
     {
         "compiler": compiler_list,
         "example": [os.path.join("example", "BlynkClient")],
         "board": ["leonardo", "feather32u4", "yun"],
-        "inline_flags": ["TINY_GSM_MODEM_XBEE"],
+        "inline_flags": [["TINY_GSM_MODEM_XBEE"]],
         "compiler_flags": [[]],
         # The XBee is a few bytes too big for 32u4 boards
     },
@@ -424,7 +422,7 @@ matrix_exclusions = [
             "feather328p",
             "feather32u4",
         ],  # doesn't fit
-        "inline_flags": ["TINY_GSM_MODEM_SARAR5"],
+        "inline_flags": [["TINY_GSM_MODEM_SARAR5"]],
         "compiler_flags": [[]],
     },
     {
@@ -437,9 +435,7 @@ matrix_exclusions = [
             "feather328p",
             "feather32u4",
         ],  # doesn't fit on 328p or 32u
-        "inline_flags": [
-            modem for modem in modem_list if modem not in unsecured_modems
-        ],
+        "inline_flags": secured_modems,
         "compiler_flags": [[]],
     },
     {
@@ -449,7 +445,7 @@ matrix_exclusions = [
             os.path.join("example", "AWS_IoTCore"),
         ],
         "board": boards,
-        "inline_flags": [modem for modem in modem_list if modem in unsecured_modems],
+        "inline_flags": secured_modems,
         "compiler_flags": [[]],
         # Exclude SSL-incapable modems on SSL required examples.
     },
@@ -460,7 +456,7 @@ matrix_exclusions = [
             os.path.join("extras", "tools", "AT_Spy"),
         ],  # never build these examples in CI, they are for debugging only
         "board": boards,
-        "inline_flags": deepcopy(modem_list),
+        "inline_flags": modem_list,
         "compiler_flags": [[]],
     },
 ]
@@ -524,7 +520,7 @@ matrix_inclusions = [
         "board": [  # boards too small for the bigger test build
             "uno_pic32",
         ],
-        "inline_flags": ["TINY_GSM_MODEM_SARAR5"],
+        "inline_flags": [["TINY_GSM_MODEM_SARAR5"]],
         "compiler_flags": [[]],
     },
     {
@@ -671,17 +667,16 @@ def create_pio_ci_compile_command(
             config_build_flags = pio_config_expanded.get(
                 f"env:{pio_board_or_env}", "build_flags", []
             )
-            if (
-                any(flag not in config_build_flags for flag in compiler_flags)
-                and any(
-                    "-D" + flag not in config_build_flags for flag in compiler_flags
-                )
-                and any(
-                    "-D " + flag not in config_build_flags for flag in compiler_flags
-                )
-            ):
+            missing_flags = [
+                flag
+                for flag in compiler_flags
+                if flag not in config_build_flags
+                and "-D" + flag not in config_build_flags
+                and "-D " + flag not in config_build_flags
+            ]
+            if missing_flags:
                 print(
-                    f"Warning: extra compiler flags {compiler_flags} will not be used because they are not in your pio config file."
+                    f"Warning: extra compiler flags {missing_flags} will not be used because they are not in your pio config file."
                 )
                 print(
                     f"Warning: These flags are in your pio config file: {config_build_flags}"
@@ -766,17 +761,24 @@ def get_filename_for_log(job: dict, name_keys: list[str]) -> str:
 
 
 def group_and_log_commands(
-    commands: List[str], group_title: str, output_filename: str
+    build_commands: List[str],
+    other_commands: List[str],
+    group_title: str,
+    output_filename: str,
 ) -> List[str]:
     command_list = []
     command_list.append("\necho ::group::{}".format(group_title))
     command_list.append("group_failed=0")
-    for command in commands:
-        command_list.append(command + ' 2>&1 | tee -a "{}"'.format(output_filename))
-        command_list.append("result_code=${PIPESTATUS[0]}")
-        command_list.append(
-            'if [ "$result_code" -ne "0" ]; then group_failed=1; status=1; fi'
-        )
+    command_list.extend(other_commands)
+    for command in build_commands:
+        if command.startswith("sed"):
+            command_list.append(command)
+        else:
+            command_list.append(command + ' 2>&1 | tee -a "{}"'.format(output_filename))
+            command_list.append("result_code=${PIPESTATUS[0]}")
+            command_list.append(
+                'if [ "$result_code" -ne "0" ]; then group_failed=1; status=1; fi'
+            )
     # command_list.append(
     #     f'if [ "$group_failed" -eq "0" ]; then echo -e " - {group_title} :white_check_mark:" >> $GITHUB_STEP_SUMMARY; else echo -e " - {group_title} :x:" >> $GITHUB_STEP_SUMMARY; fi'
     # )
@@ -795,8 +797,8 @@ def create_command_list_from_matrix(matrix_item: dict, **kwargs):
     compiler = matrix_item.get("compiler", "")
     example = matrix_item.get("example", "")
     board = matrix_item.get("board", "")
-    compiler_flags = matrix_item.get("compiler_flags", [])
-    inline_flags = matrix_item.get("inline_flags", [])
+    compiler_flags = list(matrix_item.get("compiler_flags", []))
+    inline_flags = list(matrix_item.get("inline_flags", []))
     for key, value in matrix_item.items():
         if (
             key not in required_keys
@@ -809,18 +811,13 @@ def create_command_list_from_matrix(matrix_item: dict, **kwargs):
     job_dict["inline_flags"] = inline_flags
     output_file_name = get_filename_for_log(job_dict, list(matrix_item.keys()))
     if compiler == "arduino-cli":
-        if (
-            board not in pio_to_acli.keys()
-            and pio_env_to_board[board] not in pio_to_acli.keys()
-        ) or board in acli_skip_boards:
+        acli_board = board if board in pio_to_acli else pio_env_to_board.get(board)
+        if acli_board not in pio_to_acli or board in acli_skip_boards:
             print(
                 f"Skipping {example} for {board} because no matching Arduino FQBN was found."
             )
             return None
-        if board not in pio_to_acli.keys():
-            fqbn = pio_to_acli[pio_env_to_board[board]]["fqbn"]
-        else:
-            fqbn = pio_to_acli[board]["fqbn"]
+        fqbn = pio_to_acli[acli_board]["fqbn"]
         build_command = create_arduino_cli_compile_command(
             code_subfolder=example, fqbn=fqbn, compiler_flags=compiler_flags, **kwargs
         )
@@ -847,13 +844,19 @@ def create_command_list_from_matrix(matrix_item: dict, **kwargs):
 
     example_name = f"{os.path.split(example)[-1]}"
     example_full_path = os.path.join(workspace_path, example, example_name + ".ino")
-    sed_comment = f""
+    sed_comment = ""
     for flag in inline_flags:
         if len(flag) > 0:
-            sed_comment += f"sed -i '1i\\\n#if !defined({flag.split('=')[0]})\\\n#define {flag.split('=')[0]} {flag.split('=')[1] if '=' in flag else ''}\\\n#endif\\\n' \"{example_full_path}\"\n"
+            define_name, _, define_value = flag.partition("=")
+            sed_comment += (
+                f"sed -i '1i\\\n#if !defined({define_name})\\\n"
+                f"#define {define_name} {define_value}\\\n"
+                f'#endif\\\n\' "{example_full_path}"'
+            )
 
     job_dict["output_file_name"] = output_file_name
-    job_dict["build_commands"] = [sed_comment, build_command]
+    job_dict["other_commands"] = [sed_comment]
+    job_dict["build_commands"] = [build_command]
 
     return deepcopy(job_dict)
 
@@ -873,7 +876,7 @@ print(f"Total command blocks: {len(complete_command_matrix)}")
 
 # %%
 # group the commands by how we want the collapsing in the logs to work
-log_groupers = final_matrix[0].keys()
+log_groupers = ["compiler", "board", "example", "inline_flags"]
 grouped_command_matrix: dict[str, dict[str, str | List[str]]] = {}
 for matrix_item in complete_command_matrix:
     l_names = []
@@ -893,6 +896,7 @@ for matrix_item in complete_command_matrix:
     l_key = re.sub(r"[_]{2,}", "_", l_key)
     l_command_list = group_and_log_commands(
         matrix_item["build_commands"],
+        matrix_item["other_commands"],
         group_title=l_key,
         output_filename=matrix_item["output_file_name"],
     )
@@ -905,54 +909,6 @@ for matrix_item in complete_command_matrix:
             l_dict[grouper] = matrix_item[grouper]
         grouped_command_matrix[l_key] = l_dict
     else:
-        print(
-            f"Warning: Duplicate log group key '{l_key}' found. Appending commands to existing group."
-        )
-        different_keys = {
-            k: v
-            for k, v in matrix_item.items()
-            if k in grouped_command_matrix[l_key].keys()
-            and v != grouped_command_matrix[l_key][k]
-        }
-        if len(different_keys) > 0:
-            print(f"\tKey is from matrix item:")
-            print(f"\t\t compiler: {matrix_item['compiler']}")
-            print(f"\t\t example: {matrix_item['example']}")
-            print(f"\t\t board: {matrix_item['board']}")
-            print(f"\t\t sensor: {matrix_item['sensor']}")
-            print(f"\t\t modem: {matrix_item['modem']}")
-            print(f"\t\t publisher: {matrix_item['publisher']}")
-            print(f"\t\t array: {matrix_item['array']}")
-            print(f"\t\t loop: {matrix_item['loop']}")
-            print(f"\t\t serial: {matrix_item['serial']}")
-            print(f"\t\t compiler_flags: {matrix_item['compiler_flags']}")
-            print(f"\tMatching existing group has:")
-            print(f"\t\t compiler: {grouped_command_matrix[l_key]['compiler']}")
-            print(f"\t\t example: {grouped_command_matrix[l_key]['example']}")
-            print(f"\t\t board: {grouped_command_matrix[l_key]['board']}")
-            print(f"\t\t sensor: {grouped_command_matrix[l_key]['sensor']}")
-            print(f"\t\t modem: {grouped_command_matrix[l_key]['modem']}")
-            print(f"\t\t publisher: {grouped_command_matrix[l_key]['publisher']}")
-            print(f"\t\t array: {grouped_command_matrix[l_key]['array']}")
-            print(f"\t\t loop: {grouped_command_matrix[l_key]['loop']}")
-            print(f"\t\t serial: {grouped_command_matrix[l_key]['serial']}")
-            print(
-                f"\t\t compiler_flags: {grouped_command_matrix[l_key]['compiler_flags']}"
-            )
-            print(f"Different keys?")
-            print(f"{different_keys}")
-        else:
-            print(f"\tKey is from matrix item with nothing unique!!!:")
-            print(f"\t\t compiler: {matrix_item['compiler']}")
-            print(f"\t\t example: {matrix_item['example']}")
-            print(f"\t\t board: {matrix_item['board']}")
-            print(f"\t\t sensor: {matrix_item['sensor']}")
-            print(f"\t\t modem: {matrix_item['modem']}")
-            print(f"\t\t publisher: {matrix_item['publisher']}")
-            print(f"\t\t array: {matrix_item['array']}")
-            print(f"\t\t loop: {matrix_item['loop']}")
-            print(f"\t\t serial: {matrix_item['serial']}")
-            print(f"\t\t compiler_flags: {matrix_item['compiler_flags']}")
         grouped_command_matrix[l_key]["group_commands"] += l_command_list  # type: ignore
         # break
 print(f"Total log groups: {len(grouped_command_matrix)}")

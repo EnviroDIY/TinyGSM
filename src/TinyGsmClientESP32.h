@@ -283,10 +283,17 @@ class TinyGsmESP32
       rx.clear();
       uint8_t oldMux = mux;
       sock_connected = at->modemConnect(host, port, &mux, timeout_s);
+      
+      // Validate mux before any access to sockets array
+      if (!(mux < TinyGsmESP32TcpConfig::kMuxCount)) {
+        DBG(GF("ERROR: Modem returned invalid mux"), mux,
+            GF("(max:"), static_cast<int>(TinyGsmESP32TcpConfig::kMuxCount - 1), GF(")"));
+        return 0;  // Return failure when mux is out of range
+      }
+      
       if (mux != oldMux) {
         DBG(GF("###  Mux number changed from"), oldMux, GF("to"), mux);
-        if (!(mux < TinyGsmESP32TcpConfig::kMuxCount &&
-              (at->sockets[mux] == nullptr || at->sockets[mux] == this))) {
+        if (!(at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
           DBG(GF("WARNING: This new mux number had already been assigned to a "
                  "different client, attempting to move it!"));
           uint8_t next_empty_mux = at->findFirstUnassignedMux();
