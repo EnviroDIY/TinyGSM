@@ -360,6 +360,8 @@ unsecured_modems_list = [
 unsecured_modems = [[modem] for modem in unsecured_modems_list]
 secured_modems = [modem for modem in modem_list if modem not in unsecured_modems]
 
+small_boards = ["uno", "leonardo", "yun", "feather328p", "feather32u4"]
+
 # a list of known failures to skip in the job matrix
 matrix_exclusions = [
     {
@@ -400,13 +402,7 @@ matrix_exclusions = [
             os.path.join("example", "AllFunctions"),
             os.path.join("extras", "tools", "test_build"),
         ],
-        "board": [
-            "uno",
-            "leonardo",
-            "yun",
-            "feather328p",
-            "feather32u4",
-        ],  # doesn't fit on 328p or 32u4
+        "board": small_boards,  # doesn't fit on 328p or 32u4
         "inline_flags": modem_list,
         "compiler_flags": [[]],
     },
@@ -415,27 +411,15 @@ matrix_exclusions = [
         "example": [
             os.path.join("extras", "tools", "test_build"),
         ],
-        "board": [
-            "uno_pic32",
-            "leonardo",
-            "yun",
-            "feather328p",
-            "feather32u4",
-        ],  # doesn't fit
+        "board": ["uno_pic32"] + small_boards,  # doesn't fit
         "inline_flags": [["TINY_GSM_MODEM_SARAR5"]],
         "compiler_flags": [[]],
     },
     {
         "compiler": compiler_list,
         "example": [os.path.join("example", "AWS_IoTCore")],
-        "board": [
-            "uno",
-            "leonardo",
-            "yun",
-            "feather328p",
-            "feather32u4",
-        ],  # doesn't fit on 328p or 32u
-        "inline_flags": secured_modems,
+        "board": small_boards,  # doesn't fit on 328p or 32u
+        "inline_flags": modem_list,
         "compiler_flags": [[]],
     },
     {
@@ -445,7 +429,7 @@ matrix_exclusions = [
             os.path.join("example", "AWS_IoTCore"),
         ],
         "board": boards,
-        "inline_flags": secured_modems,
+        "inline_flags": unsecured_modems,
         "compiler_flags": [[]],
         # Exclude SSL-incapable modems on SSL required examples.
     },
@@ -483,14 +467,7 @@ matrix_inclusions = [
         "board": [
             board
             for board in boards
-            if board
-            not in [
-                "uno",
-                "leonardo",
-                "yun",
-                "feather328p",
-                "feather32u4",
-            ]  # doesn't fit on 328p or 32u
+            if board not in small_boards  # doesn't fit on 328p or 32u
         ],
         "inline_flags": modem_list,
         "compiler_flags": [[]],
@@ -501,13 +478,7 @@ matrix_inclusions = [
             os.path.join("example", "WebClient"),
             os.path.join("example", "MqttClient"),
         ],
-        "board": [  # boards too small for the bigger test build
-            "uno",
-            "leonardo",
-            "yun",
-            "feather328p",
-            "feather32u4",
-        ],
+        "board": small_boards,  # boards too small for the bigger test build
         "inline_flags": modem_list,
         "compiler_flags": [[]],
     },
@@ -615,9 +586,11 @@ def create_pio_ci_compile_command(
     code_subfolder: str,
     pio_board_or_env: str | List[str],
     use_pio_config_file: bool,
-    compiler_flags: List[str] = [],
+    compiler_flags: List[str] | None = None,
     use_run: bool = False,
 ) -> str:
+    if compiler_flags is None:
+        compiler_flags = []
     pio_command_args = [
         "pio",
         "run" if use_run else "ci",
@@ -626,7 +599,7 @@ def create_pio_ci_compile_command(
         pio_command_args += ["--verbose"]
     if use_pio_config_file:
         pio_command_args += ["--project-conf", f'"{pio_config_file}"']
-        if type(pio_board_or_env) == str:
+        if isinstance(pio_board_or_env, str):
             pio_command_args += ["--environment", pio_board_or_env]
         else:
             for pio_board_or_env_item in pio_board_or_env:
@@ -635,7 +608,7 @@ def create_pio_ci_compile_command(
                     pio_board_or_env_item,
                 ]
     elif not use_run:
-        if type(pio_board_or_env) == str:
+        if isinstance(pio_board_or_env, str):
             pio_command_args += [
                 "--board",
                 pio_board_or_env,
@@ -664,23 +637,24 @@ def create_pio_ci_compile_command(
         ]
     else:
         if len(compiler_flags) > 0 and use_pio_config_file and not use_run:
-            config_build_flags = pio_config_expanded.get(
-                f"env:{pio_board_or_env}", "build_flags", []
-            )
-            missing_flags = [
-                flag
-                for flag in compiler_flags
-                if flag not in config_build_flags
-                and "-D" + flag not in config_build_flags
-                and "-D " + flag not in config_build_flags
-            ]
-            if missing_flags:
-                print(
-                    f"Warning: extra compiler flags {missing_flags} will not be used because they are not in your pio config file."
-                )
-                print(
-                    f"Warning: These flags are in your pio config file: {config_build_flags}"
-                )
+            if isinstance(pio_board_or_env, str):
+                config_build_flags = pio_config_expanded.get(
+                    f"env:{pio_board_or_env}", "build_flags"
+                ) or []
+                missing_flags = [
+                    flag
+                    for flag in compiler_flags
+                    if flag not in config_build_flags
+                    and "-D" + flag not in config_build_flags
+                    and "-D " + flag not in config_build_flags
+                ]
+                if missing_flags:
+                    print(
+                        f"Warning: extra compiler flags {missing_flags} will not be used because they are not in your pio config file."
+                    )
+                    print(
+                        f"Warning: These flags are in your pio config file: {config_build_flags}"
+                    )
         elif len(compiler_flags) > 0 and use_run:
             print(
                 f"NOTE: extra compiler flags {compiler_flags} are being ignored because you are using a pio run command."
@@ -805,6 +779,7 @@ def create_command_list_from_matrix(matrix_item: dict, **kwargs):
             and "inline_flags" not in key
             and "compiler_flags" not in key
             and len(value) > 0
+            and isinstance(value, str)
         ):
             inline_flags.append(value)
     job_dict = deepcopy(matrix_item)
@@ -844,18 +819,20 @@ def create_command_list_from_matrix(matrix_item: dict, **kwargs):
 
     example_name = f"{os.path.split(example)[-1]}"
     example_full_path = os.path.join(workspace_path, example, example_name + ".ino")
-    sed_comment = ""
+    sed_commands = [
+        f"sed -i 's/#define TINY_GSM_MODEM_/\\/\\/ #define TINY_GSM_MODEM_/g' \"{example_full_path}\""
+    ]
     for flag in inline_flags:
         if len(flag) > 0:
             define_name, _, define_value = flag.partition("=")
-            sed_comment += (
+            sed_commands.append(
                 f"sed -i '1i\\\n#if !defined({define_name})\\\n"
-                f"#define {define_name} {define_value}\\\n"
+                f"#define {define_name}{' ' if define_value else ''}{define_value}\\\n"
                 f'#endif\\\n\' "{example_full_path}"'
             )
 
     job_dict["output_file_name"] = output_file_name
-    job_dict["other_commands"] = [sed_comment]
+    job_dict["other_commands"] = sed_commands
     job_dict["build_commands"] = [build_command]
 
     return deepcopy(job_dict)
