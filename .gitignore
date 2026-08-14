@@ -89,3 +89,5 @@ continuous_integration/platformio_local.ini
 continuous_integration/generate_local_tests.py
 continuous_integration/parse_test_results.py
 src/wakeUp.h
+**/__pycache__/**
+run_CI_pipeline.bat
