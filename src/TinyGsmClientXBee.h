@@ -241,6 +241,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   friend class TinyGsmTemperature<TinyGsmXBee>;
 
   using ModemConfig = TinyGsmXBeeModemConfig;
+  using TcpConfig   = TinyGsmXBeeTcpConfig;
 
   /*
    * Inner Client
@@ -254,6 +255,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    public:
     using GsmClient<TinyGsmXBee, TinyGsmXBeeTcpConfig>::connect;
     using GsmClient<TinyGsmXBee, TinyGsmXBeeTcpConfig>::stop;
+    using TcpConfig = TinyGsmXBeeTcpConfig;
     using Print::write;
 
     /**
@@ -312,7 +314,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     }
     /// @copydoc GsmClient::connect(const char*, uint16_t)
     int connect(const char* host, uint16_t port) override {
-      return connect(host, port, TinyGsmXBeeTcpConfig::kConnectTimeoutS);
+      return connect(host, port, TcpConfig::kConnectTimeoutS);
     }
 
     /// @copydoc GsmClient::connect(IPAddress, uint16_t, int)
@@ -462,6 +464,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    public:
     using GsmClientXBee::connect;
     using GsmClientXBee::stop;
+    using TcpConfig = TinyGsmXBeeTcpConfig;
 
     TINY_GSM_SECURE_CLIENT_CTORS(XBee)
   };
@@ -1454,7 +1457,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   }
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0,
-                    int timeout_s = TinyGsmXBeeTcpConfig::kConnectTimeoutS) {
+                    int timeout_s = TcpConfig::kConnectTimeoutS) {
     // check if the host is an IP address already - if so, we can skip the DNS
     // lookup and just connect
     IPAddress hostIP = TinyGsmIpFromString(String(host));
@@ -2006,7 +2009,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   Stream& stream;
 
  protected:
-  GsmClientXBee* sockets[TinyGsmXBeeTcpConfig::kMuxCount];
+  GsmClientXBee* sockets[TcpConfig::kMuxCount];
   int16_t        guardTime;
   /// The type of XBee we're working with
   XBeeType beeType;

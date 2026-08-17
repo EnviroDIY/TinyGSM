@@ -174,6 +174,7 @@ class TinyGsmESP8266NonOS
   friend class GsmClient<TinyGsmESP8266NonOS, TinyGsmESP8266NonOSTcpConfig>;
 
   using ModemConfig = TinyGsmESP8266NonOSModemConfig;
+  using TcpConfig   = TinyGsmESP8266NonOSTcpConfig;
 
   /*
    * Inner Client
@@ -188,6 +189,7 @@ class TinyGsmESP8266NonOS
    public:
     using GsmClient<TinyGsmESP8266NonOS, TinyGsmESP8266NonOSTcpConfig>::connect;
     using GsmClient<TinyGsmESP8266NonOS, TinyGsmESP8266NonOSTcpConfig>::stop;
+    using TcpConfig = TinyGsmESP8266NonOSTcpConfig;
 
     /**
      * @brief Create a new TCP client.
@@ -232,7 +234,7 @@ class TinyGsmESP8266NonOS
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TinyGsmESP8266NonOSTcpConfig::kMuxCount &&
+      if (mux < TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -242,7 +244,7 @@ class TinyGsmESP8266NonOS
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TinyGsmESP8266NonOSTcpConfig::kMuxCount);
+        this->mux = (mux % TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -252,7 +254,7 @@ class TinyGsmESP8266NonOS
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TinyGsmESP8266NonOSTcpConfig::kStopTimeoutS * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -290,6 +292,7 @@ class TinyGsmESP8266NonOS
    public:
     using GsmClientESP8266NonOS::connect;
     using GsmClientESP8266NonOS::stop;
+    using TcpConfig = TinyGsmESP8266NonOSTcpConfig;
 
     /**
      * @brief Create a new secured TCP (SSL) client.  This must be initialized
@@ -481,16 +484,14 @@ class TinyGsmESP8266NonOS
                                  GFP(ModemConfig::GSM_ERROR));
     // if the status is anything but 3, there are no connections open
     if (status != 1) {
-      for (int muxNo = 0; muxNo < TinyGsmESP8266NonOSTcpConfig::kMuxCount;
-           muxNo++) {
+      for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
         if (sockets[muxNo]) { sockets[muxNo]->sock_connected = false; }
       }
       return false;
     }
     // initialize the connection array assuming no connections are active
-    bool verified_connections[TinyGsmESP8266NonOSTcpConfig::kMuxCount] = {0};
-    for (int muxNo = 0; muxNo < TinyGsmESP8266NonOSTcpConfig::kMuxCount;
-         muxNo++) {
+    bool verified_connections[TcpConfig::kMuxCount] = {0};
+    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       uint8_t has_status = waitResponse(GF("+CIPSTATUS:"),
                                         GFP(ModemConfig::GSM_OK),
                                         GFP(ModemConfig::GSM_ERROR));
@@ -502,15 +503,13 @@ class TinyGsmESP8266NonOS
         streamSkipUntil(',');   // Skip remote port
         streamSkipUntil(',');   // Skip local port
         streamSkipUntil('\n');  // Skip client/server type
-        if (returned_mux >= 0 &&
-            returned_mux < TinyGsmESP8266NonOSTcpConfig::kMuxCount) {
+        if (returned_mux >= 0 && returned_mux < TcpConfig::kMuxCount) {
           verified_connections[returned_mux] = 1;
         }
       }
       if (has_status == 2) break;  // once we get to the ok, stop
     }
-    for (int muxNo = 0; muxNo < TinyGsmESP8266NonOSTcpConfig::kMuxCount;
-         muxNo++) {
+    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       if (sockets[muxNo]) {
         sockets[muxNo]->sock_connected = verified_connections[muxNo];
       }
@@ -542,8 +541,7 @@ class TinyGsmESP8266NonOS
       int8_t  mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(':');
       int16_t len          = len_reported;
-      if (mux >= 0 && mux < TinyGsmESP8266NonOSTcpConfig::kMuxCount &&
-          sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           // reset the len to read to the amount free
@@ -561,8 +559,7 @@ class TinyGsmESP8266NonOS
                                       data.length() - 8));
       int8_t coma = data.indexOf(',', muxStart);
       int8_t mux  = data.substring(muxStart, coma).toInt();
-      if (mux >= 0 && mux < TinyGsmESP8266NonOSTcpConfig::kMuxCount &&
-          sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       streamSkipUntil('\n');  // throw away the new line
@@ -599,7 +596,7 @@ class TinyGsmESP8266NonOS
   }
 
  protected:
-  GsmClientESP8266NonOS* sockets[TinyGsmESP8266NonOSTcpConfig::kMuxCount];
+  GsmClientESP8266NonOS* sockets[TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTESP8266NONOS_H_

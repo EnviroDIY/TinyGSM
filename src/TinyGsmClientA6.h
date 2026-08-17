@@ -181,6 +181,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   friend class TinyGsmBattery<TinyGsmA6>;
 
   using ModemConfig = TinyGsmA6ModemConfig;
+  using TcpConfig   = TinyGsmA6TcpConfig;
 
   /*
    * Inner Client
@@ -194,6 +195,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
    public:
     using GsmClient<TinyGsmA6, TinyGsmA6TcpConfig>::connect;
     using GsmClient<TinyGsmA6, TinyGsmA6TcpConfig>::stop;
+    using TcpConfig = TinyGsmA6TcpConfig;
 
     /**
      * @brief Create a new TCP client.
@@ -234,7 +236,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TinyGsmA6TcpConfig::kStopTimeoutS * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       uint8_t newMux = -1;
@@ -678,7 +680,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
       int8_t  mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(',');
       int16_t len          = len_reported;
-      if (mux >= 0 && mux < TinyGsmA6TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len_reported, "->",
               sockets[mux]->rx.free());
@@ -692,7 +694,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
       return true;
     } else if (data.endsWith(GF("+TCPCLOSED:"))) {
       int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmA6TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -707,7 +709,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   Stream& stream;
 
  protected:
-  GsmClientA6* sockets[TinyGsmA6TcpConfig::kMuxCount];
+  GsmClientA6* sockets[TcpConfig::kMuxCount];
 };
 
 // cSpell:words aithinker

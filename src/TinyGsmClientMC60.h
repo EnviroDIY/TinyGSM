@@ -182,6 +182,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
   friend class TinyGsmBattery<TinyGsmMC60>;
 
   using ModemConfig = TinyGsmMC60ModemConfig;
+  using TcpConfig   = TinyGsmMC60TcpConfig;
 
   /*
    * Inner Client
@@ -195,6 +196,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
    public:
     using GsmClient<TinyGsmMC60, TinyGsmMC60TcpConfig>::connect;
     using GsmClient<TinyGsmMC60, TinyGsmMC60TcpConfig>::stop;
+    using TcpConfig = TinyGsmMC60TcpConfig;
 
     /**
      * @brief Create a new TCP client.
@@ -238,7 +240,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TinyGsmMC60TcpConfig::kMuxCount &&
+      if (mux < TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -248,7 +250,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TinyGsmMC60TcpConfig::kMuxCount);
+        this->mux = (mux % TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -258,7 +260,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TinyGsmMC60TcpConfig::kStopTimeoutS * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -706,7 +708,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
           ',');  // Skip the length of the current package in the buffer
       int16_t len_total =
           streamGetIntBefore('\n');  // Total length of all packages
-      if (mux >= 0 && mux < TinyGsmMC60TcpConfig::kMuxCount && sockets[mux] &&
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux] &&
           num_packets >= 0 && len_total >= 0) {
         sockets[mux]->sock_available = len_total;
       }
@@ -718,7 +720,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
                                      data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
-      if (mux >= 0 && mux < TinyGsmMC60TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -738,7 +740,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
   Stream& stream;
 
  protected:
-  GsmClientMC60* sockets[TinyGsmMC60TcpConfig::kMuxCount];
+  GsmClientMC60* sockets[TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTMC60_H_
