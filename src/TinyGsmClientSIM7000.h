@@ -177,6 +177,7 @@ class TinyGsmSim7000
   friend class TinyGsmNTP<TinyGsmSim7000>;
   friend class TinyGsmBattery<TinyGsmSim7000>;
 
+ public:
   using ModemConfig = TinyGsmSim7000ModemConfig;
   using TcpConfig   = TinyGsmSim7000TcpConfig;
 

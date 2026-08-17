@@ -173,6 +173,7 @@ class TinyGsmESP8266NonOS
   friend class TinyGsmTCP<TinyGsmESP8266NonOS, TinyGsmESP8266NonOSTcpConfig>;
   friend class GsmClient<TinyGsmESP8266NonOS, TinyGsmESP8266NonOSTcpConfig>;
 
+ public:
   using ModemConfig = TinyGsmESP8266NonOSModemConfig;
   using TcpConfig   = TinyGsmESP8266NonOSTcpConfig;
 

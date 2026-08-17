@@ -202,6 +202,7 @@ class TinyGsmSaraR4
   friend class TinyGsmTemperature<TinyGsmSaraR4>;
   friend class TinyGsmBattery<TinyGsmSaraR4>;
 
+ public:
   using ModemConfig = TinyGsmSaraR4ModemConfig;
   using TcpConfig   = TinyGsmSaraR4TcpConfig;
 

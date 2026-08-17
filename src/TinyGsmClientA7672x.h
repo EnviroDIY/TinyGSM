@@ -248,6 +248,7 @@ class TinyGsmA7672x
   friend class TinyGsmBattery<TinyGsmA7672x>;
   friend class TinyGsmTemperature<TinyGsmA7672x>;
 
+ public:
   using ModemConfig = TinyGsmA7672xModemConfig;
   using TcpConfig   = TinyGsmA7672xTcpConfig;
 

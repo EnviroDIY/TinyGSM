@@ -222,6 +222,7 @@ class TinyGsmSim7080
   friend class TinyGsmNTP<TinyGsmSim7080>;
   friend class TinyGsmBattery<TinyGsmSim7080>;
 
+ public:
   using ModemConfig = TinyGsmSim7080ModemConfig;
   using TcpConfig   = TinyGsmSim7080TcpConfig;
 

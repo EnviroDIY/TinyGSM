@@ -253,6 +253,7 @@ class TinyGsmSim7600
   friend class TinyGsmTemperature<TinyGsmSim7600>;
   friend class TinyGsmCalling<TinyGsmSim7600>;
 
+ public:
   using ModemConfig = TinyGsmSim7600ModemConfig;
   using TcpConfig   = TinyGsmSim7600TcpConfig;
 

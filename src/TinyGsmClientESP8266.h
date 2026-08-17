@@ -180,6 +180,7 @@ class TinyGsmESP8266
   friend class TinyGsmTime<TinyGsmESP8266>;
   friend class TinyGsmNTP<TinyGsmESP8266>;
 
+ public:
   using ModemConfig = TinyGsmESP8266ModemConfig;
   using TcpConfig   = TinyGsmESP8266TcpConfig;
 

@@ -207,6 +207,7 @@ class TinyGsmSim5360
   friend class TinyGsmBattery<TinyGsmSim5360>;
   friend class TinyGsmTemperature<TinyGsmSim5360>;
 
+ public:
   using ModemConfig = TinyGsmSim5360ModemConfig;
   using TcpConfig   = TinyGsmSim5360TcpConfig;
 

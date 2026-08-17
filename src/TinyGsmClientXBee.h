@@ -240,6 +240,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   friend class TinyGsmBattery<TinyGsmXBee>;
   friend class TinyGsmTemperature<TinyGsmXBee>;
 
+ public:
   using ModemConfig = TinyGsmXBeeModemConfig;
   using TcpConfig   = TinyGsmXBeeTcpConfig;
 

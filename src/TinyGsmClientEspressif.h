@@ -30,6 +30,7 @@ class TinyGsmEspressif
   friend class TinyGsmModem<EspressifType, EspressifModemConfig>;
   friend class TinyGsmWifi<EspressifType>;
 
+ public:
   using ModemConfig = EspressifModemConfig;
 
   /*
