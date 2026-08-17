@@ -178,6 +178,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
   friend class TinyGsmBattery<TinyGsmM95>;
   friend class TinyGsmTemperature<TinyGsmM95>;
 
+ public:
   using ModemConfig = TinyGsmM95ModemConfig;
   using TcpConfig   = TinyGsmM95TcpConfig;
 

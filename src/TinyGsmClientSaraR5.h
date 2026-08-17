@@ -224,6 +224,7 @@ class TinyGsmSaraR5
   friend class TinyGsmTime<TinyGsmSaraR5>;
   friend class TinyGsmBattery<TinyGsmSaraR5>;
 
+ public:
   using ModemConfig = TinyGsmSaraR5ModemConfig;
   using TcpConfig   = TinyGsmSaraR5TcpConfig;
 

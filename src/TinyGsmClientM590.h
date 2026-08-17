@@ -157,6 +157,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
   friend class TinyGsmSMS<TinyGsmM590>;
   friend class TinyGsmTime<TinyGsmM590>;
 
+ public:
   using ModemConfig = TinyGsmM590ModemConfig;
   using TcpConfig   = TinyGsmM590TcpConfig;
 

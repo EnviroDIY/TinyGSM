@@ -205,6 +205,7 @@ class TinyGsmSim7000SSL
   friend class TinyGsmNTP<TinyGsmSim7000SSL>;
   friend class TinyGsmBattery<TinyGsmSim7000SSL>;
 
+ public:
   using ModemConfig = TinyGsmSim7000SSLModemConfig;
   using TcpConfig   = TinyGsmSim7000SSLTcpConfig;
 

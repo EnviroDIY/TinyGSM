@@ -192,6 +192,7 @@ class TinyGsmESP32
   friend class TinyGsmTime<TinyGsmESP32>;
   friend class TinyGsmNTP<TinyGsmESP32>;
 
+ public:
   using ModemConfig = TinyGsmESP32ModemConfig;
   using TcpConfig   = TinyGsmESP32TcpConfig;
 

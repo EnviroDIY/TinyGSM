@@ -202,6 +202,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   friend class TinyGsmTime<TinyGsmUBLOX>;
   friend class TinyGsmBattery<TinyGsmUBLOX>;
 
+ public:
   using ModemConfig = TinyGsmUBLOXModemConfig;
   using TcpConfig   = TinyGsmUBLOXTcpConfig;
 

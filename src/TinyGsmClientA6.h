@@ -180,6 +180,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   friend class TinyGsmTime<TinyGsmA6>;
   friend class TinyGsmBattery<TinyGsmA6>;
 
+ public:
   using ModemConfig = TinyGsmA6ModemConfig;
   using TcpConfig   = TinyGsmA6TcpConfig;
 

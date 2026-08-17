@@ -217,6 +217,7 @@ class TinyGsmSim800
   friend class TinyGsmNTP<TinyGsmSim800>;
   friend class TinyGsmBattery<TinyGsmSim800>;
 
+ public:
   using ModemConfig = TinyGsmSim800ModemConfig;
   using TcpConfig   = TinyGsmSim800TcpConfig;
 

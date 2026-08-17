@@ -194,6 +194,7 @@ class TinyGsmSequansMonarch
   friend class TinyGsmTime<TinyGsmSequansMonarch>;
   friend class TinyGsmTemperature<TinyGsmSequansMonarch>;
 
+ public:
   using ModemConfig = TinyGsmSequansMonarchModemConfig;
   using TcpConfig   = TinyGsmSequansMonarchTcpConfig;
 
