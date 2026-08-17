@@ -179,6 +179,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
   friend class TinyGsmTemperature<TinyGsmM95>;
 
   using ModemConfig = TinyGsmM95ModemConfig;
+  using TcpConfig   = TinyGsmM95TcpConfig;
 
   /*
    * Inner Client
@@ -192,6 +193,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
    public:
     using GsmClient<TinyGsmM95, TinyGsmM95TcpConfig>::connect;
     using GsmClient<TinyGsmM95, TinyGsmM95TcpConfig>::stop;
+    using TcpConfig = TinyGsmM95TcpConfig;
 
     /**
      * @brief Create a new TCP client.
@@ -235,7 +237,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TinyGsmM95TcpConfig::kMuxCount &&
+      if (mux < TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -245,7 +247,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TinyGsmM95TcpConfig::kMuxCount);
+        this->mux = (mux % TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -255,7 +257,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TinyGsmM95TcpConfig::kStopTimeoutS * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -716,7 +718,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
       streamSkipUntil(',');  // Skip the role
       int8_t mux = streamGetIntBefore('\n');
       // DBG("### Got Data:", mux);
-      if (mux >= 0 && mux < TinyGsmM95TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         // We have no way of knowing how much data actually came in, so
         // we set the value to 1500, the maximum possible size.
         sockets[mux]->sock_available = 1500;
@@ -728,7 +730,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
                                      data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
-      if (mux >= 0 && mux < TinyGsmM95TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -748,7 +750,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
   Stream& stream;
 
  protected:
-  GsmClientM95* sockets[TinyGsmM95TcpConfig::kMuxCount];
+  GsmClientM95* sockets[TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTM95_H_

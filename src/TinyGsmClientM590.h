@@ -158,6 +158,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
   friend class TinyGsmTime<TinyGsmM590>;
 
   using ModemConfig = TinyGsmM590ModemConfig;
+  using TcpConfig   = TinyGsmM590TcpConfig;
 
   /*
    * Inner Client
@@ -171,6 +172,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
    public:
     using GsmClient<TinyGsmM590, TinyGsmM590TcpConfig>::connect;
     using GsmClient<TinyGsmM590, TinyGsmM590TcpConfig>::stop;
+    using TcpConfig = TinyGsmM590TcpConfig;
 
     /**
      * @brief Create a new GsmClientM590 object.  This must be initialized with
@@ -212,7 +214,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TinyGsmM590TcpConfig::kMuxCount &&
+      if (mux < TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -222,7 +224,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TinyGsmM590TcpConfig::kMuxCount);
+        this->mux = (mux % TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -232,7 +234,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TinyGsmM590TcpConfig::kStopTimeoutS * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -591,9 +593,9 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
       bool   send_success  = false;
       while (send_attempts < 3 && !send_success) {
         // Number of bytes to send from buffer in this command
-        size_t sendLength = TinyGsmM590TcpConfig::kSendMaxSize;
+        size_t sendLength = TcpConfig::kSendMaxSize;
         // Ensure the program doesn't read past the allocated memory
-        if (txPtr + TinyGsmM590TcpConfig::kSendMaxSize >
+        if (txPtr + TcpConfig::kSendMaxSize >
             const_cast<uint8_t*>(buff) + len) {
           sendLength = const_cast<uint8_t*>(buff) + len - txPtr;
         }
@@ -661,7 +663,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
       int8_t  mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(',');
       int16_t len          = len_reported;
-      if (mux >= 0 && mux < TinyGsmM590TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           // reset the len to read to the amount free
@@ -675,7 +677,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
     } else if (data.endsWith(GF("+TCPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
       streamSkipUntil('\n');
-      if (mux >= 0 && mux < TinyGsmM590TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -690,7 +692,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
   Stream& stream;
 
  protected:
-  GsmClientM590* sockets[TinyGsmM590TcpConfig::kMuxCount];
+  GsmClientM590* sockets[TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTM590_H_

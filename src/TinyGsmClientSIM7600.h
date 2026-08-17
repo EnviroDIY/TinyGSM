@@ -254,6 +254,7 @@ class TinyGsmSim7600
   friend class TinyGsmCalling<TinyGsmSim7600>;
 
   using ModemConfig = TinyGsmSim7600ModemConfig;
+  using TcpConfig   = TinyGsmSim7600TcpConfig;
 
   /*
    * Inner Client
@@ -268,6 +269,7 @@ class TinyGsmSim7600
    public:
     using GsmClient<TinyGsmSim7600, TinyGsmSim7600TcpConfig>::connect;
     using GsmClient<TinyGsmSim7600, TinyGsmSim7600TcpConfig>::stop;
+    using TcpConfig = TinyGsmSim7600TcpConfig;
 
     /**
      * @brief Create a new TCP client.
@@ -315,7 +317,7 @@ class TinyGsmSim7600
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TinyGsmSim7600TcpConfig::kMuxCount &&
+      if (mux < TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -325,7 +327,7 @@ class TinyGsmSim7600
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TinyGsmSim7600TcpConfig::kMuxCount);
+        this->mux = (mux % TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -335,7 +337,7 @@ class TinyGsmSim7600
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TinyGsmSim7600TcpConfig::kStopTimeoutS * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -374,12 +376,13 @@ class TinyGsmSim7600
    public:
     using GsmClientSim7600::connect;
     using GsmClientSim7600::stop;
+    using TcpConfig = TinyGsmSim7600TcpConfig;
 
     TINY_GSM_SECURE_CLIENT_CTORS(Sim7600)
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TinyGsmSim7600TcpConfig::kStopTimeoutS * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       if (!sslCtxConfigured) {
@@ -901,7 +904,7 @@ class TinyGsmSim7600
     String res;
     sendAT(GF("+CGNSSMODE="), mode, ',', dpo);
     if (waitResponse(10000L, res) != 1) { return ""; }
-    res.replace(String(GFP(TinyGsmSim7600ModemConfig::GSM_NL)), "");
+    res.replace(String(GFP(ModemConfig::GSM_NL)), "");
     res.trim();
     return res;
   }
@@ -1289,7 +1292,7 @@ class TinyGsmSim7600
     // Read the status of all sockets at once
     sendAT(GF("+CIPOPEN?"));
     if (waitResponse(GF("+CIPOPEN:")) != 1) { return false; }
-    for (int muxNo = 0; muxNo < TinyGsmSim7600TcpConfig::kMuxCount; muxNo++) {
+    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       // +CIPOPEN:<mux>,<State or blank...>
       String state = stream.readStringUntil('\n');
       if (state.indexOf(',') > 0) { sockets[muxNo]->sock_connected = true; }
@@ -1308,8 +1311,7 @@ class TinyGsmSim7600
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
-        if (mux >= 0 && mux < TinyGsmSim7600TcpConfig::kMuxCount &&
-            sockets[mux]) {
+        if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
           sockets[mux]->got_data = true;
         }
         data = "";
@@ -1322,8 +1324,7 @@ class TinyGsmSim7600
     } else if (data.endsWith(GF("+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSim7600TcpConfig::kMuxCount &&
-          sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
@@ -1333,8 +1334,7 @@ class TinyGsmSim7600
     } else if (data.endsWith(GF("+IPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
       streamSkipUntil('\n');  // Skip the reason code
-      if (mux >= 0 && mux < TinyGsmSim7600TcpConfig::kMuxCount &&
-          sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -1356,7 +1356,7 @@ class TinyGsmSim7600
   Stream& stream;
 
  protected:
-  GsmClientSim7600* sockets[TinyGsmSim7600TcpConfig::kMuxCount];
+  GsmClientSim7600* sockets[TcpConfig::kMuxCount];
   // TODO(SRGD): I suspect we need to have two separate socket arrays, a secure
   // and not secure one
 };

@@ -193,6 +193,7 @@ class TinyGsmESP32
   friend class TinyGsmNTP<TinyGsmESP32>;
 
   using ModemConfig = TinyGsmESP32ModemConfig;
+  using TcpConfig   = TinyGsmESP32TcpConfig;
 
   /*
    * Inner Client
@@ -206,6 +207,7 @@ class TinyGsmESP32
    public:
     using GsmClient<TinyGsmESP32, TinyGsmESP32TcpConfig>::connect;
     using GsmClient<TinyGsmESP32, TinyGsmESP32TcpConfig>::stop;
+    using TcpConfig = TinyGsmESP32TcpConfig;
 
     /**
      * @brief Create a new TCP client.
@@ -254,7 +256,7 @@ class TinyGsmESP32
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TinyGsmESP32TcpConfig::kMuxCount &&
+      if (mux < TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -264,7 +266,7 @@ class TinyGsmESP32
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TinyGsmESP32TcpConfig::kMuxCount);
+        this->mux = (mux % TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -275,22 +277,19 @@ class TinyGsmESP32
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
       is_mid_send = false;
-      if (mux < TinyGsmESP32TcpConfig::kMuxCount &&
-          at->sockets[mux] != nullptr) {
-        stop();
-      }
+      if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr) { stop(); }
       TINY_GSM_YIELD();
       rx.clear();
       uint8_t oldMux = mux;
       sock_connected = at->modemConnect(host, port, &mux, timeout_s);
-      
+
       // Validate mux before any access to sockets array
-      if (!(mux < TinyGsmESP32TcpConfig::kMuxCount)) {
-        DBG(GF("ERROR: Modem returned invalid mux"), mux,
-            GF("(max:"), static_cast<int>(TinyGsmESP32TcpConfig::kMuxCount - 1), GF(")"));
+      if (!(mux < TcpConfig::kMuxCount)) {
+        DBG(GF("ERROR: Modem returned invalid mux"), mux, GF("(max:"),
+            static_cast<int>(TcpConfig::kMuxCount - 1), GF(")"));
         return 0;  // Return failure when mux is out of range
       }
-      
+
       if (mux != oldMux) {
         DBG(GF("###  Mux number changed from"), oldMux, GF("to"), mux);
         if (!(at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
@@ -360,6 +359,7 @@ class TinyGsmESP32
    public:
     using GsmClientESP32::connect;
     using GsmClientESP32::stop;
+    using TcpConfig = TinyGsmESP32TcpConfig;
 
     TINY_GSM_SECURE_CLIENT_CTORS(ESP32)
 
@@ -465,7 +465,7 @@ class TinyGsmESP32
      * to the same number.
      */
     void setClientCertificateNumber(uint8_t certNumber) {
-      pki_number           = certNumber;
+      pki_number = certNumber;
       // generate and set the name for the client certificate from the number
       char* cert_name      = new char[16]();
       char* cert_namespace = new char[14]();
@@ -568,7 +568,7 @@ class TinyGsmESP32
     // Keep listening for modem URC's and proactively iterate through
     // sockets asking if any data is available
     bool check_socks = false;
-    for (int mux = 0; mux < TinyGsmESP32TcpConfig::kMuxCount; mux++) {
+    for (int mux = 0; mux < TcpConfig::kMuxCount; mux++) {
       GsmClientESP32* sock = sockets[mux];
       if (sock && sock->got_data) {
         sock->got_data = false;
@@ -1315,7 +1315,7 @@ class TinyGsmESP32
     size_t result = 0;
     sendAT(GF("+CIPRECVLEN?"));
     if (waitResponse(GF("+CIPRECVLEN:")) != 1) { return result; }
-    for (int muxNo = 0; muxNo < TinyGsmESP32TcpConfig::kMuxCount; muxNo++) {
+    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       long mux_avail = stream.parseInt();
       if (sockets[muxNo]) { sockets[muxNo]->sock_available = mux_avail; }
     }
@@ -1328,8 +1328,8 @@ class TinyGsmESP32
   bool modemGetConnectedImpl(uint8_t mux) {
     sendAT(GF("+CIPSTATE?"));
     // initialize the connection array assuming no connections are active
-    bool verified_connections[TinyGsmESP32TcpConfig::kMuxCount] = {0};
-    for (int muxNo = 0; muxNo < TinyGsmESP32TcpConfig::kMuxCount; muxNo++) {
+    bool verified_connections[TcpConfig::kMuxCount] = {0};
+    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       uint8_t has_status = waitResponse(GF("+CIPSTATE:"),
                                         GFP(ModemConfig::GSM_OK),
                                         GFP(ModemConfig::GSM_ERROR));
@@ -1340,15 +1340,14 @@ class TinyGsmESP32
         streamSkipUntil(',');   // Skip remote port
         streamSkipUntil(',');   // Skip local port
         streamSkipUntil('\n');  // Skip client/server type
-        if (returned_mux >= 0 &&
-            returned_mux < TinyGsmESP32TcpConfig::kMuxCount) {
+        if (returned_mux >= 0 && returned_mux < TcpConfig::kMuxCount) {
           verified_connections[returned_mux] = 1;
         }
       } else {
         break;
       };  // once we get to the ok or error, stop
     }
-    for (int muxNo = 0; muxNo < TinyGsmESP32TcpConfig::kMuxCount; muxNo++) {
+    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       if (sockets[muxNo]) {
         sockets[muxNo]->sock_connected = verified_connections[muxNo];
       }
@@ -1364,7 +1363,7 @@ class TinyGsmESP32
     if (data.endsWith(GF("+IPD,"))) {
       int8_t   mux = streamGetIntBefore(',');
       uint16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmESP32TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->got_data = true;
         // TODO: I'm not sure if each +IPD URC reports the amount newly received
         // or the total now in the buffer. It appears to be the latter.
@@ -1381,7 +1380,7 @@ class TinyGsmESP32
                                       data.length() - 8));
       int8_t coma = data.indexOf(',', muxStart);
       int8_t mux  = data.substring(muxStart, coma).toInt();
-      if (mux >= 0 && mux < TinyGsmESP32TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       streamSkipUntil('\n');  // throw away the new line
@@ -1432,7 +1431,7 @@ class TinyGsmESP32
   }
 
  protected:
-  GsmClientESP32* sockets[TinyGsmESP32TcpConfig::kMuxCount];
+  GsmClientESP32* sockets[TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTESP32_H_

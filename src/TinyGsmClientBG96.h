@@ -221,6 +221,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   friend class TinyGsmTemperature<TinyGsmBG96>;
 
   using ModemConfig = TinyGsmBG96ModemConfig;
+  using TcpConfig   = TinyGsmBG96TcpConfig;
 
   /*
    * Inner Client
@@ -234,6 +235,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
    public:
     using GsmClient<TinyGsmBG96, TinyGsmBG96TcpConfig>::connect;
     using GsmClient<TinyGsmBG96, TinyGsmBG96TcpConfig>::stop;
+    using TcpConfig = TinyGsmBG96TcpConfig;
 
     /**
      * @brief Create a new TCP client.
@@ -279,7 +281,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TinyGsmBG96TcpConfig::kMuxCount &&
+      if (mux < TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -289,7 +291,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TinyGsmBG96TcpConfig::kMuxCount);
+        this->mux = (mux % TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -299,7 +301,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TinyGsmBG96TcpConfig::kStopTimeoutS * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -338,6 +340,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
    public:
     using GsmClientBG96::connect;
     using GsmClientBG96::stop;
+    using TcpConfig = TinyGsmBG96TcpConfig;
 
     TINY_GSM_SECURE_CLIENT_CTORS(BG96)
 
@@ -346,7 +349,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     // availability.
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TinyGsmBG96TcpConfig::kStopTimeoutS * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       if (!sslCtxConfigured) {
@@ -1382,13 +1385,13 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       if (urc == "recv") {
         int8_t mux = streamGetIntBefore('\n');
         DBG("### URC RECV:", mux);
-        if (mux >= 0 && mux < TinyGsmBG96TcpConfig::kMuxCount && sockets[mux]) {
+        if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
           sockets[mux]->got_data = true;
         }
       } else if (urc == "closed") {
         int8_t mux = streamGetIntBefore('\n');
         DBG("### URC CLOSE:", mux);
-        if (mux >= 0 && mux < TinyGsmBG96TcpConfig::kMuxCount && sockets[mux]) {
+        if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
           sockets[mux]->sock_connected = false;
         }
       } else {
@@ -1404,7 +1407,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       if (urc == "recv") {
         int8_t mux = streamGetIntBefore('\n');
         DBG("### URC SSL RECV:", mux);
-        if (mux >= 0 && mux < TinyGsmBG96TcpConfig::kMuxCount && sockets[mux]) {
+        if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
           // We have no way of knowing how much data actually came in, so
           // we set the value to 1500, the maximum transmission unit for TCP.
           sockets[mux]->sock_available = 1500;
@@ -1412,7 +1415,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       } else if (urc == "closed") {
         int8_t mux = streamGetIntBefore('\n');
         DBG("### URC CLOSE:", mux);
-        if (mux >= 0 && mux < TinyGsmBG96TcpConfig::kMuxCount && sockets[mux]) {
+        if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
           sockets[mux]->sock_connected = false;
         }
       } else {
@@ -1429,7 +1432,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   Stream& stream;
 
  protected:
-  GsmClientBG96* sockets[TinyGsmBG96TcpConfig::kMuxCount];
+  GsmClientBG96* sockets[TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTBG96_H_

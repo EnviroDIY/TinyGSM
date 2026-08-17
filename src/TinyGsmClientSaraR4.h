@@ -203,6 +203,7 @@ class TinyGsmSaraR4
   friend class TinyGsmBattery<TinyGsmSaraR4>;
 
   using ModemConfig = TinyGsmSaraR4ModemConfig;
+  using TcpConfig   = TinyGsmSaraR4TcpConfig;
 
   /*
    * Inner Client
@@ -217,6 +218,7 @@ class TinyGsmSaraR4
    public:
     using GsmClient<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>::connect;
     using GsmClient<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>::stop;
+    using TcpConfig = TinyGsmSaraR4TcpConfig;
 
     /**
      * @brief Create a new TCP client.
@@ -271,7 +273,7 @@ class TinyGsmSaraR4
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TinyGsmSaraR4TcpConfig::kMuxCount &&
+      if (mux < TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -281,7 +283,7 @@ class TinyGsmSaraR4
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TinyGsmSaraR4TcpConfig::kMuxCount);
+        this->mux = (mux % TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -298,14 +300,14 @@ class TinyGsmSaraR4
 
       uint8_t oldMux = mux;
       sock_connected = at->modemConnect(host, port, &mux, timeout_s);
-      
+
       // Validate mux before any access to sockets array
-      if (!(mux < TinyGsmSaraR4TcpConfig::kMuxCount)) {
-        DBG(GF("ERROR: Modem returned invalid mux"), mux,
-            GF("(max:"), static_cast<int>(TinyGsmSaraR4TcpConfig::kMuxCount - 1), GF(")"));
+      if (!(mux < TcpConfig::kMuxCount)) {
+        DBG(GF("ERROR: Modem returned invalid mux"), mux, GF("(max:"),
+            static_cast<int>(TcpConfig::kMuxCount - 1), GF(")"));
         return 0;  // Return failure when mux is out of range
       }
-      
+
       if (mux != oldMux) {
         DBG(GF("###  Mux number changed from"), oldMux, GF("to"), mux);
         if (!(at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
@@ -363,7 +365,6 @@ class TinyGsmSaraR4
     }
 
 
-
     /*
      * Extended API
      */
@@ -385,6 +386,7 @@ class TinyGsmSaraR4
    public:
     using GsmClientSaraR4::connect;
     using GsmClientSaraR4::stop;
+    using TcpConfig = TinyGsmSaraR4TcpConfig;
 
     /**
      * @brief Create a new secured TCP (SSL) client.  This must be initialized
@@ -611,7 +613,7 @@ class TinyGsmSaraR4
   bool gprsDisconnectImpl() {
     // Mark all the sockets as closed
     // This ensures that asynchronously closed sockets are marked closed
-    for (int mux = 0; mux < TinyGsmSaraR4TcpConfig::kMuxCount; mux++) {
+    for (int mux = 0; mux < TcpConfig::kMuxCount; mux++) {
       GsmClientSaraR4* sock = sockets[mux];
       if (sock && sock->sock_connected) { sock->sock_connected = false; }
     }
@@ -1028,7 +1030,7 @@ class TinyGsmSaraR4
     if (data.endsWith(GF("+UUSORD:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSaraR4TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->got_data = true;
         // max size is 1024
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
@@ -1038,7 +1040,7 @@ class TinyGsmSaraR4
       return true;
     } else if (data.endsWith(GF("+UUSOCL:"))) {
       int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSaraR4TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -1047,7 +1049,7 @@ class TinyGsmSaraR4
     } else if (data.endsWith(GF("+UUSOCO:"))) {
       int8_t mux          = streamGetIntBefore('\n');
       int8_t socket_error = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSaraR4TcpConfig::kMuxCount && sockets[mux] &&
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux] &&
           socket_error == 0) {
         sockets[mux]->sock_connected = true;
       }
@@ -1063,7 +1065,7 @@ class TinyGsmSaraR4
   Stream& stream;
 
  protected:
-  GsmClientSaraR4* sockets[TinyGsmSaraR4TcpConfig::kMuxCount];
+  GsmClientSaraR4* sockets[TcpConfig::kMuxCount];
   bool             has2GFallback;
   bool             supportsAsyncSockets;
 };

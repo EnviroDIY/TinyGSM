@@ -218,6 +218,7 @@ class TinyGsmSim800
   friend class TinyGsmBattery<TinyGsmSim800>;
 
   using ModemConfig = TinyGsmSim800ModemConfig;
+  using TcpConfig   = TinyGsmSim800TcpConfig;
 
   /*
    * Inner Client
@@ -232,6 +233,7 @@ class TinyGsmSim800
    public:
     using GsmClient<TinyGsmSim800, TinyGsmSim800TcpConfig>::connect;
     using GsmClient<TinyGsmSim800, TinyGsmSim800TcpConfig>::stop;
+    using TcpConfig = TinyGsmSim800TcpConfig;
 
     /**
      * @brief Create a new TCP client.
@@ -274,7 +276,7 @@ class TinyGsmSim800
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TinyGsmSim800TcpConfig::kMuxCount &&
+      if (mux < TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -284,7 +286,7 @@ class TinyGsmSim800
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TinyGsmSim800TcpConfig::kMuxCount);
+        this->mux = (mux % TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -294,7 +296,7 @@ class TinyGsmSim800
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TinyGsmSim800TcpConfig::kStopTimeoutS * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -333,6 +335,7 @@ class TinyGsmSim800
    public:
     using GsmClientSim800::connect;
     using GsmClientSim800::stop;
+    using TcpConfig = TinyGsmSim800TcpConfig;
 
     /**
      * @brief Create a new secured TCP (SSL) client.  This must be initialized
@@ -867,8 +870,7 @@ class TinyGsmSim800
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
-        if (mux >= 0 && mux < TinyGsmSim800TcpConfig::kMuxCount &&
-            sockets[mux]) {
+        if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
           sockets[mux]->got_data = true;
         }
         data = "";
@@ -881,7 +883,7 @@ class TinyGsmSim800
     } else if (data.endsWith(GF("+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSim800TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
@@ -893,7 +895,7 @@ class TinyGsmSim800
                                      data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
-      if (mux >= 0 && mux < TinyGsmSim800TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -928,7 +930,7 @@ class TinyGsmSim800
   Stream& stream;
 
  protected:
-  GsmClientSim800* sockets[TinyGsmSim800TcpConfig::kMuxCount];
+  GsmClientSim800* sockets[TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTSIM800_H_

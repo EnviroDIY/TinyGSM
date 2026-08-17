@@ -206,6 +206,7 @@ class TinyGsmSim7000SSL
   friend class TinyGsmBattery<TinyGsmSim7000SSL>;
 
   using ModemConfig = TinyGsmSim7000SSLModemConfig;
+  using TcpConfig   = TinyGsmSim7000SSLTcpConfig;
 
   /*
    * Inner Client
@@ -220,6 +221,7 @@ class TinyGsmSim7000SSL
    public:
     using GsmClient<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>::connect;
     using GsmClient<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>::stop;
+    using TcpConfig = TinyGsmSim7000SSLTcpConfig;
 
     /**
      * @brief Create a new TCP client.
@@ -263,7 +265,7 @@ class TinyGsmSim7000SSL
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TinyGsmSim7000SSLTcpConfig::kMuxCount &&
+      if (mux < TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -273,7 +275,7 @@ class TinyGsmSim7000SSL
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TinyGsmSim7000SSLTcpConfig::kMuxCount);
+        this->mux = (mux % TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -283,7 +285,7 @@ class TinyGsmSim7000SSL
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TinyGsmSim7000SSLTcpConfig::kStopTimeoutS * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -322,6 +324,7 @@ class TinyGsmSim7000SSL
    public:
     using GsmClientSim7000SSL::connect;
     using GsmClientSim7000SSL::stop;
+    using TcpConfig = TinyGsmSim7000SSLTcpConfig;
 
     TINY_GSM_SECURE_CLIENT_CTORS(Sim7000SSL)
 
@@ -331,7 +334,7 @@ class TinyGsmSim7000SSL
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TinyGsmSim7000SSLTcpConfig::kStopTimeoutS * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       if (!sslCtxConfigured) {
@@ -403,7 +406,7 @@ class TinyGsmSim7000SSL
     // Keep listening for modem URC's and proactively iterate through
     // sockets asking if any data is available
     bool check_socks = false;
-    for (int mux = 0; mux < TinyGsmSim7000SSLTcpConfig::kMuxCount; mux++) {
+    for (int mux = 0; mux < TcpConfig::kMuxCount; mux++) {
       GsmClientSim7000SSL* sock = sockets[mux];
       if (sock && sock->got_data) {
         sock->got_data = false;
@@ -1159,8 +1162,7 @@ class TinyGsmSim7000SSL
     // NOTE: This gets how many characters are available on all connections that
     // have data.  It does not return all the connections, just those with data.
     sendAT(GF("+CARECV?"));
-    for (int muxNo = 0; muxNo < TinyGsmSim7000SSLTcpConfig::kMuxCount;
-         muxNo++) {
+    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
       int res = waitResponse(3000, GF("+CARECV:"), GFP(ModemConfig::GSM_OK),
                              GFP(ModemConfig::GSM_ERROR));
@@ -1183,8 +1185,8 @@ class TinyGsmSim7000SSL
       } else if (res == 2) {
         // if we get an OK, we've reached the last socket with available data
         // so we set any we haven't gotten to yet to 0
-        for (int extra_mux = muxNo;
-             extra_mux < TinyGsmSim7000SSLTcpConfig::kMuxCount; extra_mux++) {
+        for (int extra_mux = muxNo; extra_mux < TcpConfig::kMuxCount;
+             extra_mux++) {
           GsmClientSim7000SSL* isock = sockets[extra_mux];
           if (isock) { isock->sock_available = 0; }
         }
@@ -1196,9 +1198,7 @@ class TinyGsmSim7000SSL
       // Should be a final OK at the end.
       // If every connection was returned, catch the OK here.
       // If only a portion were returned, catch it above.
-      if (muxNo == TinyGsmSim7000SSLTcpConfig::kMuxCount - 1) {
-        waitResponse();
-      }
+      if (muxNo == TcpConfig::kMuxCount - 1) { waitResponse(); }
     }
     modemGetConnected(mux);  // check the state of all connections
     if (!sockets[mux]) { return 0; }
@@ -1210,8 +1210,7 @@ class TinyGsmSim7000SSL
     // since the last connection
     sendAT(GF("+CASTATE?"));
 
-    for (int muxNo = 0; muxNo < TinyGsmSim7000SSLTcpConfig::kMuxCount;
-         muxNo++) {
+    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
       int res = waitResponse(3000, GF("+CASTATE:"), GFP(ModemConfig::GSM_OK),
                              GFP(ModemConfig::GSM_ERROR));
@@ -1236,8 +1235,8 @@ class TinyGsmSim7000SSL
       } else if (res == 2) {
         // if we get an OK, we've reached the last socket with available data
         // so we set any we haven't gotten to yet to 0
-        for (int extra_mux = muxNo;
-             extra_mux < TinyGsmSim7000SSLTcpConfig::kMuxCount; extra_mux++) {
+        for (int extra_mux = muxNo; extra_mux < TcpConfig::kMuxCount;
+             extra_mux++) {
           GsmClientSim7000SSL* isock = sockets[extra_mux];
           if (isock) { isock->sock_connected = false; }
         }
@@ -1249,9 +1248,7 @@ class TinyGsmSim7000SSL
       // Should be a final OK at the end.
       // If every connection was returned, catch the OK here.
       // If only a portion were returned, catch it above.
-      if (muxNo == TinyGsmSim7000SSLTcpConfig::kMuxCount - 1) {
-        waitResponse();
-      }
+      if (muxNo == TcpConfig::kMuxCount - 1) { waitResponse(); }
     }
     return sockets[mux]->sock_connected;
   }
@@ -1264,8 +1261,7 @@ class TinyGsmSim7000SSL
     if (data.endsWith(GF("+CARECV:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSim7000SSLTcpConfig::kMuxCount &&
-          sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
@@ -1274,8 +1270,7 @@ class TinyGsmSim7000SSL
       return true;
     } else if (data.endsWith(GF("+CADATAIND:"))) {
       int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSim7000SSLTcpConfig::kMuxCount &&
-          sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->got_data = true;
       }
       data = "";
@@ -1284,8 +1279,7 @@ class TinyGsmSim7000SSL
     } else if (data.endsWith(GF("+CASTATE:"))) {
       int8_t mux   = streamGetIntBefore(',');
       int8_t state = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSim7000SSLTcpConfig::kMuxCount &&
-          sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         if (state != 1) {
           sockets[mux]->sock_connected = false;
           DBG("### Closed: ", mux);
@@ -1324,7 +1318,7 @@ class TinyGsmSim7000SSL
   }
 
  protected:
-  GsmClientSim7000SSL* sockets[TinyGsmSim7000SSLTcpConfig::kMuxCount];
+  GsmClientSim7000SSL* sockets[TcpConfig::kMuxCount];
 };
 
 // cspell:words CASEND

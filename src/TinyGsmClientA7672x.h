@@ -249,6 +249,7 @@ class TinyGsmA7672x
   friend class TinyGsmTemperature<TinyGsmA7672x>;
 
   using ModemConfig = TinyGsmA7672xModemConfig;
+  using TcpConfig   = TinyGsmA7672xTcpConfig;
 
   /*
    * Inner Client
@@ -263,6 +264,7 @@ class TinyGsmA7672x
    public:
     using GsmClient<TinyGsmA7672x, TinyGsmA7672xTcpConfig>::connect;
     using GsmClient<TinyGsmA7672x, TinyGsmA7672xTcpConfig>::stop;
+    using TcpConfig = TinyGsmA7672xTcpConfig;
 
     /**
      * @brief Create a new TCP client.
@@ -310,7 +312,7 @@ class TinyGsmA7672x
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TinyGsmA7672xTcpConfig::kMuxCount &&
+      if (mux < TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -320,7 +322,7 @@ class TinyGsmA7672x
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TinyGsmA7672xTcpConfig::kMuxCount);
+        this->mux = (mux % TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -330,7 +332,7 @@ class TinyGsmA7672x
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TinyGsmA7672xTcpConfig::kStopTimeoutS * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
@@ -368,12 +370,13 @@ class TinyGsmA7672x
    public:
     using GsmClientA7672x::connect;
     using GsmClientA7672x::stop;
+    using TcpConfig = TinyGsmA7672xTcpConfig;
 
     TINY_GSM_SECURE_CLIENT_CTORS(A7672x)
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TinyGsmA7672xTcpConfig::kStopTimeoutS * 1000L);
+      stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
       if (!sslCtxConfigured) {
@@ -1087,8 +1090,7 @@ class TinyGsmA7672x
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
-        if (mux >= 0 && mux < TinyGsmA7672xTcpConfig::kMuxCount &&
-            sockets[mux]) {
+        if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
           sockets[mux]->got_data = true;
         }
         data = "";
@@ -1110,7 +1112,7 @@ class TinyGsmA7672x
       int8_t  mux = res.substring(res.lastIndexOf(',') + 1).toInt();
       int16_t len =
           res.substring(res.indexOf(',') + 1, res.lastIndexOf(',')).toInt();
-      if (mux >= 0 && mux < TinyGsmA7672xTcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
@@ -1119,7 +1121,7 @@ class TinyGsmA7672x
       return true;
     } else if (data.endsWith(GF("+CCHRECV: 0,0\r\n"))) {
       int8_t mux = data.substring(data.lastIndexOf(',') + 1).toInt();
-      if (mux >= 0 && mux < TinyGsmA7672xTcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = true;
       }
       data = "";
@@ -1127,7 +1129,7 @@ class TinyGsmA7672x
       return true;
     } else if (data.endsWith(GF("+IPCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
-      if (mux >= 0 && mux < TinyGsmA7672xTcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -1136,7 +1138,7 @@ class TinyGsmA7672x
       return true;
     } else if (data.endsWith(GF("+CCHCLOSE:"))) {
       int8_t mux = streamGetIntBefore(',');
-      if (mux >= 0 && mux < TinyGsmA7672xTcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -1145,7 +1147,7 @@ class TinyGsmA7672x
       return true;
     } else if (data.endsWith(GF("+CCH_PEER_CLOSED:"))) {
       int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmA7672xTcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -1180,7 +1182,7 @@ class TinyGsmA7672x
   Stream& stream;
 
  protected:
-  GsmClientA7672x* sockets[TinyGsmA7672xTcpConfig::kMuxCount];
+  GsmClientA7672x* sockets[TcpConfig::kMuxCount];
   // TODO(SRGD): I suspect we need to have two separate socket arrays, a secure
   // and not secure one
 };

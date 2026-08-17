@@ -225,6 +225,7 @@ class TinyGsmSaraR5
   friend class TinyGsmBattery<TinyGsmSaraR5>;
 
   using ModemConfig = TinyGsmSaraR5ModemConfig;
+  using TcpConfig   = TinyGsmSaraR5TcpConfig;
 
   /*
    * Inner Client
@@ -239,6 +240,7 @@ class TinyGsmSaraR5
    public:
     using GsmClient<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>::connect;
     using GsmClient<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>::stop;
+    using TcpConfig = TinyGsmSaraR5TcpConfig;
 
     /**
      * @brief Create a new TCP client.
@@ -293,7 +295,7 @@ class TinyGsmSaraR5
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TinyGsmSaraR5TcpConfig::kMuxCount &&
+      if (mux < TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
@@ -303,7 +305,7 @@ class TinyGsmSaraR5
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
-        this->mux = (mux % TinyGsmSaraR5TcpConfig::kMuxCount);
+        this->mux = (mux % TcpConfig::kMuxCount);
       }
       at->sockets[this->mux] = this;
 
@@ -322,9 +324,9 @@ class TinyGsmSaraR5
       sock_connected = at->modemConnect(host, port, &mux, timeout_s);
 
       // Validate mux before any access to sockets array
-      if (!(mux < TinyGsmSaraR5TcpConfig::kMuxCount)) {
+      if (!(mux < TcpConfig::kMuxCount)) {
         DBG(GF("ERROR: Modem returned invalid mux"), mux, GF("(max:"),
-            static_cast<int>(TinyGsmSaraR5TcpConfig::kMuxCount - 1), GF(")"));
+            static_cast<int>(TcpConfig::kMuxCount - 1), GF(")"));
         return 0;  // Return failure when mux is out of range
       }
 
@@ -380,6 +382,7 @@ class TinyGsmSaraR5
    public:
     using GsmClientSaraR5::connect;
     using GsmClientSaraR5::stop;
+    using TcpConfig = TinyGsmSaraR5TcpConfig;
 
     /**
      * @brief Create a new secured TCP (SSL) client.  This must be initialized
@@ -1046,7 +1049,7 @@ class TinyGsmSaraR5
     if (data.endsWith(GF("+UUSORD:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSaraR5TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->got_data = true;
         // max size is 1024
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
@@ -1056,7 +1059,7 @@ class TinyGsmSaraR5
       return true;
     } else if (data.endsWith(GF("+UUSOCL:"))) {
       int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TinyGsmSaraR5TcpConfig::kMuxCount && sockets[mux]) {
+      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
       data = "";
@@ -1092,7 +1095,7 @@ class TinyGsmSaraR5
   Stream& stream;
 
  protected:
-  GsmClientSaraR5* sockets[TinyGsmSaraR5TcpConfig::kMuxCount];
+  GsmClientSaraR5* sockets[TcpConfig::kMuxCount];
 };
 
 // cspell:words USOWR CSFB UTRAN
