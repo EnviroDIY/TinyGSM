@@ -31,7 +31,6 @@ class TinyGsmEspressif
   friend class TinyGsmWifi<EspressifType>;
 
   using ModemConfig = EspressifModemConfig;
-  using TcpConfig   = EspressifTcpConfig;
 
   /*
    * CRTP Helper
