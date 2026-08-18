@@ -728,11 +728,11 @@ class TinyGsmESP8266
    */
  protected:
   // NOTE: I don't think this forces an immediate sync
-  byte NTPServerSyncImpl(const char* server, int TimeZone) {
+  bool NTPServerSyncImpl(const char* server, int TimeZone) {
     // configure the NTP settings for the modem
     sendAT(GF("+CIPSNTPCFG="), 1, ',', TimeZone, GF(",\""), server, '"');
-    waitResponse();
-    return 0;
+    // returns a simple OK or ERROR
+    return waitResponse() == 1;
   }
 
   /*

@@ -44,17 +44,22 @@ class TinyGsmNTP {
   /**
    * @brief Synchronize the modem with an NTP server
    *
+   * @remark PIn versions 0.12.0 and prior, this function returned a byte, the
+   * meaning of which varied by modem.  In some cases the return value indicated
+   * success with 0 and failure with other codes.  In the current version, it
+   * returns a boolean indicating success or failure.
+   *
    * @param server The NTP server to use
    * @param TimeZone The timezone offset
    *
-   * @return The result of the synchronization
+   * @return True if the synchronization was successful, false otherwise.
    */
-  byte NTPServerSync(const char* server = "pool.ntp.org", int TimeZone = 0) {
+  bool NTPServerSync(const char* server = "pool.ntp.org", int TimeZone = 0) {
     return thisModem().NTPServerSyncImpl(server, TimeZone);
   }
 
   /// @copydoc NTPServerSync(const char*, int)
-  byte NTPServerSync(const String& server, int TimeZone = 0) {
+  bool NTPServerSync(const String& server, int TimeZone = 0) {
     return NTPServerSync(server.c_str(), TimeZone);
   }
 
@@ -126,7 +131,7 @@ class TinyGsmNTP {
    * NTP server functions
    */
  protected:
-  byte NTPServerSyncImpl(const char* server, int TimeZone) {
+  bool NTPServerSyncImpl(const char* server, int TimeZone) {
     // Set GPRS bearer profile to associate with NTP sync
     // this may fail, it's not supported by all modules
     thisModem().sendAT(GF("+CNTPCID=1"));

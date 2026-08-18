@@ -829,7 +829,7 @@ class TinyGsmSim7080
    * NTP server functions
    */
  protected:
-  byte NTPServerSyncImpl(const char* server, int TimeZone) {
+  bool NTPServerSyncImpl(const char* server, int TimeZone) {
     // Set GPRS bearer profile to associate with NTP sync
     // this may fail, it's not supported by all modules
     sendAT(GF("+CNTPCID=0"));  // CID must be 0. With 1 (like other modules)
@@ -859,14 +859,19 @@ class TinyGsmSim7080
       String result = stream.readStringUntil('\n');
       // Check for ',' in case the module appends the time next to the return
       // code. Eg: +CNTP: <code>[,<time>]
+      // <code> - Result code of the NTP synchronization
+      //        - 1 UTC time synchronization is successful
+      //        - 61 Network Error
+      //        - 62 DNS resolution error
+      //        - 63 Connection Error
+      //        - 64 Service response error
+      //        - 65 Service Response Timeout
       int index = result.indexOf(',');
       if (index > 0) { result.remove(index); }
       result.trim();
-      if (TinyGsmIsValidNumber(result)) { return result.toInt(); }
-    } else {
-      return -1;
+      if (TinyGsmIsValidNumber(result)) { return result.toInt() == 1; }
     }
-    return -1;
+    return false;
   }
 
   /*
