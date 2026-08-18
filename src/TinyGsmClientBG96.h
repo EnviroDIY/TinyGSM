@@ -1007,19 +1007,21 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
    * NTP server functions
    */
 
-  byte NTPServerSyncImpl(const char* server, byte) {
+  bool NTPServerSyncImpl(const char* server, byte) {
     // Request network synchronization
     // AT+QNTP=<contextID>,<server>[,<port>][,<autosettime>]
     sendAT(GF("+QNTP=1,\""), server, '"');
+    // Response: +QNTP: <err>,<time>
+    // <err> -  Error code of operation - see chapter 4 of the
+    // BG96_TCP(IP)_Application_Note
+    // There's a long list of codes, but 0 is a success
     if (waitResponse(10000L, GF("+QNTP:"))) {
       String result = stream.readStringUntil(',');
       streamSkipUntil('\n');
       result.trim();
-      if (TinyGsmIsValidNumber(result)) { return result.toInt(); }
-    } else {
-      return -1;
+      if (TinyGsmIsValidNumber(result)) { return result.toInt() == 0; }
     }
-    return -1;
+    return false;
   }
 
   bool waitForTimeSyncImpl(int timeout_s) {
