@@ -236,11 +236,11 @@ class TinyGsmModem {
         at_serial.begin(rate);
         delay(25);  // settle
 
-#if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_ESP8266)
-        setDefaultBaud(targetBaud);
-#else
+        // #if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_ESP8266)
+        //         setDefaultBaud(targetBaud);
+        // #else
         setBaud(targetBaud);
-#endif
+        // #endif
 
         at_serial.end();
         at_serial.begin(targetBaud);
