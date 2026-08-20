@@ -205,11 +205,11 @@ class TinyGsmTCP {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * TCP functions
    */
- protected:
+
   void maintainImpl() {
     if (TcpConfig::kBufferMode ==
         TinyGsmTcpBufferMode::BufferReadAndCheckSize) {

@@ -314,11 +314,11 @@ class TinyGsmSSL {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * Secure socket layer (SSL) certificate management functions
    */
- protected:
+
   bool loadCertificateImpl(const char* certificateName, const char* cert,
                            const uint16_t len) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool

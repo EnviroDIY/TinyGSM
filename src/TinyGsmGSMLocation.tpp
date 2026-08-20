@@ -121,12 +121,12 @@ class TinyGsmGSMLocation {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * GSM location functions
    * Template is based on SIMCOM commands
    */
- protected:
+
   // String getGsmLocationImpl() {
   //   thisModem().sendAT(GF("+CIPGSMLOC=1,1"));
   //   if (thisModem().waitResponse(10000L, GF("+CIPGSMLOC:")) != 1) { return

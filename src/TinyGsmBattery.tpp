@@ -109,11 +109,11 @@ class TinyGsmBattery {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * Battery functions
    */
- protected:
+
   // Use: float vBatt = modem.getBattVoltage() / 1000.0;
   int16_t getBattVoltageImpl() {
     thisModem().sendAT(GF("+CBC"));

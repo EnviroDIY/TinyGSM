@@ -102,7 +102,7 @@ class TinyGsmBluetooth {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * Bluetooth functions
    */

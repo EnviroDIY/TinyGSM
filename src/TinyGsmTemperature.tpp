@@ -72,7 +72,7 @@ class TinyGsmTemperature {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * Temperature functions
    */

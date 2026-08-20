@@ -771,11 +771,11 @@ class TinyGsmModem {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * Basic functions
    */
- protected:
+
   bool initImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   bool setBaudImpl(uint32_t baud) {

@@ -87,12 +87,12 @@ class TinyGsmSMS {
   }
 
 
- protected:
   /**
    * @anchor sms_utilities
    * @name Utilities
    */
   /**@{*/
+ protected:
   static inline String TinyGsmDecodeHex7bit(const String& instr) {
     String result;
     byte   reminder = 0;
@@ -166,7 +166,7 @@ class TinyGsmSMS {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * Text messaging (SMS) functions
    */
