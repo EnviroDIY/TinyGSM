@@ -73,8 +73,8 @@ const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
 // Server 0 details (SSL not required)
-const char server1[]   = "time.sodaq.net";
-const char resource0[] = "/";
+const char server1[]   = "vsh.pp.ua";
+const char resource0[] = "/TinyGSM/logo.txt";
 
 // Server 1 details (this server requires SSL, expect it to fail otherwise)
 const char server2[]   = "vsh.pp.ua";
@@ -120,13 +120,31 @@ void setup() {
   SerialAT2.begin(115200);
 
   SerialMon.print("Modem 1 is compiled as ");
-  SerialMon.println(modem1.getConfiguredModem());
+  SerialMon.print(GFP(decltype(modem1)::ModemConfig::MODEM_MANUFACTURER));
+  SerialMon.print(" ");
+  SerialMon.print(GFP(decltype(modem1)::ModemConfig::MODEM_MODEL));
+  SerialMon.print(" (");
+  SerialMon.print((modem1).getConfiguredModem());
+  SerialMon.println(")");
   SerialMon.print("Modem 2 is compiled as ");
-  SerialMon.println(modem2.getConfiguredModem());
+  SerialMon.print(GFP(decltype(modem2)::ModemConfig::MODEM_MANUFACTURER));
+  SerialMon.print(" ");
+  SerialMon.print(GFP(decltype(modem2)::ModemConfig::MODEM_MODEL));
+  SerialMon.print(" (");
+  SerialMon.print((modem2).getConfiguredModem());
+  SerialMon.println(")");
 
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
   // !!!!!!!!!!!
+
+  DBG("Attempting to force baud rate of SIM7080 to 115200");
+  modem1.forceModemBaud(SerialAT1, 115200);
+  DBG("Attempting to force baud rate of ESP32 to 115200");
+  modem2.forceModemBaud(SerialAT2, 115200);
+
+  SerialMon.println(F("\n==============================="));
+  SerialMon.println(F("===============================\n"));
 
   SerialMon.println("Initializing cellular modem...");
   modem1.init();
@@ -134,11 +152,17 @@ void setup() {
   SerialMon.print("Modem Info: ");
   SerialMon.println(modemInfo1);
 
+  SerialMon.println(F("\n==============================="));
+  SerialMon.println(F("===============================\n"));
+
   SerialMon.println("Initializing WiFi modem...");
   modem2.init();
   String modemInfo2 = modem2.getModemInfo();
   SerialMon.print("Modem Info: ");
   SerialMon.println(modemInfo2);
+
+  SerialMon.println(F("\n==============================="));
+  SerialMon.println(F("===============================\n"));
 }
 
 void loop() {
@@ -162,6 +186,8 @@ void loop() {
     SerialMon.println("WiFi network connected");
   }
 
+  SerialMon.println(F("\n==============================="));
+  SerialMon.println(F("===============================\n"));
 
   // Wait for the SIM7080 to connect to the cellular network
   SerialMon.print("Waiting for cellular network...");
@@ -186,6 +212,9 @@ void loop() {
   SerialMon.println(" success");
   if (modem1.isGprsConnected()) { SerialMon.println("GPRS connected"); }
 
+  SerialMon.println(F("\n==============================="));
+  SerialMon.println(F("===============================\n"));
+
   // get some data from a server via HTTP GET request with the cellular
   // connection
   SerialMon.print("Connecting to ");
@@ -201,19 +230,24 @@ void loop() {
   SerialMon.println("Performing HTTP GET request...");
   client1.print(String("GET ") + resource0 + " HTTP/1.1\r\n");
   client1.print(String("Host: ") + server1 + "\r\n");
-  client1.print("Connection: close\r\n\r\n");
-  client1.println();
+  client1.print("Connection: keep-alive\r\n\r\n");
 
   uint32_t timeout = millis();
-  while (client1.connected() && millis() - timeout < 30000L) {
+  while (client1.connected() && millis() - timeout < 50000L) {
     // Print available data
     while (client1.available()) {
-      char c = client1.read();
-      SerialMon.print(c);
+      SerialMon.println(client1.readString());
       timeout = millis();
     }
   }
   SerialMon.println();
+
+  // Shutdown
+  client1.stop();
+  SerialMon.println(F("Server disconnected"));
+
+  SerialMon.println(F("\n==============================="));
+  SerialMon.println(F("===============================\n"));
 
   // get some data from a server via HTTP GET request with the WiFi connection
   SerialMon.print("Connecting to ");
@@ -229,28 +263,26 @@ void loop() {
   SerialMon.println("Performing HTTP GET request...");
   client2.print(String("GET ") + resource1 + " HTTP/1.1\r\n");
   client2.print(String("Host: ") + server2 + "\r\n");
-  client2.print("Connection: close\r\n\r\n");
-  client2.println();
+  client2.print("Connection: keep-alive\r\n\r\n");
 
   timeout = millis();
-  while (client2.connected() && millis() - timeout < 30000L) {
+  while (client2.connected() && millis() - timeout < 50000L) {
     // Print available data
     while (client2.available()) {
-      char c = client2.read();
-      SerialMon.print(c);
+      SerialMon.println(client2.readString());
       timeout = millis();
     }
   }
   SerialMon.println();
 
-  // Shutdown
-  client1.stop();
-  SerialMon.println(F("Server disconnected"));
   client2.stop();
   SerialMon.println(F("Server disconnected"));
 
+  SerialMon.println(F("\n==============================="));
+  SerialMon.println(F("===============================\n"));
+
   modem1.gprsDisconnect();
-  SerialMon.println(F("GPRS disconnected"));
+  SerialMon.println(F("GPRS disconnected\n"));
   modem2.networkDisconnect();
   SerialMon.println(F("WiFi disconnected"));
 
