@@ -1900,7 +1900,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       }
     }
     beeType = static_cast<XBeeType>(intRes);
-    DBG(GF("### Modem: "), getModemName(), beeType);
+    DBG(GF("### Modem: "), getModemName(), intRes);
   }
 
   /**
