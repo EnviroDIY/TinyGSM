@@ -170,7 +170,9 @@ void setup() {
 
 #if TINY_GSM_USE_GPRS
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
+  if (GSM_PIN && static_cast<int>(modem.getSimStatus()) != 3) {
+    modem.simUnlock(GSM_PIN);
+  }
 #endif
 }
 
