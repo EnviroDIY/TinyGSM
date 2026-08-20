@@ -945,8 +945,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     if (beeType == XBeeType::XBEE_S6B_WIFI)
       sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
+                         // (~RSSI)
     else
-      sendAT(GF("DB"));  // ask for the cell strength in dBm
+      sendAT(GF("DB"));  // ask for the cell strength in dBm (~RSSI)
     int16_t intRes = readResponseInt();
 
     XBEE_COMMAND_END_DECORATOR
