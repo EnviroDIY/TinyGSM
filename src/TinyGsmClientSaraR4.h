@@ -130,7 +130,7 @@
 
 /// Registration status
 /// @ingroup ublox_sara_r4
-enum SaraR4RegStatus {
+enum class SaraR4RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
   REG_SEARCHING    = 2,   ///< Searching for network
@@ -461,13 +461,13 @@ class TinyGsmSaraR4
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SimStatus::SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
-      return (getSimStatus() == SIM_READY);
+      return (getSimStatus() == SimStatus::SIM_READY);
     } else {
       // if the sim is ready, or it's locked but no pin has been provided,
       // return true
-      return (ret == SIM_READY || ret == SIM_LOCKED);
+      return (ret == SimStatus::SIM_READY || ret == SimStatus::SIM_LOCKED);
     }
   }
 
@@ -522,20 +522,22 @@ class TinyGsmSaraR4
   SaraR4RegStatus getRegistrationStatusImpl() {
     // Check first for EPS registration
     SaraR4RegStatus epsStatus =
-        (SaraR4RegStatus)getRegistrationStatusXREG("CEREG");
+        static_cast<SaraR4RegStatus>(getRegistrationStatusXREG("CEREG"));
 
     // If we're connected on EPS, great!
-    if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
+    if (epsStatus == SaraR4RegStatus::REG_OK_HOME ||
+        epsStatus == SaraR4RegStatus::REG_OK_ROAMING) {
       return epsStatus;
     } else {
       // Otherwise, check generic network status
-      return (SaraR4RegStatus)getRegistrationStatusXREG("CREG");
+      return static_cast<SaraR4RegStatus>(getRegistrationStatusXREG("CREG"));
     }
   }
 
   bool isNetworkConnectedImpl() {
     SaraR4RegStatus s = this->getRegistrationStatus();
-    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+    return (s == SaraR4RegStatus::REG_OK_HOME ||
+            s == SaraR4RegStatus::REG_OK_ROAMING);
   }
 
  public:

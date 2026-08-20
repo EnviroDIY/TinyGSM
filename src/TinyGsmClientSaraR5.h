@@ -134,7 +134,7 @@
 
 /// Registration status
 /// @ingroup ublox_sara_r5
-enum SaraR5RegStatus {
+enum class SaraR5RegStatus {
   /// No registration result
   REG_NO_RESULT = -1,
   /// Not registered on the network
@@ -446,13 +446,13 @@ class TinyGsmSaraR5
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SimStatus::SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
-      return (getSimStatus() == SIM_READY);
+      return (getSimStatus() == SimStatus::SIM_READY);
     } else {
       // if the sim is ready, or it's locked but no pin has been provided,
       // return true
-      return (ret == SIM_READY || ret == SIM_LOCKED);
+      return (ret == SimStatus::SIM_READY || ret == SimStatus::SIM_LOCKED);
     }
   }
 
@@ -547,23 +547,27 @@ class TinyGsmSaraR5
   SaraR5RegStatus getRegistrationStatusImpl() {
     // Check first for EPS registration
     SaraR5RegStatus epsStatus =
-        (SaraR5RegStatus)getRegistrationStatusXREG("CEREG");
+        static_cast<SaraR5RegStatus>(getRegistrationStatusXREG("CEREG"));
 
     // If we're connected on EPS, great!
-    if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
+    if (epsStatus == SaraR5RegStatus::REG_OK_HOME ||
+        epsStatus == SaraR5RegStatus::REG_OK_ROAMING) {
       return epsStatus;
     } else {
       // Otherwise, check generic network status
-      return (SaraR5RegStatus)getRegistrationStatusXREG("CREG");
+      return static_cast<SaraR5RegStatus>(getRegistrationStatusXREG("CREG"));
     }
   }
 
   bool isNetworkConnectedImpl() {
     SaraR5RegStatus s = this->getRegistrationStatus();
-    if (s == REG_OK_HOME || s == REG_OK_ROAMING || s == REG_SMS_ONLY_ROAMING ||
-        s == REG_SMS_ONLY_HOME)
+    if (s == SaraR5RegStatus::REG_OK_HOME ||
+        s == SaraR5RegStatus::REG_OK_ROAMING ||
+        s == SaraR5RegStatus::REG_SMS_ONLY_ROAMING ||
+        s == SaraR5RegStatus::REG_SMS_ONLY_HOME)
       return true;
-    else if (s == REG_UNKNOWN)  // for some reason, it can hang at unknown..
+    else if (s == SaraR5RegStatus::REG_UNKNOWN)  // for some reason, it can hang
+                                                 // at unknown..
       return isGprsConnected();
     else
       return false;

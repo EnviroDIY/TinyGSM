@@ -118,7 +118,7 @@
 
 /// Registration status
 /// @ingroup sequans_monarch
-enum MonarchRegStatus {
+enum class MonarchRegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
   REG_SEARCHING    = 2,   ///< Searching for network
@@ -162,7 +162,7 @@ struct TinyGsmSequansMonarchTcpConfig
           /*sendMaxSize*/ 750> {};
 
 /// Socket status
-enum SocketStatus {
+enum class SocketStatus {
   SOCK_CLOSED                 = 0,  ///< Socket is closed
   SOCK_ACTIVE_DATA            = 1,  ///< Socket is active and has data
   SOCK_SUSPENDED              = 2,  ///< Socket is suspended
@@ -424,13 +424,13 @@ class TinyGsmSequansMonarch
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SimStatus::SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
-      return (getSimStatus() == SIM_READY);
+      return (getSimStatus() == SimStatus::SIM_READY);
     } else {
       // if the sim is ready, or it's locked but no pin has been provided,
       // return true
-      return (ret == SIM_READY || ret == SIM_LOCKED);
+      return (ret == SimStatus::SIM_READY || ret == SimStatus::SIM_LOCKED);
     }
   }
 
@@ -501,12 +501,13 @@ class TinyGsmSequansMonarch
    */
  protected:
   MonarchRegStatus getRegistrationStatusImpl() {
-    return (MonarchRegStatus)getRegistrationStatusXREG("CEREG");
+    return static_cast<MonarchRegStatus>(getRegistrationStatusXREG("CEREG"));
   }
 
   bool isNetworkConnectedImpl() {
     MonarchRegStatus s = this->getRegistrationStatus();
-    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+    return (s == MonarchRegStatus::REG_OK_HOME ||
+            s == MonarchRegStatus::REG_OK_ROAMING);
   }
   String getLocalIPImpl() {
     sendAT(GF("+CGPADDR=3"));
@@ -861,12 +862,12 @@ class TinyGsmSequansMonarch
       if (waitResponse(GFP(ModemConfig::GSM_OK), GF("+SQNSS: ")) != 2) {
         break;
       }
-      uint8_t status = 0;
+      SocketStatus status = SocketStatus::SOCK_CLOSED;
       // if (streamGetIntBefore(',') != muxNo) { // check the mux no
       //   DBG("### Warning: misaligned mux numbers!");
       // }
-      streamSkipUntil(',');        // skip mux [use muxNo]
-      status = stream.parseInt();  // Read the status
+      streamSkipUntil(',');  // skip mux [use muxNo]
+      status = static_cast<SocketStatus>(stream.parseInt());  // Read the status
       // if mux is in use, will have comma then other info after the status
       // if not, there will be new line immediately after status
       // streamSkipUntil('\n'); // Skip port and IP info
@@ -879,9 +880,9 @@ class TinyGsmSequansMonarch
       // SOCK_OPENING                = 6,
       GsmClientSequansMonarch* sock = sockets[muxNo % TcpConfig::kMuxCount];
       if (sock) {
-        sock->sock_connected = ((status != SOCK_CLOSED) &&
-                                (status != SOCK_INCOMING) &&
-                                (status != SOCK_OPENING));
+        sock->sock_connected = ((status != SocketStatus::SOCK_CLOSED) &&
+                                (status != SocketStatus::SOCK_INCOMING) &&
+                                (status != SocketStatus::SOCK_OPENING));
       }
     }
     waitResponse();  // Should be an OK at the end

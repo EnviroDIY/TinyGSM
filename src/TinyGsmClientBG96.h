@@ -146,7 +146,7 @@
 
 /// Registration status
 /// @ingroup quectel_bg96
-enum BG96RegStatus {
+enum class BG96RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
   REG_SEARCHING    = 2,   ///< Searching for network
@@ -485,13 +485,13 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SimStatus::SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
-      return (getSimStatus() == SIM_READY);
+      return (getSimStatus() == SimStatus::SIM_READY);
     } else {
       // if the sim is ready, or it's locked but no pin has been provided,
       // return true
-      return (ret == SIM_READY || ret == SIM_LOCKED);
+      return (ret == SimStatus::SIM_READY || ret == SimStatus::SIM_LOCKED);
     }
   }
 
@@ -533,20 +533,23 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
  protected:
   BG96RegStatus getRegistrationStatusImpl() {
     // Check first for EPS registration
-    BG96RegStatus epsStatus = (BG96RegStatus)getRegistrationStatusXREG("CEREG");
+    BG96RegStatus epsStatus =
+        static_cast<BG96RegStatus>(getRegistrationStatusXREG("CEREG"));
 
     // If we're connected on EPS, great!
-    if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
+    if (epsStatus == BG96RegStatus::REG_OK_HOME ||
+        epsStatus == BG96RegStatus::REG_OK_ROAMING) {
       return epsStatus;
     } else {
       // Otherwise, check generic network status
-      return (BG96RegStatus)getRegistrationStatusXREG("CREG");
+      return static_cast<BG96RegStatus>(getRegistrationStatusXREG("CREG"));
     }
   }
 
   bool isNetworkConnectedImpl() {
     BG96RegStatus s = this->getRegistrationStatus();
-    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+    return (s == BG96RegStatus::REG_OK_HOME ||
+            s == BG96RegStatus::REG_OK_ROAMING);
   }
 
   /*
