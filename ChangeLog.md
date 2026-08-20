@@ -32,6 +32,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **BREAKING** Renamed the function `setURAT` to `setRadioAccessTechnology` for u-blox SARA R4 modules.
 - **BREAKING** Changed the inputs and outputs of `getCurrentRadioAccessTechnology` for the u-blox SARA R5 modules and made functional.
 - **Potentially breaking** Changed the response type of NTPServerSync from a byte with inconsistent meaning to a boolean indicating success.  Using a boolean test against this may now return inverted results. Previously, Espressif and BG96 modules returned a falsy '0' byte indicating success, but SIMCom modules returned a truthy '1' byte for success.
+- Converted all enums into enum classes
 
 ### Added
 
