@@ -776,6 +776,7 @@ class TinyGsmESP8266
 
     if (ssl) {
       if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+        DBG("### The ESP8266 does not support SSL using pre-shared keys.");
         // The ESP8266 does not support SSL using pre-shared keys with AT
         // firmware.
         return false;

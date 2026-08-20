@@ -265,7 +265,8 @@ class TinyGsmSSL {
    * identity assigned to it) need to be converted together.
    *
    * @param psk The pre-shared key.
-   * @param pskIdent The identity assigned to the pre-shared key.
+   * @param pskIdent The identity assigned to the pre-shared key (also called
+   * identifier hint or hint).
    * @return True if the PSK and identity were successfully converted, false
    * otherwise.
    */
@@ -461,7 +462,8 @@ class GsmSecureClient {
   /**
    * @brief Set the pre-shared key and identity to use for this connection
    *
-   * @param pskIdent The pre-shared key identity
+   * @param pskIdent The pre-shared key identity (also called the identity hint
+   * or just hint)
    * @param psKey The pre-shared key
    */
   virtual void setPreSharedKey(const char* pskIdent, const char* psKey) {
