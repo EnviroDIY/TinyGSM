@@ -69,14 +69,14 @@ typedef Sim5360RegStatus                 RegStatus;
 typedef TinyGsmSim7600                         TinyGsm;
 typedef TinyGsmSim7600::GsmClientSim7600       TinyGsmClient;
 typedef TinyGsmSim7600::GsmClientSecureSim7600 TinyGsmClientSecure;
-typedef Sim76xxRegStatus                       RegStatus;
+typedef Sim7600RegStatus                       RegStatus;
 
 #elif defined(TINY_GSM_MODEM_UBLOX)
 #include "TinyGsmClientUBLOX.h"
 typedef TinyGsmUBLOX                       TinyGsm;
 typedef TinyGsmUBLOX::GsmClientUBLOX       TinyGsmClient;
 typedef TinyGsmUBLOX::GsmClientSecureUBLOX TinyGsmClientSecure;
-typedef UbloxRegStatus                     RegStatus;
+typedef UBLOXRegStatus                     RegStatus;
 
 #elif defined(TINY_GSM_MODEM_SARAR4)
 #include "TinyGsmClientSaraR4.h"
@@ -158,7 +158,7 @@ typedef TinyGsmSequansMonarch                          TinyGsm;
 typedef TinyGsmSequansMonarch::GsmClientSequansMonarch TinyGsmClient;
 typedef TinyGsmSequansMonarch::GsmClientSecureSequansMonarch
     TinyGsmClientSecure;
-typedef SequansMonarchRegStatus RegStatus;
+typedef MonarchRegStatus RegStatus;
 
 #elif defined(TINY_GSM_MODEM_A7672X)
 #include "TinyGsmClientA7672x.h"

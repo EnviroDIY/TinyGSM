@@ -168,7 +168,7 @@
 
 /// Registration status
 /// @ingroup simcom_sim7600
-enum class SIM7600RegStatus {
+enum class Sim7600RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
   REG_SEARCHING    = 2,   ///< Searching for network
@@ -181,7 +181,7 @@ enum class SIM7600RegStatus {
 /// Basic modem configurations for the SIM7600 modem family
 /// @ingroup simcom_sim7600
 struct TinyGsmSim7600ModemConfig
-    : public TinyGsmModemConfigPreset<SIM7600RegStatus> {
+    : public TinyGsmModemConfigPreset<Sim7600RegStatus> {
   /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
 #if defined(TINY_GSM_MODEM_SIM7500)
@@ -505,14 +505,14 @@ class TinyGsmSim7600
    * Generic network functions
    */
  protected:
-  SIM7600RegStatus getRegistrationStatusImpl() {
-    return static_cast<SIM7600RegStatus>(getRegistrationStatusXREG("CGREG"));
+  Sim7600RegStatus getRegistrationStatusImpl() {
+    return static_cast<Sim7600RegStatus>(getRegistrationStatusXREG("CGREG"));
   }
 
   bool isNetworkConnectedImpl() {
-    SIM7600RegStatus s = this->getRegistrationStatus();
-    return (s == SIM7600RegStatus::REG_OK_HOME ||
-            s == SIM7600RegStatus::REG_OK_ROAMING);
+    Sim7600RegStatus s = this->getRegistrationStatus();
+    return (s == Sim7600RegStatus::REG_OK_HOME ||
+            s == Sim7600RegStatus::REG_OK_ROAMING);
   }
 
  public:
