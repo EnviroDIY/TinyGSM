@@ -72,6 +72,8 @@
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocation "getGsmLocation()"
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationTime "getGsmLocationTime()"
  * - GPS (GNSS, GLONASS) functions (TinyGsmGPS.tpp)
+ *     - @ref TinyGsmGPS<modemType>::enableGPS "enableGPS()"
+ *     - @ref TinyGsmGPS<modemType>::disableGPS "disableGPS()"
  *     - @ref TinyGsmGPS<modemType>::getGPSraw "getGPSraw()"
  *     - @ref TinyGsmGPS<modemType>::getGPS "getGPS()"
  *     - @ref TinyGsmGPS<modemType>::getGPSTime "getGPSTime()"
@@ -734,6 +736,14 @@ class TinyGsmSaraR5
    * I2C port, the GSM-based "Cell Locate" location will be returned instead.
    */
  protected:
+  bool enableGPSImpl() {
+    DBG(GF("GPS on SARA-R5 cannot be enabled or disabled"));
+    return true;
+  }
+  bool disableGPSImpl() {
+    DBG(GF("GPS on SARA-R5 cannot be enabled or disabled"));
+    return true;
+  }
   String inline getUbloxLocationRaw(int8_t sensor) {
     // AT+ULOC=<mode>,<sensor>,<response_type>,<timeout>,<accuracy>
     // <mode> - 2: single shot position

@@ -588,9 +588,9 @@ void loop() {
 // Test the GPS functions
 #if TINY_GSM_TEST_GPS && defined TINY_GSM_MODEM_HAS_GPS
   DBG("Enabling GPS/GNSS/GLONASS and waiting 15s for warm-up");
-#if !defined(TINY_GSM_MODEM_SARAR5)  // not needed for this module
+
   modem.enableGPS();
-#endif
+
   delay(15000L);
   float gps_latitude  = 0;
   float gps_longitude = 0;
@@ -625,13 +625,11 @@ void loop() {
   }
   DBG("Retrieving GPS/GNSS/GLONASS location again as a string");
   String gps_raw = modem.getGPSraw();
-#if !defined(TINY_GSM_MODEM_SARAR5)  // not available for this module
+  (void)gps_raw;
   DBG("GPS/GNSS Based Location String:", gps_raw);
+
   DBG("Disabling GPS");
   modem.disableGPS();
-#else
-  (void)gps_raw;
-#endif
 #endif
 
 // Test the Network time functions
