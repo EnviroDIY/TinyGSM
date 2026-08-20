@@ -235,7 +235,7 @@ void loop() {
 
   client_secure.init(&modem);
   client_secure.init(&modem, 1);
-#endif
+
 #if defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
   modem.loadCertificate("certificateName", "certificate_content", 20);
 #if !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600)
@@ -258,6 +258,7 @@ void loop() {
   modem.convertPSKTable("psk_table_name");
   modem.convertPSKTable(String("psk_table_name"));
 #endif
+
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
   client_secure.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
   client_secure.setSSLAuthMode(SSLAuthMode::MUTUAL_AUTHENTICATION);
@@ -270,7 +271,7 @@ void loop() {
   client_secure.setPreSharedKey("pskIdent", "psKey");
   client_secure.setPreSharedKey(String("pskIdent"), String("psKey"));
 #endif
-#if defined(TINY_GSM_MODEM_HAS_SSL)
+
   client_secure.connect(server, 443);
 
   // Make a HTTP GET request:
@@ -344,9 +345,9 @@ void loop() {
   modem.setGNSSMode(1, true);
   modem.getGNSSMode();
 #endif
-#if !defined(TINY_GSM_MODEM_SARAR5)  // not available for this module
+
   modem.enableGPS();
-#endif
+
   float gps_latitude  = 0;
   float gps_longitude = 0;
   float gps_speed     = 0;
@@ -367,9 +368,8 @@ void loop() {
   modem.getGPSTime(&gps_year, &gps_month, &gps_day, &gps_hour, &gps_minute,
                    &gps_second);
   modem.getGPSraw();
-#if !defined(TINY_GSM_MODEM_SARAR5)  // not available for this module
+
   modem.disableGPS();
-#endif
 #endif
 
 // Test the Network time functions
