@@ -80,7 +80,7 @@ class TinyGsmWifi {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * Wifi functions
    */

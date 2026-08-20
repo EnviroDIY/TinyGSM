@@ -98,11 +98,11 @@ class TinyGsmCalling {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * Phone call functions
    */
- protected:
+
   bool callAnswerImpl() {
     thisModem().sendAT('A');
     return thisModem().waitResponse() == 1;

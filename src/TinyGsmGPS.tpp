@@ -142,7 +142,7 @@ class TinyGsmGPS {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * GPS/GNSS/GLONASS location functions
    */

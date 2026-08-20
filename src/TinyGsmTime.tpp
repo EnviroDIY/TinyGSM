@@ -141,11 +141,11 @@ class TinyGsmTime {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * Time functions
    */
- protected:
+
   String getGSMDateTimeImpl(TinyGSMDateTimeFormat format) {
     thisModem().sendAT(GF("+CCLK?"));
     if (thisModem().waitResponse(2000L, GF("+CCLK: \"")) != 1) { return ""; }

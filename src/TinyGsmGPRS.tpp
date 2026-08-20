@@ -162,11 +162,11 @@ class TinyGsmGPRS {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * SIM card functions
    */
- protected:
+
   // Unlocks a sim via the 3GPP TS command AT+CPIN
   bool simUnlockImpl(const char* pin) {
     if (pin && strlen(pin) > 0) {

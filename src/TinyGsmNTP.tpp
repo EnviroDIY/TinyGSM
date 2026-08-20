@@ -126,11 +126,11 @@ class TinyGsmNTP {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * NTP server functions
    */
- protected:
+
   bool NTPServerSyncImpl(const char* server, int TimeZone) {
     // Set GPRS bearer profile to associate with NTP sync
     // this may fail, it's not supported by all modules
