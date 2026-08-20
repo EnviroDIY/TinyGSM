@@ -164,7 +164,7 @@
 
 /// Registration status
 /// @ingroup digi_xbee
-enum XBeeRegStatus {
+enum class XBeeRegStatus {
   REG_OK           = 0,  ///< Registered on the network
   REG_UNREGISTERED = 1,  ///< Not registered on the network
   REG_SEARCHING    = 2,  ///< Searching for network
@@ -212,7 +212,7 @@ struct TinyGsmXBeeTcpConfig
 /// The known types of XBees
 /// The values are responses to the HS command to get "hardware series"
 /// @ingroup digi_xbee
-enum XBeeType {
+enum class XBeeType {
   XBEE_UNKNOWN   = 0,      ///< Unknown XBee type
   XBEE_S6B_WIFI  = 0x601,  ///< Digi XBee Wi-Fi
   XBEE_LTE1_VZN  = 0xB01,  ///< Digi XBee Cellular LTE Cat 1
@@ -491,7 +491,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   TinyGsmXBee(Stream& stream, int8_t resetPin)
       : stream(stream),
         guardTime(TINY_GSM_XBEE_GUARD_TIME),
-        beeType(XBEE_UNKNOWN),
+        beeType(XBeeType::XBEE_UNKNOWN),
         resetPin(resetPin),
         savedIP(IPAddress(0, 0, 0, 0)),
         savedHost(""),
@@ -575,12 +575,14 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   String getModemModelImpl() {
     PGM_P suffix;
     switch (beeType) {
-      case XBEE_S6B_WIFI: suffix = PSTR(" Wi-Fi"); break;
-      case XBEE_LTE1_VZN: suffix = PSTR(" Cellular LTE Cat 1"); break;
-      case XBEE_3G: suffix = PSTR(" Cellular 3G"); break;
-      case XBEE3_LTE1_ATT: suffix = PSTR("3 Cellular LTE CAT 1"); break;
-      case XBEE3_LTEM_ATT: suffix = PSTR("3 Cellular LTE-M"); break;
-      case XBEE3_LTEM3: suffix = PSTR("3 Cellular LTE-M3"); break;
+      case XBeeType::XBEE_S6B_WIFI: suffix = PSTR(" Wi-Fi"); break;
+      case XBeeType::XBEE_LTE1_VZN: suffix = PSTR(" Cellular LTE Cat 1"); break;
+      case XBeeType::XBEE_3G: suffix = PSTR(" Cellular 3G"); break;
+      case XBeeType::XBEE3_LTE1_ATT:
+        suffix = PSTR("3 Cellular LTE CAT 1");
+        break;
+      case XBeeType::XBEE3_LTEM_ATT: suffix = PSTR("3 Cellular LTE-M"); break;
+      case XBeeType::XBEE3_LTEM3: suffix = PSTR("3 Cellular LTE-M3"); break;
       default: suffix = PSTR(" Unknown");
     }
     String result;
@@ -698,21 +700,21 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
   /*
   bool thisHasSSL() {
-    if (beeType == XBEE_S6B_WIFI)
+    if (beeType == XBeeType::XBEE_S6B_WIFI)
       return false;
     else
       return true;
   }
 
   bool thisHasWifi() {
-    if (beeType == XBEE_S6B_WIFI)
+    if (beeType == XBeeType::XBEE_S6B_WIFI)
       return true;
     else
       return false;
   }
 
   bool thisHasGPRS() {
-    if (beeType == XBEE_S6B_WIFI)
+    if (beeType == XBeeType::XBEE_S6B_WIFI)
       return false;
     else
       return true;
@@ -763,9 +765,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       return false;
     }  // Return immediately
 
-    if (beeType == XBEE_UNKNOWN) getSeries();  // how we restart depends on this
+    if (beeType == XBeeType::XBEE_UNKNOWN)
+      getSeries();  // how we restart depends on this
 
-    if (beeType != XBEE_S6B_WIFI) {
+    if (beeType != XBeeType::XBEE_S6B_WIFI) {
       sendAT(GF("AM1"));  // Digi suggests putting cellular modules into
                           // airplane mode before restarting This allows the
                           // sockets and connections to close cleanly
@@ -779,7 +782,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     else
       inCommandMode = false;  // Reset effectively exits command mode
 
-    if (beeType == XBEE_S6B_WIFI)
+    if (beeType == XBeeType::XBEE_S6B_WIFI)
       delay(2000);  // Wifi module actually resets about 2 seconds later
     else
       delay(100);  // cellular modules wait 100ms before reset happens
@@ -790,7 +793,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       delay(250);  // wait a litle before trying again
     }
 
-    if (beeType != XBEE_S6B_WIFI) {
+    if (beeType != XBeeType::XBEE_S6B_WIFI) {
       sendAT(GF("AM0"));  // Turn off airplane mode
       if (waitResponse() != 1) return exitAndFail();
       if (!writeChanges()) return exitAndFail();
@@ -804,14 +807,15 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   void setupPinSleep(bool maintainAssociation = false) {
     XBEE_COMMAND_START_DECORATOR(5, )
 
-    if (beeType == XBEE_UNKNOWN) getSeries();  // Command depends on series
+    if (beeType == XBeeType::XBEE_UNKNOWN)
+      getSeries();  // Command depends on series
 
     bool changesMade = false;
 
     // Pin sleep
     changesMade |= changeSettingIfNeeded(GF("SM"), 0x1);
 
-    if (beeType == XBEE_S6B_WIFI && !maintainAssociation) {
+    if (beeType == XBeeType::XBEE_S6B_WIFI && !maintainAssociation) {
       // For lowest power, dissassociated deep sleep
       changesMade |= changeSettingIfNeeded(GF("SO"), 0x200);
     } else if (!maintainAssociation) {
@@ -858,7 +862,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   XBeeRegStatus parseWifiRegStatus(int16_t code) {
     // 0x00 Successfully joined an access point, established IP addresses and
     // IP listening sockets
-    if (code == 0x00) return REG_OK;
+    if (code == 0x00) return XBeeRegStatus::REG_OK;
     // 0x01 Wi-Fi transceiver initialization in progress.
     // 0x02 Wi-Fi transceiver initialized, but not yet scanning for access
     // point.
@@ -870,59 +874,61 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     // 0xFF Device is currently scanning for the configured SSID.
     if (code == 0x01 || code == 0x02 || code == 0x40 || code == 0x41 ||
         code == 0x42 || code == 0xFF)
-      return REG_SEARCHING;
+      return XBeeRegStatus::REG_SEARCHING;
     // 0x13 Disconnecting from access point.
     if (code == 0x13) {
       restart();  // S6B tends to get stuck "disconnecting"
-      return REG_UNREGISTERED;
+      return XBeeRegStatus::REG_UNREGISTERED;
     }
     // 0x23 SSID not configured.
-    if (code == 0x23) return REG_UNREGISTERED;
+    if (code == 0x23) return XBeeRegStatus::REG_UNREGISTERED;
     // 0x24 Encryption key invalid (either NULL or invalid length for WEP).
     // 0x27 SSID was found, but join failed.
-    if (code == 0x24 || code == 0x27) return REG_DENIED;
-    return REG_UNKNOWN;
+    if (code == 0x24 || code == 0x27) return XBeeRegStatus::REG_DENIED;
+    return XBeeRegStatus::REG_UNKNOWN;
   }
 
   XBeeRegStatus parseCellularRegStatus(int16_t code) {
     // 0x00 Connected to the Internet.
-    if (code == 0x00) return REG_OK;
+    if (code == 0x00) return XBeeRegStatus::REG_OK;
     // 0x22 Registering to cellular network.
     // 0x23 Connecting to the Internet.
     // 0xFF Initializing.
-    if (code == 0x22 || code == 0x23 || code == 0xFF) return REG_SEARCHING;
+    if (code == 0x22 || code == 0x23 || code == 0xFF) {
+      return XBeeRegStatus::REG_SEARCHING;
+    }
     // 0x25 Cellular network registration denied.
-    if (code == 0x25) return REG_DENIED;
+    if (code == 0x25) return XBeeRegStatus::REG_DENIED;
     // 0x2A Airplane mode.
     if (code == 0x2A) {
       sendAT(GF("AM0"));  // Turn off airplane mode
       waitResponse();
       writeChanges();
-      return REG_UNKNOWN;
+      return XBeeRegStatus::REG_UNKNOWN;
     }
     // 0x2F Bypass mode active.
     if (code == 0x2F) {
       sendAT(GF("AP0"));  // Set back to transparent mode
       waitResponse();
       writeChanges();
-      return REG_UNKNOWN;
+      return XBeeRegStatus::REG_UNKNOWN;
     }
     // 0x24 The cellular component is missing, corrupt, or otherwise in error.
     // 0x2B USB Direct active.
     // 0x2C Cellular component is in PSM (power save mode).
     // All other codes default to REG_UNKNOWN
-    return REG_UNKNOWN;
+    return XBeeRegStatus::REG_UNKNOWN;
   }
 
   XBeeRegStatus getRegistrationStatusImpl() {
-    XBEE_COMMAND_START_DECORATOR(5, REG_UNKNOWN)
+    XBEE_COMMAND_START_DECORATOR(5, XBeeRegStatus::REG_UNKNOWN)
 
-    if (!inCommandMode) return REG_UNKNOWN;
-    if (beeType == XBEE_UNKNOWN) getSeries();
+    if (!inCommandMode) return XBeeRegStatus::REG_UNKNOWN;
+    if (beeType == XBeeType::XBEE_UNKNOWN) getSeries();
 
     sendAT(GF("AI"));
     int16_t       intRes = readResponseInt(10000L);
-    XBeeRegStatus stat   = (beeType == XBEE_S6B_WIFI)
+    XBeeRegStatus stat   = (beeType == XBeeType::XBEE_S6B_WIFI)
           ? parseWifiRegStatus(intRes)
           : parseCellularRegStatus(intRes);
 
@@ -933,10 +939,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   int8_t getSignalQualityImpl() {
     XBEE_COMMAND_START_DECORATOR(5, 0);
 
-    if (beeType == XBEE_UNKNOWN)
+    if (beeType == XBeeType::XBEE_UNKNOWN)
       getSeries();  // Need to know what type of bee so we know how to ask
 
-    if (beeType == XBEE_S6B_WIFI)
+    if (beeType == XBeeType::XBEE_S6B_WIFI)
       sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
     else
       sendAT(GF("DB"));  // ask for the cell strength in dBm
@@ -944,10 +950,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     XBEE_COMMAND_END_DECORATOR
 
-    if (beeType == XBEE3_LTEM_ATT && intRes == 105)
+    if (beeType == XBeeType::XBEE3_LTEM_ATT && intRes == 105)
       intRes = 0;  // tends to reply with "69" when signal is unknown
 
-    if (beeType == XBEE_S6B_WIFI) {
+    if (beeType == XBeeType::XBEE_S6B_WIFI) {
       if (intRes == 0xFF) {
         return 0;  // 0xFF returned for unknown
       } else {
@@ -961,8 +967,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   bool isNetworkConnectedImpl() {
     // first check for association indicator
     XBeeRegStatus s = this->getRegistrationStatus();
-    if (s == REG_OK) {
-      if (beeType == XBEE_S6B_WIFI) {
+    if (s == XBeeRegStatus::REG_OK) {
+      if (beeType == XBeeType::XBEE_S6B_WIFI) {
         // For wifi bees, if the association indicator is ok, check that a both
         // a local IP and DNS have been allocated
         IPAddress ip  = localIP();
@@ -1010,7 +1016,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   String getDNS() {
     XBEE_COMMAND_START_DECORATOR(5, "")
     switch (beeType) {
-      case XBEE_S6B_WIFI: {
+      case XBeeType::XBEE_S6B_WIFI: {
         sendAT(GF("NS"));
         break;
       }
@@ -1174,7 +1180,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   }
 
   SimStatus getSimStatusImpl(uint32_t) {
-    return SIM_READY;  // unsupported
+    return SimStatus::SIM_READY;  // unsupported
   }
 
   /*
@@ -1276,8 +1282,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   int16_t getBattVoltageImpl() {
     int16_t intRes = 0;
     XBEE_COMMAND_START_DECORATOR(5, false)
-    if (beeType == XBEE_UNKNOWN) getSeries();
-    if (beeType == XBEE_S6B_WIFI) {
+    if (beeType == XBeeType::XBEE_UNKNOWN) getSeries();
+    if (beeType == XBeeType::XBEE_S6B_WIFI) {
       sendAT(GF("%V"));
       intRes = readResponseInt();
     }
@@ -1449,7 +1455,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
                                          newPort);  // Set the destination port
 
     // WiFi Bee is different
-    if (beeType == XBEE_S6B_WIFI) { changesMade = changesMadeSSL; }
+    if (beeType == XBeeType::XBEE_S6B_WIFI) { changesMade = changesMadeSSL; }
 
     if (changesMade) { success &= writeChanges(); }
 
@@ -1479,10 +1485,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     XBEE_COMMAND_START_DECORATOR(5, false)
 
     // confirm the XBee type if needed so we know if we can know if connected
-    if (beeType == XBEE_UNKNOWN) { getSeries(); }
+    if (beeType == XBeeType::XBEE_UNKNOWN) { getSeries(); }
 
-    if (beeType != XBEE_S6B_WIFI && beeType != XBEE_LTE1_VZN &&
-        beeType != XBEE_3G) {
+    if (beeType != XBeeType::XBEE_S6B_WIFI &&
+        beeType != XBeeType::XBEE_LTE1_VZN && beeType != XBeeType::XBEE_3G) {
       // the newer cellular modules can look up the address on the fly
       // this is definitely the better option
       bool ssl     = sockets[mux]->is_secure;
@@ -1555,9 +1561,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     }
 
     // confirm the XBee type if needed so we know if we can know if connected
-    if (beeType == XBEE_UNKNOWN) { getSeries(); }
+    if (beeType == XBeeType::XBEE_UNKNOWN) { getSeries(); }
     // we'll accept either unknown or connected
-    if (beeType != XBEE_S6B_WIFI) {
+    if (beeType != XBeeType::XBEE_S6B_WIFI) {
       uint16_t ci = getConnectionIndicator();
       // if (ci == 0xFF || ci == 0x28) {
       //   DBG("Checking rejection status");
@@ -1584,7 +1590,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     // For WiFi models, there's no direct way to close the socket;
     // use DigiXBeeWifi::disconnectInternet(void)
 
-    if (beeType != XBEE_S6B_WIFI) {
+    if (beeType != XBeeType::XBEE_S6B_WIFI) {
       // Get the current socket timeout
       sendAT(GF("TM"));
       String timeoutUsed = readResponseString(5000L);
@@ -1611,7 +1617,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t) {
-    if (beeType != XBEE_S6B_WIFI) {
+    if (beeType != XBeeType::XBEE_S6B_WIFI) {
       // After a send, verify the outgoing ip if it isn't set
       if (savedOperatingIP == IPAddress(0, 0, 0, 0)) {
         modemGetConnected(0);
@@ -1666,18 +1672,19 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     XBEE_COMMAND_START_DECORATOR(5, false)
 
-    if (beeType == XBEE_UNKNOWN)
+    if (beeType == XBeeType::XBEE_UNKNOWN)
       getSeries();  // Need to know the bee type to interpret response
 
     switch (beeType) {
-      // The wifi be can only say if it's connected to the netowrk
-      case XBEE_S6B_WIFI: {
+      // The wifi bee can only say if it's connected to the network
+      case XBeeType::XBEE_S6B_WIFI: {
         XBeeRegStatus s = this->getRegistrationStatus();
         XBEE_COMMAND_END_DECORATOR
-        if (s != REG_OK) {
+        if (s != XBeeRegStatus::REG_OK) {
           sockets[0]->sock_connected = false;  // no multiplex
         }
-        return (s == REG_OK);  // if it's connected, we hope the sockets are too
+        return (s == XBeeRegStatus::REG_OK);  // if it's connected, we hope the
+                                              // sockets are too
       }
 
       // Cellular XBee's
@@ -1801,7 +1808,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     int8_t  res;
     bool    success         = false;
     uint8_t triesUntilReset = 4;  // reset after number of tries
-    if (beeType == XBEE_S6B_WIFI || beeType == XBEE3_LTEM3) {
+    if (beeType == XBeeType::XBEE_S6B_WIFI ||
+        beeType == XBeeType::XBEE3_LTEM3) {
       triesUntilReset = 9;
     }
     streamClear();  // Empty everything in the buffer before starting
@@ -1812,10 +1820,11 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       delay(guardTime + 10);
       stream.print(GF("+++"));  // enter command mode
 
-      if (beeType != XBEE_S6B_WIFI && beeType != XBEE3_LTEM3) {
+      if (beeType != XBeeType::XBEE_S6B_WIFI &&
+          beeType != XBeeType::XBEE3_LTEM3) {
         res = waitResponse(guardTime * 2);
       } else {
-        // S6B wait a full second for OK
+        // S6B and LTE wait a full second for OK
         res = waitResponse();
       }
 
@@ -1828,7 +1837,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
           delay(250);  // a short delay to allow it to come back up
           // TODO(SRGDamia1) optimize this
         }
-        if (beeType == XBEE_S6B_WIFI) {
+        if (beeType == XBeeType::XBEE_S6B_WIFI) {
           delay(5000);  // WiFi module frozen, wait longer
         }
       }
@@ -1887,10 +1896,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       intRes = readResponseInt();
       if (0xff == intRes) {
         // Still no response, leave a known value - should reset
-        intRes = XBEE_UNKNOWN;
+        intRes = static_cast<int16_t>(XBeeType::XBEE_UNKNOWN);
       }
     }
-    beeType = (XBeeType)intRes;
+    beeType = static_cast<XBeeType>(intRes);
     DBG(GF("### Modem: "), getModemName(), beeType);
   }
 

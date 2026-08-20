@@ -120,7 +120,7 @@
 
 /// Registration status
 /// @ingroup quectel_m95
-enum M95RegStatus {
+enum class M95RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
   REG_SEARCHING    = 2,   ///< Searching for network
@@ -333,13 +333,13 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SimStatus::SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
-      return (getSimStatus() == SIM_READY);
+      return (getSimStatus() == SimStatus::SIM_READY);
     } else {
       // if the sim is ready, or it's locked but no pin has been provided,
       // return true
-      return (ret == SIM_READY || ret == SIM_LOCKED);
+      return (ret == SimStatus::SIM_READY || ret == SimStatus::SIM_LOCKED);
     }
   }
 
@@ -384,12 +384,13 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
    */
  protected:
   M95RegStatus getRegistrationStatusImpl() {
-    return (M95RegStatus)getRegistrationStatusXREG("CREG");
+    return static_cast<M95RegStatus>(getRegistrationStatusXREG("CREG"));
   }
 
   bool isNetworkConnectedImpl() {
     M95RegStatus s = this->getRegistrationStatus();
-    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+    return (s == M95RegStatus::REG_OK_HOME ||
+            s == M95RegStatus::REG_OK_ROAMING);
   }
 
   void setHostFormat(bool useDottedQuad) {

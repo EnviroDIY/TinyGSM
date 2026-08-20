@@ -18,7 +18,7 @@
 #endif
 
 /// SIM card status
-enum SimStatus {
+enum class SimStatus {
   /// SIM card error
   SIM_ERROR = 0,
   /// SIM card is ready
@@ -221,12 +221,12 @@ class TinyGsmGPRS {
       thisModem().waitResponse();
       switch (status) {
         case 2:
-        case 3: return SIM_LOCKED;
-        case 1: return SIM_READY;
-        default: return SIM_ERROR;
+        case 3: return SimStatus::SIM_LOCKED;
+        case 1: return SimStatus::SIM_READY;
+        default: return SimStatus::SIM_ERROR;
       }
     }
-    return SIM_ERROR;
+    return SimStatus::SIM_ERROR;
   }
 
   /*

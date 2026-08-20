@@ -105,7 +105,7 @@
 
 /// State: current Wi-Fi state.
 /// @ingroup espressif_esp8266
-enum ESP8266RegStatus {
+enum class ESP8266RegStatus {
   /// ESP8266 station has not started any Wi-Fi connection.
   REG_UNINITIALIZED = 0,
   /// ESP8266 station has connected to an AP, but does not get an IPv4 address
@@ -466,18 +466,19 @@ class TinyGsmESP8266
  protected:
   ESP8266RegStatus getRegistrationStatusImpl() {
     sendAT(GF("+CWSTATE?"));
-    if (waitResponse(3000, GF("+CWSTATE:")) != 1) return REG_UNKNOWN;
+    if (waitResponse(3000, GF("+CWSTATE:")) != 1)
+      return ESP8266RegStatus::REG_UNKNOWN;
     // +CWSTATE:{state},{"ssid"}
     // followed by an OK
     int8_t status = streamGetIntBefore(',');
     streamSkipUntil('\n');  // throw away the ssid
     waitResponse();         // wait for trailing OK
-    return (ESP8266RegStatus)status;
+    return static_cast<ESP8266RegStatus>(status);
   }
 
   bool isNetworkConnectedImpl() {
     ESP8266RegStatus s = this->getRegistrationStatus();
-    return (s == REG_OK);
+    return (s == ESP8266RegStatus::REG_OK);
   }
 
   /*

@@ -19,7 +19,7 @@
 
 /// Registration status
 /// @ingroup simcom_sim70xx
-enum SIM70xxRegStatus {
+enum class SIM70xxRegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
   REG_SEARCHING    = 2,   ///< Searching for network
@@ -111,21 +111,24 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
    */
  protected:
   SIM70xxRegStatus getRegistrationStatusImpl() {
-    SIM70xxRegStatus epsStatus =
-        (SIM70xxRegStatus)thisModem().getRegistrationStatusXREG("CEREG");
+    SIM70xxRegStatus epsStatus = static_cast<SIM70xxRegStatus>(
+        thisModem().getRegistrationStatusXREG("CEREG"));
     // If we're connected on EPS, great!
-    if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
+    if (epsStatus == SIM70xxRegStatus::REG_OK_HOME ||
+        epsStatus == SIM70xxRegStatus::REG_OK_ROAMING) {
       return epsStatus;
     } else {
       // Otherwise, check GPRS network status
       // We could be using GPRS fall-back or the board could be being moody
-      return (SIM70xxRegStatus)thisModem().getRegistrationStatusXREG("CGREG");
+      return static_cast<SIM70xxRegStatus>(
+          thisModem().getRegistrationStatusXREG("CGREG"));
     }
   }
 
   bool isNetworkConnectedImpl() {
     SIM70xxRegStatus s = this->getRegistrationStatus();
-    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+    return (s == SIM70xxRegStatus::REG_OK_HOME ||
+            s == SIM70xxRegStatus::REG_OK_ROAMING);
   }
 
  public:

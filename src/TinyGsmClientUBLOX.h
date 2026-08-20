@@ -133,7 +133,7 @@
 
 /// Registration status
 /// @ingroup ublox_cellular
-enum UBLOXRegStatus {
+enum class UBLOXRegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
   REG_SEARCHING    = 2,   ///< Searching for network
@@ -422,13 +422,13 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SimStatus::SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
-      return (getSimStatus() == SIM_READY);
+      return (getSimStatus() == SimStatus::SIM_READY);
     } else {
       // if the sim is ready, or it's locked but no pin has been provided,
       // return true
-      return (ret == SIM_READY || ret == SIM_LOCKED);
+      return (ret == SimStatus::SIM_READY || ret == SimStatus::SIM_LOCKED);
     }
   }
 
@@ -526,14 +526,15 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
 
  protected:
   UBLOXRegStatus getRegistrationStatusImpl() {
-    return (UBLOXRegStatus)getRegistrationStatusXREG("CGREG");
+    return static_cast<UBLOXRegStatus>(getRegistrationStatusXREG("CGREG"));
   }
 
   bool isNetworkConnectedImpl() {
     UBLOXRegStatus s = this->getRegistrationStatus();
-    if (s == REG_OK_HOME || s == REG_OK_ROAMING)
+    if (s == UBLOXRegStatus::REG_OK_HOME || s == UBLOXRegStatus::REG_OK_ROAMING)
       return true;
-    else if (s == REG_UNKNOWN)  // for some reason, it can hang at unknown..
+    else if (s == UBLOXRegStatus::REG_UNKNOWN)  // for some reason, it can hang
+                                                // at unknown..
       return isGprsConnected();
     else
       return false;

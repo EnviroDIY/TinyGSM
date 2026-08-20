@@ -148,7 +148,7 @@
 
 /// Registration status
 /// @ingroup simcom_sim800
-enum SIM800RegStatus {
+enum class SIM800RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
   REG_SEARCHING    = 2,   ///< Searching for network
@@ -408,13 +408,13 @@ class TinyGsmSim800
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SimStatus::SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
-      return (getSimStatus() == SIM_READY);
+      return (getSimStatus() == SimStatus::SIM_READY);
     } else {
       // if the sim is ready, or it's locked but no pin has been provided,
       // return true
-      return (ret == SIM_READY || ret == SIM_LOCKED);
+      return (ret == SimStatus::SIM_READY || ret == SimStatus::SIM_LOCKED);
     }
   }
 
@@ -487,12 +487,13 @@ class TinyGsmSim800
    */
  protected:
   SIM800RegStatus getRegistrationStatusImpl() {
-    return (SIM800RegStatus)getRegistrationStatusXREG("CREG");
+    return static_cast<SIM800RegStatus>(getRegistrationStatusXREG("CREG"));
   }
 
   bool isNetworkConnectedImpl() {
     SIM800RegStatus s = this->getRegistrationStatus();
-    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+    return (s == SIM800RegStatus::REG_OK_HOME ||
+            s == SIM800RegStatus::REG_OK_ROAMING);
   }
 
   String getLocalIPImpl() {

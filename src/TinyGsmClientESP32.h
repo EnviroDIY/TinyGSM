@@ -116,7 +116,7 @@
 
 /// State: current Wi-Fi state.
 /// @ingroup espressif_esp32
-enum ESP32RegStatus {
+enum class ESP32RegStatus {
   /// ESP32 station has not started any Wi-Fi connection.
   REG_UNINITIALIZED = 0,
   /// ESP32 station has connected to an AP, but does not get an IPv4 address
@@ -598,18 +598,19 @@ class TinyGsmESP32
  protected:
   ESP32RegStatus getRegistrationStatusImpl() {
     sendAT(GF("+CWSTATE?"));
-    if (waitResponse(3000, GF("+CWSTATE:")) != 1) return REG_UNKNOWN;
+    if (waitResponse(3000, GF("+CWSTATE:")) != 1)
+      return ESP32RegStatus::REG_UNKNOWN;
     // +CWSTATE:{state},{"ssid"}
     // followed by an OK
     int8_t status = streamGetIntBefore(',');
     streamSkipUntil('\n');  // throw away the ssid
     waitResponse();         // wait for trailing OK
-    return (ESP32RegStatus)status;
+    return static_cast<ESP32RegStatus>(status);
   }
 
   bool isNetworkConnectedImpl() {
     ESP32RegStatus s = this->getRegistrationStatus();
-    return (s == REG_OK);
+    return (s == ESP32RegStatus::REG_OK);
   }
 
   /*

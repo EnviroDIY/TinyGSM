@@ -119,7 +119,7 @@
 
 /// Registration status
 /// @ingroup aithinker_a6
-enum A6RegStatus {
+enum class A6RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
   REG_SEARCHING    = 2,   ///< Searching for network
@@ -316,13 +316,13 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SimStatus::SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
-      return (getSimStatus() == SIM_READY);
+      return (getSimStatus() == SimStatus::SIM_READY);
     } else {
       // if the sim is ready, or it's locked but no pin has been provided,
       // return true
-      return (ret == SIM_READY || ret == SIM_LOCKED);
+      return (ret == SimStatus::SIM_READY || ret == SimStatus::SIM_LOCKED);
     }
   }
 
@@ -369,12 +369,12 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
    */
  protected:
   A6RegStatus getRegistrationStatusImpl() {
-    return (A6RegStatus)getRegistrationStatusXREG("CREG");
+    return static_cast<A6RegStatus>(getRegistrationStatusXREG("CREG"));
   }
 
   bool isNetworkConnectedImpl() {
     A6RegStatus s = this->getRegistrationStatus();
-    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+    return (s == A6RegStatus::REG_OK_HOME || s == A6RegStatus::REG_OK_ROAMING);
   }
 
   String getLocalIPImpl() {

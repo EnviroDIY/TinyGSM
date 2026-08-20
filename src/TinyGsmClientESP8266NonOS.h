@@ -99,7 +99,7 @@
 
 /// Status of ESP8266 station interface
 /// @ingroup espressif_esp8266_nonos
-enum ESP8266NonOSRegStatus {
+enum class ESP8266NonOSRegStatus {
   /// ESP8266 station is not initialized.
   REG_UNINITIALIZED = 0,
   /// ESP8266 station is initialized, but not started a Wi-Fi connection yet.
@@ -347,24 +347,28 @@ class TinyGsmESP8266NonOS
  protected:
   ESP8266NonOSRegStatus getRegistrationStatusImpl() {
     sendAT(GF("+CIPSTATUS"));
-    if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
+    if (waitResponse(3000, GF("STATUS:")) != 1)
+      return ESP8266NonOSRegStatus::REG_UNKNOWN;
     // after "STATUS:" it should return the status number (0,1,2,3,4,5),
     // followed by an OK
     // Since there are more possible status number codes than the arguments for
     // waitResponse, we'll capture the response in a string and then parse it.
     String res;
-    if (waitResponse(3000L, res) != 1) { return REG_UNKNOWN; }
+    if (waitResponse(3000L, res) != 1) {
+      return ESP8266NonOSRegStatus::REG_UNKNOWN;
+    }
     res.trim();
     int8_t status = res.toInt();
-    return (ESP8266NonOSRegStatus)status;
+    return static_cast<ESP8266NonOSRegStatus>(status);
   }
 
   bool isNetworkConnectedImpl() {
     ESP8266NonOSRegStatus s = this->getRegistrationStatus();
-    if (s == REG_OK_IP || s == REG_OK_TCP) {
+    if (s == ESP8266NonOSRegStatus::REG_OK_IP ||
+        s == ESP8266NonOSRegStatus::REG_OK_TCP) {
       // with these, we're definitely connected
       return true;
-    } else if (s == REG_OK_NO_TCP) {
+    } else if (s == ESP8266NonOSRegStatus::REG_OK_NO_TCP) {
       // with this, we may or may not be connected
       if (getLocalIP() == "") {
         return false;
