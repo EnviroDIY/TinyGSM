@@ -33,6 +33,7 @@
  *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
  * - Power functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
