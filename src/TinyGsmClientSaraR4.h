@@ -405,6 +405,8 @@ class TinyGsmSaraR4
         : GsmClientSaraR4(modem) {
       is_secure = true;
     }
+    /// Typedef for backward compatibility
+    using GsmClientSecureR4 = GsmClientSecureSaraR4;
   };
 
   /*
