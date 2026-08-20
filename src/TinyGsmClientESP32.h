@@ -1171,6 +1171,8 @@ class TinyGsmESP32
     SSLAuthMode sslAuthMode = SSLAuthMode::NO_VALIDATION;
     uint8_t     ca_number   = 0;
     uint8_t     pki_number  = 0;
+    const char* pskIdent    = nullptr;
+    const char* psKey       = nullptr;
     // If we actually have a secure socket populate the above with real values
     if (ssl) {
       const GsmClientSecureESP32* thisClient =
@@ -1178,6 +1180,8 @@ class TinyGsmESP32
       sslAuthMode = thisClient->sslAuthMode;
       ca_number   = thisClient->ca_number;
       pki_number  = thisClient->pki_number;
+      pskIdent    = thisClient->pskIdent;
+      psKey       = thisClient->psKey;
     }
 
     if (ssl) {
@@ -1187,9 +1191,7 @@ class TinyGsmESP32
 
       // SSL certificate checking will not work without a valid timestamp!
       if (sockets[requested_mux] != nullptr &&
-          (sslAuthMode == SSLAuthMode::CLIENT_VALIDATION ||
-           sslAuthMode == SSLAuthMode::CA_VALIDATION ||
-           sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION) &&
+          (sslAuthMode != SSLAuthMode::NO_VALIDATION) &&
           !waitForTimeSync(timeout_s)) {
         DBG("### WARNING: The module timestamp must be valid for SSL auth. "
             "Please use setTimeZone(...) or NTPServerSync(...) to enable "
@@ -1224,16 +1226,24 @@ class TinyGsmESP32
       if (sockets[requested_mux] == nullptr ||
           (sslAuthMode == SSLAuthMode::NO_VALIDATION)) {
         sendAT(GF("+CIPSSLCCONF="), requested_mux, GF(",0"));
-      } else {
+      } else if (sslAuthMode != SSLAuthMode::PRE_SHARED_KEYS) {
+        // For auth modes 1, 2, and 3, we need to specify the PKI and CA numbers
         sendAT(GF("+CIPSSLCCONF="), requested_mux, ',',
                static_cast<uint8_t>(sslAuthMode), ',', pki_number, ',',
                ca_number);
+      } else {
+        // NOTE: Support for this is firmware dependent!
+        // AT+CIPSSLCPSK=<link ID>,<"psk">,<"hint">
+        sendAT(GF("+CIPSSLCPSK="), requested_mux, GF(",\""), psKey, GF("\",\""),
+               pskIdent, '"');
       }
       waitResponse();
 
       // set the SSL SNI (server name indication)
       // Multiple connections: (AT+CIPMUX=1)
       // AT+CIPSSLCSNI=<link ID>,<"sni">
+      // NOTE: On firmware versions above 0.4.2 this happens automatically, but
+      // on older versions it must be done manually.
       sendAT(GF("+CIPSSLCSNI="), requested_mux, GF(",\""), host, '"');
       waitResponse();
     }
