@@ -434,6 +434,10 @@ class TinyGsmModem {
 
   /**
    * @brief Get the modem serial number
+   *
+   * This is usually equivalent to the IMEI for cellular modems and the MAC
+   * address for WiFi modems.
+   *
    * @return *String* The modem serial number
    */
   String getModemSerialNumber() {

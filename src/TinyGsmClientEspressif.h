@@ -158,7 +158,14 @@ class TinyGsmEspressif
   }
 
   // Gets the modem serial number
-  String getModemSerialNumberImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+  // For Espressif modules, this is the MAC address of the WiFi interface
+  String getModemSerialNumberImpl() {
+    thisModem().sendAT(GF("+CIPSTAMAC?"));
+    String res;
+    if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
+    thisModem().cleanResponseString(res);
+    return res;
+  }
 
   bool factoryDefaultImpl() {
     thisModem().sendAT(GF("+RESTORE"));
