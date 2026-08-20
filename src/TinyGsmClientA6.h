@@ -143,8 +143,8 @@ struct TinyGsmA6ModemConfig : public TinyGsmModemConfigPreset<A6RegStatus> {
 #endif
 };
 
-constexpr char TinyGsmA6ModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmA6ModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmA6ModemConfig::MODEM_MANUFACTURER[] __attribute__((weak));
+constexpr char TinyGsmA6ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the A6 modem family.

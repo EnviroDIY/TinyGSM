@@ -187,11 +187,12 @@ struct TinyGsmXBeeModemConfig : public TinyGsmModemConfigPreset<XBeeRegStatus> {
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "XBee";
 };
 
-constexpr char TinyGsmXBeeModemConfig::GSM_NL[];
-constexpr char TinyGsmXBeeModemConfig::GSM_OK[];
-constexpr char TinyGsmXBeeModemConfig::GSM_ERROR[];
-constexpr char TinyGsmXBeeModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmXBeeModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmXBeeModemConfig::GSM_NL[] __attribute__((weak));
+constexpr char TinyGsmXBeeModemConfig::GSM_OK[] __attribute__((weak));
+constexpr char TinyGsmXBeeModemConfig::GSM_ERROR[] __attribute__((weak));
+constexpr char TinyGsmXBeeModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmXBeeModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the XBee modem family.

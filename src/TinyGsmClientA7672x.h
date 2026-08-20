@@ -186,8 +186,9 @@ struct TinyGsmA7672xModemConfig
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "A7672x";
 };
 
-constexpr char TinyGsmA7672xModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmA7672xModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmA7672xModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmA7672xModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the A7672x modem family.

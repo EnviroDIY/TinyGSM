@@ -138,8 +138,10 @@ struct TinyGsmSequansMonarchModemConfig
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "Monarch";
 };
 
-constexpr char TinyGsmSequansMonarchModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmSequansMonarchModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmSequansMonarchModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmSequansMonarchModemConfig::MODEM_MODEL[]
+    __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the Sequans Monarch modem family.

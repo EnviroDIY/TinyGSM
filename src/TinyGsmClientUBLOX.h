@@ -153,8 +153,9 @@ struct TinyGsmUBLOXModemConfig
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "unknown";
 };
 
-constexpr char TinyGsmUBLOXModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmUBLOXModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmUBLOXModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmUBLOXModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the u-blox family.

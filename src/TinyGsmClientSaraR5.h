@@ -177,8 +177,9 @@ struct TinyGsmSaraR5ModemConfig
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SARA-R5";
 };
 
-constexpr char TinyGsmSaraR5ModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmSaraR5ModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmSaraR5ModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmSaraR5ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the SARA R5 modem family.

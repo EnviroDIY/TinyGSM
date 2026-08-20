@@ -131,8 +131,9 @@ struct TinyGsmESP8266ModemConfig
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "ESP8266";
 };
 
-constexpr char TinyGsmESP8266ModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmESP8266ModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmESP8266ModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmESP8266ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the ESP8266 family.

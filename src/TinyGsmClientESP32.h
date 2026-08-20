@@ -143,8 +143,9 @@ struct TinyGsmESP32ModemConfig
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "ESP32";
 };
 
-constexpr char TinyGsmESP32ModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmESP32ModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmESP32ModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmESP32ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the ESP32 family.

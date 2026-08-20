@@ -179,8 +179,9 @@ struct TinyGsmSim800ModemConfig
 #endif
 };
 
-constexpr char TinyGsmSim800ModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmSim800ModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmSim800ModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmSim800ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the SIM800 modem family.

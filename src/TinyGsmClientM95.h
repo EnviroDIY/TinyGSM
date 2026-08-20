@@ -139,8 +139,9 @@ struct TinyGsmM95ModemConfig : public TinyGsmModemConfigPreset<M95RegStatus> {
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "M95";
 };
 
-constexpr char TinyGsmM95ModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmM95ModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmM95ModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmM95ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the M95 modem family.

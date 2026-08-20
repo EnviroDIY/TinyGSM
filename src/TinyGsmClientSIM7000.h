@@ -142,8 +142,9 @@ struct TinyGsmSim7000ModemConfig
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7000";
 };
 
-constexpr char TinyGsmSim7000ModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmSim7000ModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmSim7000ModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmSim7000ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the SIM7000 modem family.

@@ -144,8 +144,9 @@ struct TinyGsmMC60ModemConfig : public TinyGsmModemConfigPreset<MC60RegStatus> {
 #endif
 };
 
-constexpr char TinyGsmMC60ModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmMC60ModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmMC60ModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmMC60ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the MC60 modem family.

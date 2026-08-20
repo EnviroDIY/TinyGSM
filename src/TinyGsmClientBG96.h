@@ -170,8 +170,9 @@ struct TinyGsmBG96ModemConfig : public TinyGsmModemConfigPreset<BG96RegStatus> {
 #endif
 };
 
-constexpr char TinyGsmBG96ModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmBG96ModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmBG96ModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmBG96ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the BG95/BG96 modem family.
