@@ -157,7 +157,7 @@ typedef XBeeRegStatus                    RegStatus;
 typedef TinyGsmSequansMonarch                          TinyGsm;
 typedef TinyGsmSequansMonarch::GsmClientSequansMonarch TinyGsmClient;
 typedef TinyGsmSequansMonarch::GsmClientSecureSequansMonarch
-    TinyGsmClientSecure;
+                         TinyGsmClientSecure;
 typedef MonarchRegStatus RegStatus;
 
 #elif defined(TINY_GSM_MODEM_A7672X)

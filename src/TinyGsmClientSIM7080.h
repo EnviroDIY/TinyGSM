@@ -166,8 +166,9 @@ struct TinyGsmSim7080ModemConfig
 #endif
 };
 
-constexpr char TinyGsmSim7080ModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmSim7080ModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmSim7080ModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmSim7080ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the SIM7080 modem family.

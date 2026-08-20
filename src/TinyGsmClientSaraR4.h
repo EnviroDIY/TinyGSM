@@ -150,8 +150,9 @@ struct TinyGsmSaraR4ModemConfig
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SARA-R4";
 };
 
-constexpr char TinyGsmSaraR4ModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmSaraR4ModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmSaraR4ModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmSaraR4ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the u-blox SARA R4 modem family.

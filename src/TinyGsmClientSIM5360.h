@@ -165,8 +165,9 @@ struct TinyGsmSim5360ModemConfig
 #endif
 };
 
-constexpr char TinyGsmSim5360ModemConfig::MODEM_MANUFACTURER[];
-constexpr char TinyGsmSim5360ModemConfig::MODEM_MODEL[];
+constexpr char TinyGsmSim5360ModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmSim5360ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the SIM5360 modem family.

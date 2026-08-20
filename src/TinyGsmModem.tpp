@@ -50,36 +50,44 @@ struct TinyGsmModemConfigPreset {
 // Out-of-class definitions for C++11 compliance
 template <typename regStatusType>
 /// @brief Out-of-class definition of the default modem manufacturer string.
-constexpr char TinyGsmModemConfigPreset<regStatusType>::MODEM_MANUFACTURER[];
+constexpr char TinyGsmModemConfigPreset<regStatusType>::MODEM_MANUFACTURER[]
+    __attribute__((weak));
 
 template <typename regStatusType>
 /// @brief Out-of-class definition of the default modem model string.
-constexpr char TinyGsmModemConfigPreset<regStatusType>::MODEM_MODEL[];
+constexpr char TinyGsmModemConfigPreset<regStatusType>::MODEM_MODEL[]
+    __attribute__((weak));
 
 template <typename regStatusType>
 /// @brief Out-of-class definition of the default AT newline sequence.
-constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_NL[];
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_NL[]
+    __attribute__((weak));
 
 template <typename regStatusType>
 /// @brief Out-of-class definition of the default AT command prefix.
-constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_AT[];
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_AT[]
+    __attribute__((weak));
 
 template <typename regStatusType>
 /// @brief Out-of-class definition of the default modem OK response string.
-constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_OK[];
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_OK[]
+    __attribute__((weak));
 
 template <typename regStatusType>
 /// @brief Out-of-class definition of the default modem ERROR response string.
-constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_ERROR[];
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_ERROR[]
+    __attribute__((weak));
 
 #if defined TINY_GSM_DEBUG
 template <typename regStatusType>
 /// @brief Out-of-class definition of the first verbose error response prefix.
-constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_VERBOSE[];
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_VERBOSE[]
+    __attribute__((weak));
 
 template <typename regStatusType>
 /// @brief Out-of-class definition of the second verbose error response prefix.
-constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_VERBOSE_2[];
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_VERBOSE_2[]
+    __attribute__((weak));
 #endif
 
 /**
