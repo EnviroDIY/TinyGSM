@@ -134,7 +134,7 @@
 
 /// Registration status
 /// @ingroup simcom_sim5360
-enum class SIM5360RegStatus {
+enum class Sim5360RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
   REG_SEARCHING    = 2,   ///< Searching for network
@@ -147,7 +147,7 @@ enum class SIM5360RegStatus {
 /// Basic modem configurations for the SIM5360 modem family
 /// @ingroup simcom_sim5360
 struct TinyGsmSim5360ModemConfig
-    : public TinyGsmModemConfigPreset<SIM5360RegStatus> {
+    : public TinyGsmModemConfigPreset<Sim5360RegStatus> {
   /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
 #if defined(TINY_GSM_MODEM_SIM5320)
@@ -417,14 +417,14 @@ class TinyGsmSim5360
    * Generic network functions
    */
  protected:
-  SIM5360RegStatus getRegistrationStatusImpl() {
-    return static_cast<SIM5360RegStatus>(getRegistrationStatusXREG("CGREG"));
+  Sim5360RegStatus getRegistrationStatusImpl() {
+    return static_cast<Sim5360RegStatus>(getRegistrationStatusXREG("CGREG"));
   }
 
   bool isNetworkConnectedImpl() {
-    SIM5360RegStatus s = this->getRegistrationStatus();
-    return (s == SIM5360RegStatus::REG_OK_HOME ||
-            s == SIM5360RegStatus::REG_OK_ROAMING);
+    Sim5360RegStatus s = this->getRegistrationStatus();
+    return (s == Sim5360RegStatus::REG_OK_HOME ||
+            s == Sim5360RegStatus::REG_OK_ROAMING);
   }
 
  public:

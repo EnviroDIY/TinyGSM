@@ -148,7 +148,7 @@
 
 /// Registration status
 /// @ingroup simcom_sim800
-enum class SIM800RegStatus {
+enum class Sim800RegStatus {
   REG_NO_RESULT    = -1,  ///< No registration result
   REG_UNREGISTERED = 0,   ///< Not registered on the network
   REG_SEARCHING    = 2,   ///< Searching for network
@@ -161,7 +161,7 @@ enum class SIM800RegStatus {
 /// Basic modem configurations for the SIM800 modem family
 /// @ingroup simcom_sim800
 struct TinyGsmSim800ModemConfig
-    : public TinyGsmModemConfigPreset<SIM800RegStatus> {
+    : public TinyGsmModemConfigPreset<Sim800RegStatus> {
   /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
 #if defined(TINY_GSM_MODEM_SIM808)
@@ -486,14 +486,14 @@ class TinyGsmSim800
    * Generic network functions
    */
  protected:
-  SIM800RegStatus getRegistrationStatusImpl() {
-    return static_cast<SIM800RegStatus>(getRegistrationStatusXREG("CREG"));
+  Sim800RegStatus getRegistrationStatusImpl() {
+    return static_cast<Sim800RegStatus>(getRegistrationStatusXREG("CREG"));
   }
 
   bool isNetworkConnectedImpl() {
-    SIM800RegStatus s = this->getRegistrationStatus();
-    return (s == SIM800RegStatus::REG_OK_HOME ||
-            s == SIM800RegStatus::REG_OK_ROAMING);
+    Sim800RegStatus s = this->getRegistrationStatus();
+    return (s == Sim800RegStatus::REG_OK_HOME ||
+            s == Sim800RegStatus::REG_OK_ROAMING);
   }
 
   String getLocalIPImpl() {

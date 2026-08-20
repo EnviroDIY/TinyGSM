@@ -135,7 +135,7 @@
 /// Basic modem configurations for the SIM7000 modem family
 /// @ingroup simcom_sim7000
 struct TinyGsmSim7000ModemConfig
-    : public TinyGsmModemConfigPreset<SIM70xxRegStatus> {
+    : public TinyGsmModemConfigPreset<Sim70xxRegStatus> {
   /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
   /// The modem model
