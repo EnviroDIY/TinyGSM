@@ -334,13 +334,13 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SimStatus::SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
-      return (getSimStatus() == SimStatus::SIM_READY);
+      return (getSimStatus() == SIM_READY);
     } else {
       // if the sim is ready, or it's locked but no pin has been provided,
       // return true
-      return (ret == SimStatus::SIM_READY || ret == SimStatus::SIM_LOCKED);
+      return (ret == SIM_READY || ret == SIM_LOCKED);
     }
   }
 

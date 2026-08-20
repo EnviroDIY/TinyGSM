@@ -337,13 +337,13 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SimStatus::SIM_READY && pin != nullptr && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
-      return (getSimStatus() == SimStatus::SIM_READY);
+      return (getSimStatus() == SIM_READY);
     } else {
       // if the sim is ready, or it's locked but no pin has been provided,
       // return true
-      return (ret == SimStatus::SIM_READY || ret == SimStatus::SIM_LOCKED);
+      return (ret == SIM_READY || ret == SIM_LOCKED);
     }
   }
 
@@ -497,14 +497,14 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
       waitResponse();
       switch (status) {
         case 2:
-        case 3: return SimStatus::SIM_LOCKED;
+        case 3: return SIM_LOCKED;
         case 5:
-        case 6: return SimStatus::SIM_ANTITHEFT_LOCKED;
-        case 1: return SimStatus::SIM_READY;
-        default: return SimStatus::SIM_ERROR;
+        case 6: return SIM_ANTITHEFT_LOCKED;
+        case 1: return SIM_READY;
+        default: return SIM_ERROR;
       }
     }
-    return SimStatus::SIM_ERROR;
+    return SIM_ERROR;
   }
 
   /*

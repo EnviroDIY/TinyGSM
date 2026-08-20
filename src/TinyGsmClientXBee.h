@@ -1182,7 +1182,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   }
 
   SimStatus getSimStatusImpl(uint32_t) {
-    return SimStatus::SIM_READY;  // unsupported
+    return SIM_READY;  // unsupported
   }
 
   /*
