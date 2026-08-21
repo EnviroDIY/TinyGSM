@@ -376,7 +376,8 @@ void loop() {
 #if defined(TINY_GSM_MODEM_HAS_NTP)
   modem.NTPServerSync("pool.ntp.org", 3);
   modem.waitForTimeSync(1);
-#if !defined(TINY_GSM_MODEM_BG96)
+#if !defined(TINY_GSM_MODEM_BG96) && !defined(TINY_GSM_MODEM_BG95) && \
+    !defined(TINY_GSM_MODEM_BG95SSL)
   modem.ShowNTPError(1);
 #endif
   modem.TinyGsmIsValidNumber("1.0");
@@ -394,7 +395,8 @@ void loop() {
   float ntp_timezone = 0;
   modem.getNetworkTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour, &ntp_min,
                        &ntp_sec, &ntp_timezone);
-#if defined(TINY_GSM_MODEM_BG96)
+#if defined(TINY_GSM_MODEM_BG96) || defined(TINY_GSM_MODEM_BG95) || \
+    defined(TINY_GSM_MODEM_BG95SSL)
   modem.getNetworkUTCTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour, &ntp_min,
                           &ntp_sec, &ntp_timezone);
 #endif
