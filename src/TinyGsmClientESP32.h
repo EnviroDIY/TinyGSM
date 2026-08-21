@@ -812,8 +812,8 @@ class TinyGsmESP32
         break;
       }
     }
-    strcpy(cert_name, ".");
-    strcpy(cert_name, cert_number);
+    strcat(cert_name, ".");
+    strcat(cert_name, cert_number);
     return;
   }
 
