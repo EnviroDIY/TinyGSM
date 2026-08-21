@@ -316,7 +316,7 @@ class TinyGsmESP8266
     void setCACertName(const char* CAcertName) override {
       this->CAcertName = CAcertName;
       // parse the certificate name into a number and namespace
-      char*   cert_namespace = new char[14]();
+      char    cert_namespace[14] = {};
       uint8_t certNumber     = 0;
       at->parseCertificateName(CAcertName, cert_namespace, certNumber);
       ca_number = certNumber;
@@ -338,17 +338,19 @@ class TinyGsmESP8266
     void setClientCertName(const char* clientCertName) override {
       this->clientCertName = clientCertName;
       // parse the certificate name into a number and namespace
-      char*   cert_namespace = new char[14]();
+      char    cert_namespace[14] = {};
       uint8_t certNumber     = 0;
       at->parseCertificateName(clientCertName, cert_namespace, certNumber);
       // set the private key number
       pki_number = certNumber;
       // generate the matching client private key name from the certificate
       // number and type
-      char* cert_name = new char[16]();
+      char cert_name[16] = {};
       at->getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
                              cert_namespace);
-      clientKeyName = cert_name;
+      memcpy(clientKeyNameBuf, cert_name, sizeof(clientKeyNameBuf));
+      clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
+      clientKeyName                                  = clientKeyNameBuf;
     }
     /// @copydoc GsmClientSecureESP8266::setClientCertName(const char*)
     void setClientCertName(String clientCertName) override {
@@ -367,18 +369,20 @@ class TinyGsmESP8266
     void setPrivateKeyName(const char* clientKeyName) override {
       this->clientKeyName = clientKeyName;
       // parse the certificate name into a number and namespace
-      char*   cert_namespace = new char[14]();
+      char    cert_namespace[14] = {};
       uint8_t certNumber     = 0;
       at->parseCertificateName(clientKeyName, cert_namespace, certNumber);
       // set the private key number
       pki_number = certNumber;
       // generate the matching client certificate name from the private key
       // number and type
-      char* cert_name = new char[16]();
+      char cert_name[16] = {};
       at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
                              cert_name, cert_namespace);
       // set the client certificate name
-      clientCertName = cert_name;
+      memcpy(clientCertNameBuf, cert_name, sizeof(clientCertNameBuf));
+      clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
+      clientCertName                                   = clientCertNameBuf;
     }
     /// @copydoc GsmClientSecureESP8266::setPrivateKeyName(const char*)
     void setPrivateKeyName(String clientKeyName) override {
@@ -393,11 +397,13 @@ class TinyGsmESP8266
       ca_number = certNumber;
       // convert the certificate number and type into the proper certificate
       // names for the ESP32
-      char* cert_name      = new char[16]();
-      char* cert_namespace = new char[14]();
+      char cert_name[16]      = {};
+      char cert_namespace[14] = {};
       at->getCertificateName(CertificateType::CA_CERTIFICATE, certNumber,
                              cert_name, cert_namespace);
-      CAcertName = cert_name;
+      memcpy(CAcertNameBuf, cert_name, sizeof(CAcertNameBuf));
+      CAcertNameBuf[sizeof(CAcertNameBuf) - 1] = '\0';
+      CAcertName                               = CAcertNameBuf;
     }
     /**
      * @brief Set the client certificate number to use for this connection
@@ -410,15 +416,19 @@ class TinyGsmESP8266
     void setClientCertificateNumber(uint8_t certNumber) {
       pki_number = certNumber;
       // generate and set the name for the client certificate from the number
-      char* cert_name      = new char[16]();
-      char* cert_namespace = new char[14]();
+      char cert_name[16]      = {};
+      char cert_namespace[14] = {};
       at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
                              cert_name, cert_namespace);
-      clientCertName = cert_name;
+      memcpy(clientCertNameBuf, cert_name, sizeof(clientCertNameBuf));
+      clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
+      clientCertName                                   = clientCertNameBuf;
       // generate and set the name for the client private key from the number
       at->getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
                              cert_namespace);
-      clientKeyName = cert_name;
+      memcpy(clientKeyNameBuf, cert_name, sizeof(clientKeyNameBuf));
+      clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
+      clientKeyName                                  = clientKeyNameBuf;
     }
     /**
      * @brief Set the client private key number to use for this connection
@@ -435,6 +445,9 @@ class TinyGsmESP8266
    protected:
     int8_t ca_number;
     int8_t pki_number;
+    char   CAcertNameBuf[16];
+    char   clientCertNameBuf[16];
+    char   clientKeyNameBuf[16];
   };
 
   /*
