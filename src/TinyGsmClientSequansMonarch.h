@@ -778,7 +778,7 @@ class TinyGsmSequansMonarch
           memset(&char_command, 0, sizeof(char_command));
           sprintf(&char_command[0], "%02X",
                   reinterpret_cast<const uint8_t*>(txPtr)[i]);
-          stream.write(char_command, sizeof(char_command));
+          stream.write(char_command, 2);
         }
         stream.flush();
         send_success = waitResponse() == 1;
