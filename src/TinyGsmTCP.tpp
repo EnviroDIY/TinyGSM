@@ -740,6 +740,7 @@ class GsmClient : public Client {
    * @brief Flush the client's send buffer (ie, wait for all data to be sent).
    */
   void flush() override {
+    if (at == nullptr) { return; }
     at->stream.flush();
   }
 
@@ -748,6 +749,7 @@ class GsmClient : public Client {
    * @return uint8_t True if the client is connected, false otherwise.
    */
   uint8_t connected() override {
+    if (at == nullptr) { return false; }
     if (is_mid_send) { return true; }  // Don't interrupt a send
     if (available()) { return true; }
     // If the modem is one where we can read and check the size of the buffer,

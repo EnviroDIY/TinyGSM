@@ -391,6 +391,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     // versions.
     /// @copydoc GsmClient::available()
     int available() override {
+      if (at == nullptr) { return 0; }
       is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                             // send to fail
       TINY_GSM_YIELD();
@@ -402,6 +403,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 
     /// @copydoc GsmClient::read(uint8_t*, size_t)
     int read(uint8_t* buf, size_t size) override {
+      if (at == nullptr) { return -1; }
       is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                             // send to fail
       TINY_GSM_YIELD();
@@ -439,6 +441,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 
     /// @copydoc GsmClient::connected()
     uint8_t connected() override {
+      if (at == nullptr) { return false; }
       if (is_mid_send) { return true; }  // Don't interrupt a send
       if (available()) { return true; }
       // If the modem doesn't have an internal buffer, or if we can't check how
