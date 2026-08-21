@@ -782,8 +782,10 @@ class TinyGsmSequansMonarch
         }
         stream.flush();
         send_success = waitResponse() == 1;
-        bytesSent += sendLength;  // bump up number of bytes sent
-        txPtr += sendLength;      // bump up the pointer
+        if (send_success) {
+          bytesSent += sendLength;  // bump up number of bytes sent
+          txPtr += sendLength;      // bump up the pointer
+        }
         send_attempts++;
       }
       // if we failed after 3 attempts at the same chunk, bail from the whole
