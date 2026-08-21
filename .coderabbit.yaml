@@ -26,6 +26,12 @@ reviews:
     - '!**/dependencies.json'
     - '!**/example_dependencies.json'
     - '!**/cspell.json'
+    - '!**/.bumpversion.toml'
+    - '!**/.gitattributes'
+    - '!**/.gitignore'
+    - '!**/*.png'
+    - '!**/*.bin'
+    - '!**/*.hex'
   path_instructions:
     - path: '**/*.md'
       instructions: >-
