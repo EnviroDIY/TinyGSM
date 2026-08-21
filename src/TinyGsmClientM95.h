@@ -273,8 +273,11 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+QICLOSE="), mux);
       sock_connected = false;
-      at->waitResponse((maxWaitMs - (millis() - startMillis)), GF("CLOSED"),
-                       GF("CLOSE OK"), GF("ERROR"));
+      uint32_t elapsedMs = millis() - startMillis;
+      if (elapsedMs < maxWaitMs) {
+        at->waitResponse(maxWaitMs - elapsedMs, GF("CLOSED"),
+                         GF("CLOSE OK"), GF("ERROR"));
+      }
     }
 
     /*
