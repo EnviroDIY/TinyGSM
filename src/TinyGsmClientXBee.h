@@ -320,7 +320,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     }
 
     /// @copydoc GsmClient::connect(IPAddress, uint16_t, int)
-    virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
+    int connect(IPAddress ip, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
       if (timeout_s != 0) {
         DBG("Timeout [", timeout_s, "] doesn't apply here.");
@@ -368,6 +368,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     /// @copydoc GsmClient::available()
     int available() override {
+      if (at == nullptr) { return 0; }
       TINY_GSM_YIELD();
       return at->stream.available();
       /*
@@ -380,6 +381,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     /// @copydoc GsmClient::read(uint8_t*, size_t)
     int read(uint8_t* buf, size_t size) override {
+      if (at == nullptr) { return -1; }
       TINY_GSM_YIELD();
       return at->stream.readBytes(reinterpret_cast<char*>(buf), size);
       /*
@@ -404,6 +406,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     /// @copydoc GsmClient::read()
     int read() override {
+      if (at == nullptr) { return -1; }
       TINY_GSM_YIELD();
       return at->stream.read();
       /*
@@ -417,15 +420,18 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     /// @copydoc GsmClient::peek()
     int peek() override {
+      if (at == nullptr) { return -1; }
       return at->stream.peek();
     }
     /// @copydoc GsmClient::flush()
     void flush() override {
+      if (at == nullptr) { return; }
       at->stream.flush();
     }
 
     /// @copydoc GsmClient::connected()
     uint8_t connected() override {
+      if (at == nullptr) { return false; }
       if (available()) {
         return true;
         // if we never got an IP, it can't be connected
