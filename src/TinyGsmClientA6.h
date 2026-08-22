@@ -216,7 +216,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
      * channel number after a successful connection.
      */
     explicit GsmClientA6(TinyGsmA6& modem, uint8_t /*mux*/ = 0) {
-      init(&modem, -1);
+      init(&modem, static_cast<uint8_t>(-1));
       is_secure = false;
     }
 
@@ -227,7 +227,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
      */
     bool init(TinyGsmA6* modem, uint8_t /*mux*/ = 0) {
       this->at       = modem;
-      this->mux      = -1;
+      this->mux      = static_cast<uint8_t>(-1);
       sock_connected = false;
       is_mid_send    = false;
 
@@ -240,7 +240,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
       stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
-      uint8_t newMux = -1;
+      uint8_t newMux = static_cast<uint8_t>(-1);
       sock_connected = at->modemConnect(host, port, &newMux, timeout_s);
       if (sock_connected) {
         mux              = newMux;
