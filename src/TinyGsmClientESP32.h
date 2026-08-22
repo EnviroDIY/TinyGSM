@@ -375,7 +375,7 @@ class TinyGsmESP32
     /// "client_ca.1".
     void setCACertName(const char* CAcertName) override {
       // copy the certificate name into owned buffer
-      memcpy(CAcertNameBuf, CAcertName, sizeof(CAcertNameBuf));
+      strncpy(CAcertNameBuf, CAcertName, sizeof(CAcertNameBuf) - 1);
       CAcertNameBuf[sizeof(CAcertNameBuf) - 1] = '\0';
       this->CAcertName                         = CAcertNameBuf;
       // parse the certificate name into a number and namespace
@@ -400,7 +400,7 @@ class TinyGsmESP32
      */
     void setClientCertName(const char* clientCertName) override {
       // copy the certificate name into owned buffer
-      memcpy(clientCertNameBuf, clientCertName, sizeof(clientCertNameBuf));
+      strncpy(clientCertNameBuf, clientCertName, sizeof(clientCertNameBuf) - 1);
       clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
       this->clientCertName                             = clientCertNameBuf;
       // parse the certificate name into a number and namespace
@@ -414,7 +414,7 @@ class TinyGsmESP32
       char cert_name[16] = {};
       at->getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
                              cert_namespace);
-      memcpy(clientKeyNameBuf, cert_name, sizeof(clientKeyNameBuf));
+      strncpy(clientKeyNameBuf, cert_name, sizeof(clientKeyNameBuf) - 1);
       clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
       clientKeyName                                  = clientKeyNameBuf;
     }
@@ -434,7 +434,7 @@ class TinyGsmESP32
      */
     void setPrivateKeyName(const char* clientKeyName) override {
       // copy the key name into owned buffer
-      memcpy(clientKeyNameBuf, clientKeyName, sizeof(clientKeyNameBuf));
+      strncpy(clientKeyNameBuf, clientKeyName, sizeof(clientKeyNameBuf) - 1);
       clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
       this->clientKeyName                            = clientKeyNameBuf;
       // parse the certificate name into a number and namespace
@@ -449,7 +449,7 @@ class TinyGsmESP32
       at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
                              cert_name, cert_namespace);
       // set the client certificate name
-      memcpy(clientCertNameBuf, cert_name, sizeof(clientCertNameBuf));
+      strncpy(clientCertNameBuf, cert_name, sizeof(clientCertNameBuf) - 1);
       clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
       clientCertName                                   = clientCertNameBuf;
     }
