@@ -719,10 +719,10 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
       // DBG("### Got Data:", len_total, "on", mux);
       return true;
     } else if (data.endsWith(GF("CLOSED\r\n"))) {
-      int8_t nl   = data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
-                                     data.length() - 8);
-      int8_t coma = data.indexOf(',', nl + 2);
-      int8_t mux  = data.substring(nl + 2, coma).toInt();
+      int nl   = data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
+                                  data.length() - 8);
+      int coma = data.indexOf(',', nl + 2);
+      int mux  = data.substring(nl + 2, coma).toInt();
       if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
