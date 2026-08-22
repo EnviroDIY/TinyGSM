@@ -1255,6 +1255,10 @@ class TinyGsmESP32
       } else {
         // NOTE: Support for this is firmware dependent!
         // AT+CIPSSLCPSK=<link ID>,<"psk">,<"hint">
+        if (psKey == nullptr || pskIdent == nullptr) {
+          DBG("### PSK authentication requires both a PSK and a PSK identity!");
+          return false;
+        }
         sendAT(GF("+CIPSSLCPSK="), requested_mux, GF(",\""), psKey, GF("\",\""),
                pskIdent, '"');
       }
