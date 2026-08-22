@@ -331,7 +331,7 @@ class TinyGsmEspressif
   // No functions of this type supported
 
   /*
-   * Client related functions
+   * Client-related functions
    */
 
   /*

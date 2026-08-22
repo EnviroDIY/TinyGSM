@@ -849,7 +849,7 @@ class TinyGsmA7672X
   }
 
   /*
-   * Client related functions
+   * Client-related functions
    */
 
  protected:

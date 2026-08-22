@@ -316,11 +316,9 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+QICLOSE="), mux);
-      sock_connected = false;
+      sock_connected     = false;
       uint32_t elapsedMs = millis() - startMillis;
-      if (elapsedMs < maxWaitMs) {
-        at->waitResponse(maxWaitMs - elapsedMs);
-      }
+      if (elapsedMs < maxWaitMs) { at->waitResponse(maxWaitMs - elapsedMs); }
     }
 
 
@@ -377,11 +375,9 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+QSSLCLOSE="), mux);
-      sock_connected = false;
+      sock_connected     = false;
       uint32_t elapsedMs = millis() - startMillis;
-      if (elapsedMs < maxWaitMs) {
-        at->waitResponse(maxWaitMs - elapsedMs);
-      }
+      if (elapsedMs < maxWaitMs) { at->waitResponse(maxWaitMs - elapsedMs); }
     }
 
 
@@ -1225,7 +1221,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   }
 
   /*
-   * Client related functions
+   * Client-related functions
    */
 
  protected:

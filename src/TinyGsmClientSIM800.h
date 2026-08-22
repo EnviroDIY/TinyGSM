@@ -761,7 +761,7 @@ class TinyGsmSim800
   // No functions of this type supported
 
   /*
-   * Client related functions
+   * Client-related functions
    */
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,

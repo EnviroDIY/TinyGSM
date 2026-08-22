@@ -317,7 +317,7 @@ class TinyGsmESP8266
       this->CAcertName = CAcertName;
       // parse the certificate name into a number and namespace
       char    cert_namespace[14] = {};
-      uint8_t certNumber     = 0;
+      uint8_t certNumber         = 0;
       at->parseCertificateName(CAcertName, cert_namespace, certNumber);
       ca_number = certNumber;
     }
@@ -339,7 +339,7 @@ class TinyGsmESP8266
       this->clientCertName = clientCertName;
       // parse the certificate name into a number and namespace
       char    cert_namespace[14] = {};
-      uint8_t certNumber     = 0;
+      uint8_t certNumber         = 0;
       at->parseCertificateName(clientCertName, cert_namespace, certNumber);
       // set the private key number
       pki_number = certNumber;
@@ -370,7 +370,7 @@ class TinyGsmESP8266
       this->clientKeyName = clientKeyName;
       // parse the certificate name into a number and namespace
       char    cert_namespace[14] = {};
-      uint8_t certNumber     = 0;
+      uint8_t certNumber         = 0;
       at->parseCertificateName(clientKeyName, cert_namespace, certNumber);
       // set the private key number
       pki_number = certNumber;
@@ -774,7 +774,7 @@ class TinyGsmESP8266
   // No functions of this type supported
 
   /*
-   * Client related functions
+   * Client-related functions
    */
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,

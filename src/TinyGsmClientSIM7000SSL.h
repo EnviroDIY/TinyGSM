@@ -105,7 +105,7 @@
  *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
  *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
  *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
- * - Client related functions
+ * - Client-related functions
  *     - @ref TinyGsmSim7000SSL::configureSSLContext "configureSSLContext()"
  *     - @ref TinyGsmSim7000SSL::applySSLCertificates "applySSLCertificates()"
  *     - @ref TinyGsmSim7000SSL::applySSLPSK "applySSLPSK()"
@@ -790,7 +790,7 @@ class TinyGsmSim7000SSL
   // No functions of this type supported
 
   /*
-   * Client related functions
+   * Client-related functions
    */
  public:
   /**
