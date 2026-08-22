@@ -314,7 +314,10 @@ class TinyGsmESP8266
     /// @warning The CA certificate name must be either "client_ca.0" or
     /// "client_ca.1".
     void setCACertName(const char* CAcertName) override {
-      this->CAcertName = CAcertName;
+      // copy the certificate name into owned buffer
+      memcpy(CAcertNameBuf, CAcertName, sizeof(CAcertNameBuf));
+      CAcertNameBuf[sizeof(CAcertNameBuf) - 1] = '\0';
+      this->CAcertName                         = CAcertNameBuf;
       // parse the certificate name into a number and namespace
       char    cert_namespace[14] = {};
       uint8_t certNumber         = 0;
@@ -336,7 +339,10 @@ class TinyGsmESP8266
      * to the equivalent name with the same number.
      */
     void setClientCertName(const char* clientCertName) override {
-      this->clientCertName = clientCertName;
+      // copy the certificate name into owned buffer
+      memcpy(clientCertNameBuf, clientCertName, sizeof(clientCertNameBuf));
+      clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
+      this->clientCertName                             = clientCertNameBuf;
       // parse the certificate name into a number and namespace
       char    cert_namespace[14] = {};
       uint8_t certNumber         = 0;
@@ -367,7 +373,10 @@ class TinyGsmESP8266
      * to the equivalent name with the same number.
      */
     void setPrivateKeyName(const char* clientKeyName) override {
-      this->clientKeyName = clientKeyName;
+      // copy the key name into owned buffer
+      memcpy(clientKeyNameBuf, clientKeyName, sizeof(clientKeyNameBuf));
+      clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
+      this->clientKeyName                            = clientKeyNameBuf;
       // parse the certificate name into a number and namespace
       char    cert_namespace[14] = {};
       uint8_t certNumber         = 0;
@@ -525,7 +534,7 @@ class TinyGsmESP8266
 
   void getCertificateName(CertificateType cert_type, uint8_t certNumber,
                           char* cert_name, char* cert_namespace) {
-    char cert_number[2];
+    char cert_number[2];  // Must be '0' or '1', so 2 bytes is enough
     itoa(certNumber, cert_number, 10);
 
     switch (cert_type) {
