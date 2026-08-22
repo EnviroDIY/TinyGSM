@@ -508,6 +508,7 @@ bool setupModem() {
 #if TINY_GSM_USE_GPRS
   // Unlock your SIM card with a PIN if needed
   if (GSM_PIN && modem.getSimStatus() != SIM_READY) {
+    // simUnlock will do nothing if the pin is empty
     success &= modem.simUnlock(GSM_PIN);
   }
 #endif
