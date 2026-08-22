@@ -1036,7 +1036,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     // <err> -  Error code of operation - see chapter 4 of the
     // BG96_TCP(IP)_Application_Note
     // There's a long list of codes, but 0 is a success
-    if (waitResponse(10000L, GF("+QNTP:"))) {
+    if (waitResponse(10000L, GF("+QNTP:")) == 1) {
       String result = stream.readStringUntil(',');
       streamSkipUntil('\n');
       result.trim();
