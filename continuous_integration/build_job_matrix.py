@@ -132,7 +132,7 @@ def build_custom_matrix(config: dict) -> list[dict]:
         "TINY_GSM_MODEM_MC60E",
     ]
     unsecured_modems = [[modem] for modem in unsecured_modems_list]
-    secured_modems = [modem for modem in modem_list if [modem] not in unsecured_modems]
+    # secured_modems = [[modem] for modem in modem_list if [modem] not in unsecured_modems]
 
     small_envs = ["uno", "leonardo", "yun", "feather328p", "feather32u4", "uno_pic32"]
     small_fqbns = [
@@ -237,6 +237,18 @@ def build_custom_matrix(config: dict) -> list[dict]:
             "board": ["arduino:zephyr_main:nicla_sense"],
             "inline_defines": modem_list,
             "compiler_flags": compiler_flags,
+        },
+        {
+            "compiler": compiler_list,
+            "example": [
+                os.path.join("examples", "more", "Multiple_Modules"),
+            ],
+            "board": boards,
+            "inline_defines": [
+                [modem] for modem in modem_list if modem != "TINY_GSM_MODEM_ESP32"
+            ],
+            "compiler_flags": compiler_flags,
+            # This hard-codes the modems, so only test it for that configuration
         },
     ]
 
