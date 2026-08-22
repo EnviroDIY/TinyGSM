@@ -611,7 +611,7 @@ class GsmClient : public Client {
    * @return int The number of bytes actually read.
    */
   int read(uint8_t* buf, size_t size) override {
-    if (at == nullptr) { return 0; }
+    if (at == nullptr) { return -1; }
     TINY_GSM_YIELD();
     is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                           // send to fail
