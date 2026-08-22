@@ -94,11 +94,11 @@
  *   - Because this module doesn't supply a way to check how much data is stored
  * in the buffer, you should try to avoid reading it out in small chunks.
  * - Socket Numbering:
- *   - The modem does not allow you to specify the multiplexing channel.
- *   - The modem will automatically assign a channel when the client connects to
- * a server.
- *   - Use the getMux() function to get the assigned multiplexing channel number
- * after a successful connection.
+ *   - TinyGsmMC60TcpConfig uses static mux selection.
+ *   - The caller chooses the multiplexing channel number via the constructor or
+ * init() function.
+ *   - init() honors the requested channel when available; if unavailable, it
+ * will select the next available channel or use modulo assignment.
  *
  * @todo In `modemEndSendImpl()`: verify len/ack
  * @todo In `modemReadImpl()`: Does this even work????
