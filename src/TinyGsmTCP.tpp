@@ -823,6 +823,7 @@ class GsmClient : public Client {
       is_mid_send = false;
       return false;
     }
+    is_mid_send = true;
     return true;
   }
   /**
