@@ -1095,6 +1095,13 @@ class TinyGsmESP32
     if (second != nullptr) *second = isec;
     if (timezone != nullptr) *timezone = itimezone;
 
+    // Validate parsed values
+    if (iyear < 2000 || imonth < 1 || imonth > 12 || iday < 1 || iday > 31 ||
+        ihour < 0 || ihour > 23 || imin < 0 || imin > 59 || isec < 0 ||
+        isec > 59|| itimezone < -48 || itimezone > 56) {
+      return false;
+    }
+
     return true;
   }
 
