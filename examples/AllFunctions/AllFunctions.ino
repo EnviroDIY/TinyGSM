@@ -261,7 +261,7 @@ void loop() {
 
 #if TINY_GSM_TEST_GPRS
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && static_cast<int>(modem.getSimStatus()) != 3) {
+  if (GSM_PIN && modem.getSimStatus() != SIM_READY) {
     modem.simUnlock(GSM_PIN);
   }
 #endif
