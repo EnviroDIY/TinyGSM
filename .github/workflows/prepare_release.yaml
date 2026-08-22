@@ -19,6 +19,8 @@ name: Create a New Release
 jobs:
   wait_for_checks:
     if: ${{ github.event_name != 'workflow_dispatch' }}
+    permissions:
+      actions: read
     strategy:
       matrix:
         req_workflow:
@@ -46,6 +48,8 @@ jobs:
   release:
     name: Prepare a new release
     needs: [wait_for_checks]
+    permissions:
+      contents: write
     if: |
       always() &&
       (needs.wait_for_checks.result == 'success' || needs.wait_for_checks.result == 'skipped')
