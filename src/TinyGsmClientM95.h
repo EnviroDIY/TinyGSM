@@ -272,11 +272,11 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+QICLOSE="), mux);
-      sock_connected = false;
+      sock_connected     = false;
       uint32_t elapsedMs = millis() - startMillis;
       if (elapsedMs < maxWaitMs) {
-        at->waitResponse(maxWaitMs - elapsedMs, GF("CLOSED"),
-                         GF("CLOSE OK"), GF("ERROR"));
+        at->waitResponse(maxWaitMs - elapsedMs, GF("CLOSED"), GF("CLOSE OK"),
+                         GF("ERROR"));
       }
     }
 
@@ -609,7 +609,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
   }
 
   /*
-   * Client related functions
+   * Client-related functions
    */
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,

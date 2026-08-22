@@ -666,7 +666,7 @@ class TinyGsmSequansMonarch
   }
 
   /*
-   * Client related functions
+   * Client-related functions
    */
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,

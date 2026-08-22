@@ -890,7 +890,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   float getTemperatureImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
-   * Client related functions
+   * Client-related functions
    */
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t* mux,

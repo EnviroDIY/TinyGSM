@@ -1330,7 +1330,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   }
 
   /*
-   * Client related functions
+   * Client-related functions
    */
  protected:
   int16_t getConnectionIndicator() {

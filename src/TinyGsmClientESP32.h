@@ -377,7 +377,7 @@ class TinyGsmESP32
       this->CAcertName = CAcertName;
       // parse the certificate name into a number and namespace
       char    cert_namespace[14] = {};
-      uint8_t certNumber     = 0;
+      uint8_t certNumber         = 0;
       at->parseCertificateName(CAcertName, cert_namespace, certNumber);
       ca_number = certNumber;
     }
@@ -399,7 +399,7 @@ class TinyGsmESP32
       this->clientCertName = clientCertName;
       // parse the certificate name into a number and namespace
       char    cert_namespace[14] = {};
-      uint8_t certNumber     = 0;
+      uint8_t certNumber         = 0;
       at->parseCertificateName(clientCertName, cert_namespace, certNumber);
       // set the private key number
       pki_number = certNumber;
@@ -430,7 +430,7 @@ class TinyGsmESP32
       this->clientKeyName = clientKeyName;
       // parse the certificate name into a number and namespace
       char    cert_namespace[14] = {};
-      uint8_t certNumber     = 0;
+      uint8_t certNumber         = 0;
       at->parseCertificateName(clientKeyName, cert_namespace, certNumber);
       // set the private key number
       pki_number = certNumber;
@@ -442,7 +442,7 @@ class TinyGsmESP32
       // set the client certificate name
       memcpy(clientCertNameBuf, cert_name, sizeof(clientCertNameBuf));
       clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
-      clientCertName = clientCertNameBuf;
+      clientCertName                                   = clientCertNameBuf;
     }
     /// @copydoc GsmClientSecureESP32::setPrivateKeyName(const char*)
     void setPrivateKeyName(String clientKeyName) override {
@@ -482,7 +482,7 @@ class TinyGsmESP32
                              cert_name, cert_namespace);
       memcpy(clientCertNameBuf, cert_name, sizeof(clientCertNameBuf));
       clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
-      clientCertName = clientCertNameBuf;
+      clientCertName                                   = clientCertNameBuf;
       // generate and set the name for the client private key from the number
       at->getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
                              cert_namespace);
@@ -1098,7 +1098,7 @@ class TinyGsmESP32
     // Validate parsed values
     if (iyear < 2000 || imonth < 1 || imonth > 12 || iday < 1 || iday > 31 ||
         ihour < 0 || ihour > 23 || imin < 0 || imin > 59 || isec < 0 ||
-        isec > 59|| itimezone < -48 || itimezone > 56) {
+        isec > 59 || itimezone < -48 || itimezone > 56) {
       return false;
     }
 
@@ -1179,7 +1179,7 @@ class TinyGsmESP32
   // No functions of this type implemented
 
   /*
-   * Client related functions
+   * Client-related functions
    */
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t* mux,
