@@ -1,7 +1,8 @@
 /** ============================================================================
  * @example{lineno} Hologram_Dash.ino
  *
- * @brief This sketch connects to a Hologram Dash using TinyGSM and a GSM modem.
+ * @brief This sketch uses TinyGSM on a Hologram Dash board to connect through
+ * the modem built into the board.
  * ========================================================================== */
 
 // Hologram Dash uses UBLOX U2 modems
