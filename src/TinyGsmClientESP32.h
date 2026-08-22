@@ -1412,12 +1412,12 @@ class TinyGsmESP32
       DBG("### Got Data:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("CLOSED"))) {
-      int8_t muxStart =
+      int muxStart =
           TinyGsmMax(0,
                      data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
                                       data.length() - 8));
-      int8_t coma = data.indexOf(',', muxStart);
-      int8_t mux  = data.substring(muxStart, coma).toInt();
+      int coma = data.indexOf(',', muxStart);
+      int mux  = data.substring(muxStart, coma).toInt();
       if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
