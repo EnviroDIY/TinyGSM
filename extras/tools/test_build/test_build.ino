@@ -23,11 +23,11 @@ void setup() {
 }
 
 void loop() {
-  Serial.print("The configured modem is ");
+  Serial.print(F("The configured modem is "));
   Serial.println(modem.getConfiguredModem());
 
-  // Test compile-time capability detection
-  // These queries can be used to check modem capabilities at compile time
+  // Test run-time capability detection
+  // These queries can be used to check modem capabilities at run time
   if (TinyGsmCapabilities::has_ssl<TinyGsm>::value) {
     Serial.println(F("SSL capability: available"));
   }
