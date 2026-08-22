@@ -2,11 +2,13 @@
  * @example{lineno} Multiple_Modules.ino
  *
  * @brief This example shows using two different modems together in the same
- * code. The key thing to notice is that instead of defining the modem type and
+ * code.
+ *
+ * The key thing to notice is that instead of defining the modem type and
  * including the TinyGsmClient.h file, it includes the specific modem headers.
- * The modem and the clients cannot be referred to using the typedefs `TinyGsm`,
- * `TinyGsmClient`, and `TinyGsmClientSecure` but must use their full class
- * names.
+ * You cannot use the typedefs `TinyGsm`, `TinyGsmClient`, and
+ * `TinyGsmClientSecure` for the modem and the clients. You must use the full
+ * class names instead.
  * ========================================================================== */
 
 // NOTE: DO NOT set a modem define!
@@ -72,13 +74,14 @@ const char gprsPass[] = "";
 const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
-// Server 0 details (SSL not required)
+// Server 1 details (this example site requires SSL)
 const char server1[]   = "vsh.pp.ua";
-const char resource0[] = "/TinyGSM/logo.txt";
-
-// Server 1 details (this server requires SSL, expect it to fail otherwise)
-const char server2[]   = "vsh.pp.ua";
 const char resource1[] = "/TinyGSM/logo.txt";
+
+// Server 2 details (in this example, identical to server 1, but could be
+// different)
+const char server2[]   = "vsh.pp.ua";
+const char resource2[] = "/TinyGSM/logo.txt";
 
 // NOTE: Do NOT include the generic TinyGsmClient headers for specific modems.
 // Include for the SIM7080 modem
@@ -228,7 +231,7 @@ void loop() {
 
   // Make a HTTP GET request:
   SerialMon.println("Performing HTTP GET request...");
-  client1.print(String("GET ") + resource0 + " HTTP/1.1\r\n");
+  client1.print(String("GET ") + resource1 + " HTTP/1.1\r\n");
   client1.print(String("Host: ") + server1 + "\r\n");
   client1.print("Connection: keep-alive\r\n\r\n");
 
@@ -261,7 +264,7 @@ void loop() {
 
   // Make a HTTP GET request:
   SerialMon.println("Performing HTTP GET request...");
-  client2.print(String("GET ") + resource1 + " HTTP/1.1\r\n");
+  client2.print(String("GET ") + resource2 + " HTTP/1.1\r\n");
   client2.print(String("Host: ") + server2 + "\r\n");
   client2.print("Connection: keep-alive\r\n\r\n");
 
