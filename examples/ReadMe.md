@@ -30,7 +30,7 @@ ___
 
 This example demonstrates and exercises a broad set of TinyGSM modem, network, client, SMS, call, and utility functions in a single sketch for capability testing.
 
-- [The all functions example on GitHub](https://github.com/EnviroDIY/TinyGSM/tree/master/examples/AllFunctions)
+- [The All Functions example on GitHub](https://github.com/EnviroDIY/TinyGSM/tree/master/examples/AllFunctions)
 
 <!--! @subpage example_all_functions -->
 
