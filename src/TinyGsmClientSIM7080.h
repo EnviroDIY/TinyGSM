@@ -841,7 +841,6 @@ class TinyGsmSim7080
 
     // Set NTP server and timezone - write command
     // AT+CNTP=<ntpserver>[,<time zone>][,<cid>][,<mode>]
-    sendAT(GF("+CNTP=\""), server, GF("\","), TimeZone * 4, GF(",0,2"));
     // <ntpserver> - NTP server’s url
     // <time zone> - Local time zone, the range is (-47 to 48), in fact, time
     // zone range (-12 to 12), but taking into account that some countries and
@@ -854,6 +853,7 @@ class TinyGsmSim7080
     //        - 0 Just set UTC to localtime
     //        - 1 Just output UTC time to AT port
     //        - 2 Set UTC to localtime and output UTC time to AT port
+    sendAT(GF("+CNTP=\""), server, GF("\","), TimeZone * 4, GF(",0,2"));
     if (waitResponse(10000L) != 1) { return -1; }
 
     // Request network synchronization - execution command
