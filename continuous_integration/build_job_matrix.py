@@ -245,7 +245,19 @@ def build_custom_matrix(config: dict) -> list[dict]:
             ],
             "board": boards,
             "inline_defines": [
-                [modem] for modem in modem_list if modem != "TINY_GSM_MODEM_ESP32"
+                modem for modem in modem_list if modem != ["TINY_GSM_MODEM_ESP32"]
+            ],
+            "compiler_flags": compiler_flags,
+            # This hard-codes the modems, so only test it for that configuration
+        },
+        {
+            "compiler": compiler_list,
+            "example": [
+                os.path.join("examples", "more", "SIM800_SslSetCert"),
+            ],
+            "board": boards,
+            "inline_defines": [
+                modem for modem in modem_list if modem != ["TINY_GSM_MODEM_SIM800"]
             ],
             "compiler_flags": compiler_flags,
             # This hard-codes the modems, so only test it for that configuration
