@@ -791,7 +791,8 @@ class TinyGsmSequansMonarch
       // if we failed after 3 attempts at the same chunk, bail from the whole
       // thing
       if (!send_success) { break; }
-    } while (bytesSent < len && sockets[mux]->sock_connected);
+    } while (bytesSent < len &&
+             sockets[mux % TcpConfig::kMuxCount]->sock_connected);
     return bytesSent;
 
     // uint8_t nAttempts = 5;
