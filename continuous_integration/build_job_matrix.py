@@ -30,9 +30,9 @@ def get_modems_from_client_file(workspace_path: str) -> list[list[str]]:
     Reads TinyGsmClient.h and extracts modem defines like TINY_GSM_MODEM_SIM800
     Returns list of lists format: [["TINY_GSM_MODEM_SIM800"], ["TINY_GSM_MODEM_SIM900"], ...]
     """
-    client_file = open(os.path.join(workspace_path, "src/TinyGsmClient.h"), "r")
-    client_file_contents = client_file.read()
-    client_file.close()
+    client_path = os.path.join(workspace_path, "src", "TinyGsmClient.h")
+    with open(client_path, "r", encoding="utf-8") as client_file:
+        client_file_contents = client_file.read()
 
     modem_list = []
     # if defined(TINY_GSM_MODEM_SIM800)
