@@ -10,6 +10,11 @@
  * When using a single modem type, this file can be included directly to get the
  * modem-specific client aliases.  If multiple modem types are used, include the
  * modem-specific client header files directly and do not include this file.
+ *
+ * @note The RegStatus type is defined in the global namespace as a typedef to
+ * the modem-specific registration status type (e.g., Sim800RegStatus,
+ * Sim70xxRegStatus). If a naming conflict occurs, use the modem-scoped
+ * alternative directly (e.g., TinyGsmSim800::Sim800RegStatus).
  */
 
 #ifndef SRC_TINYGSMCLIENT_H_
