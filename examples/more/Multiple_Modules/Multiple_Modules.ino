@@ -13,25 +13,38 @@
 
 // NOTE: DO NOT set a modem define!
 
+// WARNING:  In this example, both of the modems and the communication with the
+// serial monitor are all using the same hardware serial port.  This WILL NOT
+// WORK IN REALITY.  You must use different serial ports for each modem and the
+// serial monitor.  To communicate with both modules and to output to the serial
+// monitor your board must have **3** serial ports.  If your board does not have
+// 3 hardware serial ports, you can use SoftwareSerial for one or both of the
+// modems, but you must use different pins for each modem and the serial
+// monitor. This example uses a single port for easier CI compilation testing.
+
 // Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
-// Set serial for AT commands (to the module)
+// Set serial for AT commands (to the first module)
+// In real life, you must use different serial ports for each modem and the
+// serial monitor.
+
 // Use Hardware Serial on Mega, Leonardo, Micro
 #if !defined(__AVR_ATmega328P__) && !defined(SerialAT1)
 #define SerialAT1 Serial1
-
 // or Software Serial on Uno, Nano
 #elif !defined(SerialAT1)
 #include <SoftwareSerial.h>
 SoftwareSerial SerialAT1(2, 3);  // RX, TX
 #endif
 
-// Set serial for AT commands (to the module)
+// Set serial for AT commands (to the second module)
+// In real life, you must use different serial ports for each modem and the
+// serial monitor.
+
 // Use Hardware Serial on Mega, Leonardo, Micro
 #if !defined(__AVR_ATmega328P__) && !defined(SerialAT2)
 #define SerialAT2 Serial1
-
 // or Software Serial on Uno, Nano
 #elif !defined(SerialAT2)
 #include <SoftwareSerial.h>
