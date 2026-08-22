@@ -761,8 +761,7 @@ class TinyGsmModem {
         if (nextValue > 255) { return IPAddress(0, 0, 0, 0); }
         Parts[Part] = nextValue;
       } else {
-        if (Part == 3) break;
-        return IPAddress(0, 0, 0, 0);  // Invalid character before 4th octet
+        return IPAddress(0, 0, 0, 0);  // Invalid character
       }
     }
 
