@@ -133,13 +133,21 @@ class TinyGsmNTP {
 
   bool NTPServerSyncImpl(const char* server, int TimeZone) {
     // Set GPRS bearer profile to associate with NTP sync
-    // this may fail, it's not supported by all modules
+    // this is allowed to fail; it's not supported by all modules
     thisModem().sendAT(GF("+CNTPCID=1"));
     thisModem().waitResponse(10000L);
 
     // Set NTP server and timezone
+    // AT+CNTP=<ntpserver>[,<timezone>]
+    // <ntpserver> - NTP server’s url
+    // <time zone> - Local time zone, the range is (-47 to 48), in fact, time
+    // zone range (-12 to 12), but taking into account that some countries and
+    // regions will use half time zone, or even fourth time zone, so the entire
+    // extended four time zones X, so that when the time zone of the input
+    // integers are used, without the need for decimal. Time zone in front of
+    // the West if it is a negative number indicates the time zone.
     thisModem().sendAT(GF("+CNTP=\""), server, GF("\","), TimeZone);
-    if (thisModem().waitResponse(10000L) != 1) { return -1; }
+    if (thisModem().waitResponse(10000L) != 1) { return false; }
 
     // Request network synchronization
     thisModem().sendAT(GF("+CNTP"));
@@ -147,14 +155,21 @@ class TinyGsmNTP {
       String result = thisModem().stream.readStringUntil('\n');
       // Check for ',' in case the module appends the time next to the return
       // code. Eg: +CNTP: <code>[,<time>]
+      // <code> - Result code of the NTP synchronization
+      //        - 1 Network time synchronization is successful
+      //        - 61 Network Error
+      //        - 62 DNS resolution error
+      //        - 63 Connection Error
+      //        - 64 Service response error
+      //        - 65 Service Response Timeout
       int index = result.indexOf(',');
       if (index > 0) { result.remove(index); }
       result.trim();
-      if (TinyGsmIsValidNumber(result)) { return result.toInt(); }
+      if (TinyGsmIsValidNumber(result)) { return result.toInt() == 1; }
     } else {
-      return -1;
+      return false;
     }
-    return -1;
+    return false;
   }
 
   bool waitForTimeSyncImpl(int timeout_s) {
