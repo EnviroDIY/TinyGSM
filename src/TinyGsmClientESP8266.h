@@ -671,6 +671,7 @@ class TinyGsmESP8266
     imin              = streamGetIntBefore(':');
     isec              = streamGetIntBefore(' ');
     iyear             = streamGetIntLength(4);
+
     // Final OK
     waitResponse();
 
@@ -693,6 +694,8 @@ class TinyGsmESP8266
     if (timezone != nullptr) *timezone = itimezone;
 
     // Validate parsed values
+    // NOTE: This is a basic validation and does not account for leap years or
+    // the number of days in each month.
     if (iyear < 2000 || imonth < 1 || imonth > 12 || iday < 1 || iday > 31 ||
         ihour < 0 || ihour > 23 || imin < 0 || imin > 59 || isec < 0 ||
         isec > 59 || itimezone < -48 || itimezone > 56) {
