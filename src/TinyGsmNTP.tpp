@@ -151,7 +151,7 @@ class TinyGsmNTP {
 
     // Request network synchronization
     thisModem().sendAT(GF("+CNTP"));
-    if (thisModem().waitResponse(10000L, GF("+CNTP:"))) {
+    if (thisModem().waitResponse(10000L, GF("+CNTP:")) == 1) {
       String result = thisModem().stream.readStringUntil('\n');
       // Check for ',' in case the module appends the time next to the return
       // code. Eg: +CNTP: <code>[,<time>]
