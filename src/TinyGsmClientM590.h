@@ -81,11 +81,11 @@
  *   - Change the buffer size by defining TINY_GSM_RX_BUFFER in your sketch
  * before including any TinyGSM header file.
  * - Socket Numbering:
- *   - The modem does not allow you to specify the multiplexing channel.
- *   - The modem will automatically assign a channel when the client connects to
- * a server.
- *   - Use the getMux() function to get the assigned multiplexing channel number
- * after a successful connection.
+ *   - TinyGsmM590TcpConfig uses static mux selection.
+ *   - The caller chooses the multiplexing channel number via the constructor or
+ * init() function.
+ *   - init() honors the requested channel when available; if unavailable, it
+ * will select the next available channel or use modulo assignment.
  *
  * @todo In `gprsConnectImpl()`: configure DNS settings if needed
  * @todo In `gprsDisconnectImpl()`: There is no command in AT command set
@@ -104,7 +104,9 @@
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
 
-/// Registration status
+/// Neoway M5901 Registration status
+/// @remark The Neoway M590 uses different numbers for registration status than
+/// most other modules.
 /// @ingroup neoway_m590
 enum class M590RegStatus {
   REG_NO_RESULT    = -1,  ///< No result yet
