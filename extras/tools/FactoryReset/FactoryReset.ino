@@ -1,7 +1,7 @@
 /** ============================================================================
  * @example{lineno} FactoryReset.ino
  *
- @brief This sketch resets the modem to factory defaults.
+ * @brief This sketch resets the modem to factory defaults.
  *
  * To run this tool you need StreamDebugger library:
  *   https://github.com/vshymanskyy/StreamDebugger
