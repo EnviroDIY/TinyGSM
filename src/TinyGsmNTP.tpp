@@ -44,7 +44,7 @@ class TinyGsmNTP {
   /**
    * @brief Synchronize the modem with an NTP server
    *
-   * @remark PIn versions 0.12.0 and prior, this function returned a byte, the
+   * @remark In versions 0.12.0 and prior, this function returned a byte, the
    * meaning of which varied by modem.  In some cases the return value indicated
    * success with 0 and failure with other codes.  In the current version, it
    * returns a boolean indicating success or failure.
