@@ -264,7 +264,7 @@ class TinyGsmSaraR5
      * channel number after a successful connection.
      */
     explicit GsmClientSaraR5(TinyGsmSaraR5& modem, uint8_t /*mux*/ = 0) {
-      init(&modem, -1);
+      init(&modem, static_cast<uint8_t>(-1));
       is_secure = false;
     }
 

@@ -239,7 +239,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
      * multiplexing channel number after a successful connection.
      */
     explicit GsmClientUBLOX(TinyGsmUBLOX& modem, uint8_t /*mux*/ = 0) {
-      init(&modem, -1);
+      init(&modem, static_cast<uint8_t>(-1));
       is_secure = false;
     }
 
