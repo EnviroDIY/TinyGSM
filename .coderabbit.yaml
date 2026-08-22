@@ -42,7 +42,7 @@ reviews:
     - path: '**/*.dox'
       instructions: >-
         Review for grammar, spelling, and clarity.
-        Ensure that Doxygen comments are clear and follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
+        Ensure that Doxygen comments follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
         Check C++ and Arduino code snippets as C++ code.
     - path: '**/*.ino'
       instructions: >-
@@ -62,7 +62,8 @@ reviews:
         Files should be formatted according to the .clang-format file in the repo.
         This is a header-only library; all code should be in the header and template files.
         Template files used as includes should have the .tpp extension, and should not be included directly by the user.
-        Ensure that Doxygen comments are clear and follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
+        Ensure that Doxygen comments follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
+        Review Doxygen comments for grammar, spelling, completeness, and clarity.
     - path: '**/*.tpp'
       instructions: >-
         Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
@@ -72,7 +73,8 @@ reviews:
         Files should be formatted according to the .clang-format file in the repo.
         This is a header-only library; all code should be in the header and template files.
         Template files used as includes should have the .tpp extension, and should not be included directly by the user.
-        Ensure that Doxygen comments are clear and follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
+        Ensure that Doxygen comments follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
+        Review Doxygen comments for grammar, spelling, completeness, and clarity.
     - path: '**/*.cpp'
       instructions: >-
         This is a header-only library, there should not be any .cpp files. If you see a .cpp file, it should be removed.
