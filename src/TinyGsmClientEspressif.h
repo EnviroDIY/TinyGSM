@@ -218,7 +218,7 @@ class TinyGsmEspressif
     //   periodically closed according to listen interval set by AT+CWJAP.
     //   3: Modem-sleep listen interval mode. RF will be periodically closed
     //   according to listen interval set by AT+CWJAP.
-    thisModem().sendAT(GF("+SLEEP=2"));
+    thisModem().sendAT(GF("+SLEEP="), enable ? 2 : 0);
     return thisModem().waitResponse() == 1;
   }
 
