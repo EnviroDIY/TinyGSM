@@ -315,11 +315,13 @@ class TinyGsmESP8266
     /// @warning The CA certificate name must be either "client_ca.0" or
     /// "client_ca.1".
     void setCACertName(const char* CAcertName) override {
+      if (CAcertName == nullptr || strlen(CAcertName) == 0) { return; }
       // copy the certificate name into owned buffer
       strncpy(CAcertNameBuf, CAcertName, sizeof(CAcertNameBuf) - 1);
       CAcertNameBuf[sizeof(CAcertNameBuf) - 1] = '\0';
       this->CAcertName                         = CAcertNameBuf;
       // parse the certificate name into a number and namespace
+      if (at == nullptr) { return; }
       char    cert_namespace[14] = {};
       uint8_t certNumber         = 0;
       at->parseCertificateName(CAcertName, cert_namespace, certNumber);
@@ -340,11 +342,13 @@ class TinyGsmESP8266
      * to the equivalent name with the same number.
      */
     void setClientCertName(const char* clientCertName) override {
+      if (clientCertName == nullptr || strlen(clientCertName) == 0) { return; }
       // copy the certificate name into owned buffer
       strncpy(clientCertNameBuf, clientCertName, sizeof(clientCertNameBuf) - 1);
       clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
       this->clientCertName                             = clientCertNameBuf;
       // parse the certificate name into a number and namespace
+      if (at == nullptr) { return; }
       char    cert_namespace[14] = {};
       uint8_t certNumber         = 0;
       at->parseCertificateName(clientCertName, cert_namespace, certNumber);
@@ -374,11 +378,13 @@ class TinyGsmESP8266
      * to the equivalent name with the same number.
      */
     void setPrivateKeyName(const char* clientKeyName) override {
+      if (clientKeyName == nullptr || strlen(clientKeyName) == 0) { return; }
       // copy the key name into owned buffer
       strncpy(clientKeyNameBuf, clientKeyName, sizeof(clientKeyNameBuf) - 1);
       clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
       this->clientKeyName                            = clientKeyNameBuf;
       // parse the certificate name into a number and namespace
+      if (at == nullptr) { return; }
       char    cert_namespace[14] = {};
       uint8_t certNumber         = 0;
       at->parseCertificateName(clientKeyName, cert_namespace, certNumber);
