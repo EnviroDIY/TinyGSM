@@ -342,7 +342,9 @@ class TinyGsmESP8266NonOS
    * Power functions
    */
  protected:
-  // Follows functions inherited from Espressif
+  // Light sleep does not work properly on the old ESP8266 non-OS AT firmware,
+  // so we don't support it here.
+  bool sleepEnableImpl(bool enable) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Generic network functions

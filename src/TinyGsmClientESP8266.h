@@ -38,6 +38,7 @@
  * - Power functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::powerOff "powerOff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
  * - Generic network functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
@@ -884,6 +885,10 @@ class TinyGsmESP8266
         return false;
       }
     }
+
+    // Select TCP/IP transmission mode (normal mode)
+    sendAT(GF("+CIPMODE=0"));
+    waitResponse();
 
     // Make the connection
     sendAT(GF("+CIPSTART="), mux, ',', ssl ? GF("\"SSL") : GF("\"TCP"),
