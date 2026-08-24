@@ -702,10 +702,13 @@ void loop() {
   DBG("WiFi disconnected");
 #endif
 
+#if !defined(TINY_GSM_MODEM_ESP32)
   // Try to power-off (modem may decide to restart automatically)
   // To turn off modem completely, please use Reset/Enable pins
   modem.powerOff();
   DBG("Poweroff.");
+#endif
+
 #endif
 
   DBG("End of tests.");
