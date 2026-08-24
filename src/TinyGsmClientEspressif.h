@@ -188,6 +188,19 @@ class TinyGsmEspressif
   }
 
   bool powerOffImpl() {
+    // AT+GSLP=<time>
+    // <time>: the duration when the device stays in Deep-sleep. Unit:
+    // millisecond. When the time is up, the device automatically wakes up,
+    // calls Deep-sleep wake stub, and then proceeds to load the application.
+    //   For ESP32 devices:
+    //     0 means restarting right now [ie, **not sleeping**]
+    //     the maximum Deep-sleep time is about 28.8 days (2 31-1 milliseconds)
+    //   For ESP8266 devices:
+    //     0 means staying in Deep-sleep mode forever
+    //     the maximum Deep-sleep time is about 3 hours (due to hardware
+    //     limitation, more time will lead to setting failure or internal time
+    //     overflow)
+
     thisModem().sendAT(
         GF("+GSLP=0"));  // Power down indefinitely - until manually reset!
     return thisModem().waitResponse() == 1;
@@ -195,7 +208,19 @@ class TinyGsmEspressif
 
   bool radioOffImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool sleepEnableImpl(bool enable) TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool sleepEnableImpl(bool enable) {
+    // AT+SLEEP=<sleep mode>
+    // <sleep mode>:
+    //   0: Disable the sleep mode.
+    //   1: Modem-sleep DTIM mode. RF will be periodically closed according to
+    //   AP DTIM.
+    //   2: Light-sleep mode. CPU will automatically sleep and RF will be
+    //   periodically closed according to listen interval set by AT+CWJAP.
+    //   3: Modem-sleep listen interval mode. RF will be periodically closed
+    //   according to listen interval set by AT+CWJAP.
+    thisModem().sendAT(GF("+SLEEP=2"));
+    return thisModem().waitResponse() == 1;
+  }
 
   bool setPhoneFunctionalityImpl(uint8_t fun,
                                  bool    reset) TINY_GSM_ATTR_NOT_IMPLEMENTED;

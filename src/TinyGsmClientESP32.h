@@ -34,7 +34,8 @@
  *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
  * - Power functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::powerOff "powerOff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
  * - Generic network functions (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
@@ -614,7 +615,38 @@ class TinyGsmESP32
    * Power functions
    */
  protected:
-  // Follows functions inherited from Espressif
+  // NOTE: The ESP32 series only supports deep sleep with a wake-up timer.  It
+  // cannot be put to deep sleep indefinitely. This function is not implemented.
+  bool powerOffImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool radioOffImpl() {
+    bool success = true;
+
+    // AT+CWINIT=<init>
+    // <init>:
+    //   0: Deinitialize Wi-Fi driver of ESP32 device.
+    //   1: Initialize Wi-Fi driver of ESP32 device. (Default value)
+    sendAT(GF("+CWINIT=0"));
+    success &= waitResponse() == 1;
+
+    // AT+BTINIT=<init>
+    //  <init>:
+    //    0: Deinitialize Classic Bluetooth.
+    //    1: Initialize Classic Bluetooth.
+    sendAT(GF("+BTINIT=0"));
+    success &= waitResponse() == 1;
+
+    // AT+BLEINIT=<init>
+    // <init>:
+    //   0: deinit Bluetooth LE
+    //   1: client role
+    //   2: server role
+    //   3: dual role (client and server)
+    sendAT(GF("+BLEINIT=0"));
+    success &= waitResponse() == 1;
+
+    return success;
+  };
 
   /*
    * Generic network functions
@@ -1303,6 +1335,10 @@ class TinyGsmESP32
         return false;
       }
     }
+
+    // Select TCP/IP transmission mode (normal mode)
+    sendAT(GF("+CIPMODE=0"));
+    waitResponse();
 
     // Make the connection
     sendAT(GF("+CIPSTART="), requested_mux, ',',

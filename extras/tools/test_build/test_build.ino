@@ -100,15 +100,16 @@ void loop() {
 
   // Test Power functions
   modem.restart();
+#if !defined(TINY_GSM_MODEM_ESP32)
   modem.powerOff();
-#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) &&    \
-    !defined(TINY_GSM_MODEM_ESP8266_NONOS) && !defined(TINY_GSM_MODEM_A6) && \
+#endif
+#if !defined(TINY_GSM_MODEM_ESP8266_NONOS) && !defined(TINY_GSM_MODEM_A6) && \
     !defined(TINY_GSM_MODEM_UBLOX) && !defined(TINY_GSM_MODEM_SARAR4) &&     \
     !defined(TINY_GSM_MODEM_SARAR5) && !defined(TINY_GSM_MODEM_XBEE)
   modem.sleepEnable();
   modem.sleepEnable(false);
 #endif
-#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) &&    \
+#if !defined(TINY_GSM_MODEM_ESP8266) &&                                      \
     !defined(TINY_GSM_MODEM_ESP8266_NONOS) && !defined(TINY_GSM_MODEM_A6) && \
     !defined(TINY_GSM_MODEM_M95) && !defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
   modem.radioOff();
