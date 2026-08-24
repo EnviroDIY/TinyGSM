@@ -242,9 +242,11 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
       rx.clear();
       uint8_t newMux = static_cast<uint8_t>(-1);
       sock_connected = at->modemConnect(host, port, &newMux, timeout_s);
-      if (sock_connected) {
+      if (sock_connected && newMux < TcpConfig::kMuxCount) {
         mux              = newMux;
         at->sockets[mux] = this;
+      } else {
+        sock_connected = false;
       }
       return sock_connected;
     }
