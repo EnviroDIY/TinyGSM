@@ -54,6 +54,7 @@
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  *
  * # Connection Information
  *
@@ -255,25 +256,10 @@ class TinyGsmESP8266NonOS
       return true;
     }
 
-   public:
-    int connect(const char* host, uint16_t port, int timeout_s) override {
-      if (at == nullptr) { return 0; }
-      stop(TcpConfig::kStopTimeoutS * 1000L);
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, timeout_s);
-      return sock_connected;
-    }
-
-    void stop(uint32_t maxWaitMs) override {
-      if (at == nullptr) { return; }
-      is_mid_send = false;
-      TINY_GSM_YIELD();
-      at->sendAT(GF("+CIPCLOSE="), mux);
-      sock_connected = false;
-      at->waitResponse(maxWaitMs);
-      rx.clear();
-    }
+    /*
+     * Client API
+     */
+    // Follows the template implementations in TinyGsmTCP.tpp
 
     /*
      * Extended API

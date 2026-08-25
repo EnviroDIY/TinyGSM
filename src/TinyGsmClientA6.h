@@ -57,6 +57,7 @@
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  * - Phone call functions (TinyGsmCalling.tpp)
  *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
  *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
@@ -234,31 +235,32 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
       return true;
     }
 
+    /*
+     * Client API
+     */
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      stop(TcpConfig::kStopTimeoutS * 1000L);
+      is_mid_send = false;
+      if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr) {
+        stop(TcpConfig::kStopTimeoutS * 1000L);
+      }
       TINY_GSM_YIELD();
       rx.clear();
       uint8_t newMux = static_cast<uint8_t>(-1);
+      // modemConnect will validate the mux number returned by the modem and
+      // return false and set the newMux to -1 if the mux number is invalid or
+      // the connection fails
       sock_connected = at->modemConnect(host, port, &newMux, timeout_s);
-      if (sock_connected && newMux < TcpConfig::kMuxCount) {
-        mux              = newMux;
-        at->sockets[mux] = this;
-      } else {
-        sock_connected = false;
+      if (sock_connected) {
+        // move the pointer to this client in the sockets array if needed
+        // set the requested mux to -1 to get the next available mux number
+        at->moveSocketToNewMux(mux, static_cast<uint8_t>(-1));
+        at->sockets[newMux] = this;
       }
+      mux = newMux;  // this will be -1 if the connection failed, otherwise it
+                     // will be the mux number returned by the modem
       return sock_connected;
-    }
-
-    void stop(uint32_t maxWaitMs) override {
-      if (at == nullptr) { return; }
-      is_mid_send = false;
-      TINY_GSM_YIELD();
-      at->sendAT(GF("+CIPCLOSE="), mux);
-      sock_connected = false;
-      at->waitResponse(maxWaitMs);
-      rx.clear();
     }
 
     /*
@@ -643,13 +645,26 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
 
     uint32_t elapsed = millis() - startMillis;
     if (elapsed >= timeout_ms) { return false; }
-    int8_t rsp = waitResponse(timeout_ms - elapsed, GF("CONNECT OK\r\n"),
-                              GF("CONNECT FAIL\r\n"),
-                              GF("ALREADY CONNECT\r\n"));
-    if (waitResponse() != 1) { return false; }
-    *mux = newMux;
+    bool success = waitResponse(timeout_ms - elapsed, GF("CONNECT OK\r\n"),
+                                GF("CONNECT FAIL\r\n"),
+                                GF("ALREADY CONNECT\r\n")) == 1;
+    success &= waitResponse() != 1;
 
-    return (1 == rsp);
+    // Validate the returned mux
+    if (!(newMux < TcpConfig::kMuxCount) || !success) {
+      DBG(GF("ERROR: Modem returned invalid mux or connection failed"));
+      *mux = static_cast<uint8_t>(-1);  // Set mux to invalid value
+      return false;  // Return failure when mux is out of range
+    }
+
+    // set the mux to the new mux number if we're successful
+    *mux = newMux;
+    return success;
+  }
+
+  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+    sendAT(GF("+CIPCLOSE="), mux);
+    return waitResponse(maxWaitMs) == 1;
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {

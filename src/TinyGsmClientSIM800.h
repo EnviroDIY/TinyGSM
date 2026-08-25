@@ -60,6 +60,7 @@
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  * - Phone call functions (TinyGsmCalling.tpp)
  *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
  *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
@@ -295,25 +296,10 @@ class TinyGsmSim800
       return true;
     }
 
-   public:
-    int connect(const char* host, uint16_t port, int timeout_s) override {
-      if (at == nullptr) { return 0; }
-      stop(TcpConfig::kStopTimeoutS * 1000L);
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, timeout_s);
-      return sock_connected;
-    }
-
-    void stop(uint32_t maxWaitMs) override {
-      if (at == nullptr) { return; }
-      is_mid_send = false;
-      dumpModemBuffer(maxWaitMs);
-      at->sendAT(GF("+CIPCLOSE="), mux, GF(",1"));  // Quick close
-      sock_connected = false;
-      at->waitResponse();
-    }
-
+    /*
+     * Client API
+     */
+    // Follows the template implementations in TinyGsmTCP.tpp
 
     /*
      * Extended API
@@ -793,6 +779,12 @@ class TinyGsmSim800
                      GF("ALREADY CONNECT\r\n"), GFP(ModemConfig::GSM_ERROR),
                      GF("CLOSE OK\r\n"));  // Happens when HTTPS handshake fails
     return (1 == rsp);
+  }
+
+  bool modemStopImpl(uint8_t mux, uint32_t /*maxWaitMs*/) {
+    // Same command for both secure and non-secure sockets
+    sendAT(GF("+CIPCLOSE="), mux, GF(",1"));  // Quick close
+    return waitResponse() == 1;               // should return within 1s
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {

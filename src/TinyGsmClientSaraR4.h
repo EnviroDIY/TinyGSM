@@ -58,6 +58,7 @@
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
  *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
  * - GSM location functions (TinyGsmGSMLocation.tpp)
@@ -292,80 +293,44 @@ class TinyGsmSaraR4
       return true;
     }
 
+    /*
+     * Client API
+     */
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
       is_mid_send = false;
-      // stop();  // DON'T stop! We don't know our actual mux yet!
+#if 0
+      // DON'T stop! We don't know our actual mux yet!
+      if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr) {
+        stop(TcpConfig::kStopTimeoutS * 1000L);
+      }
+#endif
       TINY_GSM_YIELD();
       rx.clear();
-
-      uint8_t oldMux = mux;
-      sock_connected = at->modemConnect(host, port, &mux, timeout_s);
-
-      // Validate mux before any access to sockets array
-      if (!(mux < TcpConfig::kMuxCount)) {
-        DBG(GF("ERROR: Modem returned invalid mux"), mux, GF("(max:"),
-            static_cast<int>(TcpConfig::kMuxCount - 1), GF(")"));
-        return 0;  // Return failure when mux is out of range
+      uint8_t newMux = static_cast<uint8_t>(-1);
+      // modemConnect will validate the mux number returned by the modem and
+      // return false and set the newMux to -1 if the mux number is invalid or
+      // the connection fails
+      sock_connected = at->modemConnect(host, port, &newMux, timeout_s);
+      if (sock_connected) {
+        // move the pointer to this client in the sockets array if needed
+        // set the requested mux to -1 to get the next available mux number
+        at->moveSocketToNewMux(mux, static_cast<uint8_t>(-1));
+        at->sockets[newMux] = this;
+        mux                 = newMux;
       }
-
-      if (mux != oldMux) {
-        DBG(GF("###  Mux number changed from"), oldMux, GF("to"), mux);
-        if (!(at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
-          DBG(GF("WARNING: This new mux number had already been assigned to a "
-                 "different client, attempting to move it!"));
-          uint8_t next_empty_mux = at->findFirstUnassignedMux();
-          if (next_empty_mux != static_cast<uint8_t>(-1)) {
-            DBG(GF("### Socket previously assigned as"), mux, GF("moved to"),
-                next_empty_mux);
-            at->sockets[next_empty_mux] = at->sockets[mux];
-          } else {
-            DBG(GF("WARNING: Failed to move socket, it will be overwritten!"));
-          }
-        }
-        at->sockets[oldMux] = nullptr;
-      }
-      at->sockets[mux] = this;
+      // NOTE: If the sock didn't connect, DO NOT move the pointer to this
+      // client in the sockets array because we still need to be able to access
+      // the client by a valid mux number to check if it's expected to be an SSL
+      // connection and, if so, what the SSL specs are.  If we move the pointer
+      // to this client in the sockets array when the connection fails, we will
+      // lose access to the client by a valid mux number and the modem will not
+      // be able to check if it's expected to be an SSL connection and, if so,
+      // what the SSL specs are.
       at->maintain();
-
       return sock_connected;
     }
-
-    void stop(uint32_t maxWaitMs) override {
-      if (at == nullptr) { return; }
-      is_mid_send          = false;
-      uint32_t startMillis = millis();
-      dumpModemBuffer(maxWaitMs);
-      // We want to use an async socket close because the synchronous close of
-      // an open socket is INCREDIBLY SLOW and the modem can freeze up.  But we
-      // only attempt the async close if we already KNOW the socket is open
-      // because calling the async close on a closed socket and then attempting
-      // opening a new socket causes the board to lock up for 2-3 minutes and
-      // then finally return with a "new" socket that is immediately closed.
-      // Attempting to close a socket that is already closed with a synchronous
-      // close quickly returns an error.
-      if (at->supportsAsyncSockets && sock_connected) {
-        DBG("### Closing socket asynchronously!  Socket might remain open "
-            "until arrival of +UUSOCL:",
-            mux);
-        // faster asynchronous close
-        // NOT supported on SARA-R404M / SARA-R410M-01B
-        at->sendAT(GF("+USOCL="), mux, GF(",1"));
-        // NOTE:  can take up to 120s to get a response
-        at->waitResponse((maxWaitMs - (millis() - startMillis)));
-        // We set the sock as disconnected right away because it can no longer
-        // be used
-        sock_connected = false;
-      } else {
-        // synchronous close
-        at->sendAT(GF("+USOCL="), mux);
-        // NOTE:  can take up to 120s to get a response
-        at->waitResponse((maxWaitMs - (millis() - startMillis)));
-        sock_connected = false;
-      }
-    }
-
 
     /*
      * Extended API
@@ -897,8 +862,15 @@ class TinyGsmSaraR4
     sendAT(GF("+USOCR=6"));
     // reply is +USOCR: ## of socket created
     if (waitResponse(GF("+USOCR:")) != 1) { return false; }
-    *mux = streamGetIntBefore('\n');
+    int8_t newMux = streamGetIntBefore('\n');
     waitResponse();
+    // Validate the returned mux
+    if (!(newMux < TcpConfig::kMuxCount)) {
+      DBG(GF("ERROR: Modem returned invalid mux"));
+      *mux = static_cast<uint8_t>(-1);  // Set mux to invalid value
+      return false;  // Return failure when mux is out of range
+    }
+    *mux = static_cast<uint8_t>(newMux);
 
     if (ssl) {
       sendAT(GF("+USOSEC="), *mux, ",1");
@@ -946,6 +918,36 @@ class TinyGsmSaraR4
       int8_t rsp = waitResponse(timeout_ms - (millis() - startMillis));
       return (1 == rsp);
     }
+  }
+
+  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+    // We want to use an async socket close because the synchronous close of
+    // an open socket is INCREDIBLY SLOW and the modem can freeze up.  But we
+    // only attempt the async close if we already KNOW the socket is open
+    // because calling the async close on a closed socket and then attempting
+    // opening a new socket causes the board to lock up for 2-3 minutes and
+    // then finally return with a "new" socket that is immediately closed.
+    // Attempting to close a socket that is already closed with a synchronous
+    // close quickly returns an error.
+    if (supportsAsyncSockets && sockets[mux]->sock_connected) {
+      DBG("### Closing socket asynchronously!  Socket might remain open "
+          "until arrival of +UUSOCL:",
+          mux);
+      // faster asynchronous close
+      // NOT supported on SARA-R404M / SARA-R410M-01B
+      // Same command for both secure and non-secure sockets
+      sendAT(GF("+USOCL="), mux, GF(",1"));
+      // NOTE: Even though we're closing asynchronously and not waiting for the
+      // close to complete, we let the stop function set the sock as
+      // disconnected right away because it can no longer be used
+      // NOTE: Even asynchronously, it can take up to 120s to get a response
+    } else {
+      // synchronous close
+      // Same command for both secure and non-secure sockets
+      sendAT(GF("+USOCL="), mux);
+      // NOTE:  can take up to 120s to get a response
+    }
+    return waitResponse(maxWaitMs) == 1;
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
