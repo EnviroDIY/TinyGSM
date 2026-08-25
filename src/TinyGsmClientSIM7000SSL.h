@@ -182,7 +182,8 @@ struct TinyGsmSim7000SSLTcpConfig
     : public TinyGsmTcpConfigPreset<
           /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
           /*muxMode*/ TinyGsmTcpMuxMode::Static,
-          /*muxCount*/ 8> {};
+          /*muxCount*/ 8,
+          /*sendMaxSize*/ 1460> {};
 
 /// Class for the SIMCOM SIM7000 with SSL support using the SSL application
 /// @ingroup simcom_sim7000ssl

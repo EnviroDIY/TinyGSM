@@ -95,7 +95,7 @@
  *   - Because this module doesn't supply a way to check how much data is stored
  * in the buffer, you should try to avoid reading it out in small chunks.
  * - Socket Numbering:
- *   - TinyGsmMC60TcpConfig uses static mux selection.
+ *   - The Quectel MC60 uses static mux selection.
  *   - The caller chooses the multiplexing channel number via the constructor or
  * init() function.
  *   - init() honors the requested channel when available; if unavailable, it

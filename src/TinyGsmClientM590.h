@@ -82,7 +82,7 @@
  *   - Change the buffer size by defining TINY_GSM_RX_BUFFER in your sketch
  * before including any TinyGSM header file.
  * - Socket Numbering:
- *   - TinyGsmM590TcpConfig uses static mux selection.
+ *   - The Quectel M590 uses static mux selection.
  *   - The caller chooses the multiplexing channel number via the constructor or
  * init() function.
  *   - init() honors the requested channel when available; if unavailable, it

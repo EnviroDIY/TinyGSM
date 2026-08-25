@@ -457,6 +457,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     /// @copydoc GsmClient::remoteIP()
     String remoteIP() {
+      if (at == nullptr) { return ""; }
       IPAddress atLastIP = at->savedIP;
       return TinyGsmStringFromIp(atLastIP);
     }
