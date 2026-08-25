@@ -511,34 +511,24 @@ class GsmClient : public Client {
    * @param timeout_s The timeout for the connection attempt, in seconds.
    * @return 1 if the connection was successful, 0 otherwise.
    */
-  virtual int connect(const char* host, uint16_t port, int timeout_s) {
-    if (TcpConfig::kMuxMode == TinyGsmTcpMuxMode::Static) {
-      if (at == nullptr) { return 0; }
-      is_mid_send = false;
+  virtual int connect(const char* host, uint16_t port, int timeout_s) = 0;
 
-      // free the socket if there was one and it was connected
-      if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr &&
-          sock_connected) {
-        stop(TcpConfig::kStopTimeoutS * 1000L);
-        rx.clear();
-      }
-      TINY_GSM_YIELD();
-
-      // connect at the specified mux number, which is assumed to be valid
-      sock_connected = at->modemConnect(host, port, mux, timeout_s);
-      return sock_connected;
-
-    } else if (TcpConfig::kMuxMode == TinyGsmTcpMuxMode::Dynamic) {
-      DBG(GF("### ERROR: Modem client has been created incorrectly!"));
-      DBG(GF("### Modems with dynamic mux assignment must override the "
-             "connect() function."));
-      return 0;
-    } else {
-      DBG(GF("### ERROR: Modem client has been created incorrectly!"));
-      return 0;
-    }
+#define TINY_GSM_STATIC_TCP_CONNECT                                       \
+  int connect(const char* host, uint16_t port, int timeout_s) override {  \
+    is_mid_send = false;                                                  \
+    /*free the socket if there was one and it was connected*/             \
+    if (mux < TcpConfig::kMuxCount && at.sockets[mux] != nullptr &&       \
+        sock_connected) {                                                 \
+      stop(TcpConfig::kStopTimeoutS * 1000L);                             \
+      rx.clear();                                                         \
+    }                                                                     \
+    TINY_GSM_YIELD();                                                     \
+    /*connect at the specified mux number, which is assumed to be valid*/ \
+    sock_connected = at.modemConnect(host, port, mux, timeout_s);         \
+    return sock_connected;                                                \
   }
 
+ public:
   /**
    * @brief Connect to a server using an IPAddress and port number, with a
    * specified timeout.
