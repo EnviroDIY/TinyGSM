@@ -225,3 +225,5 @@ class TinyGsmTime {
 };
 
 #endif  // SRC_TINYGSMTIME_TPP_
+
+// cSpell:words ihour
