@@ -333,9 +333,9 @@ class TinyGsmSim7000SSL
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
-    /// Typedef for backward compatibility
-    using GsmClientSecureSIM7000SSL = GsmClientSecureSim7000SSL;
   };
+  /// Typedef for backward compatibility
+  using GsmClientSecureSIM7000SSL = GsmClientSecureSim7000SSL;
 
   /*
    * GSM Modem Constructor
