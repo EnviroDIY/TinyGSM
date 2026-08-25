@@ -59,6 +59,7 @@
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
  *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
  *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
@@ -235,25 +236,10 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
       return true;
     }
 
-   public:
-    int connect(const char* host, uint16_t port, int timeout_s) override {
-      if (at == nullptr) { return 0; }
-      stop(TcpConfig::kStopTimeoutS * 1000L);
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, timeout_s);
-      return sock_connected;
-    }
-
-    void stop(uint32_t maxWaitMs) override {
-      if (at == nullptr) { return; }
-      is_mid_send = false;
-      TINY_GSM_YIELD();
-      at->sendAT(GF("+TCPCLOSE="), mux);
-      sock_connected = false;
-      at->waitResponse(maxWaitMs);
-      rx.clear();
-    }
+    /*
+     * Client API
+     */
+    // Follows the template implementations in TinyGsmTCP.tpp
 
     /*
      * Extended API
@@ -628,6 +614,11 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
       if (!send_success) { break; }
     } while (bytesSent < len && sockets[mux]->sock_connected);
     return bytesSent;
+  }
+
+  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+    sendAT(GF("+TCPCLOSE="), mux);
+    return waitResponse(maxWaitMs) == 1;
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {

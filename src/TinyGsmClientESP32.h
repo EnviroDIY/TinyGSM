@@ -52,6 +52,7 @@
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
  *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
  *     - @ref TinyGsmSSL<modemType>::deleteCertificate "deleteCertificate()"
@@ -277,40 +278,38 @@ class TinyGsmESP32
       return true;
     }
 
+    /*
+     * Client API
+     */
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
       is_mid_send = false;
-      if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr) { stop(); }
+      if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr) {
+        stop(TcpConfig::kStopTimeoutS * 1000L);
+      }
       TINY_GSM_YIELD();
       rx.clear();
-      uint8_t oldMux = mux;
-      sock_connected = at->modemConnect(host, port, &mux, timeout_s);
-
-      // Validate mux before any access to sockets array
-      if (!(mux < TcpConfig::kMuxCount)) {
-        DBG(GF("ERROR: Modem returned invalid mux"), mux, GF("(max:"),
-            static_cast<int>(TcpConfig::kMuxCount - 1), GF(")"));
-        return 0;  // Return failure when mux is out of range
+      uint8_t newMux = static_cast<uint8_t>(-1);
+      // modemConnect will validate the mux number returned by the modem and
+      // return false and set the newMux to -1 if the mux number is invalid or
+      // the connection fails
+      sock_connected = at->modemConnect(host, port, &newMux, timeout_s);
+      if (sock_connected) {
+        // move the pointer to this client in the sockets array if needed
+        // set the requested mux to -1 to get the next available mux number
+        at->moveSocketToNewMux(mux, static_cast<uint8_t>(-1));
+        at->sockets[newMux] = this;
+        mux                 = newMux;
       }
-
-      if (mux != oldMux) {
-        DBG(GF("###  Mux number changed from"), oldMux, GF("to"), mux);
-        if (!(at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
-          DBG(GF("WARNING: This new mux number had already been assigned to a "
-                 "different client, attempting to move it!"));
-          uint8_t next_empty_mux = at->findFirstUnassignedMux();
-          if (next_empty_mux != static_cast<uint8_t>(-1)) {
-            DBG(GF("### Socket previously assigned as"), mux, GF("moved to"),
-                next_empty_mux);
-            at->sockets[next_empty_mux] = at->sockets[mux];
-          } else {
-            DBG(GF("WARNING: Failed to move socket, it will be overwritten!"));
-          }
-        }
-        at->sockets[oldMux] = nullptr;
-      }
-      at->sockets[mux] = this;
+      // NOTE: If the sock didn't connect, DO NOT move the pointer to this
+      // client in the sockets array because we still need to be able to access
+      // the client by a valid mux number to check if it's expected to be an SSL
+      // connection and, if so, what the SSL specs are.  If we move the pointer
+      // to this client in the sockets array when the connection fails, we will
+      // lose access to the client by a valid mux number and the modem will not
+      // be able to check if it's expected to be an SSL connection and, if so,
+      // what the SSL specs are.
       return sock_connected;
     }
 
@@ -326,7 +325,7 @@ class TinyGsmESP32
         // We explicitly toss it here because the socket will appear open in
         // response to connected() even after it closes until all data is read
         // to give the user a chance to recover the data if they want it.
-        dumpModemBuffer(maxWaitMs);
+        dumpModemBuffer(/*maxWaitMs*/);
       }
       // NOTE: It should be safe to only send the close here if sock_connected
       // reads true because the above will have updated sock_connected
@@ -334,12 +333,8 @@ class TinyGsmESP32
       // calls modemGetAvailable on every read to update sock_available, once
       // sock_available=0 modemGetAvailable calls modemGetConnected, and
       // modemGetConnected updates sock_connected for all sockets.)
-      if (sock_connected) {
-        at->sendAT(GF("+CIPCLOSE="), mux);
-        at->waitResponse(maxWaitMs);
-      }
+      if (sock_connected) { at->modemStop(mux, maxWaitMs); }
       sock_connected = false;
-      rx.clear();
     }
 
     /*
@@ -1356,15 +1351,24 @@ class TinyGsmESP32
     );
 
     String data;
-    int8_t rsp = waitResponse(timeout_ms, data, GFP(ModemConfig::GSM_OK),
-                              GFP(ModemConfig::GSM_ERROR),
-                              GF("ALREADY CONNECT"));
-    if (rsp == 1 && data.length() > 8) {
+    bool   success = waitResponse(timeout_ms, data, GFP(ModemConfig::GSM_OK),
+                                  GFP(ModemConfig::GSM_ERROR),
+                                  GF("ALREADY CONNECT")) == 1;
+    if (success && data.length() > 8) {
       int8_t coma        = data.indexOf(',');
       int8_t connect_mux = data.substring(0, coma).toInt();
-      *mux               = connect_mux;
+
+      // Validate the returned mux
+      if (!(connect_mux < TcpConfig::kMuxCount)) {
+        DBG(GF("ERROR: Modem returned invalid mux or connection failed"));
+        *mux = static_cast<uint8_t>(-1);  // Set mux to invalid value
+        return false;  // Return failure when mux is out of range
+      }
+      *mux = connect_mux;
+    } else {
+      *mux = static_cast<uint8_t>(-1);  // Set mux to invalid value on failure
     }
-    return (1 == rsp);
+    return success;
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {

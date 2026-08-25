@@ -127,6 +127,40 @@ class TinyGsmTCP {
     return static_cast<uint8_t>(-1);
   }
 
+  bool moveSocketToNewMux(uint8_t oldMux, uint8_t reqMux,
+                          uint8_t* newMux = nullptr) {
+    if (!(oldMux < TcpConfig::kMuxCount)) {
+      DBG(GF("ERROR: Cannot move from an invalid socket:"), oldMux);
+      return false;
+    }
+    if (oldMux == reqMux || thisModem().sockets[oldMux] == nullptr) {
+      if (newMux) { *newMux = oldMux; }
+      return true;  // Nothing to do, but not an error
+    }
+    if (!(reqMux < TcpConfig::kMuxCount) ||
+        thisModem().sockets[reqMux] != nullptr) {
+      DBG(GF("Warning: The requested mux number ("), reqMux,
+          GF(") is invalid or already in use, moving to the next empty socket "
+             "instead."));
+
+      uint8_t next_empty_mux = findFirstUnassignedMux();
+      if (next_empty_mux == static_cast<uint8_t>(-1)) {
+        DBG(GF("ERROR: No empty mux sockets available!"));
+        return false;
+      }
+
+      thisModem().sockets[next_empty_mux] = thisModem().sockets[oldMux];
+      thisModem().sockets[oldMux]         = nullptr;
+      if (newMux) { *newMux = next_empty_mux; }
+      return true;
+    }
+    // If we reach here, it means the requested mux is valid and not in use
+    thisModem().sockets[reqMux] = thisModem().sockets[oldMux];
+    thisModem().sockets[oldMux] = nullptr;
+    if (newMux) { *newMux = reqMux; }
+    return true;
+  }
+
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     int timeout_s = TcpConfig::kConnectTimeoutS) {
@@ -136,6 +170,10 @@ class TinyGsmTCP {
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
                     int timeout_s = TcpConfig::kConnectTimeoutS) {
     return thisModem().modemConnectImpl(host, port, mux, timeout_s);
+  }
+
+  bool modemStop(uint8_t mux, uint32_t maxWaitMs) {
+    return thisModem().modemStopImpl(mux, maxWaitMs);
   }
 
   /**
@@ -315,6 +353,9 @@ class TinyGsmTCP {
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t* mux,
                         int timeout_s) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
+  virtual bool modemStopImpl(uint8_t  mux,
+                             uint32_t maxWaitMs) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
   size_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
     // Pointer to where in the buffer we're up to
     // A const cast is need to cast-away the constant-ness of the buffer (ie,
@@ -430,6 +471,10 @@ class TinyGsmTCP {
  *
  * @tparam modemType The derived modem class
  * @tparam tcpConfig Trait type controlling TCP behavior and limits.
+ *
+ * @todo In `GsmClient::connect()`, confirm that we can trust sock_connected at
+ * the start of a new connection before calling stop or if we should call stop
+ * regardless for static mux assignment.
  */
 template <class modemType, class tcpConfig>
 class GsmClient : public Client {
@@ -466,7 +511,33 @@ class GsmClient : public Client {
    * @param timeout_s The timeout for the connection attempt, in seconds.
    * @return 1 if the connection was successful, 0 otherwise.
    */
-  virtual int connect(const char* host, uint16_t port, int timeout_s) = 0;
+  virtual int connect(const char* host, uint16_t port, int timeout_s) {
+    if (TcpConfig::kMuxMode == TinyGsmTcpMuxMode::Static) {
+      if (at == nullptr) { return 0; }
+      is_mid_send = false;
+
+      // free the socket if there was one and it was connected
+      if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr &&
+          sock_connected) {
+        stop(TcpConfig::kStopTimeoutS * 1000L);
+        rx.clear();
+      }
+      TINY_GSM_YIELD();
+
+      // connect at the specified mux number, which is assumed to be valid
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
+      return sock_connected;
+
+    } else if (TcpConfig::kMuxMode == TinyGsmTcpMuxMode::Dynamic) {
+      DBG(GF("### ERROR: Modem client has been created incorrectly!"));
+      DBG(GF("### Modems with dynamic mux assignment must override the "
+             "connect() function."));
+      return 0;
+    } else {
+      DBG(GF("### ERROR: Modem client has been created incorrectly!"));
+      return 0;
+    }
+  }
 
   /**
    * @brief Connect to a server using an IPAddress and port number, with a
@@ -509,10 +580,35 @@ class GsmClient : public Client {
    * @brief Close the client connection, with a specified maximum wait time
    * for the operation.
    *
+   * If there is modem remaining in the modem buffer before the connection is
+   * closed, it will be dumped and lost.
+   *
    * @param maxWaitMs The maximum time to wait for the connection to close,
    * in milliseconds.
+   *
+   * @note The max wait time is the time to give the modem to close the
+   * connection cleanly. If there is modem remaining in the modem buffer before
+   * the connection is closed, the total time before this function returns may
+   * be longer than the max wait time, as dumping the modem buffer may take
+   * additional time.
    */
-  virtual void stop(uint32_t maxWaitMs) = 0;
+  virtual void stop(uint32_t maxWaitMs) {
+    if (at == nullptr) { return; }
+    is_mid_send = false;
+    // Throw away any remaining data in the modem buffer.
+    // We explicitly toss it here because the socket will appear open in
+    // response to connected() even after it closes until all data is read
+    // to give the user a chance to recover the data if they want it.
+    // Dumping the modem buffer will also clear the rx fifo.
+    dumpModemBuffer(/*maxWaitMs*/);
+    at->modemStop(mux, maxWaitMs);
+    // Mark the socket disconnected
+    // Should we check the return of modemStop and only set sock_connected to
+    // false if it was successful?  I suspect we should error on the side of
+    // caution and assume that if we called stop, the socket is no longer
+    // connected, even if the modem didn't report it cleanly.
+    sock_connected = false;
+  }
   /**
    * @brief Close the client connection, with a default maximum wait time
    */
@@ -868,14 +964,14 @@ class GsmClient : public Client {
   // closes until all data is read from the buffer.
   // Doing it this way allows the external mcu to find and get all of the
   // data that it wants from the socket even if it was closed externally.
-  inline void dumpModemBuffer(uint32_t maxWaitMs) {
+  inline void dumpModemBuffer(/*uint32_t maxWaitMs*/) {
     if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
       rx.clear();
       at->streamClear();
     } else {
       TINY_GSM_YIELD();
-      uint32_t startMillis = millis();
-      while (sock_available > 0 && (millis() - startMillis < maxWaitMs)) {
+      // uint32_t startMillis = millis();
+      while (sock_available > 0 /*&& (millis() - startMillis < maxWaitMs)*/) {
         rx.clear();
         at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       }

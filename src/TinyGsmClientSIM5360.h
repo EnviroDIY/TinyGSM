@@ -60,6 +60,7 @@
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
  *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
  *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
@@ -285,25 +286,10 @@ class TinyGsmSim5360
       return true;
     }
 
-   public:
-    int connect(const char* host, uint16_t port, int timeout_s) override {
-      if (at == nullptr) { return 0; }
-      stop(TcpConfig::kStopTimeoutS * 1000L);
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, timeout_s);
-      return sock_connected;
-    }
-
-    void stop(uint32_t maxWaitMs) override {
-      if (at == nullptr) { return; }
-      is_mid_send = false;
-      dumpModemBuffer(maxWaitMs);
-      at->sendAT(GF("+CIPCLOSE="), mux);
-      sock_connected = false;
-      at->waitResponse();
-    }
-
+    /*
+     * Client API
+     */
+    // Follows the template implementations in TinyGsmTCP.tpp
 
     /*
      * Extended API
@@ -823,6 +809,11 @@ class TinyGsmSim5360
     // The reply is +CIPOPEN: ## of socket created
     if (waitResponse(timeout_ms, GF("+CIPOPEN:")) != 1) { return false; }
     return true;
+  }
+
+  bool modemStopImpl(uint8_t mux, uint32_t /*maxWaitMs*/) {
+    sendAT(GF("+CIPCLOSE="), mux);
+    return waitResponse() == 1;  // should return within 1s
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {

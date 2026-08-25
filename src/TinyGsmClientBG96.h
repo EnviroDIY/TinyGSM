@@ -60,6 +60,7 @@
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
  *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
  *     - @ref TinyGsmSSL<modemType>::deleteCertificate "deleteCertificate()"
@@ -300,27 +301,10 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       return true;
     }
 
-   public:
-    int connect(const char* host, uint16_t port, int timeout_s) override {
-      if (at == nullptr) { return 0; }
-      stop(TcpConfig::kStopTimeoutS * 1000L);
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, timeout_s);
-      return sock_connected;
-    }
-
-    void stop(uint32_t maxWaitMs) override {
-      if (at == nullptr) { return; }
-      is_mid_send          = false;
-      uint32_t startMillis = millis();
-      dumpModemBuffer(maxWaitMs);
-      at->sendAT(GF("+QICLOSE="), mux);
-      sock_connected     = false;
-      uint32_t elapsedMs = millis() - startMillis;
-      if (elapsedMs < maxWaitMs) { at->waitResponse(maxWaitMs - elapsedMs); }
-    }
-
+    /*
+     * Client API
+     */
+    // Follows the template implementations in TinyGsmTCP.tpp
 
     /*
      * Extended API
@@ -368,18 +352,6 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
-
-    void stop(uint32_t maxWaitMs) override {
-      if (at == nullptr) { return; }
-      is_mid_send          = false;
-      uint32_t startMillis = millis();
-      dumpModemBuffer(maxWaitMs);
-      at->sendAT(GF("+QSSLCLOSE="), mux);
-      sock_connected     = false;
-      uint32_t elapsedMs = millis() - startMillis;
-      if (elapsedMs < maxWaitMs) { at->waitResponse(maxWaitMs - elapsedMs); }
-    }
-
 
     // NOTE: Unlike the unsecured client, we can't check the size of the buffer
     // for an SSL socket. This means we have to overwrite all of the
@@ -1272,6 +1244,16 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     }
     // Read status
     return (0 == streamGetIntBefore('\n'));
+  }
+
+  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+    bool ssl = sockets[mux]->is_secure;
+    if (ssl) {
+      sendAT(GF("+QSSLCLOSE="), mux);
+    } else {
+      sendAT(GF("+QICLOSE="), mux);
+    }
+    return waitResponse(maxWaitMs) == 1;
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {

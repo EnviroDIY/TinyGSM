@@ -75,6 +75,7 @@
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
  *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
  *     - @ref TinyGsmSSL<modemType>::deleteCertificate "deleteCertificate()"
@@ -285,25 +286,10 @@ class TinyGsmSim7000SSL
       return true;
     }
 
-   public:
-    int connect(const char* host, uint16_t port, int timeout_s) override {
-      if (at == nullptr) { return 0; }
-      stop(TcpConfig::kStopTimeoutS * 1000L);
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, timeout_s);
-      return sock_connected;
-    }
-
-    void stop(uint32_t maxWaitMs) override {
-      if (at == nullptr) { return; }
-      is_mid_send = false;
-      dumpModemBuffer(maxWaitMs);
-      at->sendAT(GF("+CACLOSE="), mux);
-      sock_connected = false;
-      at->waitResponse(3000);
-    }
-
+    /*
+     * Client API
+     */
+    // Follows the template implementations in TinyGsmTCP.tpp
 
     /*
      * Extended API
@@ -1105,6 +1091,12 @@ class TinyGsmSim7000SSL
     waitResponse();
 
     return 0 == res;
+  }
+
+  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+    // Same command for both secure and non-secure sockets
+    sendAT(GF("+CACLOSE="), mux);
+    return waitResponse(min(maxWaitMs, 3000L)) == 1;  // should return within 3s
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
