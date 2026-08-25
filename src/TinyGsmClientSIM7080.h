@@ -275,6 +275,7 @@ class TinyGsmSim7080
      * @copydetails GsmClientSim7080::GsmClientSim7080(TinyGsmSim7080&, uint8_t)
      */
     bool init(TinyGsmSim7080* modem, uint8_t mux = 0) {
+      if (modem == nullptr) { return false; }
       this->at        = modem;
       sock_available  = 0;
       prev_check      = 0;

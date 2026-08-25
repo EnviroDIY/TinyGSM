@@ -253,6 +253,7 @@ class TinyGsmSequansMonarch
      * TinyGsmSequansMonarch&, uint8_t)
      */
     bool init(TinyGsmSequansMonarch* modem, uint8_t mux = 1) {
+      if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;
       prev_check     = 0;

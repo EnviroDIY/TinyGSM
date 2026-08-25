@@ -260,6 +260,7 @@ class TinyGsmSim7000SSL
      * uint8_t)
      */
     bool init(TinyGsmSim7000SSL* modem, uint8_t mux = 0) {
+      if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;
       prev_check     = 0;

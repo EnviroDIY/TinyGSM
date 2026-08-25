@@ -235,6 +235,7 @@ class TinyGsmESP8266
      * @copydetails GsmClientESP8266::GsmClientESP8266(TinyGsmESP8266&, uint8_t)
      */
     bool init(TinyGsmESP8266* modem, uint8_t mux = 0) {
+      if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_connected = false;
       is_mid_send    = false;

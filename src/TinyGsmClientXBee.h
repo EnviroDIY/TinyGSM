@@ -287,6 +287,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
      * @copydetails GsmClientXBee::GsmClientXBee(TinyGsmXBee&, uint8_t)
      */
     bool init(TinyGsmXBee* modem, uint8_t /*mux*/ = 0) {
+      if (modem == nullptr) { return false; }
       this->at       = modem;
       this->mux      = 0;
       sock_connected = false;
