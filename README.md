@@ -259,7 +259,7 @@ The general flow of your code should be:
 
 - Define the module that you are using (choose one and only one)
   - ie, `#define TINY_GSM_MODEM_SIM800`
-- Included TinyGSM
+- Include TinyGSM
   - `#include <TinyGsmClient.h>`
 - Create a TinyGSM modem instance
   - `TinyGsm modem(SerialAT);`

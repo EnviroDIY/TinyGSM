@@ -48,44 +48,45 @@ struct TinyGsmModemConfigPreset {
 };
 
 // Out-of-class definitions for C++11 compliance
-template <typename regStatusType>
+
 /// @brief Out-of-class definition of the default modem manufacturer string.
+template <typename regStatusType>
 constexpr char TinyGsmModemConfigPreset<regStatusType>::MODEM_MANUFACTURER[]
     __attribute__((weak));
 
-template <typename regStatusType>
 /// @brief Out-of-class definition of the default modem model string.
+template <typename regStatusType>
 constexpr char TinyGsmModemConfigPreset<regStatusType>::MODEM_MODEL[]
     __attribute__((weak));
 
-template <typename regStatusType>
 /// @brief Out-of-class definition of the default AT newline sequence.
+template <typename regStatusType>
 constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_NL[]
     __attribute__((weak));
 
-template <typename regStatusType>
 /// @brief Out-of-class definition of the default AT command prefix.
+template <typename regStatusType>
 constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_AT[]
     __attribute__((weak));
 
-template <typename regStatusType>
 /// @brief Out-of-class definition of the default modem OK response string.
+template <typename regStatusType>
 constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_OK[]
     __attribute__((weak));
 
-template <typename regStatusType>
 /// @brief Out-of-class definition of the default modem ERROR response string.
+template <typename regStatusType>
 constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_ERROR[]
     __attribute__((weak));
 
 #if defined TINY_GSM_DEBUG
-template <typename regStatusType>
 /// @brief Out-of-class definition of the first verbose error response prefix.
+template <typename regStatusType>
 constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_VERBOSE[]
     __attribute__((weak));
 
-template <typename regStatusType>
 /// @brief Out-of-class definition of the second verbose error response prefix.
+template <typename regStatusType>
 constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_VERBOSE_2[]
     __attribute__((weak));
 #endif

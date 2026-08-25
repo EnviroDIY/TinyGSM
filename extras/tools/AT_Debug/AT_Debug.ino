@@ -1,8 +1,8 @@
 /** ============================================================================
  * @example{lineno} AT_Debug.ino
  *
- * @brief This script tries to auto-detect the baud rate and allows direct AT
- * commands access.
+ * @brief This script tries to auto-detect the baud rate and provides direct
+ * access to AT commands.
  *
  * @warning The quality of the passthrough connection created by this sketch is
  * limited by the baud rate and the speed of the Arduino.  If possible, you
