@@ -200,14 +200,6 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
     using TcpConfig = TinyGsmA6TcpConfig;
 
     /**
-     * @brief Create a new TCP client.
-     * @warning You must call the init() method before attempting to use a
-     * client created with this constructor.
-     */
-    GsmClientA6() {
-      is_secure = false;
-    }
-    /**
      * @brief Create a new TCP client and bind it to a modem.
      * @param modem Modem instance used by this client.
      *
@@ -216,24 +208,13 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
      * a server.  Use the getMux() function to get the assigned multiplexing
      * channel number after a successful connection.
      */
-    explicit GsmClientA6(TinyGsmA6& modem, uint8_t /*mux*/ = 0) {
-      init(&modem, static_cast<uint8_t>(-1));
+    explicit GsmClientA6(TinyGsmA6& modem, uint8_t /*mux*/ = 0)
+        : GsmClient<TinyGsmA6, TinyGsmA6TcpConfig>(modem /*, mux*/) {
       is_secure = false;
-    }
 
-    /**
-     * @brief Initialize the TCP client with a modem.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientA6::GsmClientA6(TinyGsmA6&, uint8_t)
-     */
-    bool init(TinyGsmA6* modem, uint8_t /*mux*/ = 0) {
-      if (modem == nullptr) { return false; }
-      this->at       = modem;
       this->mux      = static_cast<uint8_t>(-1);
       sock_connected = false;
       is_mid_send    = false;
-
-      return true;
     }
 
     /*
@@ -241,9 +222,11 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
      */
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      if (at == nullptr) { return 0; }
       is_mid_send = false;
-      if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr) {
+      // stop if and only if the mux number is valid, the socket pointer is not
+      // null, and the socket is connected
+      if (mux < TcpConfig::kMuxCount && at.sockets[mux] != nullptr &&
+          sock_connected) {
         stop(TcpConfig::kStopTimeoutS * 1000L);
       }
       TINY_GSM_YIELD();
@@ -252,12 +235,12 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
       // modemConnect will validate the mux number returned by the modem and
       // return false and set the newMux to -1 if the mux number is invalid or
       // the connection fails
-      sock_connected = at->modemConnect(host, port, &newMux, timeout_s);
+      sock_connected = at.modemConnect(host, port, &newMux, timeout_s);
       if (sock_connected) {
         // move the pointer to this client in the sockets array if needed
         // set the requested mux to -1 to get the next available mux number
-        at->moveSocketToNewMux(mux, static_cast<uint8_t>(-1));
-        at->sockets[newMux] = this;
+        at.moveSocketToNewMux(mux, static_cast<uint8_t>(-1));
+        at.sockets[newMux] = this;
       }
       mux = newMux;  // this will be -1 if the connection failed, otherwise it
                      // will be the mux number returned by the modem

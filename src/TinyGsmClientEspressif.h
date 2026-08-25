@@ -358,10 +358,11 @@ class TinyGsmEspressif
   /*
    * Client-related functions
    */
-  void modemStopImpl(uint8_t mux, uint32_t maxWaitMs) override {
+ protected:
+  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
     // same command for SSL and not SSL
-    sendAT(GF("+CIPCLOSE="), mux);
-    waitResponse(maxWaitMs);
+    thisModem().sendAT(GF("+CIPCLOSE="), mux);
+    return thisModem().waitResponse(maxWaitMs);
   }
 
   /*

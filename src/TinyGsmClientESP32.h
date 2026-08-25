@@ -215,14 +215,6 @@ class TinyGsmESP32
     using TcpConfig = TinyGsmESP32TcpConfig;
 
     /**
-     * @brief Create a new TCP client.
-     * @warning You must call the init() method before attempting to use a
-     * client created with this constructor.
-     */
-    GsmClientESP32() {
-      is_secure = false;
-    }
-    /**
      * @brief Create a new TCP client and bind it to a modem and optionally a
      * multiplexing channel.
      * @param modem Modem instance used by this client.
@@ -234,20 +226,11 @@ class TinyGsmESP32
      * getMux() function to get the assigned multiplexing channel number after a
      * successful connection.
      */
-    explicit GsmClientESP32(TinyGsmESP32& modem, uint8_t mux = 0) {
-      init(&modem, mux);
+    explicit GsmClientESP32(TinyGsmESP32& modem, uint8_t mux = 0)
+        : GsmClient<TinyGsmESP32, TinyGsmESP32TcpConfig>(modem, mux) {
       is_secure = false;
-    }
 
-    /**
-     * @brief Initialize the TCP client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientESP32::GsmClientESP32(TinyGsmESP32&, uint8_t)
-     */
-    bool init(TinyGsmESP32* modem, uint8_t mux = 0) {
-      if (modem == nullptr) { return false; }
-      this->at       = modem;
+
       sock_connected = false;
       is_mid_send    = false;
 
@@ -263,20 +246,18 @@ class TinyGsmESP32
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
       if (mux < TcpConfig::kMuxCount &&
-          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
+          (at.sockets[mux] == nullptr || at.sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
         // one
-      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
-        this->mux = at->findFirstUnassignedMux();
+      } else if (at.findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
+        this->mux = at.findFirstUnassignedMux();
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
         this->mux = (mux % TcpConfig::kMuxCount);
       }
-      at->sockets[this->mux] = this;
-
-      return true;
+      at.sockets[this->mux] = this;
     }
 
     /*
@@ -284,9 +265,11 @@ class TinyGsmESP32
      */
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      if (at == nullptr) { return 0; }
       is_mid_send = false;
-      if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr) {
+      // stop if and only if the mux number is valid, the socket pointer is not
+      // null, and the socket is connected
+      if (mux < TcpConfig::kMuxCount &&
+          at.sockets[mux] != nullptr && sock_connected) {
         stop(TcpConfig::kStopTimeoutS * 1000L);
       }
       TINY_GSM_YIELD();
@@ -295,13 +278,13 @@ class TinyGsmESP32
       // modemConnect will validate the mux number returned by the modem and
       // return false and set the newMux to -1 if the mux number is invalid or
       // the connection fails
-      sock_connected = at->modemConnect(host, port, &newMux, timeout_s);
+      sock_connected = at.modemConnect(host, port, &newMux, timeout_s);
       if (sock_connected) {
         // move the pointer to this client in the sockets array if needed
         // set the requested mux to -1 to get the next available mux number
-        at->moveSocketToNewMux(mux, static_cast<uint8_t>(-1));
-        at->sockets[newMux] = this;
-        mux                 = newMux;
+        at.moveSocketToNewMux(mux, static_cast<uint8_t>(-1));
+        at.sockets[newMux] = this;
+        mux                = newMux;
       }
       // NOTE: If the sock didn't connect, DO NOT move the pointer to this
       // client in the sockets array because we still need to be able to access
@@ -315,13 +298,12 @@ class TinyGsmESP32
     }
 
     void stop(uint32_t maxWaitMs) override {
-      if (at == nullptr) { return; }
       is_mid_send = false;
       TINY_GSM_YIELD();
       if (sock_connected || sock_available) {
         // Update available data first, because if the socket was closed
         // externally, the module may have thrown away the data
-        at->modemGetAvailable(mux);
+        at.modemGetAvailable(mux);
         // Now we throw away any remaining data in the modem buffer
         // We explicitly toss it here because the socket will appear open in
         // response to connected() even after it closes until all data is read
@@ -334,7 +316,7 @@ class TinyGsmESP32
       // calls modemGetAvailable on every read to update sock_available, once
       // sock_available=0 modemGetAvailable calls modemGetConnected, and
       // modemGetConnected updates sock_connected for all sockets.)
-      if (sock_connected) { at->modemStop(mux, maxWaitMs); }
+      if (sock_connected) { at.modemStop(mux, maxWaitMs); }
       sock_connected = false;
     }
 
@@ -377,10 +359,9 @@ class TinyGsmESP32
       CAcertNameBuf[sizeof(CAcertNameBuf) - 1] = '\0';
       this->CAcertName                         = CAcertNameBuf;
       // parse the certificate name into a number and namespace
-      if (at == nullptr) { return; }
       char    cert_namespace[14] = {};
       uint8_t certNumber         = 0;
-      at->parseCertificateName(CAcertName, cert_namespace, certNumber);
+      at.parseCertificateName(CAcertName, cert_namespace, certNumber);
       ca_number = certNumber;
     }
     /// @copydoc GsmClientSecureESP32::setCACertName(const char*)
@@ -404,17 +385,16 @@ class TinyGsmESP32
       clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
       this->clientCertName                             = clientCertNameBuf;
       // parse the certificate name into a number and namespace
-      if (at == nullptr) { return; }
       char    cert_namespace[14] = {};
       uint8_t certNumber         = 0;
-      at->parseCertificateName(clientCertName, cert_namespace, certNumber);
+      at.parseCertificateName(clientCertName, cert_namespace, certNumber);
       // set the private key number
       pki_number = certNumber;
       // generate the matching client private key name from the certificate
       // number and type
       char cert_name[16] = {};
-      at->getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
-                             cert_namespace);
+      at.getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
+                            cert_namespace);
       strncpy(clientKeyNameBuf, cert_name, sizeof(clientKeyNameBuf) - 1);
       clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
       clientKeyName                                  = clientKeyNameBuf;
@@ -440,17 +420,16 @@ class TinyGsmESP32
       clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
       this->clientKeyName                            = clientKeyNameBuf;
       // parse the certificate name into a number and namespace
-      if (at == nullptr) { return; }
       char    cert_namespace[14] = {};
       uint8_t certNumber         = 0;
-      at->parseCertificateName(clientKeyName, cert_namespace, certNumber);
+      at.parseCertificateName(clientKeyName, cert_namespace, certNumber);
       // set the private key number
       pki_number = certNumber;
       // generate the matching client certificate name from the private key
       // number and type
       char cert_name[16] = {};
-      at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
-                             cert_name, cert_namespace);
+      at.getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
+                            cert_name, cert_namespace);
       // set the client certificate name
       strncpy(clientCertNameBuf, cert_name, sizeof(clientCertNameBuf) - 1);
       clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
@@ -471,8 +450,8 @@ class TinyGsmESP32
       // names for the ESP32
       char cert_name[16]      = {};
       char cert_namespace[14] = {};
-      at->getCertificateName(CertificateType::CA_CERTIFICATE, certNumber,
-                             cert_name, cert_namespace);
+      at.getCertificateName(CertificateType::CA_CERTIFICATE, certNumber,
+                            cert_name, cert_namespace);
       memcpy(CAcertNameBuf, cert_name, sizeof(CAcertNameBuf));
       CAcertNameBuf[sizeof(CAcertNameBuf) - 1] = '\0';
       CAcertName                               = CAcertNameBuf;
@@ -490,14 +469,14 @@ class TinyGsmESP32
       // generate and set the name for the client certificate from the number
       char cert_name[16]      = {};
       char cert_namespace[14] = {};
-      at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
-                             cert_name, cert_namespace);
+      at.getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
+                            cert_name, cert_namespace);
       memcpy(clientCertNameBuf, cert_name, sizeof(clientCertNameBuf));
       clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
       clientCertName                                   = clientCertNameBuf;
       // generate and set the name for the client private key from the number
-      at->getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
-                             cert_namespace);
+      at.getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
+                            cert_namespace);
       memcpy(clientKeyNameBuf, cert_name, sizeof(clientKeyNameBuf));
       clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
       clientKeyName                                  = clientKeyNameBuf;
@@ -1371,6 +1350,9 @@ class TinyGsmESP32
     }
     return success;
   }
+
+  // Disambiguate modemStopImpl by using the Espressif implementation
+  using TinyGsmEspressif<TinyGsmESP32, TinyGsmESP32ModemConfig>::modemStopImpl;
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', len);
