@@ -143,6 +143,7 @@ class TinyGsmSSL {
 
   /// Default constructor
   TinyGsmSSL() {}
+  explicit TinyGsmSSL(modemType& modem, uint8_t mux = 0) {}
 
   /**
    * @brief Load a new certificate onto the module.
@@ -507,9 +508,6 @@ class GsmSecureClient {
 
 /// short-cut macro for constructors
 #define TINY_GSM_SECURE_CLIENT_CTORS(modemAbbrev)                             \
-  GsmClientSecure##modemAbbrev() {                                            \
-    is_secure = true;                                                         \
-  }                                                                           \
   explicit GsmClientSecure##modemAbbrev(TinyGsm##modemAbbrev& modem,          \
                                         uint8_t               mux = 0)        \
       : GsmClient##modemAbbrev(modem, mux) {                                  \

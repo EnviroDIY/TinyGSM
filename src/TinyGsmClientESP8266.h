@@ -204,14 +204,6 @@ class TinyGsmESP8266
     using TcpConfig = TinyGsmESP8266TcpConfig;
 
     /**
-     * @brief Create a new TCP client.
-     * @warning You must call the init() method before attempting to use a
-     * client created with this constructor.
-     */
-    GsmClientESP8266() {
-      is_secure = false;
-    }
-    /**
      * @brief Create a new TCP client and bind it to a modem and optionally a
      * multiplexing channel.
      * @param modem Modem instance used by this client.
@@ -223,20 +215,11 @@ class TinyGsmESP8266
      * getMux() function to get the assigned multiplexing channel number after a
      * successful connection.
      */
-    explicit GsmClientESP8266(TinyGsmESP8266& modem, uint8_t mux = 0) {
-      init(&modem, mux);
+    explicit GsmClientESP8266(TinyGsmESP8266& modem, uint8_t mux = 0)
+        : GsmClient<TinyGsmESP8266, TinyGsmESP8266TcpConfig>(modem, mux) {
       is_secure = false;
-    }
 
-    /**
-     * @brief Initialize the TCP client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientESP8266::GsmClientESP8266(TinyGsmESP8266&, uint8_t)
-     */
-    bool init(TinyGsmESP8266* modem, uint8_t mux = 0) {
-      if (modem == nullptr) { return false; }
-      this->at       = modem;
+
       sock_connected = false;
       is_mid_send    = false;
 
@@ -246,20 +229,18 @@ class TinyGsmESP8266
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
       if (mux < TcpConfig::kMuxCount &&
-          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
+          (at.sockets[mux] == nullptr || at.sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
         // one
-      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
-        this->mux = at->findFirstUnassignedMux();
+      } else if (at.findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
+        this->mux = at.findFirstUnassignedMux();
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
         this->mux = (mux % TcpConfig::kMuxCount);
       }
-      at->sockets[this->mux] = this;
-
-      return true;
+      at.sockets[this->mux] = this;
     }
 
     /*
@@ -307,10 +288,9 @@ class TinyGsmESP8266
       CAcertNameBuf[sizeof(CAcertNameBuf) - 1] = '\0';
       this->CAcertName                         = CAcertNameBuf;
       // parse the certificate name into a number and namespace
-      if (at == nullptr) { return; }
       char    cert_namespace[14] = {};
       uint8_t certNumber         = 0;
-      at->parseCertificateName(CAcertName, cert_namespace, certNumber);
+      at.parseCertificateName(CAcertName, cert_namespace, certNumber);
       ca_number = certNumber;
     }
     /// @copydoc GsmClientSecureESP8266::setCACertName(const char*)
@@ -334,17 +314,16 @@ class TinyGsmESP8266
       clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
       this->clientCertName                             = clientCertNameBuf;
       // parse the certificate name into a number and namespace
-      if (at == nullptr) { return; }
       char    cert_namespace[14] = {};
       uint8_t certNumber         = 0;
-      at->parseCertificateName(clientCertName, cert_namespace, certNumber);
+      at.parseCertificateName(clientCertName, cert_namespace, certNumber);
       // set the private key number
       pki_number = certNumber;
       // generate the matching client private key name from the certificate
       // number and type
       char cert_name[16] = {};
-      at->getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
-                             cert_namespace);
+      at.getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
+                            cert_namespace);
       strncpy(clientKeyNameBuf, cert_name, sizeof(clientKeyNameBuf) - 1);
       clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
       clientKeyName                                  = clientKeyNameBuf;
@@ -370,17 +349,16 @@ class TinyGsmESP8266
       clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
       this->clientKeyName                            = clientKeyNameBuf;
       // parse the certificate name into a number and namespace
-      if (at == nullptr) { return; }
       char    cert_namespace[14] = {};
       uint8_t certNumber         = 0;
-      at->parseCertificateName(clientKeyName, cert_namespace, certNumber);
+      at.parseCertificateName(clientKeyName, cert_namespace, certNumber);
       // set the private key number
       pki_number = certNumber;
       // generate the matching client certificate name from the private key
       // number and type
       char cert_name[16] = {};
-      at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
-                             cert_name, cert_namespace);
+      at.getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
+                            cert_name, cert_namespace);
       // set the client certificate name
       strncpy(clientCertNameBuf, cert_name, sizeof(clientCertNameBuf) - 1);
       clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
@@ -401,8 +379,8 @@ class TinyGsmESP8266
       // names for the ESP32
       char cert_name[16]      = {};
       char cert_namespace[14] = {};
-      at->getCertificateName(CertificateType::CA_CERTIFICATE, certNumber,
-                             cert_name, cert_namespace);
+      at.getCertificateName(CertificateType::CA_CERTIFICATE, certNumber,
+                            cert_name, cert_namespace);
       memcpy(CAcertNameBuf, cert_name, sizeof(CAcertNameBuf));
       CAcertNameBuf[sizeof(CAcertNameBuf) - 1] = '\0';
       CAcertName                               = CAcertNameBuf;
@@ -420,14 +398,14 @@ class TinyGsmESP8266
       // generate and set the name for the client certificate from the number
       char cert_name[16]      = {};
       char cert_namespace[14] = {};
-      at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
-                             cert_name, cert_namespace);
+      at.getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
+                            cert_name, cert_namespace);
       memcpy(clientCertNameBuf, cert_name, sizeof(clientCertNameBuf));
       clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
       clientCertName                                   = clientCertNameBuf;
       // generate and set the name for the client private key from the number
-      at->getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
-                             cert_namespace);
+      at.getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
+                            cert_namespace);
       memcpy(clientKeyNameBuf, cert_name, sizeof(clientKeyNameBuf));
       clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
       clientKeyName                                  = clientKeyNameBuf;
@@ -905,6 +883,10 @@ class TinyGsmESP8266
     }
     return (1 == rsp);
   }
+
+  // Disambiguate modemStopImpl by using the Espressif implementation
+  using TinyGsmEspressif<TinyGsmESP8266,
+                         TinyGsmESP8266ModemConfig>::modemStopImpl;
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', len);

@@ -223,14 +223,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     using TcpConfig = TinyGsmUBLOXTcpConfig;
 
     /**
-     * @brief Create a new TCP client.
-     * @warning You must call the init() method before attempting to use a
-     * client created with this constructor.
-     */
-    GsmClientUBLOX() {
-      is_secure = false;
-    }
-    /**
      * @brief Create a new TCP client and bind it to a modem.
      * @param modem Modem instance used by this client.
      *
@@ -239,19 +231,10 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
      * connects to a server.  Use the getMux() function to get the assigned
      * multiplexing channel number after a successful connection.
      */
-    explicit GsmClientUBLOX(TinyGsmUBLOX& modem, uint8_t /*mux*/ = 0) {
-      init(&modem, static_cast<uint8_t>(-1));
+    explicit GsmClientUBLOX(TinyGsmUBLOX& modem, uint8_t /*mux*/ = 0)
+        : GsmClient<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>(modem /*, mux*/) {
       is_secure = false;
-    }
 
-    /**
-     * @brief Initialize the TCP client with a modem.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientUBLOX::GsmClientUBLOX(TinyGsmUBLOX&, uint8_t)
-     */
-    bool init(TinyGsmUBLOX* modem, uint8_t /*mux*/ = 0) {
-      if (modem == nullptr) { return false; }
-      this->at       = modem;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
@@ -277,20 +260,18 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
       if (mux < TcpConfig::kMuxCount &&
-          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
+          (at.sockets[mux] == nullptr || at.sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
         // one
-      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
-        this->mux = at->findFirstUnassignedMux();
+      } else if (at.findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
+        this->mux = at.findFirstUnassignedMux();
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
         this->mux = (mux % TcpConfig::kMuxCount);
       }
-      at->sockets[this->mux] = this;
-
-      return true;
+      at.sockets[this->mux] = this;
     }
 
     /*
@@ -298,11 +279,12 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
      */
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      if (at == nullptr) { return 0; }
       is_mid_send = false;
 #if 0
-// DON'T stop! We don't know our actual mux yet!
-if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr) {
+      // stop if and only if the mux number is valid, the socket pointer is not
+      // null, and the socket is connected
+      if (mux < TcpConfig::kMuxCount &&
+          at.sockets[mux] != nullptr && sock_connected) {
         stop(TcpConfig::kStopTimeoutS * 1000L);
       }
 #endif
@@ -312,13 +294,13 @@ if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr) {
       // modemConnect will validate the mux number returned by the modem and
       // return false and set the newMux to -1 if the mux number is invalid or
       // the connection fails
-      sock_connected = at->modemConnect(host, port, &newMux, timeout_s);
+      sock_connected = at.modemConnect(host, port, &newMux, timeout_s);
       if (sock_connected) {
         // move the pointer to this client in the sockets array if needed
         // set the requested mux to -1 to get the next available mux number
-        at->moveSocketToNewMux(mux, static_cast<uint8_t>(-1));
-        at->sockets[newMux] = this;
-        mux                 = newMux;
+        at.moveSocketToNewMux(mux, static_cast<uint8_t>(-1));
+        at.sockets[newMux] = this;
+        mux                = newMux;
       }
       // NOTE: If the sock didn't connect, DO NOT move the pointer to this
       // client in the sockets array because we still need to be able to access
@@ -328,7 +310,7 @@ if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr) {
       // lose access to the client by a valid mux number and the modem will not
       // be able to check if it's expected to be an SSL connection and, if so,
       // what the SSL specs are.
-      at->maintain();
+      at.maintain();
       return sock_connected;
     }
 
@@ -355,13 +337,6 @@ if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr) {
     using GsmClientUBLOX::stop;
     using TcpConfig = TinyGsmUBLOXTcpConfig;
 
-    /**
-     * @brief Create a new secured TCP (SSL) client.  This must be initialized
-     * with a modem before it can be used.
-     */
-    GsmClientSecureUBLOX() {
-      is_secure = true;
-    }
     /**
      * @brief Create a new secured TCP (SSL) client and bind it to a modem.
      * @copydetails GsmClientUBLOX::GsmClientUBLOX(TinyGsmUBLOX&, uint8_t)

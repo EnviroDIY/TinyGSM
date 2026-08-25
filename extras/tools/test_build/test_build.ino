@@ -165,11 +165,8 @@ void loop() {
 
   // Test TCP functions
   modem.maintain();
-  TinyGsmClient client;
-  TinyGsmClient client2(modem);
-  TinyGsmClient client3(modem, 1);
-  client.init(&modem);
-  client.init(&modem, 1);
+  TinyGsmClient client(modem);
+  TinyGsmClient client2(modem, 1);
 
   client.connect(server, 80);
 
@@ -233,9 +230,6 @@ void loop() {
   TinyGsmClientSecure(modem, "pskTableName");
   TinyGsmClientSecure(modem, (uint8_t)0, "pskTableName", SSLVersion::TLS1_2);
 #endif
-
-  client_secure.init(&modem);
-  client_secure.init(&modem, 1);
 
 #if defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
   modem.loadCertificate("certificateName", "certificate_content", 20);

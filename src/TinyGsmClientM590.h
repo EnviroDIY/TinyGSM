@@ -180,13 +180,6 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
     using TcpConfig = TinyGsmM590TcpConfig;
 
     /**
-     * @brief Create a new GsmClientM590 object.  This must be initialized with
-     * a TinyGsmM590 modem before it can be used.
-     */
-    GsmClientM590() {
-      is_secure = false;
-    }
-    /**
      * @brief Create a new TCP client and bind it to a modem and optionally a
      * multiplexing channel.
      * @param modem Modem instance used by this client.
@@ -198,20 +191,11 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
      * getMux() function to get the assigned multiplexing channel number after a
      * successful connection.
      */
-    explicit GsmClientM590(TinyGsmM590& modem, uint8_t mux = 0) {
-      init(&modem, mux);
+    explicit GsmClientM590(TinyGsmM590& modem, uint8_t mux = 0)
+        : GsmClient<TinyGsmM590, TinyGsmM590TcpConfig>(modem, mux) {
       is_secure = false;
-    }
 
-    /**
-     * @brief Initialize the TCP client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientM590::GsmClientM590(TinyGsmM590&, uint8_t)
-     */
-    bool init(TinyGsmM590* modem, uint8_t mux = 0) {
-      if (modem == nullptr) { return false; }
-      this->at       = modem;
+
       sock_connected = false;
       is_mid_send    = false;
 
@@ -221,20 +205,18 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
       if (mux < TcpConfig::kMuxCount &&
-          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
+          (at.sockets[mux] == nullptr || at.sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
         // one
-      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
-        this->mux = at->findFirstUnassignedMux();
+      } else if (at.findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
+        this->mux = at.findFirstUnassignedMux();
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
         this->mux = (mux % TcpConfig::kMuxCount);
       }
-      at->sockets[this->mux] = this;
-
-      return true;
+      at.sockets[this->mux] = this;
     }
 
     /*
