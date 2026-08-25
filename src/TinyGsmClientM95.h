@@ -230,6 +230,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
      * @copydetails GsmClientM95::GsmClientM95(TinyGsmM95&, uint8_t)
      */
     bool init(TinyGsmM95* modem, uint8_t mux = 0) {
+      if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;
       sock_connected = false;

@@ -260,6 +260,7 @@ class TinyGsmSim5360
      * @copydetails GsmClientSim5360::GsmClientSim5360(TinyGsmSim5360&, uint8_t)
      */
     bool init(TinyGsmSim5360* modem, uint8_t mux = 0) {
+      if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;
       prev_check     = 0;

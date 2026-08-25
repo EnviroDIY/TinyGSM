@@ -210,6 +210,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
      * @copydetails GsmClientM590::GsmClientM590(TinyGsmM590&, uint8_t)
      */
     bool init(TinyGsmM590* modem, uint8_t mux = 0) {
+      if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_connected = false;
       is_mid_send    = false;

@@ -233,6 +233,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
      * @copydetails GsmClientMC60::GsmClientMC60(TinyGsmMC60&, uint8_t)
      */
     bool init(TinyGsmMC60* modem, uint8_t mux = 0) {
+      if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;
       sock_connected = false;
