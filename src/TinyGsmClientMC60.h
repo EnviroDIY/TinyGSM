@@ -245,7 +245,8 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
     /*
      * Client API
      */
-    // Follows the template implementations in TinyGsmTCP.tpp
+   public:
+    TINY_GSM_STATIC_TCP_CONNECT
 
     /*
      * Extended API

@@ -322,7 +322,7 @@ class TinyGsmSim7600
     /*
      * Client API
      */
-    // Follows the template implementations in TinyGsmTCP.tpp
+    TINY_GSM_STATIC_TCP_CONNECT
 
     /*
      * Extended API

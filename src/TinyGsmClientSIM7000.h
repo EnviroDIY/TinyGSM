@@ -241,7 +241,8 @@ class TinyGsmSim7000
     /*
      * Client API
      */
-    // Follows the template implementations in TinyGsmTCP.tpp
+   public:
+    TINY_GSM_STATIC_TCP_CONNECT
 
     /*
      * Extended API
