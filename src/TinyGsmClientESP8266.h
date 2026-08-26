@@ -873,7 +873,7 @@ class TinyGsmESP8266
                               GFP(ModemConfig::GSM_ERROR),
                               GF("ALREADY CONNECT"));
     if (rsp == 1 && data.length() > 8) {
-      int coma   = data.indexOf(',');
+      int coma        = data.indexOf(',');
       int assignedMux = data.substring(0, coma).toInt();
       if (mux != assignedMux) {
         DBG("WARNING:  Unexpected mux number returned:", assignedMux, "not",
