@@ -677,10 +677,18 @@ class TinyGsmModem {
 
   inline int16_t streamGetIntLength(int8_t         numChars,
                                     const uint32_t timeout_ms = 1000L) {
+    // max 6 digits for int16_t (-32767)
+    if (numChars <= 0 || numChars > 6) { return -9999; }
     char buf[numChars + 1];
     if (streamGetLength(buf, numChars, timeout_ms)) {
       buf[numChars] = '\0';
+#if defined(TINY_GSM_USE_STRTOX)
+      char*   endptr;
+      int16_t res = strtol(buf, &endptr, 10);
+      if (endptr == buf + numChars) { return res; }
+#else
       return atoi(buf);
+#endif
     }
 
     return -9999;
@@ -693,8 +701,13 @@ class TinyGsmModem {
     // if we read 7 or more bytes, it's an overflow
     if (bytesRead && bytesRead < 7) {
       buf[bytesRead] = '\0';
-      int16_t res    = atoi(buf);
-      return res;
+#if defined(TINY_GSM_USE_STRTOX)
+      char*   endptr;
+      int16_t res = strtol(buf, &endptr, 10);
+      if (endptr == buf + bytesRead) { return res; }
+#else
+      return atoi(buf);
+#endif
     }
 
     return -9999;
@@ -705,7 +718,13 @@ class TinyGsmModem {
     char buf[numChars + 1];
     if (streamGetLength(buf, numChars, timeout_ms)) {
       buf[numChars] = '\0';
+#if defined(TINY_GSM_USE_STRTOX)
+      char* endptr;
+      float res = strtof(buf, &endptr);
+      if (endptr == buf + numChars) { return res; }
+#else
       return atof(buf);
+#endif
     }
 
     return -9999.0F;
@@ -718,8 +737,13 @@ class TinyGsmModem {
     // if we read 16 or more bytes, it's an overflow
     if (bytesRead && bytesRead < 16) {
       buf[bytesRead] = '\0';
-      float res      = atof(buf);
-      return res;
+#if defined(TINY_GSM_USE_STRTOX)
+      char* endptr;
+      float res = strtof(buf, &endptr);
+      if (endptr == buf + bytesRead) { return res; }
+#else
+      return atof(buf);
+#endif
     }
 
     return -9999.0F;
