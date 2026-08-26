@@ -56,8 +56,6 @@
  *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  * - Phone call functions (TinyGsmCalling.tpp)
  *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
  *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
@@ -239,7 +237,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
       if (sock_connected) {
         // move the pointer to this client in the sockets array if needed
         // set the requested mux to -1 to get the next available mux number
-        at.moveSocketToNewMux(mux, static_cast<uint8_t>(-1));
+        at.moveSocket(mux, static_cast<uint8_t>(-1));
         at.sockets[newMux] = this;
       }
       mux = newMux;  // this will be -1 if the connection failed, otherwise it

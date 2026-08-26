@@ -59,8 +59,6 @@
  *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
  *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
  *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"

@@ -299,7 +299,7 @@ class TinyGsmSaraR4
       if (sock_connected) {
         // move the pointer to this client in the sockets array if needed
         // set the requested mux to -1 to get the next available mux number
-        at.moveSocketToNewMux(mux, static_cast<uint8_t>(-1));
+        at.moveSocket(mux, static_cast<uint8_t>(-1));
         at.sockets[newMux] = this;
         mux                = newMux;
       }

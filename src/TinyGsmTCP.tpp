@@ -110,6 +110,7 @@ class TinyGsmTCP {
     return thisModem().maintainImpl();
   }
 
+ protected:
   /**
    * @brief Find the number of the first unassigned mux socket
    * @return The mux number of the first unassigned socket, or 255 (0xFF,
@@ -127,19 +128,19 @@ class TinyGsmTCP {
     return static_cast<uint8_t>(-1);
   }
 
-  bool moveSocketToNewMux(uint8_t oldMux, uint8_t reqMux,
-                          uint8_t* newMux = nullptr) {
+  bool moveSocket(uint8_t oldMux, uint8_t requestedMux,
+                  uint8_t* assignedMux = nullptr) {
     if (!(oldMux < TcpConfig::kMuxCount)) {
       DBG(GF("ERROR: Cannot move from an invalid socket:"), oldMux);
       return false;
     }
-    if (oldMux == reqMux || thisModem().sockets[oldMux] == nullptr) {
-      if (newMux) { *newMux = oldMux; }
+    if (oldMux == requestedMux || thisModem().sockets[oldMux] == nullptr) {
+      if (assignedMux) { *assignedMux = oldMux; }
       return true;  // Nothing to do, but not an error
     }
-    if (!(reqMux < TcpConfig::kMuxCount) ||
-        thisModem().sockets[reqMux] != nullptr) {
-      DBG(GF("Warning: The requested mux number ("), reqMux,
+    if (!(requestedMux < TcpConfig::kMuxCount) ||
+        thisModem().sockets[requestedMux] != nullptr) {
+      DBG(GF("Warning: The requested mux number ("), requestedMux,
           GF(") is invalid or already in use, moving to the next empty socket "
              "instead."));
 
@@ -151,17 +152,16 @@ class TinyGsmTCP {
 
       thisModem().sockets[next_empty_mux] = thisModem().sockets[oldMux];
       thisModem().sockets[oldMux]         = nullptr;
-      if (newMux) { *newMux = next_empty_mux; }
+      if (assignedMux) { *assignedMux = next_empty_mux; }
       return true;
     }
     // If we reach here, it means the requested mux is valid and not in use
-    thisModem().sockets[reqMux] = thisModem().sockets[oldMux];
-    thisModem().sockets[oldMux] = nullptr;
-    if (newMux) { *newMux = reqMux; }
+    thisModem().sockets[requestedMux] = thisModem().sockets[oldMux];
+    thisModem().sockets[oldMux]       = nullptr;
+    if (assignedMux) { *assignedMux = requestedMux; }
     return true;
   }
 
- protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     int timeout_s = TcpConfig::kConnectTimeoutS) {
     return thisModem().modemConnectImpl(host, port, mux, timeout_s);
