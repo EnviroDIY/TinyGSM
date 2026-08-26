@@ -597,20 +597,43 @@ class TinyGsmSaraR5
 
 
     // check all available PDP context identifiers
+    sendAT(GF("+CGDCONT?"));
+    // Example Responses:
+    // +CGDCONT: 0,"IP","payandgo.o2.co.uk","0.0.0.0",0,0,0,0,0,0,0,0,0,0
+    // +CGDCONT:
+    // 1,"IP","payandgo.o2.co.uk.mnc010.mcc234.gprs","10.160.182.234",0,0,0,2,0,0,0,0,0,0
+
+    // While we're still getting responses starting with +CGDCONT:, keep reading
+    // the lines and trying to match the APN.  If we find a match, break out of
+    // the loop and use that PDP context identifier.
+    bool matchedApn = false;
+    int  rcid       = -1;
+    char strApn[128];
+    while (waitResponse(1000, GF("+CGDCONT:")) == 1) {
+      rcid = streamGetIntBefore(',');
+      streamSkipUntil('\"');  // skip to the opening quote
+      char strPdpType[10];
+      // read the PDP type
+      stream.readBytesUntil('\"', strPdpType, sizeof(strPdpType));
+      streamSkipUntil('\"');  // skip to the next opening quote
+      // read the APN
+      stream.readBytesUntil('\"', strApn, sizeof(strApn));
+      streamSkipUntil('\n');  // throw away the rest of the line
+      if (!strcmp(strApn, apn)) {
+        matchedApn = true;
+        break;
+      }
+    }
+
+#if 0
     String response;
     response.reserve(1024);
-    sendAT(GF("+CGDCONT?"));
-
     waitResponseUntilEndStream(1000, response);
 
     if (response.length() == 0) {
       return false;  // no apn at all found
     }
     // parse string & look for apn -> modified from SparkFun u-blox SARA-R5 lib
-    // Example:
-    // +CGDCONT: 0,"IP","payandgo.o2.co.uk","0.0.0.0",0,0,0,0,0,0,0,0,0,0
-    // +CGDCONT:
-    // 1,"IP","payandgo.o2.co.uk.mnc010.mcc234.gprs","10.160.182.234",0,0,0,2,0,0,0,0,0,0
 
     // create search buffer where we can search
     char* searchBuf = (char*)malloc(response.length() + 1);
@@ -642,6 +665,7 @@ class TinyGsmSaraR5
     }
 
     free(searchBuf);
+#endif
 
     sendAT(GF(
         "+UPSDA=0,4"));  // Deactivate the PDP context associated with profile 0
@@ -1069,6 +1093,7 @@ class TinyGsmSaraR5
     return false;
   }
 
+#if 0
  private:
   // basically the same as waitResponse but without preemptive exiting (except
   // when time runs out) this is used for +CGDCONT? as it can return multiple
@@ -1089,6 +1114,7 @@ class TinyGsmSaraR5
     } while (millis() - startMillis < timeout_ms);
     return index;
   }
+#endif
 
  public:
   /// Stream used to communicate with the modem.
