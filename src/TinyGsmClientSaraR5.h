@@ -606,8 +606,7 @@ class TinyGsmSaraR5
     // While we're still getting responses starting with +CGDCONT:, keep reading
     // the lines and trying to match the APN.  If we find a match, break out of
     // the loop and use that PDP context identifier.
-    bool matchedApn = false;
-    int  rcid       = -1;
+    int  rcid = -1;
     char strApn[128];
     while (waitResponse(1000, GF("+CGDCONT:")) == 1) {
       rcid = streamGetIntBefore(',');
@@ -619,10 +618,7 @@ class TinyGsmSaraR5
       // read the APN
       stream.readBytesUntil('\"', strApn, sizeof(strApn));
       streamSkipUntil('\n');  // throw away the rest of the line
-      if (!strcmp(strApn, apn)) {
-        matchedApn = true;
-        break;
-      }
+      if (!strcmp(strApn, apn)) { break; }
     }
 
 #if 0
