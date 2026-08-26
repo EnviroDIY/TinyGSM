@@ -167,9 +167,9 @@ class TinyGsmTCP {
     return thisModem().modemConnectImpl(host, port, staticMux, timeout_s);
   }
 
-  bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
+  bool modemConnect(const char* host, uint16_t port, uint8_t* dynamicMux,
                     int timeout_s = TcpConfig::kConnectTimeoutS) {
-    return thisModem().modemConnectImpl(host, port, mux, timeout_s);
+    return thisModem().modemConnectImpl(host, port, dynamicMux, timeout_s);
   }
 
   bool modemStop(uint8_t mux, uint32_t maxWaitMs) {
@@ -350,7 +350,7 @@ class TinyGsmTCP {
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* mux,
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* dynamicMux,
                         int timeout_s) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   bool modemStopImpl(uint8_t  mux,

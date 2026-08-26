@@ -229,19 +229,20 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
       }
       TINY_GSM_YIELD();
       rx.clear();
-      uint8_t newMux = static_cast<uint8_t>(-1);
+      // attempt to use the requested mux number first
+      uint8_t assignedMux = mux;
       // modemConnect will validate the mux number returned by the modem and
-      // return false and set the newMux to -1 if the mux number is invalid or
-      // the connection fails
-      sock_connected = at.modemConnect(host, port, &newMux, timeout_s);
+      // return false and set the assignedMux to -1 if the mux number is invalid
+      // or the connection fails
+      sock_connected = at.modemConnect(host, port, &assignedMux, timeout_s);
       if (sock_connected) {
         // move the pointer to this client in the sockets array if needed
         // set the requested mux to -1 to get the next available mux number
         at.moveSocket(mux, static_cast<uint8_t>(-1));
-        at.sockets[newMux] = this;
+        at.sockets[assignedMux] = this;
       }
-      mux = newMux;  // this will be -1 if the connection failed, otherwise it
-                     // will be the mux number returned by the modem
+      mux = assignedMux;  // this will be -1 if the connection failed, otherwise
+                          // it will be the mux number returned by the modem
       return sock_connected;
     }
 
@@ -616,14 +617,14 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* mux,
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* dynamicMux,
                         int timeout_s) {
     uint32_t startMillis = millis();
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
 
     sendAT(GF("+CIPSTART="), GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     if (waitResponse(timeout_ms, GF("+CIPNUM:")) != 1) { return false; }
-    int8_t newMux = streamGetIntBefore('\n');
+    int connected_mux = streamGetIntBefore('\n');
 
     uint32_t elapsed = millis() - startMillis;
     if (elapsed >= timeout_ms) { return false; }
@@ -633,14 +634,15 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
     success &= waitResponse() != 1;
 
     // Validate the returned mux
-    if (!(newMux < TcpConfig::kMuxCount) || !success) {
+    if (connected_mux < 0 || connected_mux >= TcpConfig::kMuxCount ||
+        !success) {
       DBG(GF("ERROR: Modem returned invalid mux or connection failed"));
-      *mux = static_cast<uint8_t>(-1);  // Set mux to invalid value
+      *dynamicMux = static_cast<uint8_t>(-1);  // Set mux to invalid value
       return false;  // Return failure when mux is out of range
     }
 
     // set the mux to the new mux number if we're successful
-    *mux = newMux;
+    *dynamicMux = connected_mux;
     return success;
   }
 

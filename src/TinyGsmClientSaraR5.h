@@ -57,8 +57,6 @@
  *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  * - Phone call functions (TinyGsmCalling.tpp)
  *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
  *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
@@ -315,17 +313,18 @@ class TinyGsmSaraR5
 #endif
       TINY_GSM_YIELD();
       rx.clear();
-      uint8_t newMux = static_cast<uint8_t>(-1);
+      // attempt to use the requested mux number first
+      uint8_t assignedMux = mux;
       // modemConnect will validate the mux number returned by the modem and
-      // return false and set the newMux to -1 if the mux number is invalid or
-      // the connection fails
-      sock_connected = at.modemConnect(host, port, &newMux, timeout_s);
+      // return false and set the assignedMux to -1 if the mux number is invalid
+      // or the connection fails
+      sock_connected = at.modemConnect(host, port, &assignedMux, timeout_s);
       if (sock_connected) {
         // move the pointer to this client in the sockets array if needed
         // set the requested mux to -1 to get the next available mux number
         at.moveSocket(mux, static_cast<uint8_t>(-1));
-        at.sockets[newMux] = this;
-        mux                = newMux;
+        at.sockets[assignedMux] = this;
+        mux                     = assignedMux;
       }
       // NOTE: If the sock didn't connect, DO NOT move the pointer to this
       // client in the sockets array because we still need to be able to access
@@ -911,28 +910,28 @@ class TinyGsmSaraR5
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* mux,
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* dynamicMux,
                         int timeout_s) {
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
-    bool     ssl         = sockets[*mux]->is_secure;
+    bool     ssl         = sockets[*dynamicMux]->is_secure;
     uint32_t startMillis = millis();
 
     // create a socket
     sendAT(GF("+USOCR=6"));
     // reply is +USOCR: ## of socket created
     if (waitResponse(GF("+USOCR:")) != 1) { return false; }
-    int8_t newMux = streamGetIntBefore('\n');
+    int8_t connected_mux = streamGetIntBefore('\n');
     waitResponse();
     // Validate the returned mux
-    if (!(newMux < TcpConfig::kMuxCount)) {
+    if (!(connected_mux < TcpConfig::kMuxCount)) {
       DBG(GF("ERROR: Modem returned invalid mux"));
-      *mux = static_cast<uint8_t>(-1);  // Set mux to invalid value
+      *dynamicMux = static_cast<uint8_t>(-1);  // Set mux to invalid value
       return false;  // Return failure when mux is out of range
     }
-    *mux = static_cast<uint8_t>(newMux);
+    *dynamicMux = static_cast<uint8_t>(connected_mux);
 
     if (ssl) {
-      sendAT(GF("+USOSEC="), *mux, ",1");
+      sendAT(GF("+USOSEC="), *dynamicMux, ",1");
       waitResponse();
     }
 
@@ -941,15 +940,15 @@ class TinyGsmSaraR5
     // <level> - 0 for IP, 6 for TCP, 65535 for socket level options
     // <opt_name> TCP/1 = no delay (do not delay send to coalesce packets)
     // NOTE:  Enabling this may increase data plan usage
-    // sendAT(GF("+USOSO="), *mux, GF(",6,1,1"));
+    // sendAT(GF("+USOSO="), *dynamicMux, GF(",6,1,1"));
     // waitResponse();
 
     // Enable KEEPALIVE, 30 sec
-    // sendAT(GF("+USOSO="), *mux, GF(",6,2,30000"));
+    // sendAT(GF("+USOSO="), *dynamicMux, GF(",6,2,30000"));
     // waitResponse();
 
     // connect on the allocated socket
-    sendAT(GF("+USOCO="), *mux, GF(",\""), host, GF("\","), port);
+    sendAT(GF("+USOCO="), *dynamicMux, GF(",\""), host, GF("\","), port);
     int8_t rsp = waitResponse(timeout_ms - (millis() - startMillis));
     return (1 == rsp);
   }
