@@ -221,12 +221,14 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       is_mid_send = false;
+#if 1
       // stop if and only if the mux number is valid, the socket pointer is not
       // null, and the socket is connected
       if (mux < TcpConfig::kMuxCount && at.sockets[mux] != nullptr &&
           sock_connected) {
         stop(TcpConfig::kStopTimeoutS * 1000L);
       }
+#endif
       TINY_GSM_YIELD();
       rx.clear();
       // attempt to use the requested mux number first
@@ -236,13 +238,14 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
       // or the connection fails
       sock_connected = at.modemConnect(host, port, &assignedMux, timeout_s);
       if (sock_connected) {
-        // move the pointer to this client in the sockets array if needed
-        // set the requested mux to -1 to get the next available mux number
+        // move any existing client at the assigned mux number to the next
+        // available slot
+        // set the requested mux to -1 to get the  next available mux number
         at.moveSocket(mux, static_cast<uint8_t>(-1));
+        // set the client's internal mux number and insert it into the array
         at.sockets[assignedMux] = this;
+        mux                     = assignedMux;
       }
-      mux = assignedMux;  // this will be -1 if the connection failed, otherwise
-                          // it will be the mux number returned by the modem
       return sock_connected;
     }
 

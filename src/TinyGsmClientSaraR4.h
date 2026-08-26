@@ -253,8 +253,8 @@ class TinyGsmSaraR4
 
       // NOTE: Because we can't control the mux number, we don't need to worry
       // about attempting to assign a mux number for a secure socket that is out
-      // of range of because the number of secure sockets is smaller than the
-      // number of standard sockets.
+      // of range of even though the number of secure sockets is smaller than
+      // the number of standard sockets.
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
@@ -282,8 +282,7 @@ class TinyGsmSaraR4
 #if 0
       // stop if and only if the mux number is valid, the socket pointer is not
       // null, and the socket is connected
-      if (mux < TcpConfig::kMuxCount &&
-          at.sockets[mux] != nullptr && sock_connected) {
+      if (mux < TcpConfig::kMuxCount && at.sockets[mux] != nullptr && sock_connected) {
         stop(TcpConfig::kStopTimeoutS * 1000L);
       }
 #endif
@@ -296,21 +295,23 @@ class TinyGsmSaraR4
       // or the connection fails
       sock_connected = at.modemConnect(host, port, &assignedMux, timeout_s);
       if (sock_connected) {
-        // move the pointer to this client in the sockets array if needed
-        // set the requested mux to -1 to get the next available mux number
+        // move any existing client at the assigned mux number to the next
+        // available slot
+        // set the requested mux to -1 to get the  next available mux number
         at.moveSocket(mux, static_cast<uint8_t>(-1));
+        // set the client's internal mux number and insert it into the array
         at.sockets[assignedMux] = this;
         mux                     = assignedMux;
       }
-      // NOTE: If the sock didn't connect, DO NOT move the pointer to this
-      // client in the sockets array or assign an invalid mux number.  The
+      // NOTE: If the sock didn't connect, DO NOT assign an invalid mux number
+      // or move the pointer to this client in the modem's sockets array.  The
       // modem still needs to be able to access this client via its mux number
       // in the socket array to check if it's expected to be an SSL connection
-      // and, if so, what the SSL specs are.  If we move the pointer to this
-      // client in the sockets array when the connection fails, we will lose
-      // access to the client by a valid mux number and the modem will not be
-      // able to check if it's expected to be an SSL connection and, if so, what
-      // the SSL specs are.
+      // and, if so, what the SSL specs are.  If we set an invalid mux number or
+      // break the alignment between the mux number and the position of the
+      // pointer in the array client in the sockets array when the connection
+      // fails, the modem loses access to the client.
+
       at.maintain();
       return sock_connected;
     }

@@ -138,6 +138,8 @@ class TinyGsmTCP {
       if (assignedMux) { *assignedMux = oldMux; }
       return true;  // Nothing to do, but not an error
     }
+
+    uint8_t destination_mux = requestedMux;
     if (!(requestedMux < TcpConfig::kMuxCount) ||
         thisModem().sockets[requestedMux] != nullptr) {
       DBG(GF("Warning: The requested mux number ("), requestedMux,
@@ -150,15 +152,17 @@ class TinyGsmTCP {
         return false;
       }
 
-      thisModem().sockets[next_empty_mux] = thisModem().sockets[oldMux];
-      thisModem().sockets[oldMux]         = nullptr;
-      if (assignedMux) { *assignedMux = next_empty_mux; }
-      return true;
+      destination_mux = next_empty_mux;
     }
-    // If we reach here, it means the requested mux is valid and not in use
-    thisModem().sockets[requestedMux] = thisModem().sockets[oldMux];
-    thisModem().sockets[oldMux]       = nullptr;
-    if (assignedMux) { *assignedMux = requestedMux; }
+
+    // if the requested mux is valid and not in use or we found empty mux
+    // socket, move the client pointer to that socket, reset the internal mux
+    // number of the moved socket to its destination, set the value of the
+    // assignedMux pointer to the new mux number, and return true
+    thisModem().sockets[destination_mux]      = thisModem().sockets[oldMux];
+    thisModem().sockets[destination_mux]->mux = destination_mux;
+    thisModem().sockets[oldMux]               = nullptr;
+    if (assignedMux) { *assignedMux = destination_mux; }
     return true;
   }
 
