@@ -59,8 +59,6 @@
  *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
  *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
  *     - @ref TinyGsmSSL<modemType>::deleteCertificate "deleteCertificate()"
@@ -1093,7 +1091,7 @@ class TinyGsmA7672X
       DBG("### Got Data:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("+CCHRECV: 0,0\r\n"))) {
-      int8_t mux = data.substring(data.lastIndexOf(',') + 1).toInt();
+      int mux = data.substring(data.lastIndexOf(',') + 1).toInt();
       if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
         sockets[mux]->sock_connected = true;
       }

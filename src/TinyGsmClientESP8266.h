@@ -54,8 +54,6 @@
  *     - @ref TinyGsmWifi<modemType>::networkDisconnect "networkDisconnect()"
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  * - Time functions (TinyGsmTime.tpp)
  *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
  *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
@@ -875,11 +873,10 @@ class TinyGsmESP8266
                               GFP(ModemConfig::GSM_ERROR),
                               GF("ALREADY CONNECT"));
     if (rsp == 1 && data.length() > 8) {
-      int8_t coma        = data.indexOf(',');
-      int8_t connect_mux = data.substring(0, coma).toInt();
-      if (mux != connect_mux) {
-        DBG("WARNING:  Unexpected mux number returned:", connect_mux, "not",
-            mux);
+      int coma   = data.indexOf(',');
+      int newMux = data.substring(0, coma).toInt();
+      if (mux != newMux) {
+        DBG("WARNING:  Unexpected mux number returned:", newMux, "not", mux);
       }
     }
     return (1 == rsp);

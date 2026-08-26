@@ -51,8 +51,6 @@
  *     - @ref TinyGsmWifi<modemType>::networkDisconnect "networkDisconnect()"
  * - TCP functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::findFirstUnassignedMux "findFirstUnassignedMux()"
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::moveSocketToNewMux "moveSocketToNewMux()"
  * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
  *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
  *     - @ref TinyGsmSSL<modemType>::deleteCertificate "deleteCertificate()"
@@ -282,7 +280,7 @@ class TinyGsmESP32
       if (sock_connected) {
         // move the pointer to this client in the sockets array if needed
         // set the requested mux to -1 to get the next available mux number
-        at.moveSocketToNewMux(mux, static_cast<uint8_t>(-1));
+        at.moveSocket(mux, static_cast<uint8_t>(-1));
         at.sockets[newMux] = this;
         mux                = newMux;
       }
@@ -1335,16 +1333,16 @@ class TinyGsmESP32
                                   GFP(ModemConfig::GSM_ERROR),
                                   GF("ALREADY CONNECT")) == 1;
     if (success && data.length() > 8) {
-      int8_t coma        = data.indexOf(',');
-      int8_t connect_mux = data.substring(0, coma).toInt();
+      int coma   = data.indexOf(',');
+      int newMux = data.substring(0, coma).toInt();
 
       // Validate the returned mux
-      if (!(connect_mux < TcpConfig::kMuxCount)) {
+      if (coma < 0 || newMux < 0 || newMux >= TcpConfig::kMuxCount) {
         DBG(GF("ERROR: Modem returned invalid mux or connection failed"));
         *mux = static_cast<uint8_t>(-1);  // Set mux to invalid value
         return false;  // Return failure when mux is out of range
       }
-      *mux = connect_mux;
+      *mux = newMux;
     } else {
       *mux = static_cast<uint8_t>(-1);  // Set mux to invalid value on failure
     }
