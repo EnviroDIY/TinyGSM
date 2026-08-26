@@ -1054,7 +1054,7 @@ class TinyGsmSim7600
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
     bool     success    = false;
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;

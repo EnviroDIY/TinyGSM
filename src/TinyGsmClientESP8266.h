@@ -759,7 +759,7 @@ class TinyGsmESP8266
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
@@ -874,9 +874,10 @@ class TinyGsmESP8266
                               GF("ALREADY CONNECT"));
     if (rsp == 1 && data.length() > 8) {
       int coma   = data.indexOf(',');
-      int newMux = data.substring(0, coma).toInt();
-      if (mux != newMux) {
-        DBG("WARNING:  Unexpected mux number returned:", newMux, "not", mux);
+      int assignedMux = data.substring(0, coma).toInt();
+      if (mux != assignedMux) {
+        DBG("WARNING:  Unexpected mux number returned:", assignedMux, "not",
+            mux);
       }
     }
     return (1 == rsp);
