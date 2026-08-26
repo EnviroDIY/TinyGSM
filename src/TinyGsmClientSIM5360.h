@@ -777,7 +777,7 @@ class TinyGsmSim5360
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
     // Make sure we'll be getting data manually on this connection
     sendAT(GF("+CIPRXGET=1"));

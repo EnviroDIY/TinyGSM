@@ -532,7 +532,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     for (int i = 0; i < 3; i++) {  // TODO(?): no need for loop?
