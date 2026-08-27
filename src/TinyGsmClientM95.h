@@ -608,7 +608,8 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
 
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
     sendAT(GF("+QICLOSE="), mux);
-    int8_t rsp = waitResponse(maxWaitMs, GF("CLOSED"), GF("CLOSE OK"), GF("ERROR"));
+    int8_t rsp = waitResponse(maxWaitMs, GF("CLOSED"), GF("CLOSE OK"),
+                              GF("ERROR"));
     return rsp == 1 || rsp == 2;
   }
 
