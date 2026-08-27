@@ -141,8 +141,19 @@ class TinyGsmSSL {
    */
   /**@{*/
 
-  /// Default constructor
+  /**
+   * @brief Create a new SSL client.
+   * @warning You must call the init() method before attempting to use a
+   * client created with this constructor.
+   */
   TinyGsmSSL() {}
+
+  /**
+   * @brief Create a new SSL client and bind it to a modem and optionally a
+   * multiplexing channel.
+   * @param modem Modem instance used by this client.
+   * @param mux Multiplexing channel to use.
+   */
   explicit TinyGsmSSL(modemType& modem, uint8_t mux = 0) {}
 
   /**
@@ -508,6 +519,9 @@ class GsmSecureClient {
 
 /// short-cut macro for constructors
 #define TINY_GSM_SECURE_CLIENT_CTORS(modemAbbrev)                             \
+  GsmClientSecure##modemAbbrev() {                                            \
+    is_secure = true;                                                         \
+  }                                                                           \
   explicit GsmClientSecure##modemAbbrev(TinyGsm##modemAbbrev& modem,          \
                                         uint8_t               mux = 0)        \
       : GsmClient##modemAbbrev(modem, mux) {                                  \

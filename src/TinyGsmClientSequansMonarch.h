@@ -218,6 +218,14 @@ class TinyGsmSequansMonarch
     using TcpConfig = TinyGsmSequansMonarchTcpConfig;
 
     /**
+     * @brief Create a new TCP client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
+     */
+    GsmClientSequansMonarch() {
+      is_secure = false;
+    }
+    /**
      * @brief Create a new TCP client and bind it to a modem and optionally a
      * multiplexing channel.
      * @param modem Modem instance used by this client.
@@ -234,7 +242,19 @@ class TinyGsmSequansMonarch
         : GsmClient<TinyGsmSequansMonarch, TinyGsmSequansMonarchTcpConfig>(
               modem, mux) {
       is_secure = false;
+      init(&modem, mux);
+    }
 
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientSequansMonarch::GsmClientSequansMonarch(
+     * TinyGsmSequansMonarch&, uint8_t)
+     */
+    bool init(TinyGsmSequansMonarch* modem, uint8_t mux = 1) {
+      if (modem == nullptr) { return false; }
+      this->at       = modem;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
@@ -248,7 +268,9 @@ class TinyGsmSequansMonarch
       } else {
         this->mux = (mux % TcpConfig::kMuxCount) + 1;
       }
-      at.sockets[this->mux % TcpConfig::kMuxCount] = this;
+      at->sockets[this->mux % TcpConfig::kMuxCount] = this;
+
+      return true;
     }
 
     /*
@@ -281,6 +303,14 @@ class TinyGsmSequansMonarch
     using TcpConfig = TinyGsmSequansMonarchTcpConfig;
 
     /**
+     * @brief Create a new secured TCP (SSL) client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
+     */
+    GsmClientSecureSequansMonarch() {
+      is_secure = true;
+    }
+    /**
      * @brief Create a new secured TCP (SSL) client and bind it to a modem and
      * optionally a multiplexing channel.
      * @copydetails GsmClientSequansMonarch::GsmClientSequansMonarch(
@@ -297,6 +327,7 @@ class TinyGsmSequansMonarch
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
+      if (at == nullptr) { return 0; }
       stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
@@ -307,19 +338,19 @@ class TinyGsmSequansMonarch
         // only support cipher suite 0x3D: TLS_RSA_WITH_AES_256_CBC_SHA256
         // verify server certificate against imported CA certs 0 and enforce
         // validity period (3)
-        at.sendAT(GF("+SQNSPCFG=1,3,\"0x3D\",3,0,,,\"\",\"\""));
+        at->sendAT(GF("+SQNSPCFG=1,3,\"0x3D\",3,0,,,\"\",\"\""));
       } else {
         // use TLS 1.0 or higher (1)
         // support wider variety of cipher suites
         // do not verify server certificate (0)
-        at.sendAT(GF("+SQNSPCFG=1,1,\"0x2F;0x35;0x3C;0x3D\",0,,,,\"\",\"\""));
+        at->sendAT(GF("+SQNSPCFG=1,1,\"0x2F;0x35;0x3C;0x3D\",0,,,,\"\",\"\""));
       }
-      if (at.waitResponse() != 1) {
+      if (at->waitResponse() != 1) {
         DBG("failed to configure security profile");
         return false;
       }
 
-      sock_connected = at.modemConnect(host, port, mux, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
 

@@ -260,6 +260,14 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     using Print::write;
 
     /**
+     * @brief Create a new TCP client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
+     */
+    GsmClientXBee() {
+      is_secure = false;
+    }
+    /**
      * @brief Create a new TCP client and bind it to a modem.
      * @param modem Modem instance used by this client.
      *
@@ -269,13 +277,25 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     explicit GsmClientXBee(TinyGsmXBee& modem, uint8_t /*mux*/ = 0)
         : GsmClient<TinyGsmXBee, TinyGsmXBeeTcpConfig>(modem /*, mux*/) {
       is_secure = false;
+      init(&modem);
+    }
 
+    /**
+     * @brief Initialize the TCP client with a modem.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientXBee::GsmClientXBee(TinyGsmXBee&, uint8_t)
+     */
+    bool init(TinyGsmXBee* modem, uint8_t /*mux*/ = 0) {
+      if (modem == nullptr) { return false; }
+      this->at       = modem;
       this->mux      = 0;
       sock_connected = false;
       is_mid_send    = false;
 
       // only 1 possible socket for XBee in transparent mode
-      at.sockets[0] = this;
+      at->sockets[0] = this;
+
+      return true;
     }
 
    public:
@@ -290,9 +310,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
      * any connection.
      */
     int connect(const char* host, uint16_t port, int timeout_s) override {
+      if (at == nullptr) { return 0; }
       // NOTE:  Not calling stop() or yield() here
-      at.streamClear();  // Empty anything in the buffer before starting
-      sock_connected = at.modemConnect(host, port, mux, timeout_s);
+      at->streamClear();  // Empty anything in the buffer before starting
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     /// @copydoc GsmClient::connect(const char*, uint16_t)
@@ -302,12 +323,13 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     /// @copydoc GsmClient::connect(IPAddress, uint16_t, int)
     int connect(IPAddress ip, uint16_t port, int timeout_s) override {
+      if (at == nullptr) { return 0; }
       if (timeout_s != 0) {
         DBG("Timeout [", timeout_s, "] doesn't apply here.");
       }
       // NOTE:  Not calling stop() or yield() here
-      at.streamClear();  // Empty anything in the buffer before starting
-      sock_connected = at.modemConnectXBee(ip, port, mux);
+      at->streamClear();  // Empty anything in the buffer before starting
+      sock_connected = at->modemConnectXBee(ip, port, mux);
       return sock_connected;
     }
     /// @copydoc GsmClient::connect(IPAddress, uint16_t)
@@ -325,18 +347,20 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
      * more nicely with libraries like PubSubClient.
      */
     void stop(uint32_t maxWaitMs) override {
-      at.streamClear();  // Empty anything in the buffer
-                         // empty the saved currently-in-use destination address
-      at.modemStop(0, maxWaitMs);
-      at.streamClear();  // Empty anything in the buffer
+      if (at == nullptr) { return; }
+      at->streamClear();  // Empty anything in the buffer
+      // empty the saved currently-in-use destination address
+      at->modemStop(0, maxWaitMs);
+      at->streamClear();  // Empty anything in the buffer
       is_mid_send    = false;
       sock_connected = false;
     }
 
     /// @copydoc GsmClient::write(const uint8_t*, size_t)
     size_t write(const uint8_t* buf, size_t size) override {
+      if (at == nullptr) { return 0; }
       TINY_GSM_YIELD();
-      return at.modemSend(buf, size, mux);
+      return at->modemSend(buf, size, mux);
     }
 
     /// @copydoc GsmClient::write(uint8_t)
@@ -346,20 +370,22 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     /// @copydoc GsmClient::available()
     int available() override {
+      if (at == nullptr) { return 0; }
       TINY_GSM_YIELD();
-      return at.stream.available();
+      return at->stream.available();
       /*
-      if (!rx.size() || at.stream.available()) {
-        at.maintain();
+      if (!rx.size() || at->stream.available()) {
+        at->maintain();
       }
-      return at.stream.available() + rx.size();
+      return at->stream.available() + rx.size();
       */
     }
 
     /// @copydoc GsmClient::read(uint8_t*, size_t)
     int read(uint8_t* buf, size_t size) override {
+      if (at == nullptr) { return -1; }
       TINY_GSM_YIELD();
-      return at.stream.readBytes(reinterpret_cast<char*>(buf), size);
+      return at->stream.readBytes(reinterpret_cast<char*>(buf), size);
       /*
       size_t cnt = 0;
       uint32_t _startMillis = millis();
@@ -372,8 +398,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
           continue;
         }
         // TODO(vshymanskyy): Read directly into user buffer?
-        if (!rx.size() || at.stream.available()) {
-          at.maintain();
+        if (!rx.size() || at->stream.available()) {
+          at->maintain();
         }
       }
       return cnt;
@@ -382,8 +408,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     /// @copydoc GsmClient::read()
     int read() override {
+      if (at == nullptr) { return -1; }
       TINY_GSM_YIELD();
-      return at.stream.read();
+      return at->stream.read();
       /*
       uint8_t c;
       if (read(&c, 1) == 1) {
@@ -395,26 +422,29 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     /// @copydoc GsmClient::peek()
     int peek() override {
-      return at.stream.peek();
+      if (at == nullptr) { return -1; }
+      return at->stream.peek();
     }
     /// @copydoc GsmClient::flush()
     void flush() override {
-      at.stream.flush();
+      if (at == nullptr) { return; }
+      at->stream.flush();
     }
 
     /// @copydoc GsmClient::connected()
     uint8_t connected() override {
+      if (at == nullptr) { return false; }
       if (available()) {
         return true;
         // if we never got an IP, it can't be connected
-      } else if (at.savedIP == IPAddress(0, 0, 0, 0)) {
+      } else if (at->savedIP == IPAddress(0, 0, 0, 0)) {
         return false;
       }
       return sock_connected;
       // NOTE:  We don't check or return
       // modemGetConnected() because we don't
       // want to go into command mode.
-      // return at.modemGetConnected();
+      // return at->modemGetConnected();
     }
     /// @copydoc GsmClient::operator bool()
     operator bool() override {
@@ -427,7 +457,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     /// @copydoc GsmClient::remoteIP()
     String remoteIP() {
-      IPAddress atLastIP = at.savedIP;
+      if (at == nullptr) { return ""; }
+      IPAddress atLastIP = at->savedIP;
       return TinyGsmStringFromIp(atLastIP);
     }
   };
