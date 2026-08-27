@@ -32,6 +32,8 @@ reviews:
     - '!**/*.png'
     - '!**/*.bin'
     - '!**/*.hex'
+    - '!**/DSTRoot*.h'
+    - '!**/*Certificate*.h'
   path_instructions:
     - path: '**/*.md'
       instructions: >-
