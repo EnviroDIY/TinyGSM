@@ -195,6 +195,14 @@ class TinyGsmESP8266NonOS
     using TcpConfig = TinyGsmESP8266NonOSTcpConfig;
 
     /**
+     * @brief Create a new TCP client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
+     */
+    GsmClientESP8266NonOS() {
+      is_secure = false;
+    }
+    /**
      * @brief Create a new TCP client and bind it to a modem and optionally a
      * multiplexing channel.
      * @param modem Modem instance used by this client.
@@ -210,7 +218,19 @@ class TinyGsmESP8266NonOS
         : GsmClient<TinyGsmESP8266NonOS, TinyGsmESP8266NonOSTcpConfig>(modem,
                                                                        mux) {
       is_secure = false;
+      init(&modem, mux);
+    }
 
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientESP8266NonOS::GsmClientESP8266NonOS(
+     * TinyGsmESP8266NonOS&, uint8_t)
+     */
+    bool init(TinyGsmESP8266NonOS* modem, uint8_t mux = 0) {
+      if (modem == nullptr) { return false; }
+      this->at       = modem;
       sock_connected = false;
       is_mid_send    = false;
 
@@ -220,18 +240,20 @@ class TinyGsmESP8266NonOS
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
       if (mux < TcpConfig::kMuxCount &&
-          (at.sockets[mux] == nullptr || at.sockets[mux] == this)) {
+          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
         // one
-      } else if (at.findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
-        this->mux = at.findFirstUnassignedMux();
+      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
+        this->mux = at->findFirstUnassignedMux();
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
         this->mux = (mux % TcpConfig::kMuxCount);
       }
-      at.sockets[this->mux] = this;
+      at->sockets[this->mux] = this;
+
+      return true;
     }
 
     /*
@@ -263,6 +285,14 @@ class TinyGsmESP8266NonOS
     using GsmClientESP8266NonOS::stop;
     using TcpConfig = TinyGsmESP8266NonOSTcpConfig;
 
+    /**
+     * @brief Create a new secured TCP (SSL) client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
+     */
+    GsmClientSecureESP8266NonOS() {
+      is_secure = true;
+    }
     /**
      * @brief Create a new secured TCP (SSL) client and bind it to a modem and
      * optionally a multiplexing channel.

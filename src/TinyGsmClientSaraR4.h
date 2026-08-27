@@ -222,6 +222,14 @@ class TinyGsmSaraR4
     using TcpConfig = TinyGsmSaraR4TcpConfig;
 
     /**
+     * @brief Create a new TCP client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
+     */
+    GsmClientSaraR4() {
+      is_secure = false;
+    }
+    /**
      * @brief Create a new TCP client and bind it to a modem.
      * @param modem Modem instance used by this client.
      *
@@ -233,7 +241,17 @@ class TinyGsmSaraR4
     explicit GsmClientSaraR4(TinyGsmSaraR4& modem, uint8_t /*mux*/ = 0)
         : GsmClient<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>(modem /*, mux*/) {
       is_secure = false;
+      init(&modem);
+    }
 
+    /**
+     * @brief Initialize the TCP client with a modem.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientSaraR4::GsmClientSaraR4(TinyGsmSaraR4&, uint8_t)
+     */
+    bool init(TinyGsmSaraR4* modem, uint8_t /*mux*/ = 0) {
+      if (modem == nullptr) { return false; }
+      this->at       = modem;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
@@ -259,18 +277,20 @@ class TinyGsmSaraR4
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
       if (mux < TcpConfig::kMuxCount &&
-          (at.sockets[mux] == nullptr || at.sockets[mux] == this)) {
+          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
         // one
-      } else if (at.findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
-        this->mux = at.findFirstUnassignedMux();
+      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
+        this->mux = at->findFirstUnassignedMux();
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
         this->mux = (mux % TcpConfig::kMuxCount);
       }
-      at.sockets[this->mux] = this;
+      at->sockets[this->mux] = this;
+
+      return true;
     }
 
     /*
@@ -278,11 +298,12 @@ class TinyGsmSaraR4
      */
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
+      if (at == nullptr) { return 0; }
       is_mid_send = false;
 #if 0
       // stop if and only if the mux number is valid, the socket pointer is not
       // null, and the socket is connected
-      if (mux < TcpConfig::kMuxCount && at.sockets[mux] != nullptr && sock_connected) {
+      if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr && sock_connected) {
         stop(TcpConfig::kStopTimeoutS * 1000L);
       }
 #endif
@@ -293,15 +314,15 @@ class TinyGsmSaraR4
       // modemConnect will validate the mux number returned by the modem and
       // return false and set the assignedMux to -1 if the mux number is invalid
       // or the connection fails
-      sock_connected = at.modemConnect(host, port, &assignedMux, timeout_s);
+      sock_connected = at->modemConnect(host, port, &assignedMux, timeout_s);
       if (sock_connected) {
         // move any existing client at the assigned mux number to the next
         // available slot
         // set the requested mux to -1 to get the  next available mux number
-        at.moveSocket(mux, static_cast<uint8_t>(-1));
+        at->moveSocket(mux, static_cast<uint8_t>(-1));
         // set the client's internal mux number and insert it into the array
-        at.sockets[assignedMux] = this;
-        mux                     = assignedMux;
+        at->sockets[assignedMux] = this;
+        mux                      = assignedMux;
       }
       // NOTE: If the sock didn't connect, DO NOT assign an invalid mux number
       // or move the pointer to this client in the modem's sockets array.  The
@@ -312,7 +333,7 @@ class TinyGsmSaraR4
       // pointer in the array client in the sockets array when the connection
       // fails, the modem loses access to the client.
 
-      at.maintain();
+      at->maintain();
       return sock_connected;
     }
 
@@ -339,6 +360,14 @@ class TinyGsmSaraR4
     using GsmClientSaraR4::stop;
     using TcpConfig = TinyGsmSaraR4TcpConfig;
 
+    /**
+     * @brief Create a new secured TCP (SSL) client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
+     */
+    GsmClientSecureSaraR4() {
+      is_secure = true;
+    }
     /**
      * @brief Create a new secured TCP (SSL) client and bind it to a modem.
      * @copydetails GsmClientSaraR4::GsmClientSaraR4(TinyGsmSaraR4&, uint8_t)

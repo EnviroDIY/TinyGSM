@@ -498,6 +498,15 @@ class GsmClient : public Client {
   /**@{*/
 
   /**
+   * @brief Create a new TCP client.
+   * @warning You must call the init() method before attempting to use a
+   * client created with this constructor.
+   */
+  GsmClient() {
+    is_secure = false;
+  }
+
+  /**
    * @brief Create a new TCP client and bind it to a modem and optionally a
    * multiplexing channel.
    * @param modem Modem instance used by this client.
@@ -506,6 +515,16 @@ class GsmClient : public Client {
   explicit GsmClient(modemType& modem, uint8_t mux = 0) : at(modem), mux(mux) {
     is_secure = false;
   }
+
+  /**
+   * @brief Initialize this client with modem context and channel state.
+   *
+   * @param modem Pointer to the modem instance.
+   * @param mux Multiplexing channel to assign.
+   * @return true if initialization completed.
+   */
+  virtual bool init(modemType* modem, uint8_t mux) = 0;
+
   /**
    * @brief Connect to a server using a host name and port number, with a
    * specified timeout.
@@ -519,20 +538,20 @@ class GsmClient : public Client {
 
 #define TINY_GSM_STATIC_TCP_CONNECT                                       \
   int connect(const char* host, uint16_t port, int timeout_s) override {  \
+    if (at == nullptr) { return 0; }                                      \
     is_mid_send = false;                                                  \
     /*free the socket if there was one and it was connected*/             \
-    if (mux < TcpConfig::kMuxCount && at.sockets[mux] != nullptr &&       \
+    if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr &&      \
         sock_connected) {                                                 \
       stop(TcpConfig::kStopTimeoutS * 1000L);                             \
       rx.clear();                                                         \
     }                                                                     \
     TINY_GSM_YIELD();                                                     \
     /*connect at the specified mux number, which is assumed to be valid*/ \
-    sock_connected = at.modemConnect(host, port, mux, timeout_s);         \
+    sock_connected = at->modemConnect(host, port, mux, timeout_s);        \
     return sock_connected;                                                \
   }
 
- public:
   /**
    * @brief Connect to a server using an IPAddress and port number, with a
    * specified timeout.
@@ -587,6 +606,7 @@ class GsmClient : public Client {
    * additional time.
    */
   virtual void stop(uint32_t maxWaitMs) {
+    if (at == nullptr) { return; }
     is_mid_send = false;
     // Throw away any remaining data in the modem buffer.
     // We explicitly toss it here because the socket will appear open in
@@ -594,7 +614,7 @@ class GsmClient : public Client {
     // to give the user a chance to recover the data if they want it.
     // Dumping the modem buffer will also clear the rx fifo.
     dumpModemBuffer(/*maxWaitMs*/);
-    at.modemStop(mux, maxWaitMs);
+    at->modemStop(mux, maxWaitMs);
     // Mark the socket disconnected
     // Should we check the return of modemStop and only set sock_connected to
     // false if it was successful?  I suspect we should error on the side of
@@ -616,12 +636,13 @@ class GsmClient : public Client {
    * @return The number of bytes written
    */
   size_t write(const uint8_t* buf, size_t size) override {
+    if (at == nullptr) { return 0; }
     if (is_mid_send) {
       // if we're in the middle of a write, pass directly to the stream
-      return at.stream.write(buf, size);
+      return at->stream.write(buf, size);
     }
     TINY_GSM_YIELD();
-    at.maintain();
+    at->maintain();
     // If the modem is one where we can read and check the size of the buffer,
     // then the 'available()' function will call a check of the current size
     // of the buffer and state of the connection. [available calls maintain,
@@ -634,7 +655,7 @@ class GsmClient : public Client {
         !sock_connected) {
       return 0;
     }
-    return at.modemSend(buf, size, mux);
+    return at->modemSend(buf, size, mux);
   }
 
   /**
@@ -658,19 +679,20 @@ class GsmClient : public Client {
    * @return int The number of bytes available in the client's receive buffer.
    */
   int available() override {
+    if (at == nullptr) { return 0; }
     is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                           // send to fail
     TINY_GSM_YIELD();
     // Returns the number of characters available in the TinyGSM fifo
     if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
-      if (!rx.size() && sock_connected) { at.maintain(); }
+      if (!rx.size() && sock_connected) { at->maintain(); }
       return rx.size();
     }
 
     // Returns the combined number of characters available in the TinyGSM
     // fifo and the modem chips internal fifo.
     if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::BufferReadNoCheck) {
-      if (!rx.size()) { at.maintain(); }
+      if (!rx.size()) { at->maintain(); }
       return static_cast<uint16_t>(rx.size()) + sock_available;
     }
 
@@ -684,7 +706,7 @@ class GsmClient : public Client {
         got_data   = true;
         prev_check = millis();
       }
-      at.maintain();
+      at->maintain();
     }
     return static_cast<uint16_t>(rx.size()) + sock_available;
   }
@@ -698,6 +720,7 @@ class GsmClient : public Client {
    * @return int The number of bytes actually read.
    */
   int read(uint8_t* buf, size_t size) override {
+    if (at == nullptr) { return -1; }
     TINY_GSM_YIELD();
     is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                           // send to fail
@@ -719,7 +742,7 @@ class GsmClient : public Client {
         // continue to parse URCs from the modem stream until the timeout
         if (!rx.size()) {
           if (!sock_connected) { break; }
-          at.maintain();
+          at->maintain();
         }
       }
       return cnt;
@@ -737,12 +760,12 @@ class GsmClient : public Client {
           cnt += chunk;
           continue;
         }
-        at.maintain();  // clear the modem stream/parse URCs
+        at->maintain();  // clear the modem stream/parse URCs
         // Refill the TinyGSM fifo from the modem's internal buffer
         // TODO: Read directly from modem into user buffer, skipping FIFO
         if (sock_available > 0) {
-          int n = at.modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
-                               mux);
+          int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
+                                mux);
           if (n == 0) break;
         } else {
           break;
@@ -770,13 +793,13 @@ class GsmClient : public Client {
         got_data   = true;
         prev_check = millis();
       }
-      at.maintain();  // clear the modem stream, parse URCs, run
-                      // modemGetAvailable()
+      at->maintain();  // clear the modem stream, parse URCs, run
+                       // modemGetAvailable()
       // Refill the TinyGSM fifo from the modem's internal buffer
       // TODO: Read directly from modem into user buffer, skipping FIFO
       if (sock_available > 0) {
-        int n = at.modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
-                             mux);
+        int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
+                              mux);
         if (n == 0) break;
       } else {
         break;
@@ -802,6 +825,7 @@ class GsmClient : public Client {
    * @return int The next byte, or -1 if no data is available.
    */
   int peek() override {
+    if (at == nullptr) { return -1; }
     TINY_GSM_YIELD();
     // If data is already in the FIFO, peek at it
     if (rx.size() > 0) { return rx.peek(); }
@@ -811,9 +835,9 @@ class GsmClient : public Client {
         sock_available > 0) {
       is_mid_send = false;  // Any calls to the AT when mid-send will cause
                             // the send to fail
-      at.maintain();        // clear the modem stream/parse URCs
+      at->maintain();       // clear the modem stream/parse URCs
       // Pull one byte (or more if available) from the modem into the FIFO
-      at.modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+      at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       // Now peek at the FIFO again
       return rx.peek();
     }
@@ -825,7 +849,8 @@ class GsmClient : public Client {
    * @brief Flush the client's send buffer (ie, wait for all data to be sent).
    */
   void flush() override {
-    at.stream.flush();
+    if (at == nullptr) { return; }
+    at->stream.flush();
   }
 
   /**
@@ -833,6 +858,7 @@ class GsmClient : public Client {
    * @return uint8_t True if the client is connected, false otherwise.
    */
   uint8_t connected() override {
+    if (at == nullptr) { return false; }
     if (is_mid_send) { return true; }  // Don't interrupt a send
     if (available()) { return true; }
     // If the modem is one where we can read and check the size of the buffer,
@@ -848,7 +874,7 @@ class GsmClient : public Client {
     // If the modem doesn't have an internal buffer, or if we can't check how
     // many characters are in the buffer then the cascade won't happen.
     // We need to call modemGetConnected to check the sock state.
-    return at.modemGetConnected(mux);
+    return at->modemGetConnected(mux);
   }
   /// Check if the client is connected (overrides operator bool)
   operator bool() override {
@@ -857,8 +883,8 @@ class GsmClient : public Client {
 
   /// destructor - need to remove self from the socket pointer array
   virtual ~GsmClient() {
-    if (mux < TcpConfig::kMuxCount) {
-      if (at.sockets[mux] == this) { at.sockets[mux] = nullptr; }
+    if (at != nullptr && mux < TcpConfig::kMuxCount) {
+      if (at->sockets[mux] == this) { at->sockets[mux] = nullptr; }
     }
   }
   /**@}*/
@@ -896,13 +922,14 @@ class GsmClient : public Client {
    * connection.
    */
   bool beginWrite(uint16_t size) {
+    if (at == nullptr) { return false; }
     if (size > TcpConfig::kSendMaxSize) {
       DBG(GF("### ERROR: You are attempting send"), size,
           GF("bytes, which is more than the"), TcpConfig::kSendMaxSize,
           GF("that can be sent at once by this modem!"));
       return false;
     }
-    if (!at.modemBeginSend(size, mux)) {
+    if (!at->modemBeginSend(size, mux)) {
       is_mid_send = false;
       return false;
     }
@@ -919,7 +946,8 @@ class GsmClient : public Client {
    * connection.
    */
   bool endWrite(uint16_t expected_size = 0) {
-    uint16_t sent_size = at.modemEndSend(expected_size, mux);
+    if (at == nullptr) { return false; }
+    uint16_t sent_size = at->modemEndSend(expected_size, mux);
     is_mid_send        = false;
     if (expected_size) { return sent_size == expected_size; }
     return true;
@@ -952,22 +980,23 @@ class GsmClient : public Client {
   // Doing it this way allows the external mcu to find and get all of the
   // data that it wants from the socket even if it was closed externally.
   inline void dumpModemBuffer(/*uint32_t maxWaitMs*/) {
+    if (at == nullptr) { return; }
     if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
       rx.clear();
-      at.streamClear();
+      at->streamClear();
     } else {
       TINY_GSM_YIELD();
       // uint32_t startMillis = millis();
       while (sock_available > 0 /*&& (millis() - startMillis < maxWaitMs)*/) {
         rx.clear();
-        at.modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+        at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       }
       rx.clear();
-      at.streamClear();
+      at->streamClear();
     }
   }
 
-  modemType&                               at;
+  modemType*                               at             = nullptr;
   uint8_t                                  mux            = 0;
   uint16_t                                 sock_available = 0;
   uint32_t                                 prev_check     = 0;

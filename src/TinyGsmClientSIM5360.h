@@ -227,6 +227,14 @@ class TinyGsmSim5360
     using TcpConfig = TinyGsmSim5360TcpConfig;
 
     /**
+     * @brief Create a new TCP client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
+     */
+    GsmClientSim5360() {
+      is_secure = false;
+    }
+    /**
      * @brief Create a new TCP client and bind it to a modem and optionally a
      * multiplexing channel.
      * @param modem Modem instance used by this client.
@@ -241,8 +249,18 @@ class TinyGsmSim5360
     explicit GsmClientSim5360(TinyGsmSim5360& modem, uint8_t mux = 0)
         : GsmClient<TinyGsmSim5360, TinyGsmSim5360TcpConfig>(modem, mux) {
       is_secure = false;
+      init(&modem, mux);
+    }
 
-
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientSim5360::GsmClientSim5360(TinyGsmSim5360&, uint8_t)
+     */
+    bool init(TinyGsmSim5360* modem, uint8_t mux = 0) {
+      if (modem == nullptr) { return false; }
+      this->at       = modem;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
@@ -252,18 +270,20 @@ class TinyGsmSim5360
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
       if (mux < TcpConfig::kMuxCount &&
-          (at.sockets[mux] == nullptr || at.sockets[mux] == this)) {
+          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
         // one
-      } else if (at.findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
-        this->mux = at.findFirstUnassignedMux();
+      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
+        this->mux = at->findFirstUnassignedMux();
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
         this->mux = (mux % TcpConfig::kMuxCount);
       }
-      at.sockets[this->mux] = this;
+      at->sockets[this->mux] = this;
+
+      return true;
     }
 
     /*

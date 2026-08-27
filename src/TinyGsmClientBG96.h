@@ -239,6 +239,14 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     using TcpConfig = TinyGsmBG96TcpConfig;
 
     /**
+     * @brief Create a new TCP client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
+     */
+    GsmClientBG96() {
+      is_secure = false;
+    }
+    /**
      * @brief Create a new TCP client and bind it to a modem and optionally a
      * multiplexing channel.
      * @param modem Modem instance used by this client.
@@ -253,7 +261,18 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     explicit GsmClientBG96(TinyGsmBG96& modem, uint8_t mux = 0)
         : GsmClient<TinyGsmBG96, TinyGsmBG96TcpConfig>(modem, mux) {
       is_secure = false;
+      init(&modem, mux);
+    }
 
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientBG96::GsmClientBG96(TinyGsmBG96&, uint8_t)
+     */
+    bool init(TinyGsmBG96* modem, uint8_t mux = 0) {
+      if (modem == nullptr) { return false; }
+      this->at       = modem;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
@@ -266,18 +285,20 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
       if (mux < TcpConfig::kMuxCount &&
-          (at.sockets[mux] == nullptr || at.sockets[mux] == this)) {
+          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
         // one
-      } else if (at.findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
-        this->mux = at.findFirstUnassignedMux();
+      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
+        this->mux = at->findFirstUnassignedMux();
       } else {
         // If we can't find anything available, overwrite something, using mod
         // to make sure we're in range
         this->mux = (mux % TcpConfig::kMuxCount);
       }
-      at.sockets[this->mux] = this;
+      at->sockets[this->mux] = this;
+
+      return true;
     }
 
     /*
@@ -315,6 +336,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     // insecure connections, we don't need to re-check for mux number
     // availability.
     int connect(const char* host, uint16_t port, int timeout_s) override {
+      if (at == nullptr) { return 0; }
       stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
@@ -323,12 +345,12 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
           DBG("### The BG96 does not support SSL using pre-shared keys.");
           sslCtxConfigured = false;
         } else {
-          sslCtxConfigured =
-              at.configureSSLContext(sslCtxIndex, sslAuthMode, sslVersion,
-                                     CAcertName, clientCertName, clientKeyName);
+          sslCtxConfigured = at->configureSSLContext(
+              sslCtxIndex, sslAuthMode, sslVersion, CAcertName, clientCertName,
+              clientKeyName);
         }
       }
-      sock_connected = at.modemConnect(host, port, mux, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
 
@@ -338,17 +360,19 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     // versions.
     /// @copydoc GsmClient::available()
     int available() override {
+      if (at == nullptr) { return 0; }
       is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                             // send to fail
       TINY_GSM_YIELD();
       // Returns the combined number of characters available in the TinyGSM
       // fifo and the modem chips internal fifo.
-      if (!rx.size()) { at.maintain(); }
+      if (!rx.size()) { at->maintain(); }
       return static_cast<uint16_t>(rx.size()) + sock_available;
     }
 
     /// @copydoc GsmClient::read(uint8_t*, size_t)
     int read(uint8_t* buf, size_t size) override {
+      if (at == nullptr) { return -1; }
       is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                             // send to fail
       TINY_GSM_YIELD();
@@ -356,7 +380,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 
       // Reads characters out of the TinyGSM fifo, and from the modem chip's
       // internal fifo if available.
-      at.maintain();
+      at->maintain();
       while (cnt < size) {
         size_t chunk = TinyGsmMin(size - cnt, rx.size());
         if (chunk > 0) {
@@ -365,10 +389,10 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
           cnt += chunk;
           continue;
         } /* TODO: Read directly into user buffer? */
-        at.maintain();
+        at->maintain();
         if (sock_available > 0) {
-          int n = at.modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
-                               mux);
+          int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
+                                mux);
           if (n == 0) break;
         } else {
           break;
@@ -386,12 +410,13 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 
     /// @copydoc GsmClient::connected()
     uint8_t connected() override {
+      if (at == nullptr) { return false; }
       if (is_mid_send) { return true; }  // Don't interrupt a send
       if (available()) { return true; }
       // If the modem doesn't have an internal buffer, or if we can't check how
       // many characters are in the buffer then the cascade won't happen.
       // We need to call modemGetConnected to check the sock state.
-      return at.modemGetConnected(mux);
+      return at->modemGetConnected(mux);
     }
   };
 
