@@ -902,7 +902,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     int8_t connected_mux = streamGetIntBefore('\n');
     waitResponse();
     // Validate the returned mux
-    if (!(connected_mux < TcpConfig::kMuxCount)) {
+    if (connected_mux < 0 || connected_mux >= TcpConfig::kMuxCount) {
       DBG(GF("ERROR: Modem returned invalid mux"));
       *dynamicMux = static_cast<uint8_t>(-1);  // Set mux to invalid value
       return false;  // Return failure when mux is out of range

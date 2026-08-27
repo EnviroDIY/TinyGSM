@@ -1361,9 +1361,11 @@ class TinyGsmESP32
     );
 
     String data;
-    bool   success = waitResponse(timeout_ms, data, GFP(ModemConfig::GSM_OK),
-                                  GFP(ModemConfig::GSM_ERROR),
-                                  GF("ALREADY CONNECT")) == 1;
+    int8_t connect_rsp =
+        waitResponse(timeout_ms, data, GFP(ModemConfig::GSM_OK),
+                     GFP(ModemConfig::GSM_ERROR), GF("ALREADY CONNECT"));
+    bool success = connect_rsp == 1 ||
+        connect_rsp == 3;  // OK or ALREADY CONNECT
     if (success && data.length() > 8) {
       int coma          = data.indexOf(',');
       int connected_mux = data.substring(0, coma).toInt();
