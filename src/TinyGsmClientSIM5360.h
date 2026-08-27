@@ -110,9 +110,6 @@
  * select the next available one.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
- *
- * @todo In `modemReadImpl()`: validate mux
- * @todo In `modemGetAvailableImpl()`: validate mux
  */
 /* clang-format on */
 
@@ -826,11 +823,11 @@ class TinyGsmSim5360
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
     if (waitResponse(GF("+CIPSEND:")) != 1) { return 0; }
-    uint8_t ret_mux = streamGetIntBefore(',');  // check mux
+    int16_t ret_mux = streamGetIntBefore(',');  // check mux
     streamSkipUntil(',');                       // Skip requested bytes to send
     uint16_t sent = streamGetIntBefore('\n');   // check send length
     if (sent != len) { DBG("### Sent:", sent, "of", len, "on", mux); }
-    if (mux == ret_mux) return sent;
+    if (isExpectedMux(ret_mux, mux)) { return sent; }
     return 0;
   }
 
@@ -843,17 +840,17 @@ class TinyGsmSim5360
 #endif
     if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
-    streamSkipUntil(',');  // Skip mux/cid (connecion id)
-    // TODO: validate mux
+    int16_t ret_mux      = streamGetIntBefore(',');  // mux/cid (connecion id)
     int16_t len_reported = streamGetIntBefore(',');
     //  ^^ Requested number of data bytes (1-1460 bytes) to be read
     int16_t len_remaining = streamGetIntBefore('\n');
     // ^^ The data length which not read in the buffer
     size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
     // sockets[mux]->sock_available = modemGetAvailable(mux);
-    sockets[mux]->sock_available = len_remaining;
+    if (isValidMux(ret_mux)) { sockets[mux]->sock_available = len_remaining; }
     waitResponse();
-    return len_read;
+    if (isExpectedMux(ret_mux, mux)) { return len_read; }
+    return 0;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
@@ -861,10 +858,10 @@ class TinyGsmSim5360
     sendAT(GF("+CIPRXGET=4,"), mux);
     size_t result = 0;
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
-      streamSkipUntil(',');  // Skip mode 4
-      streamSkipUntil(',');  // Skip mux
-      // TODO: validate mux
-      result = streamGetIntBefore('\n');
+      streamSkipUntil(',');                       // Skip mode 4
+      int16_t ret_mux = streamGetIntBefore(',');  // mux
+      result          = streamGetIntBefore('\n');
+      if (!isExpectedMux(ret_mux, mux)) { result = 0; }
       waitResponse();
     }
     // DBG("### Available:", result, "on", mux);
@@ -894,10 +891,8 @@ class TinyGsmSim5360
     if (data.endsWith(GF("+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
-        int8_t mux = streamGetIntBefore('\n');
-        if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-          sockets[mux]->got_data = true;
-        }
+        int16_t mux = streamGetIntBefore('\n');
+        if (isValidMux(mux)) { sockets[mux]->got_data = true; }
         data = "";
         // DBG("### Got Data:", mux);
         return true;
@@ -906,9 +901,9 @@ class TinyGsmSim5360
         return false;
       }
     } else if (data.endsWith(GF("+RECEIVE:"))) {
-      int8_t  mux = streamGetIntBefore(',');
+      int16_t mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
+      if (isValidMux(mux)) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
@@ -916,11 +911,9 @@ class TinyGsmSim5360
       // DBG("### Got Data:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("+IPCLOSE:"))) {
-      int8_t mux = streamGetIntBefore(',');
+      int16_t mux = streamGetIntBefore(',');
       streamSkipUntil('\n');  // Skip the reason code
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
-      }
+      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       data = "";
       DBG("### Closed: ", mux);
       return true;

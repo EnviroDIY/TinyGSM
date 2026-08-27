@@ -136,10 +136,6 @@
  * @todo In `connect()` (non-secure path): Should NETOPEN be called once during
  * the GPRS connection process instead of repeatly here?
  * @todo In `modemSendImpl()`: make sure requested and confirmed bytes match
- * @todo In `modemSendImpl()`: validate mux/cid (connection id)
- * @todo In `modemSendImpl()`: validate mux/cid (connection id) (second
- * validation)
- * @todo In `modemReadImpl()`: Validate mux
  * @todo In `modemGetConnectedImpl()`: Does this work?  It's not the right
  * command by the manual
  * @todo In `handleURCs()`: This is a problem, we can't issue a
@@ -908,9 +904,9 @@ class TinyGsmA7672X
     // Since both CIPOPEN and CCHOPEN return the same response, we can handle it
     // here
     if (success) {
-      uint8_t opened_mux    = streamGetIntBefore(',');
+      int16_t opened_mux    = streamGetIntBefore(',');
       uint8_t opened_result = streamGetIntBefore('\n');
-      if (opened_mux != mux || opened_result != 0) return false;
+      if (isExpectedMux(opened_mux, mux) || opened_result != 0) return false;
     }
     return success;
   }
@@ -951,18 +947,18 @@ class TinyGsmA7672X
                        GF("CLOSE OK\r\n")) != 1) {
         return 0;
       }
-      uint8_t ret_mux = streamGetIntBefore(',');       // check mux
+      int16_t ret_mux = streamGetIntBefore(',');       // check mux
       bool    result  = streamGetIntBefore(',') == 0;  // check error code
-      if (ret_mux == mux && result) { return len; }
+      if (isExpectedMux(ret_mux, mux) && result) { return len; }
       return 0;
     } else {
       // after OK, returns +CIPSEND: <link_num>,<reqSendLength>,<cnfSendLength>
       if (waitResponse(GF("+CIPSEND:")) != 1) { return 0; }
-      uint8_t ret_mux = streamGetIntBefore(',');  // check mux
+      int16_t ret_mux = streamGetIntBefore(',');  // check mux
       streamSkipUntil(',');  // Skip requested bytes to send
       // TODO:  make sure requested and confirmed bytes match
       int16_t sent = streamGetIntBefore('\n');  // check send length
-      if (mux == ret_mux) { return sent; }
+      if (isExpectedMux(ret_mux, mux)) { return sent; }
       return 0;
     }
   }
@@ -972,14 +968,14 @@ class TinyGsmA7672X
     bool    ssl           = sockets[mux]->is_secure;
     int16_t len_reported  = 0;
     int16_t len_remaining = 0;
+    int16_t ret_mux       = 0;
     if (ssl) {
       // AT+CCHRECV=<session_id>[,<max_recv_len>]
       sendAT(GF("+CCHRECV="), mux, ',', (uint16_t)size);
       // response is +CCHRECV: DATA, <session_id>,<len>\n<data>
       if (waitResponse(GF("+CCHRECV:")) != 1) { return 0; }
-      streamSkipUntil(',');  // Skip the word "DATA"
-      streamSkipUntil(',');  // Skip mux/cid (connecion id)
-      // TODO: validate mux/cid (connecion id)
+      streamSkipUntil(',');                    // Skip the word "DATA"
+      ret_mux      = streamGetIntBefore(',');  // mux/cid (connecion id)
       len_reported = streamGetIntBefore('\n');
     } else {
 #ifdef TINY_GSM_USE_HEX
@@ -990,25 +986,29 @@ class TinyGsmA7672X
       sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
 #endif
       if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
-      streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
-      streamSkipUntil(',');  // Skip mux/cid (connecion id)
-      // TODO: validate mux/cid (connecion id)
+      streamSkipUntil(',');                    // Skip Rx mode 2/normal or 3/HEX
+      ret_mux      = streamGetIntBefore(',');  // mux/cid (connecion id)
       len_reported = streamGetIntBefore(',');
       // ^^ Integer type, the length of data that has been read.
       len_remaining = streamGetIntBefore('\n');
       // ^^ Integer type, the length of data which has not been read in the
       // buffer.
     }
-    size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
-    if (ssl) {
-      // we need to check how much is left after the read
-      sockets[mux]->sock_available = modemGetAvailable(mux);
-    } else {
-      // the read call already told us how much is left
-      sockets[mux]->sock_available = len_remaining;
-      waitResponse();
+    if (isValidMux(ret_mux)) {
+      // move the data to a socket buffer as long as the returned mux is valid,
+      // even if it doesn't match the expected mux.
+      size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
+      if (ssl) {
+        // we need to check how much is left after the read
+        sockets[mux]->sock_available = modemGetAvailable(mux);
+      } else {
+        // the read call already told us how much is left
+        sockets[mux]->sock_available = len_remaining;
+        waitResponse();
+      }
+      if (isExpectedMux(ret_mux, mux)) { return len_read; }
     }
-    return len_read;
+    return 0;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
@@ -1043,10 +1043,15 @@ class TinyGsmA7672X
     } else {
       sendAT(GF("+CIPRXGET=4,"), mux);
       if (waitResponse(GF("+CIPRXGET:")) == 1) {
-        streamSkipUntil(',');  // Skip returned mode (4)
-        streamSkipUntil(',');  // Skip mux
-        // TODO: Validate mux
-        result = streamGetIntBefore('\n');
+        streamSkipUntil(',');                       // Skip returned mode (4)
+        int16_t ret_mux = streamGetIntBefore(',');  // mux
+        result          = streamGetIntBefore('\n');
+        if (isValidMux(ret_mux)) {
+          // set the sock available as long as the received mux is valid
+          sockets[ret_mux]->sock_available = result;
+        }
+        // but if we somehome got an unexpected mux, set the result to 0
+        if (!isExpectedMux(ret_mux, mux)) { result = 0; }
       }
     }
     waitResponse();  // final ok
@@ -1082,10 +1087,8 @@ class TinyGsmA7672X
     if (data.endsWith(GF("+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
-        int8_t mux = streamGetIntBefore('\n');
-        if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-          sockets[mux]->got_data = true;
-        }
+        int16_t mux = streamGetIntBefore('\n');
+        if (isValidMux(mux)) { sockets[mux]->got_data = true; }
         data = "";
         DBG("### Got Data:", mux);
         return true;
@@ -1105,7 +1108,7 @@ class TinyGsmA7672X
       int8_t  mux = res.substring(res.lastIndexOf(',') + 1).toInt();
       int16_t len =
           res.substring(res.indexOf(',') + 1, res.lastIndexOf(',')).toInt();
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
+      if (isValidMux(mux)) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
@@ -1114,35 +1117,27 @@ class TinyGsmA7672X
       return true;
     } else if (data.endsWith(GF("+CCHRECV: 0,0\r\n"))) {
       int mux = data.substring(data.lastIndexOf(',') + 1).toInt();
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->sock_connected = true;
-      }
+      if (isValidMux(mux)) { sockets[mux]->sock_connected = true; }
       data = "";
       DBG("### ACK:", mux);
       return true;
     } else if (data.endsWith(GF("+IPCLOSE:"))) {
-      int8_t mux = streamGetIntBefore(',');
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
-      }
+      int16_t mux = streamGetIntBefore(',');
+      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       data = "";
       streamSkipUntil('\n');
       DBG("### TCP Closed: ", mux);
       return true;
     } else if (data.endsWith(GF("+CCHCLOSE:"))) {
-      int8_t mux = streamGetIntBefore(',');
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
-      }
+      int16_t mux = streamGetIntBefore(',');
+      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       data = "";
       streamSkipUntil('\n');
       DBG("### SSL Closed: ", mux);
       return true;
     } else if (data.endsWith(GF("+CCH_PEER_CLOSED:"))) {
-      int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
-      }
+      int16_t mux = streamGetIntBefore('\n');
+      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       data = "";
       DBG("### SSL Closed: ", mux);
       return true;

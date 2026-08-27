@@ -111,6 +111,33 @@ class TinyGsmTCP {
   }
 
  protected:
+  bool isValidMux(uint8_t mux) {
+    return mux < TcpConfig::kMuxCount && thisModem().sockets[mux] != nullptr;
+  }
+  bool isValidMux(int8_t mux) {
+    return mux >= 0 && mux < TcpConfig::kMuxCount &&
+        thisModem().sockets[mux] != nullptr;
+  }
+  bool isValidMux(uint16_t mux) {
+    return mux < TcpConfig::kMuxCount && thisModem().sockets[mux] != nullptr;
+  }
+  bool isValidMux(int16_t mux) {
+    return mux >= 0 && mux < TcpConfig::kMuxCount &&
+        thisModem().sockets[mux] != nullptr;
+  }
+  bool isExpectedMux(uint8_t query_mux, uint8_t known_mux) {
+    return query_mux == known_mux;
+  }
+  bool isExpectedMux(int8_t query_mux, uint8_t known_mux) {
+    return static_cast<uint8_t>(query_mux) == known_mux;
+  }
+  bool isExpectedMux(uint16_t query_mux, uint8_t known_mux) {
+    return static_cast<uint8_t>(query_mux) == known_mux;
+  }
+  bool isExpectedMux(int16_t query_mux, uint8_t known_mux) {
+    return static_cast<uint8_t>(query_mux) == known_mux;
+  }
+
   /**
    * @brief Find the number of the first unassigned mux socket
    * @return The mux number of the first unassigned socket, or 255 (0xFF,
@@ -590,7 +617,6 @@ class GsmClient : public Client {
     return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
   }
   /**
-   * @fn int connect(const char* host, uint16_t port) override
    * @brief Connect to a server using a host name and port number
    * @param host The host name of the server to connect to.
    * @param port The port number to connect to on the server.
@@ -600,7 +626,6 @@ class GsmClient : public Client {
     return connect(host, port, TcpConfig::kConnectTimeoutS);
   }
   /**
-   * @fn int connect(IPAddress ip, uint16_t port) override
    * @brief Connect to a server using an IPAddress and port number
    * @param ip The IP address of the server to connect to.
    * @param port The port number to connect to on the server.

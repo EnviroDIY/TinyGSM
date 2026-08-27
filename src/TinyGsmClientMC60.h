@@ -617,7 +617,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
     }
     waitResponse(5000L);
 
-    // streamSkipUntil(','); // Skip mux
+    // int16_t ret_mux = streamGetIntBefore(','); // mux
     // return streamGetIntBefore('\n');
     if (!allAcknowledged) { return 0; }
     return len;  // TODO(?): verify len/ack
@@ -671,17 +671,17 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
 
     if (waitResponse(GF("+QISTATE:")) != 1) { return false; }
 
-    streamSkipUntil(',');                  // Skip mux
-    streamSkipUntil(',');                  // Skip socket type
-    streamSkipUntil(',');                  // Skip remote ip
-    streamSkipUntil(',');                  // Skip remote port
-    streamSkipUntil(',');                  // Skip local port
-    int8_t res = streamGetIntBefore(',');  // socket state
+    int16_t ret_mux = streamGetIntBefore(',');  // mux
+    streamSkipUntil(',');                       // Skip socket type
+    streamSkipUntil(',');                       // Skip remote ip
+    streamSkipUntil(',');                       // Skip remote port
+    streamSkipUntil(',');                       // Skip local port
+    int8_t res = streamGetIntBefore(',');       // socket state
 
     waitResponse();
 
     // 0 Initial, 1 Opening, 2 Connected, 3 Listening, 4 Closing
-    return 2 == res;
+    return 2 == res && isExpectedMux(ret_mux, mux);
   }
 
   /*
@@ -695,7 +695,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
       streamSkipUntil(',');  // Skip the context
       streamSkipUntil(',');  // Skip the role
       // read the connection id
-      int8_t mux = streamGetIntBefore(',');
+      int16_t mux = streamGetIntBefore(',');
       // read the number of packets in the buffer
       int8_t num_packets = streamGetIntBefore(',');
       // read the length of the current packet
@@ -703,21 +703,18 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
           ',');  // Skip the length of the current package in the buffer
       int16_t len_total =
           streamGetIntBefore('\n');  // Total length of all packages
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux] &&
-          num_packets >= 0 && len_total >= 0) {
+      if (isValidMux(mux) && num_packets >= 0 && len_total >= 0) {
         sockets[mux]->sock_available = len_total;
       }
       data = "";
       // DBG("### Got Data:", len_total, "on", mux);
       return true;
     } else if (data.endsWith(GF("CLOSED\r\n"))) {
-      int nl   = data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
-                                  data.length() - 8);
-      int coma = data.indexOf(',', nl + 2);
-      int mux  = data.substring(nl + 2, coma).toInt();
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
-      }
+      int16_t nl   = data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
+                                      data.length() - 8);
+      int16_t coma = data.indexOf(',', nl + 2);
+      int16_t mux  = data.substring(nl + 2, coma).toInt();
+      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       data = "";
       DBG("### Closed: ", mux);
       return true;

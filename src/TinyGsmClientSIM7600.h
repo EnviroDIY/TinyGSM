@@ -140,9 +140,6 @@
  * client_type as 2=SSL/TLS?
  * @todo In `GsmClientSecureSim7600::connect()`: verify CCHOPEN
  * @todo In `modemSendImpl()`: make sure requested and confirmed bytes match
- * @todo In `modemReadImpl()` (SSL path): validate mux/cid (connection id)
- * @todo In `modemReadImpl()` (non-SSL path): validate mux/cid (connection id)
- * @todo In `modemGetAvailableImpl()`: validate mux
  * @todo In `modemGetConnectedImpl()`: I think this only returns the TCP socket
  * connection status, not the SSL connection status
  */
@@ -1121,9 +1118,9 @@ class TinyGsmSim7600
     // Since both CIPOPEN and CCHOPEN return the same response, we can handle it
     // here
     if (success) {
-      uint8_t opened_mux    = streamGetIntBefore(',');
+      int16_t opened_mux    = streamGetIntBefore(',');
       uint8_t opened_result = streamGetIntBefore('\n');
-      if (opened_mux != mux || opened_result != 0) return false;
+      if (!isExpectedMux(opened_mux, mux) || opened_result != 0) return false;
     }
     return success;
   }
@@ -1165,18 +1162,18 @@ class TinyGsmSim7600
                        GF("CLOSE OK\r\n")) != 1) {
         return 0;
       }
-      uint8_t ret_mux = streamGetIntBefore(',');        // check mux
+      int16_t ret_mux = streamGetIntBefore(',');        // check mux
       bool    result  = streamGetIntBefore('\n') == 0;  // check error code
-      if (ret_mux == mux && result) { return len; }
+      if (isExpectedMux(ret_mux, mux) && result) { return len; }
       return 0;
     } else {
       // after OK, returns +CIPSEND: <link_num>,<reqSendLength>,<cnfSendLength>
       if (waitResponse(GF("+CIPSEND:")) != 1) { return 0; }
-      uint8_t ret_mux = streamGetIntBefore(',');  // check mux
+      int16_t ret_mux = streamGetIntBefore(',');  // check mux
       streamSkipUntil(',');  // Skip requested bytes to send
       // TODO(?):  make sure requested and confirmed bytes match
       int16_t sent = streamGetIntBefore('\n');  // check send length
-      if (mux == ret_mux) { return sent; }
+      if (isExpectedMux(ret_mux, mux)) { return sent; }
       return 0;
     }
   }
@@ -1186,6 +1183,7 @@ class TinyGsmSim7600
     bool    ssl           = sockets[mux]->is_secure;
     int16_t len_reported  = 0;
     int16_t len_remaining = 0;
+    int16_t ret_mux;
     if (ssl) {
 #if defined(TINY_GSM_USE_HEX) && defined(TINY_GSM_DEBUG)
       DBG("### ERROR: SSL sockets do not support reading in HEX mode, reading "
@@ -1195,9 +1193,8 @@ class TinyGsmSim7600
       sendAT(GF("+CCHRECV="), mux, ',', (uint16_t)size);
       // response is +CCHRECV: DATA, <session_id>,<len>\n<data>
       if (waitResponse(GF("+CCHRECV:")) != 1) { return 0; }
-      streamSkipUntil(',');  // Skip the word "DATA"
-      streamSkipUntil(',');  // Skip mux/cid (connecion id)
-      // TODO: validate mux/cid (connecion id)
+      streamSkipUntil(',');                    // Skip the word "DATA"
+      ret_mux      = streamGetIntBefore(',');  // mux/cid (connecion id)
       len_reported = streamGetIntBefore('\n');
     } else {
 #ifdef TINY_GSM_USE_HEX
@@ -1210,16 +1207,18 @@ class TinyGsmSim7600
       //<len_read> Integer type, the length of data that has been read.
       //<rest_len> Integer type, the length of data which has not been read in
       // the buffer.
-      streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
-      streamSkipUntil(',');  // Skip mux/cid (connecion id)
-      // TODO: validate mux/cid (connecion id)
+      streamSkipUntil(',');                    // Skip Rx mode 2/normal or 3/HEX
+      ret_mux      = streamGetIntBefore(',');  // mux/cid (connecion id)
       len_reported = streamGetIntBefore(',');
       // ^^ Integer type, the length of data that has been read.
       len_remaining = streamGetIntBefore('\n');
       // ^^ Integer type, the length of data which has not been read in the
       // buffer.
     }
-    size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
+    size_t len_read = 0;
+    if (isValidMux(ret_mux)) {
+      len_read = moveCharsFromStreamToFifo(mux, len_reported);
+    }
     if (ssl) {
       // Returns +CCHRECV: {mux},0 after the data
       String await_response = "+CCHRECV: " + String(mux) + ",0";
@@ -1231,7 +1230,8 @@ class TinyGsmSim7600
       sockets[mux]->sock_available = len_remaining;
       waitResponse();
     }
-    return len_read;
+    if (isExpectedMux(ret_mux, mux)) { return len_read; }
+    return 0;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
@@ -1266,10 +1266,10 @@ class TinyGsmSim7600
     } else {
       sendAT(GF("+CIPRXGET=4,"), mux);
       if (waitResponse(GF("+CIPRXGET:")) == 1) {
-        streamSkipUntil(',');  // Skip returned mode (4)
-        streamSkipUntil(',');  // Skip mux
-        // TODO: validate mux
-        result = streamGetIntBefore('\n');
+        streamSkipUntil(',');                       // Skip returned mode (4)
+        int16_t ret_mux = streamGetIntBefore(',');  // mux
+        result          = streamGetIntBefore('\n');
+        if (!isExpectedMux(ret_mux, mux)) { result = 0; }
       }
     }
     waitResponse();  // final ok
@@ -1302,10 +1302,8 @@ class TinyGsmSim7600
     if (data.endsWith(GF("+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
-        int8_t mux = streamGetIntBefore('\n');
-        if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-          sockets[mux]->got_data = true;
-        }
+        int16_t mux = streamGetIntBefore('\n');
+        if (isValidMux(mux)) { sockets[mux]->got_data = true; }
         data = "";
         // DBG("### Got Data:", mux);
         return true;
@@ -1314,9 +1312,9 @@ class TinyGsmSim7600
         return false;
       }
     } else if (data.endsWith(GF("+RECEIVE:"))) {
-      int8_t  mux = streamGetIntBefore(',');
+      int16_t mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
+      if (isValidMux(mux)) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
@@ -1324,11 +1322,9 @@ class TinyGsmSim7600
       // DBG("### Got Data:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("+IPCLOSE:"))) {
-      int8_t mux = streamGetIntBefore(',');
+      int16_t mux = streamGetIntBefore(',');
       streamSkipUntil('\n');  // Skip the reason code
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
-      }
+      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       data = "";
       DBG("### Closed: ", mux);
       return true;

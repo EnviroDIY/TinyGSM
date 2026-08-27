@@ -1447,7 +1447,7 @@ class TinyGsmESP32
                                         GFP(ModemConfig::GSM_OK),
                                         GFP(ModemConfig::GSM_ERROR));
       if (has_status == 1) {
-        int8_t returned_mux = streamGetIntBefore(',');
+        int16_t returned_mux = streamGetIntBefore(',');
         streamSkipUntil(',');   // Skip type
         streamSkipUntil(',');   // Skip remote IP
         streamSkipUntil(',');   // Skip remote port
@@ -1474,14 +1474,14 @@ class TinyGsmESP32
  protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+IPD,"))) {
-      int8_t   mux = streamGetIntBefore(',');
+      int16_t  mux = streamGetIntBefore(',');
       uint16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->got_data = true;
+      if (isValidMux(mux)) {
+        sockets[static_cast<uint8_t>(mux)]->got_data = true;
         // TODO: I'm not sure if each +IPD URC reports the amount newly received
         // or the total now in the buffer. It appears to be the latter.
         // sockets[mux]->sock_available = sockets[mux]->sock_available + len;
-        sockets[mux]->sock_available = len;
+        sockets[static_cast<uint8_t>(mux)]->sock_available = len;
       }
       data = "";
       DBG("### Got Data:", len, "on", mux);
@@ -1493,8 +1493,8 @@ class TinyGsmESP32
                                       data.length() - 8));
       int coma = data.indexOf(',', muxStart);
       int mux  = data.substring(muxStart, coma).toInt();
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
+      if (isValidMux(mux)) {
+        sockets[static_cast<uint8_t>(mux)]->sock_connected = false;
       }
       streamSkipUntil('\n');  // throw away the new line
       data = "";

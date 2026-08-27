@@ -494,8 +494,8 @@ class TinyGsmESP8266NonOS
                                         GFP(ModemConfig::GSM_OK),
                                         GFP(ModemConfig::GSM_ERROR));
       if (has_status == 1) {
-        int8_t returned_mux = streamGetIntBefore(',');
-        streamSkipUntil(',');   // Skip mux
+        int16_t returned_mux = streamGetIntBefore(',');
+        streamSkipUntil(',');   // Skip mux (?)
         streamSkipUntil(',');   // Skip type
         streamSkipUntil(',');   // Skip remote IP
         streamSkipUntil(',');   // Skip remote port
@@ -540,10 +540,10 @@ class TinyGsmESP8266NonOS
  protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+IPD,"))) {
-      int8_t  mux          = streamGetIntBefore(',');
+      int16_t mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(':');
       int16_t len          = len_reported;
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
+      if (isValidMux(mux)) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           // reset the len to read to the amount free
@@ -561,9 +561,7 @@ class TinyGsmESP8266NonOS
                                       data.length() - 8));
       int coma = data.indexOf(',', muxStart);
       int mux  = data.substring(muxStart, coma).toInt();
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
-      }
+      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       streamSkipUntil('\n');  // throw away the new line
       data = "";
       DBG("### Closed: ", mux);

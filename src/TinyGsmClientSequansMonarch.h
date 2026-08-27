@@ -88,9 +88,6 @@
  * select the next available one.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
- *
- * @todo In `modemReadImpl()`: validate mux
- * @todo In `modemGetAvailableImpl()`: validate mux
  */
 /* clang-format on */
 
@@ -828,30 +825,33 @@ class TinyGsmSequansMonarch
   size_t modemReadImpl(size_t size, uint8_t mux) {
     sendAT(GF("+SQNSRECV="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+SQNSRECV: ")) != 1) { return 0; }
-    streamSkipUntil(',');  // Skip mux
-    // TODO: validate mux
+    int16_t ret_mux      = streamGetIntBefore(',');  // mux
     int16_t len_reported = streamGetIntBefore('\n');
     size_t  len_read     = moveCharsFromStreamToFifo(mux % TcpConfig::kMuxCount,
                                                      len_reported);
     waitResponse();
-    sockets[mux % TcpConfig::kMuxCount]->sock_available =
-        modemGetAvailable(mux);
-    return len_read;
+    if (isValidMux(ret_mux)) {
+      sockets[ret_mux % TcpConfig::kMuxCount]->sock_available =
+          modemGetAvailable(ret_mux);
+    }
+    if (isExpectedMux(ret_mux, mux)) { return len_read; }
+    return 0;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
     sendAT(GF("+SQNSI="), mux);
-    size_t result = 0;
+    size_t  result = 0;
+    int16_t ret_mux;
     if (waitResponse(GF("+SQNSI:")) == 1) {
-      streamSkipUntil(',');  // Skip mux
-      // TODO: validate mux
-      streamSkipUntil(',');              // Skip total sent
-      streamSkipUntil(',');              // Skip total received
-      result = streamGetIntBefore(',');  // keep data not yet read
+      ret_mux = streamGetIntBefore(',');  // mux
+      streamSkipUntil(',');               // Skip total sent
+      streamSkipUntil(',');               // Skip total received
+      result = streamGetIntBefore(',');   // keep data not yet read
       waitResponse();
     }
     // DBG("### Available:", result, "on", mux);
-    return result;
+    if (isExpectedMux(ret_mux, mux)) { return result; }
+    return 0;
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
@@ -896,10 +896,9 @@ class TinyGsmSequansMonarch
  protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+SQNSRING:"))) {
-      int8_t  mux = streamGetIntBefore(',');
+      int16_t mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux > 0 && mux <= TcpConfig::kMuxCount &&
-          sockets[mux % TcpConfig::kMuxCount]) {
+      if (isValidMux(mux)) {
         sockets[mux % TcpConfig::kMuxCount]->got_data       = true;
         sockets[mux % TcpConfig::kMuxCount]->sock_available = len;
       }
@@ -907,9 +906,8 @@ class TinyGsmSequansMonarch
       DBG("### URC Data Received:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("SQNSH: "))) {
-      int8_t mux = streamGetIntBefore('\n');
-      if (mux > 0 && mux <= TcpConfig::kMuxCount &&
-          sockets[mux % TcpConfig::kMuxCount]) {
+      int16_t mux = streamGetIntBefore('\n');
+      if (isValidMux(mux)) {
         sockets[mux % TcpConfig::kMuxCount]->sock_connected = false;
       }
       data = "";
@@ -928,6 +926,24 @@ class TinyGsmSequansMonarch
   // The modem's NL is \r\n (ModemConfig::GSM_NL) but that is not accepted
   // with SQNSSENDEXT in data mode so use \n
   const char* gsmNL = "\n";
+
+  // over-ride because mux numbers start at 1
+  bool isValidMux(uint8_t mux) {
+    return mux <= TcpConfig::kMuxCount &&
+        sockets[mux % TcpConfig::kMuxCount] != nullptr;
+  }
+  bool isValidMux(uint16_t mux) {
+    return mux <= TcpConfig::kMuxCount &&
+        sockets[mux % TcpConfig::kMuxCount] != nullptr;
+  }
+  bool isValidMux(int16_t mux) {
+    return mux > 0 && mux <= TcpConfig::kMuxCount &&
+        sockets[mux % TcpConfig::kMuxCount] != nullptr;
+  }
+  bool isValidMux(int8_t mux) {
+    return mux > 0 && mux <= TcpConfig::kMuxCount &&
+        sockets[mux % TcpConfig::kMuxCount] != nullptr;
+  }
 };
 
 // cspell:words SQNSSENDEXT
