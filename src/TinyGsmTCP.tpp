@@ -128,6 +128,27 @@ class TinyGsmTCP {
     return static_cast<uint8_t>(-1);
   }
 
+  /**
+   * @brief Move a client from one mux socket to another.
+   *
+   * This function will check if the requested mux socket is valid and not
+   * already in use. If it is invalid or in use, it will find the next available
+   * mux socket and put the pointer to the client at the old mux socket into
+   * that position, moving the client there instead. The assignedMux parameter
+   * can be used to retrieve the actual mux socket number that was assigned to
+   * the client after the move.  When moving a client, the internal mux number
+   * of the moved client will be updated to reflect the new mux socket number.
+   * After moving a socket, the pointer in the array at the old mux position
+   * will be set to nullptr.
+   *
+   * @param oldMux The mux socket number to move from.
+   * @param requestedMux The mux socket number to move to. Use
+   * static_cast<uint8_t>(-1) [255] to find and move to the next available mux
+   * socket.
+   * @param assignedMux Optional pointer to a variable to receive the actual mux
+   * socket number that was assigned to the client after the move.
+   * @return true if the move was successful, false otherwise.
+   */
   bool moveSocket(uint8_t oldMux, uint8_t requestedMux,
                   uint8_t* assignedMux = nullptr) {
     if (!(oldMux < TcpConfig::kMuxCount)) {
