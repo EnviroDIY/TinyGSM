@@ -900,7 +900,7 @@ class TinyGsmESP8266
     if (rsp == 1 && data.length() > 8) {
       int coma        = data.indexOf(',');
       int assignedMux = data.substring(0, coma).toInt();
-      if (mux != assignedMux) {
+      if (!isExpectedMux(assignedmux, mux)) {
         DBG("WARNING:  Unexpected mux number returned:", assignedMux, "not",
             mux);
       }
@@ -941,7 +941,7 @@ class TinyGsmESP8266
                                         GFP(ModemConfig::GSM_OK),
                                         GFP(ModemConfig::GSM_ERROR));
       if (has_status == 1) {
-        int8_t returned_mux = streamGetIntBefore(',');
+        int16_t returned_mux = streamGetIntBefore(',');
         streamSkipUntil(',');   // Skip type
         streamSkipUntil(',');   // Skip remote IP
         streamSkipUntil(',');   // Skip remote port
@@ -968,14 +968,15 @@ class TinyGsmESP8266
  protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+IPD,"))) {
-      int8_t  mux          = streamGetIntBefore(',');
+      int16_t mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(':');
       int16_t len          = len_reported;
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        if (len > sockets[mux]->rx.free()) {
-          DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
+      if (isValidMux(mux)) {
+        if (len > sockets[static_cast<uint8_t>(mux)]->rx.free()) {
+          DBG("### Buffer overflow: ", len, "->",
+              sockets[static_cast<uint8_t>(mux)]->rx.free());
           // reset the len to read to the amount free
-          len = sockets[mux]->rx.free();
+          len = sockets[static_cast<uint8_t>(mux)]->rx.free();
         }
         moveCharsFromStreamToFifo(mux, len);
         // TODO(SRGDamia1): deal with buffer overflow
@@ -987,10 +988,10 @@ class TinyGsmESP8266
           TinyGsmMax(0,
                      data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
                                       data.length() - 8));
-      int coma = data.indexOf(',', muxStart);
-      int mux  = data.substring(muxStart, coma).toInt();
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
+      int16_t coma = data.indexOf(',', muxStart);
+      int16_t mux  = data.substring(muxStart, coma).toInt();
+      if (isValidMux(mux)) {
+        sockets[static_cast<uint8_t>(mux)]->sock_connected = false;
       }
       streamSkipUntil('\n');  // throw away the new line
       data = "";

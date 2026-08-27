@@ -658,10 +658,10 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
  protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+TCPRECV:"))) {
-      int8_t  mux          = streamGetIntBefore(',');
+      int16_t mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(',');
       int16_t len          = len_reported;
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
+      if (isValidMux(mux)) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           // reset the len to read to the amount free
@@ -673,11 +673,9 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
       data = "";
       return true;
     } else if (data.endsWith(GF("+TCPCLOSE:"))) {
-      int8_t mux = streamGetIntBefore(',');
+      int16_t mux = streamGetIntBefore(',');
       streamSkipUntil('\n');
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
-      }
+      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       data = "";
       DBG("### Closed: ", mux);
       return true;

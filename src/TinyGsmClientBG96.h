@@ -1333,7 +1333,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
-    bool ssl = sockets[mux]->is_secure;
+    bool    ssl = sockets[mux]->is_secure;
+    int16_t ret_mux;
     if (ssl) {
       sendAT(GF("+QSSLSTATE="), mux);
       // +QSSLSTATE:<clientID>,"SSLClient",<IP_address>,<remote_port>,<local_port>,<socket_state>,<pdpctxID>,<serverID>,<access_mode>,<AT_port>,<sslctxID>)
@@ -1343,8 +1344,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
         return false;
       }
 
-      streamSkipUntil(',');  // Skip clientID
-      // TODO: Verify mux
+      ret_mux = streamGetIntBefore(',');     // clientID (mux)
       streamSkipUntil(',');                  // Skip "SSLClient"
       streamSkipUntil(',');                  // Skip remote ip
       streamSkipUntil(',');                  // Skip remote port
@@ -1354,7 +1354,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       waitResponse();
 
       // 0 Initial, 1 Opening, 2 Connected, 3 Listening, 4 Closing
-      return 2 == res;
+      return 2 == res && isExpectedMux(ret_mux, mux);
     } else {
       sendAT(GF("+QISTATE=1,"), mux);
       // +QISTATE: 0,"TCP","151.139.237.11",80,5087,4,1,0,0,"uart1"
@@ -1364,7 +1364,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
         return false;
       }
 
-      streamSkipUntil(',');                  // Skip mux
+      ret_mux = streamGetIntBefore(',');     //  mux
       streamSkipUntil(',');                  // Skip socket type
       streamSkipUntil(',');                  // Skip remote ip
       streamSkipUntil(',');                  // Skip remote port
@@ -1374,7 +1374,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       waitResponse();
 
       // 0 Initial, 1 Opening, 2 Connected, 3 Listening, 4 Closing
-      return 2 == res;
+      return 2 == res && isExpectedMux(ret_mux, mux);
     }
   }
 
@@ -1388,17 +1388,13 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       String urc = stream.readStringUntil('\"');
       streamSkipUntil(',');
       if (urc == "recv") {
-        int8_t mux = streamGetIntBefore('\n');
+        int16_t mux = streamGetIntBefore('\n');
         DBG("### URC RECV:", mux);
-        if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-          sockets[mux]->got_data = true;
-        }
+        if (isValidMux(mux)) { sockets[mux]->got_data = true; }
       } else if (urc == "closed") {
-        int8_t mux = streamGetIntBefore('\n');
+        int16_t mux = streamGetIntBefore('\n');
         DBG("### URC CLOSE:", mux);
-        if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-          sockets[mux]->sock_connected = false;
-        }
+        if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       } else {
         streamSkipUntil('\n');
       }
@@ -1410,19 +1406,17 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       String urc = stream.readStringUntil('\"');
       streamSkipUntil(',');
       if (urc == "recv") {
-        int8_t mux = streamGetIntBefore('\n');
+        int16_t mux = streamGetIntBefore('\n');
         DBG("### URC SSL RECV:", mux);
-        if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
+        if (isValidMux(mux)) {
           // We have no way of knowing how much data actually came in, so
           // we set the value to 1500, the maximum transmission unit for TCP.
           sockets[mux]->sock_available = 1500;
         }
       } else if (urc == "closed") {
-        int8_t mux = streamGetIntBefore('\n');
+        int16_t mux = streamGetIntBefore('\n');
         DBG("### URC CLOSE:", mux);
-        if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-          sockets[mux]->sock_connected = false;
-        }
+        if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       } else {
         streamSkipUntil('\n');
       }

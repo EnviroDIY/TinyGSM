@@ -691,17 +691,17 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
 
     if (waitResponse(GF("+QISTATE:")) != 1) { return false; }
 
-    streamSkipUntil(',');                  // Skip mux
-    streamSkipUntil(',');                  // Skip socket type
-    streamSkipUntil(',');                  // Skip remote ip
-    streamSkipUntil(',');                  // Skip remote port
-    streamSkipUntil(',');                  // Skip local port
-    int8_t res = streamGetIntBefore(',');  // socket state
+    int16_t ret_mux = streamGetIntBefore(',');  // mux
+    streamSkipUntil(',');                       // Skip socket type
+    streamSkipUntil(',');                       // Skip remote ip
+    streamSkipUntil(',');                       // Skip remote port
+    streamSkipUntil(',');                       // Skip local port
+    int8_t res = streamGetIntBefore(',');       // socket state
 
     waitResponse();
 
     // 0 Initial, 1 Opening, 2 Connected, 3 Listening, 4 Closing
-    return 2 == res;
+    return 2 == res && isExpectedMux(ret_mux, mux);
   }
 
   /*
@@ -712,9 +712,9 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
     if (data.endsWith(GF("+QIRDI:"))) {
       streamSkipUntil(',');  // Skip the context
       streamSkipUntil(',');  // Skip the role
-      int8_t mux = streamGetIntBefore('\n');
+      int16_t mux = streamGetIntBefore('\n');
       // DBG("### Got Data:", mux);
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
+      if (isValidMux(mux)) {
         // We have no way of knowing how much data actually came in, so
         // we set the value to 1500, the maximum possible size.
         sockets[mux]->sock_available = 1500;
@@ -726,9 +726,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
                                   data.length() - 8);
       int coma = data.indexOf(',', nl + 2);
       int mux  = data.substring(nl + 2, coma).toInt();
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
-      }
+      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       data = "";
       DBG("### Closed: ", mux);
       return true;

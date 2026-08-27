@@ -648,7 +648,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
 
     sendAT(GF("+CIPSTART="), GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     if (waitResponse(timeout_ms, GF("+CIPNUM:")) != 1) { return false; }
-    int connected_mux = streamGetIntBefore('\n');
+    int16_t connected_mux = streamGetIntBefore('\n');
 
     uint32_t elapsed = millis() - startMillis;
     if (elapsed >= timeout_ms) { return false; }
@@ -704,10 +704,10 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
  protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+CIPRCV:"))) {
-      int8_t  mux          = streamGetIntBefore(',');
+      int16_t mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(',');
       int16_t len          = len_reported;
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
+      if (isValidMux(mux)) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len_reported, "->",
               sockets[mux]->rx.free());
@@ -720,10 +720,8 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
       DBG("### Got Data: ", len_reported, "on", mux);
       return true;
     } else if (data.endsWith(GF("+TCPCLOSED:"))) {
-      int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
-      }
+      int16_t mux = streamGetIntBefore('\n');
+      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       data = "";
       DBG("### Closed: ", mux);
       return true;

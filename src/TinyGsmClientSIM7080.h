@@ -129,7 +129,6 @@
  * after a successful connection.
  *
  * @todo In `configureSSLContext()`: Skip verifying the context number?
- * @todo In `modemConnectImpl()` (SSL path): validate mux
  */
 /* clang-format on */
 
@@ -1215,8 +1214,7 @@ class TinyGsmSim7080
     //          25: Certificate’s common name does not match
     //          26: Certificate’s common name does not match and time expired
     //          27: Connect failed
-    streamSkipUntil(',');  // Skip mux
-    // TODO: validate mux
+    int16_t ret_mux = streamGetIntBefore(',');  // mux
 
     // make sure the connection really opened
     int8_t res = streamGetIntBefore('\n');
@@ -1231,7 +1229,7 @@ class TinyGsmSim7080
     DBG(GF("### Real max send size for mux"), mux, GF("is"),
         sockets[mux]->realMaxSendSize);
 
-    return 0 == res;
+    return isExpectedMux(ret_mux, mux) && 0 == res;
   }
 
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
@@ -1303,10 +1301,10 @@ class TinyGsmSim7080
     sendAT(GF("+CARECV="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+CARECV:")) != 1) { return 0; }
 
-    // uint8_t ret_mux = streamGetIntBefore(',');
+    // int16_t ret_mux = streamGetIntBefore(',');
     // const int16_t len_reported = streamGetIntBefore('\n');
 
-    // if (ret_mux != mux) {
+    // if (!isExpectedMux(ret_mux, mux)) {
     //   DBG("### Data from wrong mux! Got", ret_mux, "expected", mux);
     //   waitResponse();
     //   sockets[mux]->sock_available = modemGetAvailable(mux);
@@ -1338,7 +1336,7 @@ class TinyGsmSim7080
       // if we get the +CARECV: response, read the mux number and the number of
       // characters available
       if (res == 1) {
-        int               ret_mux = streamGetIntBefore(',');
+        int16_t           ret_mux = streamGetIntBefore(',');
         size_t            result  = streamGetIntBefore('\n');
         GsmClientSim7080* sock    = sockets[ret_mux];
         if (sock) { sock->sock_available = result; }
@@ -1385,8 +1383,8 @@ class TinyGsmSim7080
                              GFP(ModemConfig::GSM_ERROR));
       // if we get the +CASTATE: response, read the mux number and the status
       if (res == 1) {
-        int    ret_mux = streamGetIntBefore(',');
-        size_t status  = streamGetIntBefore('\n');
+        int16_t ret_mux = streamGetIntBefore(',');
+        size_t  status  = streamGetIntBefore('\n');
         // 0: Closed by remote server or internal error
         // 1: Connected to remote server
         // 2: Listening (server mode)
@@ -1428,9 +1426,9 @@ class TinyGsmSim7080
  protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+CARECV:"))) {
-      int8_t  mux = streamGetIntBefore(',');
+      int16_t mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
+      if (isValidMux(mux)) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
@@ -1438,17 +1436,15 @@ class TinyGsmSim7080
       DBG("### Got Data:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("+CADATAIND:"))) {
-      int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->got_data = true;
-      }
+      int16_t mux = streamGetIntBefore('\n');
+      if (isValidMux(mux)) { sockets[mux]->got_data = true; }
       data = "";
       DBG("### Got Data:", mux);
       return true;
     } else if (data.endsWith(GF("+CASTATE:"))) {
-      int8_t mux   = streamGetIntBefore(',');
-      int8_t state = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
+      int16_t mux   = streamGetIntBefore(',');
+      int16_t state = streamGetIntBefore('\n');
+      if (isValidMux(mux)) {
         if (state != 1) {
           sockets[mux]->sock_connected = false;
           DBG("### Closed: ", mux);

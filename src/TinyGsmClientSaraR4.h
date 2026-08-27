@@ -100,7 +100,6 @@
  * after a successful connection.
  *
  * @todo In `restartImpl()`: Verify delay timing here
- * @todo In `modemReadImpl()`: Validate mux
  */
 /* clang-format on */
 
@@ -868,7 +867,7 @@ class TinyGsmSaraR4
     sendAT(GF("+USOCR=6"));
     // reply is +USOCR: ## of socket created
     if (waitResponse(GF("+USOCR:")) != 1) { return false; }
-    int8_t connected_mux = streamGetIntBefore('\n');
+    int16_t connected_mux = streamGetIntBefore('\n');
     waitResponse();
     // Validate the returned mux
     if (connected_mux < 0 || connected_mux >= TcpConfig::kMuxCount) {
@@ -969,12 +968,12 @@ class TinyGsmSaraR4
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
     if (waitResponse(GF("+USOWR:")) != 1) { return 0; }
-    uint8_t  ret_mux = streamGetIntBefore(',');   // check mux
+    int16_t  ret_mux = streamGetIntBefore(',');   // check mux
     uint16_t sent    = streamGetIntBefore('\n');  // check send length
     bool     success = waitResponse() ==
         1;  // sends back OK after the confirmation of number sent
     if (sent != len) { DBG("### Sent:", sent, "of", len, "on", mux); }
-    if (mux == ret_mux && success) return sent;
+    if (success && isExpectedMux(ret_mux, mux)) return sent;
     return 0;
   }
 
@@ -982,15 +981,17 @@ class TinyGsmSaraR4
     if (!sockets[mux]) return 0;
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+USORD:")) != 1) { return 0; }
-    streamSkipUntil(',');  // Skip mux
-    // TODO: Validate mux
+    int16_t ret_mux      = streamGetIntBefore(',');  // mux
     int16_t len_reported = streamGetIntBefore(',');
     streamSkipUntil('\"');
     size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
     streamSkipUntil('\"');
     waitResponse();
-    sockets[mux]->sock_available = modemGetAvailable(mux);
-    return len_read;
+    if (isValidMux(ret_mux)) {
+      sockets[ret_mux]->sock_available = modemGetAvailable(ret_mux);
+    }
+    if (isExpectedMux(ret_mux, mux)) { return len_read; }
+    return 0;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
@@ -1002,10 +1003,11 @@ class TinyGsmSaraR4
     // Will give error "operation not allowed" when attempting to read a socket
     // that you have already told to close
     if (res == 1) {
-      streamSkipUntil(',');  // Skip mux
-      result = streamGetIntBefore('\n');
+      int16_t ret_mux = streamGetIntBefore(',');  // mux
+      result          = streamGetIntBefore('\n');
       // if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
       waitResponse();
+      if (!isExpectedMux(ret_mux, mux)) { result = 0; }
     }
     if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
     // DBG("### Available:", result, "on", mux);
@@ -1018,8 +1020,8 @@ class TinyGsmSaraR4
     uint8_t res = waitResponse(GF("+USOCTL:"));
     if (res != 1) { return false; }
 
-    streamSkipUntil(',');  // Skip mux
-    streamSkipUntil(',');  // Skip type
+    int16_t ret_mux = streamGetIntBefore(',');  // mux
+    streamSkipUntil(',');                       // Skip type
     int8_t result = streamGetIntBefore('\n');
     // 0: the socket is in INACTIVE status (it corresponds to CLOSED status
     // defined in RFC793 "TCP Protocol Specification" [112])
@@ -1034,7 +1036,7 @@ class TinyGsmSaraR4
     // 9: the socket is in LAST_ACK status
     // 10: the socket is in TIME_WAIT status
     waitResponse();
-    return (result != 0);
+    return (result != 0 && isExpectedMux(ret_mux, mux));
   }
 
   /*
@@ -1043,9 +1045,9 @@ class TinyGsmSaraR4
  protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+UUSORD:"))) {
-      int8_t  mux = streamGetIntBefore(',');
+      int16_t mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
+      if (isValidMux(mux)) {
         sockets[mux]->got_data = true;
         // max size is 1024
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
@@ -1054,18 +1056,15 @@ class TinyGsmSaraR4
       DBG("### URC Data Received:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("+UUSOCL:"))) {
-      int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
-      }
+      int16_t mux = streamGetIntBefore('\n');
+      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       data = "";
       DBG("### URC Sock Closed: ", mux);
       return true;
     } else if (data.endsWith(GF("+UUSOCO:"))) {
-      int8_t mux          = streamGetIntBefore('\n');
-      int8_t socket_error = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TcpConfig::kMuxCount && sockets[mux] &&
-          socket_error == 0) {
+      int16_t mux          = streamGetIntBefore('\n');
+      int16_t socket_error = streamGetIntBefore('\n');
+      if (isValidMux(mux) && socket_error == 0) {
         sockets[mux]->sock_connected = true;
       }
       data = "";
