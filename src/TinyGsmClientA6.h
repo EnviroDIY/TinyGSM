@@ -652,10 +652,11 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
 
     uint32_t elapsed = millis() - startMillis;
     if (elapsed >= timeout_ms) { return false; }
-    bool success = waitResponse(timeout_ms - elapsed, GF("CONNECT OK\r\n"),
-                                GF("CONNECT FAIL\r\n"),
-                                GF("ALREADY CONNECT\r\n")) == 1;
-    success &= waitResponse() != 1;
+    int8_t connect_rsp = waitResponse(timeout_ms - elapsed, GF("CONNECT OK\r\n"),
+                                      GF("CONNECT FAIL\r\n"),
+                                      GF("ALREADY CONNECT\r\n"));
+    bool success = connect_rsp == 1 || connect_rsp == 3;
+    success &= waitResponse() == 1;
 
     // Validate the returned mux
     if (connected_mux < 0 || connected_mux >= TcpConfig::kMuxCount ||
