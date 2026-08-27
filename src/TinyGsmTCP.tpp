@@ -512,7 +512,7 @@ class GsmClient : public Client {
    * @param modem Modem instance used by this client.
    * @param mux Multiplexing channel to use.
    */
-  explicit GsmClient(modemType& modem, uint8_t mux = 0) : at(modem), mux(mux) {
+  explicit GsmClient(modemType& modem, uint8_t mux = 0) : at(&modem), mux(mux) {
     is_secure = false;
   }
 
