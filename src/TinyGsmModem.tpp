@@ -100,6 +100,7 @@ constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_VERBOSE_2[]
  */
 template <class modemType, class modemConfig = TinyGsmModemConfigPreset<int8_t>>
 class TinyGsmModem {
+ public:
   using ModemConfig   = modemConfig;
   using regStatusType = typename ModemConfig::RegStatus;
 
