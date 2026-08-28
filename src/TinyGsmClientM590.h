@@ -103,7 +103,7 @@
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
 
-/// Neoway M5901 Registration status
+/// Neoway M590 Registration status
 /// @remark The Neoway M590 uses different numbers for registration status than
 /// most other modules.
 /// @ingroup neoway_m590
@@ -665,7 +665,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
       int16_t mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(',');
       int16_t len          = len_reported;
-      if (isValidMux(mux)) {
+      if (isValidMux(mux) && len_reported > 0) {
         if (len > sockets[mux]->rx.free()) {
           DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           // reset the len to read to the amount free
