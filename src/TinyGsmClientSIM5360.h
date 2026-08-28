@@ -848,7 +848,6 @@ class TinyGsmSim5360
     //  ^^ Requested number of data bytes (1-1460 bytes) to be read
     int16_t len_remaining = streamGetIntBefore('\n');
     // ^^ The data length which not read in the buffer
-    size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
     if (isValidMux(ret_mux)) {
       // move the data to the socket buffer of the returned mux as long as the
       // returned mux is valid, even if it doesn't match the expected mux.
