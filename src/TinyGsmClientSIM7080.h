@@ -352,9 +352,10 @@ class TinyGsmSim7080
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
-    /// Typedef for backward compatibility
-    using GsmClientSecureSIM7080 = GsmClientSecureSim7080;
   };
+
+  /// Typedef for backward compatibility
+  using GsmClientSecureSIM7080 = GsmClientSecureSim7080;
 
   /*
    * GSM Modem Constructor
