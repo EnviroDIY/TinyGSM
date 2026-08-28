@@ -1712,18 +1712,12 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         if (open_socks != "") {
           // In transparent mode, only socket 0 should be possible
           sendAT(GF("SI0"));
-          // read socket it
-          String sock_id = stream.readStringUntil('\r');
-          // read socket state
-          String sock_state = stream.readStringUntil('\r');
-          // read socket protocol (TCP/UDP)
-          String sock_protocol = stream.readStringUntil('\r');
-          // read local port number
-          String local_port = stream.readStringUntil('\r');
-          // read remote port number
-          String remote_port = stream.readStringUntil('\r');
-          // read remote ip address
-          String remoted_address = stream.readStringUntil('\r');  // read result
+          streamSkipUntil('\r');  //  socket id
+          streamSkipUntil('\r');  //  socket state
+          streamSkipUntil('\r');  //  socket protocol (TCP/UDP)
+          streamSkipUntil('\r');  //  local port number
+          streamSkipUntil('\r');  //  remote port number
+          streamSkipUntil('\r');  //  remote ip address
           streamSkipUntil('\r');  // final carriage return
         }
 
