@@ -939,8 +939,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     sendAT(GF("AI"));
     int16_t       intRes = readResponseInt(10000L);
     XBeeRegStatus stat   = (beeType == XBeeType::XBEE_S6B_WIFI)
-          ? parseWifiRegStatus(intRes)
-          : parseCellularRegStatus(intRes);
+        ? parseWifiRegStatus(intRes)
+        : parseCellularRegStatus(intRes);
 
     XBEE_COMMAND_END_DECORATOR
     return stat;

@@ -823,19 +823,36 @@ class TinyGsmSequansMonarch
 #endif
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
+    if (!sockets[mux]) return 0;
+    size_t len_read = 0;
+
     sendAT(GF("+SQNSRECV="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+SQNSRECV: ")) != 1) { return 0; }
+
     int16_t ret_mux      = streamGetIntBefore(',');  // mux
     int16_t len_reported = streamGetIntBefore('\n');
-    size_t  len_read     = moveCharsFromStreamToFifo(mux % TcpConfig::kMuxCount,
-                                                     len_reported);
-    waitResponse();
     if (isValidMux(ret_mux)) {
+      // move the data to the socket buffer of the returned mux as long as the
+      // returned mux is valid, even if it doesn't match the expected mux.
+      len_read = moveCharsFromStreamToFifo(ret_mux % TcpConfig::kMuxCount,
+                                           len_reported);
+    }
+    waitResponse();  // ending OK; the waitResponse function will toss all the
+                     // characters before the OK if the mux was invalid
+
+    if (isValidMux(ret_mux)) {
+      // get the amount available after reading
       sockets[ret_mux % TcpConfig::kMuxCount]->sock_available =
           modemGetAvailable(ret_mux);
     }
-    if (isExpectedMux(ret_mux, mux)) { return len_read; }
-    return 0;
+    if (!isExpectedMux(ret_mux, mux)) {
+      // if we didn't get a read from the expected mux, set the read length to 0
+      // and update the available data for the mux that was requested
+      len_read = 0;
+      sockets[mux % TcpConfig::kMuxCount]->sock_available =
+          modemGetAvailable(mux);
+    }
+    return len_read;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {

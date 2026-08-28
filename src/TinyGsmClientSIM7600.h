@@ -1184,6 +1184,7 @@ class TinyGsmSim7600
     int16_t len_reported  = 0;
     int16_t len_remaining = 0;
     int16_t ret_mux;
+
     if (ssl) {
 #if defined(TINY_GSM_USE_HEX) && defined(TINY_GSM_DEBUG)
       DBG("### ERROR: SSL sockets do not support reading in HEX mode, reading "
@@ -1215,23 +1216,42 @@ class TinyGsmSim7600
       // ^^ Integer type, the length of data which has not been read in the
       // buffer.
     }
+
     size_t len_read = 0;
     if (isValidMux(ret_mux)) {
-      len_read = moveCharsFromStreamToFifo(mux, len_reported);
+      // move the data to the socket buffer of the returned mux as long as the
+      // returned mux is valid, even if it doesn't match the expected mux.
+      len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
     }
+
     if (ssl) {
-      // Returns +CCHRECV: {mux},0 after the data
-      String await_response = "+CCHRECV: " + String(mux) + ",0";
-      waitResponse(GFP(await_response.c_str()));
-      // we need to check how much is left after the read
-      sockets[mux]->sock_available = (uint16_t)modemGetAvailable(mux);
+      if (isValidMux(ret_mux)) {
+        // Returns +CCHRECV: {mux},0 after the data
+        String await_response = "+CCHRECV: " + String(ret_mux) + ",0";
+        waitResponse(GFP(await_response.c_str()));
+        // we need to check how much is left after the read
+        sockets[ret_mux]->sock_available = (uint16_t)modemGetAvailable(ret_mux);
+      } else {
+        // if the mux is invalid we need to eat everything in the stream
+        streamClear();
+      }
     } else {
-      // the read call already told us how much is left
-      sockets[mux]->sock_available = len_remaining;
-      waitResponse();
+      if (isValidMux(ret_mux)) {
+        // the read call already told us how much is left
+        sockets[ret_mux]->sock_available = len_remaining;
+      }
+      waitResponse();  // ending OK after non-SSL request; the waitResponse
+                       // function will toss all the characters before the OK if
+                       // the mux was invalid
     }
-    if (isExpectedMux(ret_mux, mux)) { return len_read; }
-    return 0;
+
+    if (!isExpectedMux(ret_mux, mux)) {
+      // if we didn't get a read from the expected mux, set the read length to 0
+      // and update the available data for the mux that was requested
+      len_read                     = 0;
+      sockets[mux]->sock_available = modemGetAvailable(mux);
+    }
+    return len_read;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {

@@ -1036,19 +1036,35 @@ class TinyGsmSaraR5
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
+    size_t len_read = 0;
+
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+USORD:")) != 1) { return 0; }
+
     int16_t ret_mux      = streamGetIntBefore(',');  // mux
     int16_t len_reported = streamGetIntBefore(',');
     streamSkipUntil('\"');
-    size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
-    streamSkipUntil('\"');
-    waitResponse();
     if (isValidMux(ret_mux)) {
+      // move the data to the socket buffer of the returned mux as long as the
+      // returned mux is valid, even if it doesn't match the expected mux.
+      len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
+    }
+    streamSkipUntil('\"');
+    // ^^ if the returned mux is invalid, this will skip the entire line, if it
+    // was valid this will only skip the closing quote
+    waitResponse();
+
+    if (isValidMux(ret_mux)) {
+      // get the amount available after reading
       sockets[ret_mux]->sock_available = modemGetAvailable(ret_mux);
     }
-    if (isExpectedMux(ret_mux, mux)) { return len_read; }
-    return 0;
+    if (!isExpectedMux(ret_mux, mux)) {
+      // if we didn't get a read from the expected mux, set the read length to 0
+      // and update the available data for the mux that was requested
+      len_read                     = 0;
+      sockets[mux]->sock_available = modemGetAvailable(mux);
+    }
+    return len_read;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {

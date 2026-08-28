@@ -833,12 +833,15 @@ class TinyGsmSim5360
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
+    size_t len_read = 0;
+
 #ifdef TINY_GSM_USE_HEX
     sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
 #else
     sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
 #endif
     if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
+
     streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
     int16_t ret_mux      = streamGetIntBefore(',');  // mux/cid (connecion id)
     int16_t len_reported = streamGetIntBefore(',');
@@ -846,11 +849,24 @@ class TinyGsmSim5360
     int16_t len_remaining = streamGetIntBefore('\n');
     // ^^ The data length which not read in the buffer
     size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
-    // sockets[mux]->sock_available = modemGetAvailable(mux);
-    if (isValidMux(ret_mux)) { sockets[mux]->sock_available = len_remaining; }
-    waitResponse();
-    if (isExpectedMux(ret_mux, mux)) { return len_read; }
-    return 0;
+    if (isValidMux(ret_mux)) {
+      // move the data to the socket buffer of the returned mux as long as the
+      // returned mux is valid, even if it doesn't match the expected mux.
+      len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
+      // update the amount remaining for the returned mux, even if it doesn't
+      // match the expected mux.
+      sockets[ret_mux]->sock_available = len_remaining;
+    }
+    waitResponse();  // ending OK; the waitResponse function will toss all the
+                     // characters before the OK if the mux was invalid
+
+    if (!isExpectedMux(ret_mux, mux)) {
+      // if we didn't get a read from the expected mux, set the read length to 0
+      // and update the available data for the mux that was requested
+      len_read                     = 0;
+      sockets[mux]->sock_available = modemGetAvailable(mux);
+    }
+    return len_read;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
