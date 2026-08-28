@@ -1249,7 +1249,10 @@ class TinyGsmESP32
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t* dynamicMux,
                         int timeout_s) {
-    // NOTE: Don't validate mux!  It's not the real one yet!
+    // Validate dynamicMux before accessing sockets array
+    if (*dynamicMux >= TcpConfig::kMuxCount || !sockets[*dynamicMux]) {
+      return false;
+    }
     uint32_t timeout_ms    = ((uint32_t)timeout_s) * 1000;
     uint8_t  requested_mux = *dynamicMux;
     bool     ssl           = sockets[requested_mux]->is_secure;

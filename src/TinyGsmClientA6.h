@@ -643,7 +643,8 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t* dynamicMux,
                         int timeout_s) {
-    // NOTE: Don't validate mux!  It's not the real one yet!
+    // NOTE: Don't validate mux!  It's not the real one yet and we don't need to
+    // access it for any SSL configuration
     uint32_t startMillis = millis();
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
 
