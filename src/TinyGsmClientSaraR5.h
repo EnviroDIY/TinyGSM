@@ -343,7 +343,7 @@ class TinyGsmSaraR5
         // move any existing client at the assigned mux number to the next
         // available slot
         // set the requested mux to -1 to get the next available mux number
-        at->moveSocket(mux, static_cast<uint8_t>(-1));
+        at->moveSocket(assignedMux, static_cast<uint8_t>(-1));
         // set the client's internal mux number and insert it into the array
         at->sockets[assignedMux] = this;
         mux                      = assignedMux;
