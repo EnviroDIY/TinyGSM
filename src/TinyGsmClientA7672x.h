@@ -1197,7 +1197,7 @@ class TinyGsmA7672X
 };
 
 /// Typedef for backward compatibility
-typedef TinyGsmA7672X TinyGsmA7672X;
+typedef TinyGsmA7672X TinyGsmA7672x;
 
 // cspell:words CCHSEND
 
