@@ -70,13 +70,14 @@
  *   - Change the buffer size by defining TINY_GSM_RX_BUFFER in your sketch
  * before including any TinyGSM header file.
  * - Socket Numbering:
- *   - The modem does not allow you to specify the multiplexing channel.
- *   - The modem will automatically assign a channel when the client connects to
- * a server.
+ *   - The ESP8266 uses static mux selection.
+ *   - The caller chooses the multiplexing channel number via the constructor or
+ * init() function.
+ *   - init() honors the requested channel when available; if unavailable, it
+ * will select the next available channel or use modulo assignment.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  *
- * @todo In `modemConnectImpl()`: Check mux
  * @todo In `handleURCs()`: deal with buffer overflow
  */
 /* clang-format on */
