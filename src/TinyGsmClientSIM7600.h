@@ -1311,7 +1311,9 @@ class TinyGsmSim7600
     for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       // +CIPOPEN:<mux>,<State or blank...>
       String state = stream.readStringUntil('\n');
-      if (state.indexOf(',') > 0) { sockets[muxNo]->sock_connected = true; }
+      if (state.indexOf(',') > 0 && sockets[muxNo]) {
+        sockets[muxNo]->sock_connected = true;
+      }
     }
     waitResponse();  // Should be an OK at the end
     if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
