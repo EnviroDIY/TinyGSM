@@ -857,8 +857,8 @@ class TinyGsmSequansMonarch
 
   size_t modemGetAvailableImpl(uint8_t mux) {
     sendAT(GF("+SQNSI="), mux);
-    size_t  result = 0;
-    int16_t ret_mux;
+    size_t  result  = 0;
+    int16_t ret_mux = -1;
     if (waitResponse(GF("+SQNSI:")) == 1) {
       ret_mux = streamGetIntBefore(',');  // mux
       streamSkipUntil(',');               // Skip total sent
@@ -946,11 +946,11 @@ class TinyGsmSequansMonarch
 
   // over-ride because mux numbers start at 1
   bool isValidMux(uint8_t mux) {
-    return mux <= TcpConfig::kMuxCount &&
+    return mux > 0 && mux <= TcpConfig::kMuxCount &&
         sockets[mux % TcpConfig::kMuxCount] != nullptr;
   }
   bool isValidMux(uint16_t mux) {
-    return mux <= TcpConfig::kMuxCount &&
+    return mux > 0 && mux <= TcpConfig::kMuxCount &&
         sockets[mux % TcpConfig::kMuxCount] != nullptr;
   }
   bool isValidMux(int16_t mux) {
