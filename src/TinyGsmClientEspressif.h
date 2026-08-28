@@ -362,7 +362,7 @@ class TinyGsmEspressif
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
     // same command for SSL and not SSL
     thisModem().sendAT(GF("+CIPCLOSE="), mux);
-    return thisModem().waitResponse(maxWaitMs);
+    return thisModem().waitResponse(maxWaitMs) == 1;
   }
 
   /*
