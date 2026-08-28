@@ -418,6 +418,10 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       // We need to call modemGetConnected to check the sock state.
       return at->modemGetConnected(mux);
     }
+
+    // NOTE: We do NOT need to re-write the peek() function for the secure
+    // client, because the peek() function isn't different for buffers that can
+    // and can't have the size checked - only for those with no buffer at all.
   };
 
   /*
@@ -1003,30 +1007,56 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     // Request network synchronization
     // AT+QNTP=<contextID>,<server>[,<port>][,<autosettime>]
     sendAT(GF("+QNTP=1,\""), server, '"');
-    // Response: +QNTP: <err>,<time>
-    // <err> -  Error code of operation - see chapter 4 of the
+    // Response: OK\r\n+QNTP: <err>,<time>
+    //   <err> -  Error code of operation - see chapter 4 of the
     // BG96_TCP(IP)_Application_Note
     // There's a long list of codes, but 0 is a success
-    if (waitResponse(10000L, GF("+QNTP:")) == 1) {
-      String result = stream.readStringUntil(',');
-      streamSkipUntil('\n');
-      result.trim();
-      if (TinyGsmIsValidNumber(result)) { return result.toInt() == 0; }
+    bool quick_sync = waitResponse(10000L) == 1;  // Wait for the OK response
+    // NOTE: This only waits 10s, but the BG96 can take up to 125s to sync
+    // with the NTP server.
+    if (quick_sync) {
+      // if we get the response within 10s, check the error code to see if it
+      // was successful
+      if (waitResponse(GF("+QNTP:")) == 1) {
+        String result = stream.readStringUntil(',');
+        streamSkipUntil('\n');
+        result.trim();
+        if (TinyGsmIsValidNumber(result)) { return result.toInt() == 0; }
+      }
     }
+    // if we don't get the response within 10s, or if the error code was not 0,
+    // check if the time is still syncing.  If it is, we consider this a
+    // success, as the time will be updated when the sync is complete.  If it is
+    // not syncing, we consider this a failure.
+    sendAT(GF("+QNTP?"));
+    // If in the process of local time synchronization:
+    // +QNTP: <server>,<port>]\r\nOK\r\n
+    bool success = waitResponse(10000L, GF("+QNTP:")) == 1;
+    if (success) { return waitResponse() == 1; }
     return false;
   }
 
   bool waitForTimeSyncImpl(int timeout_s) {
     // if we're not connected, we'll never get the time
-    if (!isNetworkConnected()) { return false; }
+    if (!isNetworkConnected()) {
+      DBG(GF("### Not connected to network; cannot sync time!"));
+      return false;
+    }
     // if we're sure we should be able to get the time, wait for it
     uint32_t start_millis = millis();
     while (millis() - start_millis < static_cast<uint32_t>(timeout_s) * 1000) {
-      // Request network synchronization
-      sendAT(GF("+QNTP?"));
-      // +QNTP: <server>,<port>]\r\nOK\r\n
-      if (waitResponse(10000L) == 1) { return true; }
-      delay(250);
+      // Request the time
+      sendAT(GF("+QLTS"));
+      bool got_time_rsp = waitResponse(500L, GF("+QLTS: \"")) == 1;
+      if (got_time_rsp) {
+        // if the year is between 2025 and 2035, we assume the time is valid and
+        // synced (the response uses a 2-digit year, so we check for 25-35)
+        int16_t iyear = streamGetIntBefore('/');
+        streamSkipUntil('\n');  // skip the rest of the response
+        bool got_ok = waitResponse(500L) == 1;
+        if (iyear >= 25 && iyear <= 35 && got_ok) { return true; }
+      }
+      delay(500);  // Wait 0.5s before trying again
     }
     return false;
   }
@@ -1158,7 +1188,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
         break;
       }
     }
-    sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, ',', q_ssl_version);
+    sendAT(GF("+QSSLCFG=\"sslversion\","), context_id, ',', q_ssl_version);
     success &= waitResponse(5000L) == 1;
 
     // set the ssl sec level
