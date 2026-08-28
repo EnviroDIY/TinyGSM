@@ -476,6 +476,7 @@ class TinyGsmESP32
      */
     void setCACertificateNumber(uint8_t certNumber) {
       if (at == nullptr) { return; }
+      if (certNumber > 1) { return; }
       ca_number = certNumber;
       // convert the certificate number and type into the proper certificate
       // names for the ESP32
@@ -497,6 +498,7 @@ class TinyGsmESP32
      */
     void setClientCertificateNumber(uint8_t certNumber) {
       if (at == nullptr) { return; }
+      if (certNumber > 1) { return; }
       pki_number = certNumber;
       // generate and set the name for the client certificate from the number
       char cert_name[16]      = {};
