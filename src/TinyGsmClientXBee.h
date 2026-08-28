@@ -100,12 +100,9 @@
  *   - Change the buffer size by defining TINY_GSM_RX_BUFFER in your sketch
  * before including any TinyGSM header file.
  * - Socket Numbering:
- *   - The modem does not allow you to specify the multiplexing channel.
- *   - The modem will automatically assign a channel when the client connects to
- * a server.
- *   - Use the getMux() function to get the assigned multiplexing channel number
- * after a successful connection.
- *
+ *   - Only one socket is available in transparent/command mode, and it is
+ * always channel 0.
+ *   - The mux argument on the client constructor and init() is ignored. *
  * @todo In operator `GsmClientXBee::read()`: Read directly into user buffer?
  * @todo In `enterCommandMode()`: optimize this
  */
