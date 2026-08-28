@@ -191,9 +191,7 @@ class TinyGsmModem {
    */
   template <class StreamObject>
   bool forceModemBaud(StreamObject& at_serial, uint32_t targetBaud) {
-    static uint32_t rates[] = {115200, 57600,  9600,   921600, 38400,
-                               19200,  460800, 230400, 74400,  74880,
-                               2400,   4800,   14400,  28800};
+    static const uint32_t* rates = TINY_GSM_AUTOBAUD_RATES;
 
     uint32_t maximum = 921600;
 #if defined(F_CPU)
@@ -229,7 +227,8 @@ class TinyGsmModem {
     // not recognized as a response.  In this case, we still want to try to
     // set the baud rate.
 
-    for (uint8_t i = 0; i < sizeof(rates) / sizeof(rates[0]); i++) {
+    for (uint8_t i = 0; i < 14;
+         i++) {  // sizeof(TINY_GSM_AUTOBAUD_RATES)/sizeof(uint32_t)
       uint32_t rate = rates[i];
       for (uint8_t j = 0; j < 3; j++) {
         DBG("Trying to set the baud rate from a rate of", rate, "...");
@@ -237,11 +236,7 @@ class TinyGsmModem {
         at_serial.begin(rate);
         delay(25);  // settle
 
-        // #if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_ESP8266)
-        //         setDefaultBaud(targetBaud);
-        // #else
         setBaud(targetBaud);
-        // #endif
 
         at_serial.end();
         at_serial.begin(targetBaud);
