@@ -1330,21 +1330,25 @@ class TinyGsmSim7080
     // NOTE: This gets how many characters are available on all connections that
     // have data.  It does not return all the connections, just those with data.
     sendAT(GF("+CARECV?"));
-    for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+    for (int16_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
       int res = waitResponse(3000, GF("+CARECV:"), GFP(ModemConfig::GSM_OK),
                              GFP(ModemConfig::GSM_ERROR));
       // if we get the +CARECV: response, read the mux number and the number of
       // characters available
       if (res == 1) {
-        int16_t           ret_mux = streamGetIntBefore(',');
-        size_t            result  = streamGetIntBefore('\n');
-        GsmClientSim7080* sock    = sockets[ret_mux];
-        if (sock) { sock->sock_available = result; }
+        int16_t ret_mux = streamGetIntBefore(',');
+        size_t  result  = streamGetIntBefore('\n');
+        if (isValidMux(ret_mux)) {
+          // if the mux is valid, set the number of available characters for
+          // that socket
+          sockets[ret_mux]->sock_available = result;
+        }
         // if the first returned mux isn't 0 (or is higher than expected)
         // we need to fill in the missing muxes
         if (ret_mux > muxNo) {
-          for (int extra_mux = muxNo; extra_mux < ret_mux; extra_mux++) {
+          for (int16_t extra_mux = muxNo;
+               extra_mux < min(ret_mux, TcpConfig::kMuxCount); extra_mux++) {
             GsmClientSim7080* isock = sockets[extra_mux];
             if (isock) { isock->sock_available = 0; }
           }
@@ -1353,7 +1357,7 @@ class TinyGsmSim7080
       } else if (res == 2) {
         // if we get an OK, we've reached the last socket with available data
         // so we set any we haven't gotten to yet to 0
-        for (int extra_mux = muxNo; extra_mux < TcpConfig::kMuxCount;
+        for (int16_t extra_mux = muxNo; extra_mux < TcpConfig::kMuxCount;
              extra_mux++) {
           GsmClientSim7080* isock = sockets[extra_mux];
           if (isock) { isock->sock_available = 0; }
@@ -1378,7 +1382,7 @@ class TinyGsmSim7080
     // since the last connection
     sendAT(GF("+CASTATE?"));
 
-    for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+    for (int16_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
       int res = waitResponse(3000, GF("+CASTATE:"), GFP(ModemConfig::GSM_OK),
                              GFP(ModemConfig::GSM_ERROR));
@@ -1389,12 +1393,16 @@ class TinyGsmSim7080
         // 0: Closed by remote server or internal error
         // 1: Connected to remote server
         // 2: Listening (server mode)
-        GsmClientSim7080* sock = sockets[ret_mux];
-        if (sock) { sock->sock_connected = (status == 1); }
+        if (isValidMux(ret_mux)) {
+          // if the mux is valid, set the number of available characters for
+          // that socket
+          sockets[ret_mux]->sock_connected = (status == 1);
+        }
         // if the first returned mux isn't 0 (or is higher than expected)
         // we need to fill in the missing muxes
         if (ret_mux > muxNo) {
-          for (int extra_mux = muxNo; extra_mux < ret_mux; extra_mux++) {
+          for (int16_t extra_mux = muxNo;
+               extra_mux < min(ret_mux, TcpConfig::kMuxCount); extra_mux++) {
             GsmClientSim7080* isock = sockets[extra_mux];
             if (isock) { isock->sock_connected = false; }
           }
@@ -1403,7 +1411,7 @@ class TinyGsmSim7080
       } else if (res == 2) {
         // if we get an OK, we've reached the last socket with available data
         // so we set any we haven't gotten to yet to 0
-        for (int extra_mux = muxNo; extra_mux < TcpConfig::kMuxCount;
+        for (int16_t extra_mux = muxNo; extra_mux < TcpConfig::kMuxCount;
              extra_mux++) {
           GsmClientSim7080* isock = sockets[extra_mux];
           if (isock) { isock->sock_connected = false; }
