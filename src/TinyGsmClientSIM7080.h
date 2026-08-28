@@ -841,7 +841,7 @@ class TinyGsmSim7080
     //        - 1 Just output UTC time to AT port
     //        - 2 Set UTC to localtime and output UTC time to AT port
     sendAT(GF("+CNTP=\""), server, GF("\","), TimeZone * 4, GF(",0,2"));
-    if (waitResponse(10000L) != 1) { return -1; }
+    if (waitResponse(10000L) != 1) { return false; }
 
     // Request network synchronization - execution command
     sendAT(GF("+CNTP"));
