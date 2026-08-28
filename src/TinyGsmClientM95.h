@@ -663,15 +663,24 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
       streamSkipUntil(',');  // skip port
       streamSkipUntil(',');  // skip connection type (TCP/UDP)
       // read the real length of the retrieved data
-      uint16_t len_reported = streamGetIntBefore('\n');
+      int16_t len_reported = streamGetIntBefore('\n');
+      if (len_reported <= 0) {
+        sockets[mux]->sock_available = 0;
+        waitResponse();  // ends with an OK
+        return 0;
+      }
       // We have no way of knowing in advance how much data will be in the
       // buffer so when data is received we always assume the buffer is
       // completely full. Chances are, this is not true and there's really not
       // that much there. In that case, make sure we make sure we re-set the
       // amount of data available.
-      if (len_reported < size) { sockets[mux]->sock_available = len_reported; }
+      if (static_cast<size_t>(len_reported) < size) {
+        sockets[mux]->sock_available = len_reported;
+      }
       size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
-      sockets[mux]->sock_available -= len_read;
+      // Never wrap the unsigned available counter
+      sockets[mux]->sock_available -= TinyGsmMin(
+          static_cast<size_t>(sockets[mux]->sock_available), len_read);
       // ^^ Decrease the characters available after moving from modem's FIFO to
       // our FIFO
       waitResponse();  // ends with an OK
@@ -730,10 +739,12 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
                               data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
                                                data.length() - 8));
       int16_t coma = data.indexOf(',', nl + 2);
-      int16_t mux  = data.substring(nl + 2, coma).toInt();
-      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
+      if (coma > nl + 2) {
+        int16_t mux = data.substring(nl + 2, coma).toInt();
+        if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
+        DBG("### Closed: ", mux);
+      }
       data = "";
-      DBG("### Closed: ", mux);
       return true;
     } else if (data.endsWith(GF("+QNITZ:"))) {
       streamSkipUntil('\n');  // URC for time sync
