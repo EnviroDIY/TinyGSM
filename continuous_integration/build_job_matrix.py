@@ -124,7 +124,6 @@ def build_custom_matrix(config: dict) -> list[dict]:
         "TINY_GSM_MODEM_SIM5300",
         "TINY_GSM_MODEM_SIM7100",
         "TINY_GSM_MODEM_M95",
-        "TINY_GSM_MODEM_BG95",
         "TINY_GSM_MODEM_A6",
         "TINY_GSM_MODEM_A7",
         "TINY_GSM_MODEM_M590",
