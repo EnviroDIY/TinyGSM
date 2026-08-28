@@ -152,7 +152,7 @@ void setup() {
   // Set your reset, enable, power pins here
   // !!!!!!!!!!!
 
-  SerialMon.println("Wait...");
+  SerialMon.println(F("Wait..."));
 
   // Set GSM module baud rate
   TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
@@ -163,7 +163,7 @@ void setup() {
 void loop() {
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
-  SerialMon.print("Initializing modem...");
+  SerialMon.print(F("Initializing modem..."));
   if (!modem.restart()) {
     // if (!modem.init()) {
     SerialMon.println(F(" [fail]"));
@@ -181,7 +181,7 @@ void loop() {
   SerialMon.println(F(" [OK]"));
 
   String modemInfo = modem.getModemInfo();
-  SerialMon.print("Modem Info: ");
+  SerialMon.print(F("Modem Info: "));
   SerialMon.println(modemInfo);
 
 #if TINY_GSM_USE_GPRS
@@ -196,11 +196,11 @@ void loop() {
   // Wifi connection parameters must be set before waiting for the network
   SerialMon.print(F("Setting SSID/password..."));
   if (!modem.networkConnect(wifiSSID, wifiPass)) {
-    SerialMon.println(" fail");
+    SerialMon.println(F(" fail"));
     delay(10000);
     return;
   }
-  SerialMon.println(" success");
+  SerialMon.println(F(" success"));
 #endif
 
 #if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_XBEE
@@ -208,7 +208,7 @@ void loop() {
   modem.gprsConnect(apn, gprsUser, gprsPass);
 #endif
 
-  SerialMon.print("Waiting for network...");
+  SerialMon.print(F("Waiting for network..."));
   if (!modem.waitForNetwork(
           600000L)) {  // You may need lengthen this in poor service areas
     SerialMon.println(F(" [fail]"));
@@ -225,7 +225,7 @@ void loop() {
 
 #if TINY_GSM_USE_GPRS
   // GPRS connection parameters are usually set after network registration
-  SerialMon.print("Connecting to ");
+  SerialMon.print(F("Connecting to "));
   SerialMon.print(apn);
   if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
     SerialMon.println(F(" [fail]"));
@@ -240,7 +240,7 @@ void loop() {
 #endif
 
   IPAddress local = modem.localIP();
-  SerialMon.print("Local IP: ");
+  SerialMon.print(F("Local IP: "));
   SerialMon.println(local);
 
   SerialMon.print(F("Connecting to "));
@@ -257,8 +257,14 @@ void loop() {
   client.print(String("Host: ") + server + "\r\n");
   client.print("Connection: close\r\n\r\n");
 
+  uint32_t responseTimeout = millis();
   // Wait for data to arrive
   while (client.connected() && !client.available()) {
+    if (millis() - responseTimeout >= 10000L) {
+      SerialMon.println(F(" [timeout]"));
+      client.stop();
+      return;
+    }
     delay(100);
     SerialMon.print('.');
   };
