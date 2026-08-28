@@ -45,9 +45,9 @@ TinyGsm mdm(SerialAT);
 #ifdef USE_SSL
 TinyGsmClientSecure client(mdm);
 // Server details to test TCP over SSL
-const char server_ssl[]   = "vsh.pp.ua";
-const char resource_ssl[] = "/TinyGSM/logo.txt";
-const int  port_ssl       = 443;
+const char server[]   = "vsh.pp.ua";
+const char resource[] = "/TinyGSM/logo.txt";
+const int  port       = 443;
 #else
 TinyGsmClient client(mdm);
 // Server details to test TCP without SSL

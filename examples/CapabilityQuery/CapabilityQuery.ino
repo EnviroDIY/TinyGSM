@@ -1,5 +1,5 @@
 /** ============================================================================
- * @example CapabilityQuery.ino
+ * @example{lineno} CapabilityQuery.ino
  *
  * @brief Demonstrates compile-time modem capability detection.
  *

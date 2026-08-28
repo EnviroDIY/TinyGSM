@@ -112,16 +112,17 @@ static const char topicLedStatus[] TINY_GSM_PROGMEM = THING_NAME "/ledStatus";
 // whether to print certs after uploading
 // not all modules support printing the content of certificates after uploading
 // them
-bool print_certs  = false;
-bool delete_certs = false;
+bool print_certs = false;
 
 // NOTE: some modems (SIM70xx modules) suggest that you delete the
 // certificate file from the file system after converting the certificate so
 // that they cannot be read back.  On other modules (SIM7600, A7672, ESP32,
 // BG96, XBee) the certificate must be in the file system to be used and cannot
 // be deleted.
-#if defined(TINY_GSM_MODEM_ESP32) && defined(TINY_GSM_MODEM_BG96)
-delete_certs = false;
+#if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_BG96)
+bool delete_certs = false;
+#else
+bool delete_certs = false;
 #endif
 
 

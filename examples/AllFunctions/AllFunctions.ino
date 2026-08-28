@@ -61,9 +61,6 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 // commands
 // #define DUMP_AT_COMMANDS
 
-// Define the serial console for debug prints, if needed
-// #define TINY_GSM_DEBUG SerialMon
-
 // Range to attempt to autobaud
 // NOTE:  DO NOT AUTOBAUD in production code.  Once you've established
 // communication, set a fixed baud rate using modem.setBaud(#).
@@ -371,11 +368,12 @@ void loop() {
     };
     int read_chars = 0;
     while (client.connected() && millis() - start < 10000L) {
-      while (client.available()) {
-        time_page[read_chars]     = client.read();
-        time_page[read_chars + 1] = '\0';
+      while (client.available() &&
+             read_chars < static_cast<int>(sizeof(time_page)) - 1) {
+        time_page[read_chars] = client.read();
         read_chars++;
-        start = millis();
+        time_page[read_chars] = '\0';
+        start                 = millis();
       }
     }
     SerialMon.println("\n----------------------------------");
@@ -419,12 +417,14 @@ void loop() {
     };
     int read_chars = 0;
     while (client.connected() && millis() - start < 10000L) {
+      size_t space = sizeof(time_page) - 1 - read_chars;
       size_t avail = client.available();
+      if (avail > space) { avail = space; }
       if (avail) {
         read_chars += client.read(
             reinterpret_cast<uint8_t*>(time_page) + read_chars, avail);
-        time_page[read_chars + 1] = '\0';
-        start                     = millis();
+        time_page[read_chars] = '\0';
+        start                 = millis();
       }
     }
     SerialMon.println("\n----------------------------------");
@@ -506,12 +506,12 @@ void loop() {
     };
     int read_charsS = 0;
     while (secureClient.connected() && millis() - startS < 10000L) {
-      while (secureClient.available()) {
-        logo[read_charsS]     = secureClient.read();
-        logo[read_charsS + 1] = '\0';
+      while (secureClient.available() &&
+             read_charsS < static_cast<int>(sizeof(logo)) - 1) {
+        logo[read_charsS] = secureClient.read();
         read_charsS++;
-        // DBG("Put character", read_charsS, "into logo");
-        startS = millis();
+        logo[read_charsS] = '\0';
+        startS            = millis();
       }
     }
     SerialMon.println("\n----------------------------------");
