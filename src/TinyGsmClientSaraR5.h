@@ -645,7 +645,8 @@ class TinyGsmSaraR5
       stream.readBytesUntil('\"', strPdpType, sizeof(strPdpType));
       streamSkipUntil('\"');  // skip to the next opening quote
       // read the APN
-      stream.readBytesUntil('\"', strApn, sizeof(strApn));
+      size_t len  = stream.readBytesUntil('\"', strApn, sizeof(strApn) - 1);
+      strApn[len] = '\0';
       streamSkipUntil('\n');  // throw away the rest of the line
       if (!strcmp(strApn, apn)) { break; }
     }
@@ -1001,9 +1002,7 @@ class TinyGsmSaraR5
     // connect on the allocated socket
     sendAT(GF("+USOCO="), *dynamicMux, GF(",\""), host, GF("\","), port);
     uint32_t elapsed = millis() - startMillis;
-    if (elapsed >= timeout_ms) {
-      return false;
-    }
+    if (elapsed >= timeout_ms) { return false; }
     int8_t rsp = waitResponse(timeout_ms - elapsed);
     return (1 == rsp);
   }
