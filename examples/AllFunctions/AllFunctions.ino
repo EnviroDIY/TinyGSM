@@ -38,6 +38,13 @@
 // Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
+// If DBG isn't enabled, this sketch won't print anything to the console. Unless
+// you want this to run silently, you should enable DBG.
+#ifdef TINY_GSM_DEBUG
+#undef TINY_GSM_DEBUG
+#endif
+#define TINY_GSM_DEBUG SerialMon
+
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
 #if !defined(__AVR_ATmega328P__) && !defined(SerialAT)
@@ -157,9 +164,9 @@ void setup() {
   DBG("Wait...");
   delay(500L);
 
-  SerialMon.println("All functions example for TinyGSM...");
-  SerialMon.println("The current version of TinyGSM is " TINYGSM_VERSION);
-  SerialMon.print("The configured modem is ");
+  SerialMon.println(F("All functions example for TinyGSM..."));
+  SerialMon.println(F("The current version of TinyGSM is " TINYGSM_VERSION));
+  SerialMon.print(F("The configured modem is "));
   SerialMon.println(modem.getConfiguredModem());
   SerialMon.println("=====================================");
 

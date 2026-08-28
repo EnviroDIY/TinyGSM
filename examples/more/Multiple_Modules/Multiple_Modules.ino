@@ -129,121 +129,121 @@ void setup() {
   while (!SerialMon && millis() < 10000L) {}
   delay(10);
 
-  SerialMon.println("Wait...");
+  SerialMon.println(GF("Wait..."));
 
   // Set GSM module baud rate
   SerialAT1.begin(115200);
   SerialAT2.begin(115200);
 
-  SerialMon.print("Modem 1 is compiled as ");
+  SerialMon.print(GF("Modem 1 is compiled as "));
   SerialMon.print(GFP(decltype(modem1)::ModemConfig::MODEM_MANUFACTURER));
-  SerialMon.print(" ");
+  SerialMon.print(GF(" "));
   SerialMon.print(GFP(decltype(modem1)::ModemConfig::MODEM_MODEL));
-  SerialMon.print(" (");
+  SerialMon.print(GF(" ("));
   SerialMon.print((modem1).getConfiguredModem());
-  SerialMon.println(")");
-  SerialMon.print("Modem 2 is compiled as ");
+  SerialMon.println(GF(")"));
+  SerialMon.print(GF("Modem 2 is compiled as "));
   SerialMon.print(GFP(decltype(modem2)::ModemConfig::MODEM_MANUFACTURER));
-  SerialMon.print(" ");
+  SerialMon.print(GF(" "));
   SerialMon.print(GFP(decltype(modem2)::ModemConfig::MODEM_MODEL));
-  SerialMon.print(" (");
+  SerialMon.print(GF(" ("));
   SerialMon.print((modem2).getConfiguredModem());
-  SerialMon.println(")");
+  SerialMon.println(GF(")"));
 
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
   // !!!!!!!!!!!
 
-  DBG("Attempting to force baud rate of SIM7080 to 115200");
+  DBG(GF("Attempting to force baud rate of SIM7080 to 115200"));
   modem1.forceModemBaud(SerialAT1, 115200);
-  DBG("Attempting to force baud rate of ESP32 to 115200");
+  DBG(GF("Attempting to force baud rate of ESP32 to 115200"));
   modem2.forceModemBaud(SerialAT2, 115200);
 
-  SerialMon.println(F("\n==============================="));
-  SerialMon.println(F("===============================\n"));
+  SerialMon.println(GF("\n==============================="));
+  SerialMon.println(GF("===============================\n"));
 
   SerialMon.println("Initializing cellular modem...");
   modem1.init();
   String modemInfo1 = modem1.getModemInfo();
-  SerialMon.print("Modem Info: ");
+  SerialMon.print(GF("Modem Info: "));
   SerialMon.println(modemInfo1);
 
-  SerialMon.println(F("\n==============================="));
-  SerialMon.println(F("===============================\n"));
+  SerialMon.println(GF("\n==============================="));
+  SerialMon.println(GF("===============================\n"));
 
   SerialMon.println("Initializing WiFi modem...");
   modem2.init();
   String modemInfo2 = modem2.getModemInfo();
-  SerialMon.print("Modem Info: ");
+  SerialMon.print(GF("Modem Info: "));
   SerialMon.println(modemInfo2);
 
-  SerialMon.println(F("\n==============================="));
-  SerialMon.println(F("===============================\n"));
+  SerialMon.println(GF("\n==============================="));
+  SerialMon.println(GF("===============================\n"));
 }
 
 void loop() {
   // Connect the ESP32 to WiFi
-  SerialMon.print(F("Setting SSID/password..."));
+  SerialMon.print(GF("Setting SSID/password..."));
   if (!modem2.networkConnect(wifiSSID, wifiPass)) {
     SerialMon.println(" fail");
     delay(10000);
     return;
   }
-  SerialMon.println(" success");
+  SerialMon.println(GF(" success"));
 
-  SerialMon.print("Waiting for WiFi network...");
+  SerialMon.print(GF("Waiting for WiFi network..."));
   if (!modem2.waitForNetwork()) {
-    SerialMon.println(" fail");
+    SerialMon.println(GF(" fail"));
     delay(10000);
     return;
   }
-  SerialMon.println(" success");
+  SerialMon.println(GF(" success"));
   if (modem2.isNetworkConnected()) {
-    SerialMon.println("WiFi network connected");
+    SerialMon.println(GF("WiFi network connected"));
   }
 
-  SerialMon.println(F("\n==============================="));
-  SerialMon.println(F("===============================\n"));
+  SerialMon.println(GF("\n==============================="));
+  SerialMon.println(GF("===============================\n"));
 
   // Wait for the SIM7080 to connect to the cellular network
-  SerialMon.print("Waiting for cellular network...");
+  SerialMon.print(GF("Waiting for cellular network..."));
   if (!modem1.waitForNetwork()) {
-    SerialMon.println(" fail");
+    SerialMon.println(GF(" fail"));
     delay(10000);
     return;
   }
-  SerialMon.println(" success");
+  SerialMon.println(GF(" success"));
   if (modem1.isNetworkConnected()) {
-    SerialMon.println("Cellular network connected");
+    SerialMon.println(GF("Cellular network connected"));
   }
 
   // GPRS connection parameters are usually set after network registration
-  SerialMon.print(F("Connecting to "));
+  SerialMon.print(GF("Connecting to "));
   SerialMon.print(apn);
   if (!modem1.gprsConnect(apn, gprsUser, gprsPass)) {
-    SerialMon.println(" fail");
+    SerialMon.println(GF(" fail"));
     delay(10000);
     return;
   }
-  SerialMon.println(" success");
-  if (modem1.isGprsConnected()) { SerialMon.println("GPRS connected"); }
+  SerialMon.println(GF(" success"));
+  if (modem1.isGprsConnected()) { SerialMon.println(GF("GPRS connected")); }
 
-  SerialMon.println(F("\n==============================="));
-  SerialMon.println(F("===============================\n"));
+  SerialMon.println(GF("\n==============================="));
+  SerialMon.println(GF("===============================\n"));
 
   // get some data from a server via HTTP GET request with the cellular
   // connection
-  SerialMon.print("Connecting to ");
+  SerialMon.print(GF("Connecting to "));
   SerialMon.println(server1);
   if (!client1.connect(server1, port1)) {
-    SerialMon.println(" fail");
+    SerialMon.println(GF(" fail"));
     delay(10000);
     return;
   }
-  SerialMon.println(" success");
+  SerialMon.println(GF(" success"));
 
   // Make a HTTP GET request:
-  SerialMon.println("Performing HTTP GET request...");
+  SerialMon.println(GF("Performing HTTP GET request..."));
   client1.print(String("GET ") + resource1 + " HTTP/1.1\r\n");
   client1.print(String("Host: ") + server1 + "\r\n");
   client1.print("Connection: keep-alive\r\n\r\n");
@@ -260,23 +260,23 @@ void loop() {
 
   // Shutdown
   client1.stop();
-  SerialMon.println(F("Server disconnected"));
+  SerialMon.println(GF("Server disconnected"));
 
-  SerialMon.println(F("\n==============================="));
-  SerialMon.println(F("===============================\n"));
+  SerialMon.println(GF("\n==============================="));
+  SerialMon.println(GF("===============================\n"));
 
   // get some data from a server via HTTP GET request with the WiFi connection
-  SerialMon.print("Connecting to ");
+  SerialMon.print(GF("Connecting to "));
   SerialMon.println(server2);
   if (!client2.connect(server2, port2)) {
-    SerialMon.println(" fail");
+    SerialMon.println(GF(" fail"));
     delay(10000);
     return;
   }
-  SerialMon.println(" success");
+  SerialMon.println(GF(" success"));
 
   // Make a HTTP GET request:
-  SerialMon.println("Performing HTTP GET request...");
+  SerialMon.println(GF("Performing HTTP GET request..."));
   client2.print(String("GET ") + resource2 + " HTTP/1.1\r\n");
   client2.print(String("Host: ") + server2 + "\r\n");
   client2.print("Connection: keep-alive\r\n\r\n");
@@ -292,15 +292,15 @@ void loop() {
   SerialMon.println();
 
   client2.stop();
-  SerialMon.println(F("Server disconnected"));
+  SerialMon.println(GF("Server disconnected"));
 
-  SerialMon.println(F("\n==============================="));
-  SerialMon.println(F("===============================\n"));
+  SerialMon.println(GF("\n==============================="));
+  SerialMon.println(GF("===============================\n"));
 
   modem1.gprsDisconnect();
-  SerialMon.println(F("GPRS disconnected\n"));
+  SerialMon.println(GF("GPRS disconnected"));
   modem2.networkDisconnect();
-  SerialMon.println(F("WiFi disconnected"));
+  SerialMon.println(GF("WiFi disconnected"));
 
   // Do nothing forevermore
   while (true) { delay(1000); }
