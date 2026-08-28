@@ -360,7 +360,10 @@ class TinyGsmEspressif
    */
  protected:
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
-    if (!thisModem().sockets[mux]) { return false; }
+    if (mux >= EspressifType::TcpConfig::kMuxCount ||
+        !thisModem().sockets[mux]) {
+      return false;
+    }
     // same command for SSL and not SSL
     thisModem().sendAT(GF("+CIPCLOSE="), mux);
     return thisModem().waitResponse(maxWaitMs) == 1;
