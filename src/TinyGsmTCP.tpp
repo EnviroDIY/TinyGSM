@@ -581,6 +581,10 @@ class GsmClient : public Client {
    * @param port The port number to connect to on the server.
    * @param timeout_s The timeout for the connection attempt, in seconds.
    * @return 1 if the connection was successful, 0 otherwise.
+   *
+   * @remark Every time you call the connect() function, it will stop the socket
+   * if there was one and it was connected. It will also clear the receive
+   * buffer before connecting.
    */
   virtual int connect(const char* host, uint16_t port, int timeout_s) = 0;
 
@@ -592,8 +596,9 @@ class GsmClient : public Client {
     if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr &&      \
         sock_connected) {                                                 \
       stop(TcpConfig::kStopTimeoutS * 1000L);                             \
-      rx.clear();                                                         \
     }                                                                     \
+    /* always clear the rx buffer before connecting */                    \
+    rx.clear();                                                           \
     TINY_GSM_YIELD();                                                     \
     /*connect at the specified mux number, which is assumed to be valid*/ \
     sock_connected = at->modemConnect(host, port, mux, timeout_s);        \
