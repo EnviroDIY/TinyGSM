@@ -898,10 +898,10 @@ class TinyGsmESP8266
                               GFP(ModemConfig::GSM_ERROR),
                               GF("ALREADY CONNECT"));
     if (rsp == 1 && data.length() > 8) {
-      int coma        = data.indexOf(',');
-      int assignedMux = data.substring(0, coma).toInt();
-      if (!isExpectedMux(assignedmux, mux)) {
-        DBG("WARNING:  Unexpected mux number returned:", assignedMux, "not",
+      uint16_t coma          = data.indexOf(',');
+      uint16_t connected_mux = data.substring(0, coma).toInt();
+      if (!isExpectedMux(connected_mux, mux)) {
+        DBG("WARNING:  Unexpected mux number returned:", connected_mux, "not",
             mux);
       }
     }
@@ -936,7 +936,7 @@ class TinyGsmESP8266
     sendAT(GF("+CIPSTATE?"));
     // initialize the connection array assuming no connections are active
     bool verified_connections[TcpConfig::kMuxCount] = {0};
-    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+    for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       uint8_t has_status = waitResponse(GF("+CIPSTATE:"),
                                         GFP(ModemConfig::GSM_OK),
                                         GFP(ModemConfig::GSM_ERROR));
@@ -954,7 +954,7 @@ class TinyGsmESP8266
         break;
       };  // once we get to the ok or error, stop
     }
-    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+    for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       if (sockets[muxNo]) {
         sockets[muxNo]->sock_connected = verified_connections[muxNo];
       }

@@ -432,7 +432,7 @@ class TinyGsmSequansMonarch
   }
 
   void maintainImpl() {
-    for (int mux = 1; mux <= TcpConfig::kMuxCount; mux++) {
+    for (uint8_t mux = 1; mux <= TcpConfig::kMuxCount; mux++) {
       GsmClientSequansMonarch* sock = sockets[mux % TcpConfig::kMuxCount];
       if (sock && sock->got_data) {
         sock->got_data       = false;
@@ -858,7 +858,7 @@ class TinyGsmSequansMonarch
     // This single command always returns the connection status of all
     // six possible sockets.
     sendAT(GF("+SQNSS"));
-    for (int muxNo = 1; muxNo <= TcpConfig::kMuxCount; muxNo++) {
+    for (uint8_t muxNo = 1; muxNo <= TcpConfig::kMuxCount; muxNo++) {
       if (waitResponse(GFP(ModemConfig::GSM_OK), GF("+SQNSS: ")) != 2) {
         break;
       }

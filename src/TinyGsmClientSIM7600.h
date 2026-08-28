@@ -1284,7 +1284,7 @@ class TinyGsmSim7600
     // Read the status of all sockets at once
     sendAT(GF("+CIPOPEN?"));
     if (waitResponse(GF("+CIPOPEN:")) != 1) { return false; }
-    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+    for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       // +CIPOPEN:<mux>,<State or blank...>
       String state = stream.readStringUntil('\n');
       if (state.indexOf(',') > 0) { sockets[muxNo]->sock_connected = true; }

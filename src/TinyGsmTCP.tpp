@@ -305,7 +305,7 @@ class TinyGsmTCP {
         TinyGsmTcpBufferMode::BufferReadAndCheckSize) {
       // Keep listening for modem URC's and proactively iterate through
       // sockets asking if any data is available
-      for (int mux = 0; mux < TcpConfig::kMuxCount; mux++) {
+      for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; mux++) {
         GsmClient<modemType, tcpConfig>* sock = thisModem().sockets[mux];
         if (sock && sock->got_data && sock->sock_available == 0) {
           sock->got_data       = false;
@@ -770,7 +770,7 @@ class GsmClient : public Client {
     TINY_GSM_YIELD();
     is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                           // send to fail
-    size_t cnt = 0;
+    size_t cnt  = 0;
 
     if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
       // Reads characters out of the TinyGSM fifo, waiting for any URC's
