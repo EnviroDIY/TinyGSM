@@ -67,6 +67,12 @@ void loop() {
   if (TinyGsmCapabilities::has_tcp<TinyGsm>::value) {
     Serial.println(F("TCP capability: available"));
   }
+  if (TinyGsmCapabilities::can_specify_certs<TinyGsm>::value) {
+    Serial.println(F("Can specify certs capability: available"));
+  }
+  if (TinyGsmCapabilities::can_load_certs<TinyGsm>::value) {
+    Serial.println(F("Can load certs capability: available"));
+  }
 
   // Test the basic functions
   modem.begin();
