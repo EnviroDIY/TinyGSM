@@ -752,7 +752,7 @@ class TinyGsmSim7080
     while (!res && ntries < 5) {
       sendAT(GF("+CNACT=0,1"));
       res = waitResponse(60000L, GF("+APP PDP: 0,ACTIVE"),
-                         GF("+APP PDP: 0,DEACTIVE"));
+                         GF("+APP PDP: 0,DEACTIVE")) == 1;
       waitResponse();
       ntries++;
     }
