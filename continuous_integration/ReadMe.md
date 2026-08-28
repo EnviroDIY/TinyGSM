@@ -1,8 +1,8 @@
 <!--! @dir continuous_integration -->
 # Extra scripts for Continuous Integration Using GitHub Actions
 
-- generate_job_matrix.py
-  - A python script to generate a series of shell scripts to splice apart the menu a la carte example and run each sensor, modem, and publisher as individual testing jobs on a number of different processors.
+- build_job_matrix.py
+  - A python script to generate build the expected matrix of processors and modems to test with the EnviroDIY example building CI workflow.
 
 - continuous_integration/platformio.ini
   - PlatformIO environments for CI testing

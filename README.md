@@ -133,7 +133,8 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 - RAK WisLTE _**(alpha)**_
 - ... other modules, based on supported modems. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
 
-Watch this repo for new updates! And of course, contributions are welcome ;)
+Watch this repo for new updates!
+And of course, contributions are welcome ;)
 
 ## Features
 
@@ -363,7 +364,7 @@ This may result in problems such as:
 - etc.
 
 To return module to **Factory Defaults**, use this sketch:
-  File -> Examples -> TinyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/FactoryReset/FactoryReset.ino)
+  File -> Examples -> TinyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/extras/tools/FactoryReset/FactoryReset.ino)
 
 In some cases, you may need to set an initial APN to connect to the cellular network.
 Try using the `gprsConnect(APN)` function to set an initial APN if you are unable to register on the network.
@@ -382,7 +383,7 @@ When using MQTT, to keep a continuous connection you may need to reduce your kee
 ### Diagnostics sketch
 
 Use this sketch to help diagnose SIM card and GPRS connection issues:
-  File -> Examples -> TinyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/Diagnostics/Diagnostics.ino)
+  File -> Examples -> TinyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/extras/tools/Diagnostics/Diagnostics.ino)
 
 If the diagnostics fail, uncomment this line to output some debugging comments from the library:
 

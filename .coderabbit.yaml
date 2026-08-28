@@ -38,7 +38,7 @@ reviews:
     - path: '**/*.md'
       instructions: >-
         Review for grammar, spelling, and clarity.
-        Each sentence should be on a new line.
+        Each sentence should be on a new line, except inside of lists and bullet points.
         Markdown files should follow rules of markdownlint.
         Check C++ and Arduino code snippets as C++ code.
     - path: '**/*.dox'

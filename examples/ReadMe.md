@@ -18,6 +18,7 @@ ___
   - [Web Client](#web-client)
   - [Hologram Dash](#hologram-dash)
   - [Multiple Connections](#multiple-connections)
+  - [Multiple Modules](#multiple-modules)
   - [SIM800 SSL Set Cert](#sim800-ssl-set-cert)
 
 <!--! @endif -->
@@ -113,6 +114,15 @@ This example opens and manages multiple simultaneous client connections to diffe
 - [The multiple connections example on GitHub](https://github.com/EnviroDIY/TinyGSM/tree/master/examples/more/Multiple_Connections)
 
 <!--! @subpage example_multiple_connections -->
+
+## Multiple Modules<!--! {#examples_multiple_modules} -->
+
+This example shows how to use two different modems together in the same code.
+The key thing to notice is that instead of defining the modem type and including the TinyGsmClient.h file, it includes the specific modem headers.
+
+- [The multiple modules example on GitHub](https://github.com/EnviroDIY/TinyGSM/tree/master/examples/more/Multiple_Modules)
+
+<!--! @subpage example_multiple_modules -->
 
 ## SIM800 SSL Set Cert<!--! {#examples_sim800_ssl_set_cert} -->
 

@@ -41,7 +41,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Added support for selecting specific certificates for specific connections on select modules
   - This includes both CA and client certs
 - Added SSL support for the SIM7600 by @floBik
-- Added functions `beginWrite` and `endWrite` to directly write into the modem's send buffer to help ensure than an entire request is sent in one chunk.
+- Added functions `beginWrite` and `endWrite` to directly write into the modem's send buffer to help ensure that an entire request is sent in one chunk.
   - WARNING: These functions will **NOT** warn you or prevent you from writing more to the modem's send buffer than it is possible for the modem to receive
     - Prior to this version of the library, there wasn't any support for limiting requests to the modem's built-in limits on any functions. There now is.
   - These functions are directly analogous to the `beginPublish` and `endPublish` functions within [PubSubClient](https://github.com/knolleary/pubsubclient) and should be usable in combination with them.
@@ -66,7 +66,7 @@ gsmClient.endWrite(strlen(request));
   - This can be used as an external build flag.
 - Added defines for the maximum size each modem accepts in a single send command (`TINY_GSM_SEND_MAX_SIZE`)
   - *This is only to be used internally*
-  - Implemented support for break all send calls into chunks less than the specified `TINY_GSM_SEND_MAX_SIZE` for each module.
+  - Implemented support for breaking all send calls into chunks less than the specified `TINY_GSM_SEND_MAX_SIZE` for each module.
 - Added defines for the number of secure sockets (`TINY_GSM_SECURE_MUX_COUNT`)
   - *This is only for reference to be used internally*
 - Added defines `TINY_GSM_MUX_DYNAMIC` and `TINY_GSM_MUX_STATIC` to be used *internally* to help build module support
@@ -85,7 +85,7 @@ gsmClient.endWrite(strlen(request));
 
 ### Fixed
 
-- Don't force maintain to call modemGetAvailable if the sock_available is already non-zero
+- Don't force the maintain function to call modemGetAvailable if the sock_available is already non-zero
 - Don't repeatedly call for sock_connected and sock_available for each socket on espressif modules when the response always includes all sockets.
 - Fixes to stop logic on Espressif and SIM7080
 - Modified HTTP examples to attempt to connect to a site that doesn't require SSL.
