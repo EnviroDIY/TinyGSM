@@ -524,8 +524,8 @@ class TinyGsmESP32
     }
 
    protected:
-    int8_t ca_number;
-    int8_t pki_number;
+    int8_t ca_number  = 0;
+    int8_t pki_number = 0;
     char   CAcertNameBuf[16];
     char   clientCertNameBuf[16];
     char   clientKeyNameBuf[16];
@@ -1367,8 +1367,8 @@ class TinyGsmESP32
     bool success = connect_rsp == 1 ||
         connect_rsp == 3;  // OK or ALREADY CONNECT
     if (success && data.length() > 8) {
-      int coma          = data.indexOf(',');
-      int connected_mux = data.substring(0, coma).toInt();
+      int16_t coma          = data.indexOf(',');
+      int16_t connected_mux = data.substring(0, coma).toInt();
 
       // Validate the returned mux
       if (coma < 0 || connected_mux < 0 ||

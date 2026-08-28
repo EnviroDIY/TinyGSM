@@ -447,8 +447,8 @@ class TinyGsmESP8266
     }
 
    protected:
-    int8_t ca_number;
-    int8_t pki_number;
+    int8_t ca_number  = 0;
+    int8_t pki_number = 0;
     char   CAcertNameBuf[16];
     char   clientCertNameBuf[16];
     char   clientKeyNameBuf[16];
@@ -898,8 +898,8 @@ class TinyGsmESP8266
                               GFP(ModemConfig::GSM_ERROR),
                               GF("ALREADY CONNECT"));
     if (rsp == 1 && data.length() > 8) {
-      uint16_t coma          = data.indexOf(',');
-      uint16_t connected_mux = data.substring(0, coma).toInt();
+      int16_t coma          = data.indexOf(',');
+      int16_t connected_mux = data.substring(0, coma).toInt();
       if (!isExpectedMux(connected_mux, mux)) {
         DBG("WARNING:  Unexpected mux number returned:", connected_mux, "not",
             mux);
