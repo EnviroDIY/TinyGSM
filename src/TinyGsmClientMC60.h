@@ -591,8 +591,9 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
     if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     sendAT(GF("+QICLOSE="), mux);
-    return waitResponse((maxWaitMs), GF("CLOSED"), GF("CLOSE OK"),
-                        GF("ERROR")) == 1;
+    int8_t rsp = waitResponse((maxWaitMs), GF("CLOSED"), GF("CLOSE OK"),
+                              GF("ERROR"));
+    return rsp == 1 || rsp == 2;
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
