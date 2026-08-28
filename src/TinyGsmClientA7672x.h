@@ -906,7 +906,7 @@ class TinyGsmA7672X
     if (success) {
       int16_t opened_mux    = streamGetIntBefore(',');
       uint8_t opened_result = streamGetIntBefore('\n');
-      if (isExpectedMux(opened_mux, mux) || opened_result != 0) return false;
+      if (!isExpectedMux(opened_mux, mux) || opened_result != 0) return false;
     }
     return success;
   }
