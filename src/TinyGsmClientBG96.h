@@ -343,11 +343,15 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       if (!sslCtxConfigured) {
         if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
           DBG("### The BG96 does not support SSL using pre-shared keys.");
-          sslCtxConfigured = false;
+          return 0;
         } else {
           sslCtxConfigured = at->configureSSLContext(
               sslCtxIndex, sslAuthMode, sslVersion, CAcertName, clientCertName,
               clientKeyName);
+          if (!sslCtxConfigured) {
+            DBG("### Failed to configure the SSL context!");
+            return 0;
+          }
         }
       }
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
