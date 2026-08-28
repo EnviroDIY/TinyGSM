@@ -554,6 +554,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     for (int i = 0; i < 3; i++) {  // TODO(?): no need for loop?
       String ip = dnsIpQuery(host);
@@ -619,11 +620,13 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
   }
 
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     sendAT(GF("+TCPCLOSE="), mux);
     return waitResponse(maxWaitMs) == 1;
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     sendAT(GF("+TCPSEND="), mux, ',', (uint16_t)len);
     return waitResponse(GF(">")) == 1;
   }
@@ -636,6 +639,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     sendAT(GF("+CIPSTATUS="), mux);
     int8_t res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),
                               GF(",\"CLOSING\""), GF(",\"INITIAL\""));

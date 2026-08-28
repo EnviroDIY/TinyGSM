@@ -1249,6 +1249,7 @@ class TinyGsmESP32
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t* dynamicMux,
                         int timeout_s) {
+    // NOTE: Don't validate mux!  It's not the real one yet!
     uint32_t timeout_ms    = ((uint32_t)timeout_s) * 1000;
     uint8_t  requested_mux = *dynamicMux;
     bool     ssl           = sockets[requested_mux]->is_secure;
@@ -1419,7 +1420,7 @@ class TinyGsmESP32
   }
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
-    if (!sockets[mux]) return 0;
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
 
     // AT+CIPRECVDATA=<link_id>,<len>
     sendAT(GF("+CIPRECVDATA="), mux, ',', (uint16_t)size);
@@ -1435,6 +1436,7 @@ class TinyGsmESP32
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
     size_t result = 0;
     sendAT(GF("+CIPRECVLEN?"));
     if (waitResponse(GF("+CIPRECVLEN:")) != 1) { return result; }
@@ -1449,6 +1451,7 @@ class TinyGsmESP32
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     sendAT(GF("+CIPSTATE?"));
     // initialize the connection array assuming no connections are active
     bool verified_connections[TcpConfig::kMuxCount] = {0};
