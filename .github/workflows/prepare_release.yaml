@@ -5,11 +5,11 @@ on:
       - main
     # Sequence of patterns matched against refs/tags
     paths:
-      - "VERSION" # Push events when the VERSION file changes
+      - 'VERSION' # Push events when the VERSION file changes
   workflow_dispatch:
     inputs:
       include_dependencies:
-        description: "True to include a zip file with dependencies in the release"
+        description: 'True to include a zip file with dependencies in the release'
         required: false
         type: boolean
         default: true
@@ -24,11 +24,7 @@ jobs:
     strategy:
       matrix:
         req_workflow:
-          [
-            verify_library_structure.yaml,
-            build_examples.yaml,
-            build_documentation.yaml,
-          ]
+          [verify_library_structure.yaml, build_examples.yaml, build_documentation.yaml]
     name: Wait for Checks to complete
     runs-on: ubuntu-latest
     steps:
@@ -57,4 +53,4 @@ jobs:
     secrets:
       PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
     with:
-      include_dependencies: ${{ ( true ) || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true') }}
+      include_dependencies: ${{ github.event_name != 'workflow_dispatch' || inputs.include_dependencies }}
