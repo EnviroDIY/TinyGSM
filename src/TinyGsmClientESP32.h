@@ -765,8 +765,8 @@ class TinyGsmESP32
     }
     // convert the certificate number and type into the proper certificate names
     // for the ESP32
-    char* cert_name      = new char[16]();
-    char* cert_namespace = new char[14]();
+    char cert_name[16]      = {};
+    char cert_namespace[14] = {};
     getCertificateName(cert_type, certNumber, cert_name, cert_namespace);
     // add the certificate by name/namespace
     return loadCertificateWithNamespace(cert_namespace, cert_name, cert, len);
@@ -788,8 +788,8 @@ class TinyGsmESP32
     }
     // convert the certificate number and type into the proper certificate names
     // for the ESP32
-    char* cert_name      = new char[16]();
-    char* cert_namespace = new char[14]();
+    char cert_name[16]      = {};
+    char cert_namespace[14] = {};
     getCertificateName(cert_type, certNumber, cert_name, cert_namespace);
     // delete the certificate by name/namespace
     return deleteCertificateWithNamespace(cert_namespace, cert_name);
@@ -812,8 +812,8 @@ class TinyGsmESP32
     }
     // convert the certificate number and type into the proper certificate names
     // for the ESP32
-    char* cert_name      = new char[16]();
-    char* cert_namespace = new char[14]();
+    char cert_name[16]      = {};
+    char cert_namespace[14] = {};
     getCertificateName(cert_type, certNumber, cert_name, cert_namespace);
     // delete the certificate by name/namespace
     return printCertificateWithNamespace(cert_namespace, cert_name,
@@ -958,8 +958,8 @@ class TinyGsmESP32
   bool loadCertificateImpl(const char* certificateName, const char* cert,
                            const uint16_t len) {
     // parse the certificate name into a number and namespace
-    char*   cert_namespace = new char[14]();
-    uint8_t certNumber     = 0;
+    char    cert_namespace[14] = {};
+    uint8_t certNumber         = 0;
     parseCertificateName(certificateName, cert_namespace, certNumber);
     // add the certificate by name
     return loadCertificateWithNamespace(
@@ -968,8 +968,8 @@ class TinyGsmESP32
 
   bool deleteCertificateImpl(const char* certificateName) {
     // parse the certificate name into a number and namespace
-    char*   cert_namespace = new char[14]();
-    uint8_t certNumber     = 0;
+    char    cert_namespace[14] = {};
+    uint8_t certNumber         = 0;
     parseCertificateName(certificateName, cert_namespace, certNumber);
     // add the certificate by name
     return deleteCertificateWithNamespace(cert_namespace,
@@ -979,8 +979,8 @@ class TinyGsmESP32
 
   bool printCertificateImpl(const char* filename, Stream& print_stream) {
     // parse the certificate name into a number and namespace
-    char*   cert_namespace = new char[14]();
-    uint8_t certNumber     = 0;
+    char    cert_namespace[14] = {};
+    uint8_t certNumber         = 0;
     parseCertificateName(filename, cert_namespace, certNumber);
     // add the certificate by name
     return printCertificateWithNamespace(
