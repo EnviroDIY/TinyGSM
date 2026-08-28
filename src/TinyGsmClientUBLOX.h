@@ -932,7 +932,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     return (1 == rsp);
   }
 
-  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+  bool modemStopImpl(uint8_t mux, uint32_t /*maxWaitMs*/) {
     // Same command for both secure and non-secure sockets
     sendAT(GF("+USOCL="), mux);
     return waitResponse() == 1;  // should return within 1s
