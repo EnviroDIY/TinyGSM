@@ -445,8 +445,8 @@ class TinyGsmTCP {
         // let the transfer finish
         thisModem().stream.flush();
         // End this send command and check its responses
-        // NOTE: In many cases, confirmed is just a passthrough of len
-        int16_t confirmed = thisModem().modemEndSend(len, mux);
+        // NOTE: In many cases, confirmed is just a passthrough of sendLength
+        int16_t confirmed = thisModem().modemEndSend(sendLength, mux);
 #if defined(TINY_GSM_DEBUG)
         if (confirmed < attempted) {
           DBG(GF("### Fewer bytes were confirmed ("), confirmed,
@@ -666,8 +666,10 @@ class GsmClient : public Client {
     // to give the user a chance to recover the data if they want it.
     // Dumping the modem buffer will also clear the rx fifo.
     dumpModemBuffer(maxWaitMs);
-    uint32_t elapsed = millis() - startMillis;
-    at->modemStop(mux, maxWaitMs - elapsed);
+    uint32_t elapsed       = millis() - startMillis;
+    uint32_t remainingWait = (elapsed >= maxWaitMs) ? 1000L
+                                                    : (maxWaitMs - elapsed);
+    at->modemStop(mux, remainingWait);
     // Mark the socket disconnected
     // Should we check the return of modemStop and only set sock_connected to
     // false if it was successful?  I suspect we should error on the side of
@@ -693,6 +695,10 @@ class GsmClient : public Client {
     if (is_mid_send) {
       // if we're in the middle of a write, pass directly to the stream
       return at->stream.write(buf, size);
+    }
+    // Validate mux before entering the send path
+    if (mux >= TcpConfig::kMuxCount || at->sockets[mux] == nullptr) {
+      return 0;
     }
     TINY_GSM_YIELD();
     at->maintain();
@@ -891,8 +897,8 @@ class GsmClient : public Client {
       at->maintain();       // clear the modem stream/parse URCs
       // Pull one byte (or more if available) from the modem into the FIFO
       at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
-      // Now peek at the FIFO again
-      return rx.peek();
+      // Now peek at the FIFO again, but only if data was actually added
+      return (rx.size() > 0) ? rx.peek() : -1;
     }
     // No data available
     return -1;
