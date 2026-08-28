@@ -823,9 +823,15 @@ class TinyGsmESP32
  protected:
   void parseCertificateName(const char* cert_name, char* parsed_namespace,
                             uint8_t& parsed_number) {
+    size_t name_len = (cert_name == nullptr) ? 0 : strlen(cert_name);
+    if (name_len < 3) {
+      parsed_namespace[0] = '\0';
+      parsed_number       = 0;
+      return;
+    }
     // pull the namespace out of the name
-    memcpy(parsed_namespace, cert_name, strlen(cert_name) - 2);
-    parsed_namespace[strlen(cert_name) - 2] = '\0';
+    memcpy(parsed_namespace, cert_name, name_len - 2);
+    parsed_namespace[name_len - 2] = '\0';
     // pull the number out of the name
     char certNumber[2];
     memcpy(certNumber, cert_name + strlen(cert_name) - 1, 1);
