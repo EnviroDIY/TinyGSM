@@ -907,7 +907,7 @@ class TinyGsmESP8266
             mux);
       }
     }
-    return (1 == rsp);
+    return (1 == rsp || 3 == rsp);  // OK or ALREADY CONNECT
   }
 
   // Disambiguate modemStopImpl by using the Espressif implementation

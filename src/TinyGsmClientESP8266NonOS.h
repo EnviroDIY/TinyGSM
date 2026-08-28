@@ -469,7 +469,7 @@ class TinyGsmESP8266NonOS
                               GF("ALREADY CONNECT"));
     if (rsp == 3) waitResponse();
     // May return "ERROR" after the "ALREADY CONNECT"
-    return (1 == rsp);
+    return (1 == rsp || 3 == rsp);  // OK or ALREADY CONNECT
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
