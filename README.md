@@ -269,9 +269,9 @@ The general flow of your code should be:
         or
         `TinyGsmClientSecure client(modem);` (on supported modules)
   - For multiple connections (on supported modules) use:
-    - `TinyGsmClient clientX(modem, 0);`, `TinyGsmClient clientY(modem, 1);`, etc
+    - `TinyGsmClient clientX(modem, 0);`, `TinyGsmClient clientY(modem, 1);`, etc.
           or
-    - `TinyGsmClientSecure clientX(modem, 0);`, `TinyGsmClientSecure clientY(modem, 1);`, etc
+    - `TinyGsmClientSecure clientX(modem, 0);`, `TinyGsmClientSecure clientY(modem, 1);`, etc.
   - Secure and insecure clients can usually be mixed when using multiple connections.
   - The total number of connections possible varies by module
     - You can verify the number of connections possible against the defines `TINY_GSM_MUX_COUNT` and `TINY_GSM_SECURE_MUX_COUNT`

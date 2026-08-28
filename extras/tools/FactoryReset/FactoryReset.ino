@@ -3,7 +3,7 @@
  *
  * @brief This sketch resets the modem to factory defaults.
  *
- * To run this tool you need StreamDebugger library:
+ * To run this tool you need the StreamDebugger library:
  *   https://github.com/vshymanskyy/StreamDebugger
  *   or from http://librarymanager/all#StreamDebugger
  * ========================================================================== */
