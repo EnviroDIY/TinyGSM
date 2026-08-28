@@ -877,7 +877,9 @@ class TinyGsmA7672X
       // <session_id> is the mux number and <err> should be 0 if there's no
       // error
       success = waitResponse(timeout_ms) == 1;  // capture the OK or ERROR
-      success &= waitResponse(timeout_ms, GF("+CCHOPEN:")) == 1;
+      if (success) {
+        success &= waitResponse(timeout_ms, GF("+CCHOPEN:")) == 1;
+      }
       // TODO: verify this
     } else {
       // TODO: Should NETOPEN be called once during the GPRS connection process
@@ -949,8 +951,8 @@ class TinyGsmA7672X
                        GF("CLOSE OK\r\n")) != 1) {
         return 0;
       }
-      int16_t ret_mux = streamGetIntBefore(',');       // check mux
-      bool    result  = streamGetIntBefore(',') == 0;  // check error code
+      int16_t ret_mux = streamGetIntBefore(',');        // check mux
+      bool    result  = streamGetIntBefore('\n') == 0;  // check error code
       if (isExpectedMux(ret_mux, mux) && result) { return len; }
       return 0;
     } else {
