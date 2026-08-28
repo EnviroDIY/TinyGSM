@@ -1116,7 +1116,7 @@ class TinyGsmA7672X
       DBG("### Got Data:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("+CCHRECV: 0,0\r\n"))) {
-      int mux = data.substring(data.lastIndexOf(',') + 1).toInt();
+      int16_t mux = data.substring(data.lastIndexOf(',') + 1).toInt();
       if (isValidMux(mux)) { sockets[mux]->sock_connected = true; }
       data = "";
       DBG("### ACK:", mux);

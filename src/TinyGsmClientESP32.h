@@ -605,7 +605,7 @@ class TinyGsmESP32
     // Keep listening for modem URC's and proactively iterate through
     // sockets asking if any data is available
     bool check_socks = false;
-    for (int mux = 0; mux < TcpConfig::kMuxCount; mux++) {
+    for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; mux++) {
       GsmClientESP32* sock = sockets[mux];
       if (sock && sock->got_data) {
         sock->got_data = false;
@@ -1428,7 +1428,7 @@ class TinyGsmESP32
     size_t result = 0;
     sendAT(GF("+CIPRECVLEN?"));
     if (waitResponse(GF("+CIPRECVLEN:")) != 1) { return result; }
-    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+    for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       long mux_avail = stream.parseInt();
       if (sockets[muxNo]) { sockets[muxNo]->sock_available = mux_avail; }
     }
@@ -1442,7 +1442,7 @@ class TinyGsmESP32
     sendAT(GF("+CIPSTATE?"));
     // initialize the connection array assuming no connections are active
     bool verified_connections[TcpConfig::kMuxCount] = {0};
-    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+    for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       uint8_t has_status = waitResponse(GF("+CIPSTATE:"),
                                         GFP(ModemConfig::GSM_OK),
                                         GFP(ModemConfig::GSM_ERROR));
@@ -1460,7 +1460,7 @@ class TinyGsmESP32
         break;
       };  // once we get to the ok or error, stop
     }
-    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+    for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       if (sockets[muxNo]) {
         sockets[muxNo]->sock_connected = verified_connections[muxNo];
       }
@@ -1487,12 +1487,12 @@ class TinyGsmESP32
       DBG("### Got Data:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("CLOSED"))) {
-      int muxStart =
+      int16_t muxStart =
           TinyGsmMax(0,
                      data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
                                       data.length() - 8));
-      int coma = data.indexOf(',', muxStart);
-      int mux  = data.substring(muxStart, coma).toInt();
+      int16_t coma = data.indexOf(',', muxStart);
+      int16_t mux  = data.substring(muxStart, coma).toInt();
       if (isValidMux(mux)) {
         sockets[static_cast<uint8_t>(mux)]->sock_connected = false;
       }

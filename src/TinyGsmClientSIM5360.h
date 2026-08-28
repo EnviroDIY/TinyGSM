@@ -553,7 +553,7 @@ class TinyGsmSim5360
 
   bool gprsDisconnectImpl() {
     // Close any open sockets
-    for (int mux = 0; mux < TcpConfig::kMuxCount; mux++) {
+    for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; mux++) {
       GsmClientSim5360* sock = sockets[mux];
       if (sock) { sock->stop(); }
     }
@@ -873,7 +873,7 @@ class TinyGsmSim5360
     // Read the status of all sockets at once
     sendAT(GF("+CIPCLOSE?"));
     if (waitResponse(GF("+CIPCLOSE:")) != 1) { return false; }
-    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+    for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       // +CIPCLOSE:<link0_state>,<link1_state>,...,<link9_state>
       bool muxState = stream.parseInt();
       if (sockets[muxNo]) { sockets[muxNo]->sock_connected = muxState; }

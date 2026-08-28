@@ -482,14 +482,14 @@ class TinyGsmESP8266NonOS
                                  GFP(ModemConfig::GSM_ERROR));
     // if the status is anything but 3, there are no connections open
     if (status != 1) {
-      for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+      for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
         if (sockets[muxNo]) { sockets[muxNo]->sock_connected = false; }
       }
       return false;
     }
     // initialize the connection array assuming no connections are active
     bool verified_connections[TcpConfig::kMuxCount] = {0};
-    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+    for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       uint8_t has_status = waitResponse(GF("+CIPSTATUS:"),
                                         GFP(ModemConfig::GSM_OK),
                                         GFP(ModemConfig::GSM_ERROR));
@@ -507,7 +507,7 @@ class TinyGsmESP8266NonOS
       }
       if (has_status == 2) break;  // once we get to the ok, stop
     }
-    for (int muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+    for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       if (sockets[muxNo]) {
         sockets[muxNo]->sock_connected = verified_connections[muxNo];
       }
@@ -555,12 +555,12 @@ class TinyGsmESP8266NonOS
       data = "";
       return true;
     } else if (data.endsWith(GF("CLOSED"))) {
-      int muxStart =
+      int16_t muxStart =
           TinyGsmMax(0,
                      data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
                                       data.length() - 8));
-      int coma = data.indexOf(',', muxStart);
-      int mux  = data.substring(muxStart, coma).toInt();
+      int16_t coma = data.indexOf(',', muxStart);
+      int16_t mux  = data.substring(muxStart, coma).toInt();
       if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       streamSkipUntil('\n');  // throw away the new line
       data = "";

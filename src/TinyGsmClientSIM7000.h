@@ -621,11 +621,11 @@ class TinyGsmSim7000
       // DBG("### Got Data:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("CLOSED\r\n"))) {
-      int nl   = TinyGsmMax(0,
-                            data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
-                                             data.length() - 8));
-      int coma = data.indexOf(',', nl + 2);
-      int mux  = data.substring(nl + 2, coma).toInt();
+      int16_t nl = TinyGsmMax(0,
+                              data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
+                                               data.length() - 8));
+      int16_t coma = data.indexOf(',', nl + 2);
+      int16_t mux  = data.substring(nl + 2, coma).toInt();
       if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       data = "";
       DBG("### Closed: ", mux);

@@ -589,7 +589,7 @@ class TinyGsmSaraR4
   bool gprsDisconnectImpl() {
     // Mark all the sockets as closed
     // This ensures that asynchronously closed sockets are marked closed
-    for (int mux = 0; mux < TcpConfig::kMuxCount; mux++) {
+    for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; mux++) {
       GsmClientSaraR4* sock = sockets[mux];
       if (sock && sock->sock_connected) { sock->sock_connected = false; }
     }
