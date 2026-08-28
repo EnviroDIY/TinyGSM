@@ -120,8 +120,11 @@ bool print_certs = false;
 // BG96, XBee) the certificate must be in the file system to be used and cannot
 // be deleted.
 #if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_BG96)
+// DON'T delete the certificates after loading them into the modem!
 bool delete_certs = false;
 #else
+// Change this if you want to delete the certificates after loading them into
+// the modem This testing program won't delete by default
 bool delete_certs = false;
 #endif
 
