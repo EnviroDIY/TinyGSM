@@ -554,7 +554,13 @@ class TinyGsmESP8266NonOS
           len = sockets[mux]->rx.free();
         }
         moveCharsFromStreamToFifo(mux, len);
-        // TODO(SRGDamia1): deal with buffer overflow
+        // Drain surplus payload bytes if buffer overflow occurred
+        if (len < len_reported) {
+          int16_t surplus = len_reported - len;
+          for (int16_t i = 0; i < surplus && stream.available(); i++) {
+            stream.read();
+          }
+        }
       }
       data = "";
       return true;
