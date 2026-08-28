@@ -603,7 +603,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
     int8_t rsp = waitResponse(timeout_ms, GF("CONNECT OK\r\n"),
                               GF("CONNECT FAIL\r\n"),
                               GF("ALREADY CONNECT\r\n"));
-    return (1 == rsp);
+    return (1 == rsp || 3 == rsp);  // OK or ALREADY CONNECT
   }
 
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
