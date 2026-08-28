@@ -142,19 +142,18 @@ class TinyGsmSSL {
   /**@{*/
 
   /**
-   * @brief Create a new SSL client.
-   * @warning You must call the init() method before attempting to use a
-   * client created with this constructor.
+   * @brief Create the SSL capability mixin.
    */
   TinyGsmSSL() {}
 
   /**
-   * @brief Create a new SSL client and bind it to a modem and optionally a
-   * multiplexing channel.
-   * @param modem Modem instance used by this client.
-   * @param mux Multiplexing channel to use.
+   * @brief Create the SSL capability mixin.
+   * @param modem Unused. Accepted for signature compatibility with the derived
+   * client constructors.
+   * @param mux Unused. Accepted for signature compatibility with the derived
+   * client constructors.
    */
-  explicit TinyGsmSSL(modemType& modem, uint8_t mux = 0) {}
+  explicit TinyGsmSSL(modemType& /*modem*/, uint8_t /*mux*/ = 0) {}
 
   /**
    * @brief Load a new certificate onto the module.
