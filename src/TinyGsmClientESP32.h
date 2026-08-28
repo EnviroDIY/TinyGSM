@@ -325,6 +325,7 @@ class TinyGsmESP32
       if (at == nullptr) { return; }
       is_mid_send = false;
       TINY_GSM_YIELD();
+      uint32_t startMillis = millis();
       if (sock_connected || sock_available) {
         // Update available data first, because if the socket was closed
         // externally, the module may have thrown away the data
@@ -333,15 +334,16 @@ class TinyGsmESP32
         // We explicitly toss it here because the socket will appear open in
         // response to connected() even after it closes until all data is read
         // to give the user a chance to recover the data if they want it.
-        dumpModemBuffer(/*maxWaitMs*/);
+        dumpModemBuffer(maxWaitMs);
       }
+      uint32_t elapsed = millis() - startMillis;
       // NOTE: It should be safe to only send the close here if sock_connected
       // reads true because the above will have updated sock_connected
       // (dumpModemBuffer calls modemRead until sock_available=0, modemRead
       // calls modemGetAvailable on every read to update sock_available, once
       // sock_available=0 modemGetAvailable calls modemGetConnected, and
       // modemGetConnected updates sock_connected for all sockets.)
-      if (sock_connected) { at->modemStop(mux, maxWaitMs); }
+      if (sock_connected) { at->modemStop(mux, maxWaitMs - elapsed); }
       sock_connected = false;
     }
 
