@@ -1099,7 +1099,9 @@ class TinyGsmSim7600
       // <session_id> is the mux number and <err> should be 0 if there's no
       // error
       success = waitResponse(timeout_ms) == 1;  // capture the OK or ERROR
-      success &= waitResponse(timeout_ms, GF("+CCHOPEN:")) == 1;
+      if (success) {
+        success &= waitResponse(timeout_ms, GF("+CCHOPEN:")) == 1;
+      }
       // TODO: verify this
     } else {
       // AT+CIPOPEN=<link_num>,"TCP",<serverIP>,<serverPort>[,<localPort>]
@@ -1311,8 +1313,8 @@ class TinyGsmSim7600
     for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       // +CIPOPEN:<mux>,<State or blank...>
       String state = stream.readStringUntil('\n');
-      if (state.indexOf(',') > 0 && sockets[muxNo]) {
-        sockets[muxNo]->sock_connected = true;
+      if (sockets[muxNo]) {
+        sockets[muxNo]->sock_connected = (state.indexOf(',') > 0);
       }
     }
     waitResponse();  // Should be an OK at the end

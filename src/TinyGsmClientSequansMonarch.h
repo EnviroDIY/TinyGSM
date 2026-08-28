@@ -656,12 +656,13 @@ class TinyGsmSequansMonarch
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
-    if (mux > TcpConfig::kMuxCount || !sockets[mux % TcpConfig::kMuxCount]) {
+    if (mux == 0 || mux > TcpConfig::kMuxCount ||
+        !sockets[mux % TcpConfig::kMuxCount]) {
       return false;
     }
     int8_t   rsp;
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
-    bool     ssl         = sockets[mux]->is_secure;
+    bool     ssl         = sockets[mux % TcpConfig::kMuxCount]->is_secure;
     uint32_t startMillis = millis();
 
     if (ssl) {

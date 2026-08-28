@@ -1089,7 +1089,7 @@ class TinyGsmSaraR4
       DBG("### URC Sock Closed: ", mux);
       return true;
     } else if (data.endsWith(GF("+UUSOCO:"))) {
-      int16_t mux          = streamGetIntBefore('\n');
+      int16_t mux          = streamGetIntBefore(',');
       int16_t socket_error = streamGetIntBefore('\n');
       if (isValidMux(mux) && socket_error == 0) {
         sockets[mux]->sock_connected = true;
