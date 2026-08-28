@@ -605,7 +605,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
         // NOTE: Don't flush here! Differ that to the modemEndSend() function
         // End this send command and check its responses
         // NOTE: In many cases, confirmed is just a passthrough of len
-        int16_t confirmed = modemEndSend(len, mux);
+        int16_t confirmed = modemEndSend(sendLength, mux);
         bytesSent += min(attempted,
                          confirmed);         // bump up number of bytes sent
         txPtr += min(attempted, confirmed);  // bump up the pointer
