@@ -653,14 +653,16 @@ class GsmClient : public Client {
    */
   virtual void stop(uint32_t maxWaitMs) {
     if (at == nullptr) { return; }
-    is_mid_send = false;
+    is_mid_send          = false;
+    uint32_t startMillis = millis();
     // Throw away any remaining data in the modem buffer.
     // We explicitly toss it here because the socket will appear open in
     // response to connected() even after it closes until all data is read
     // to give the user a chance to recover the data if they want it.
     // Dumping the modem buffer will also clear the rx fifo.
-    dumpModemBuffer(/*maxWaitMs*/);
-    at->modemStop(mux, maxWaitMs);
+    dumpModemBuffer(maxWaitMs);
+    uint32_t elapsed = millis() - startMillis;
+    at->modemStop(mux, maxWaitMs - elapsed);
     // Mark the socket disconnected
     // Should we check the return of modemStop and only set sock_connected to
     // false if it was successful?  I suspect we should error on the side of
@@ -1025,15 +1027,15 @@ class GsmClient : public Client {
   // closes until all data is read from the buffer.
   // Doing it this way allows the external mcu to find and get all of the
   // data that it wants from the socket even if it was closed externally.
-  inline void dumpModemBuffer(/*uint32_t maxWaitMs*/) {
+  inline void dumpModemBuffer(uint32_t maxWaitMs) {
     if (at == nullptr) { return; }
     if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
       rx.clear();
       at->streamClear();
     } else {
       TINY_GSM_YIELD();
-      // uint32_t startMillis = millis();
-      while (sock_available > 0 /*&& (millis() - startMillis < maxWaitMs)*/) {
+      uint32_t startMillis = millis();
+      while (sock_available > 0 && (millis() - startMillis < maxWaitMs)) {
         rx.clear();
         at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       }
