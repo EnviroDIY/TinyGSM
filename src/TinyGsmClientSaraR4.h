@@ -907,7 +907,11 @@ class TinyGsmSaraR4
           "the URC '+UUSOCO' appears.");
       sendAT(GF("+USOCO="), *dynamicMux, GF(",\""), host, GF("\","), port,
              GF(",1"));
-      if (waitResponse(timeout_ms - (millis() - startMillis), GF("+UUSOCO:")) ==
+      uint32_t elapsed = millis() - startMillis;
+      if (elapsed >= timeout_ms) {
+        return false;
+      }
+      if (waitResponse(timeout_ms - elapsed, GF("+UUSOCO:")) ==
           1) {
         streamGetIntBefore(',');  // skip repeated mux
         int8_t connection_status = streamGetIntBefore('\n');
@@ -921,7 +925,11 @@ class TinyGsmSaraR4
     } else {
       // use synchronous open
       sendAT(GF("+USOCO="), *dynamicMux, GF(",\""), host, GF("\","), port);
-      int8_t rsp = waitResponse(timeout_ms - (millis() - startMillis));
+      uint32_t elapsed = millis() - startMillis;
+      if (elapsed >= timeout_ms) {
+        return false;
+      }
+      int8_t rsp = waitResponse(timeout_ms - elapsed);
       return (1 == rsp);
     }
   }

@@ -1000,7 +1000,11 @@ class TinyGsmSaraR5
 
     // connect on the allocated socket
     sendAT(GF("+USOCO="), *dynamicMux, GF(",\""), host, GF("\","), port);
-    int8_t rsp = waitResponse(timeout_ms - (millis() - startMillis));
+    uint32_t elapsed = millis() - startMillis;
+    if (elapsed >= timeout_ms) {
+      return false;
+    }
+    int8_t rsp = waitResponse(timeout_ms - elapsed);
     return (1 == rsp);
   }
 
