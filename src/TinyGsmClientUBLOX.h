@@ -891,6 +891,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t* dynamicMux,
                         int timeout_s) {
+    // NOTE: Don't validate mux!  It's not the real one yet!
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
     bool     ssl         = sockets[*dynamicMux]->is_secure;
     uint32_t startMillis = millis();
@@ -933,12 +934,14 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   }
 
   bool modemStopImpl(uint8_t mux, uint32_t /*maxWaitMs*/) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     // Same command for both secure and non-secure sockets
     sendAT(GF("+USOCL="), mux);
     return waitResponse() == 1;  // should return within 1s
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     sendAT(GF("+USOWR="), mux, ',', (uint16_t)len);
     if (waitResponse(GF("@")) != 1) { return 0; }
     // 50ms delay, see AT manual section 25.10.4
@@ -949,6 +952,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
     if (waitResponse(GF("+USOWR:")) != 1) { return 0; }
     int16_t  ret_mux = streamGetIntBefore(',');   // check mux
     uint16_t sent    = streamGetIntBefore('\n');  // check send length
@@ -960,7 +964,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   }
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
-    if (!sockets[mux]) return 0;
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
     size_t len_read = 0;
 
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
@@ -993,7 +997,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
-    if (!sockets[mux]) return 0;
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USORD="), mux, ",0");
     size_t  result = 0;
@@ -1013,6 +1017,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USOCTL="), mux, ",10");
     uint8_t res = waitResponse(GF("+USOCTL:"));

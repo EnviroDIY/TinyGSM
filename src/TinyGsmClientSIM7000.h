@@ -504,6 +504,7 @@ class TinyGsmSim7000
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
 
     // when not using SSL, the TCP application toolkit is more stable
@@ -516,12 +517,14 @@ class TinyGsmSim7000
   }
 
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     sendAT(GF("+CIPCLOSE="), mux);
     return waitResponse(min(maxWaitMs, static_cast<uint32_t>(3000))) ==
         1;  // should return within 3s
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     return waitResponse(GF(">")) == 1;
   }
@@ -529,6 +532,7 @@ class TinyGsmSim7000
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
     if (waitResponse(GF("DATA ACCEPT:"), GF("SEND FAIL")) != 1) { return 0; }
     int16_t  ret_mux = streamGetIntBefore(',');   // check mux
     uint16_t sent    = streamGetIntBefore('\n');  // check send length
@@ -538,7 +542,7 @@ class TinyGsmSim7000
   }
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
-    if (!sockets[mux]) return 0;
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
     size_t len_read = 0;
 
 #ifdef TINY_GSM_USE_HEX
@@ -579,7 +583,7 @@ class TinyGsmSim7000
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
-    if (!sockets[mux]) return 0;
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
 
     sendAT(GF("+CIPRXGET=4,"), mux);
     size_t result = 0;
@@ -596,6 +600,7 @@ class TinyGsmSim7000
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     sendAT(GF("+CIPSTATUS="), mux);
     waitResponse(GF("+CIPSTATUS"));
     int8_t res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),

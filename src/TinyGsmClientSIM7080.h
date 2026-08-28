@@ -1133,6 +1133,7 @@ class TinyGsmSim7080
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
 
@@ -1234,6 +1235,7 @@ class TinyGsmSim7080
   }
 
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     // Same command for both secure and non-secure sockets
     sendAT(GF("+CACLOSE="), mux);
     return waitResponse(min(maxWaitMs, static_cast<uint32_t>(3000))) ==
@@ -1241,6 +1243,7 @@ class TinyGsmSim7080
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     // send data on prompt
     sendAT(GF("+CASEND="), mux, ',', (uint16_t)len);
     return waitResponse(GF(">")) == 1;
@@ -1254,6 +1257,7 @@ class TinyGsmSim7080
     return len;
   }
   size_t modemGetSendLengthImpl(uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     // Sending only the mux number will return the number of bytes left in the
     // send buffer (that we can soon fill up with our next send attempt)
     sendAT(GF("+CASEND="), mux);
@@ -1297,7 +1301,7 @@ class TinyGsmSim7080
   }
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
-    if (!sockets[mux]) { return 0; }
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
 
     sendAT(GF("+CARECV="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+CARECV:")) != 1) { return 0; }
@@ -1326,7 +1330,7 @@ class TinyGsmSim7080
 
   size_t modemGetAvailableImpl(uint8_t mux) {
     // If the socket doesn't exist, just return
-    if (!sockets[mux]) { return 0; }
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
     // NOTE: This gets how many characters are available on all connections that
     // have data.  It does not return all the connections, just those with data.
     sendAT(GF("+CARECV?"));
@@ -1378,6 +1382,7 @@ class TinyGsmSim7080
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     // NOTE:  This gets the state of all connections that have been opened
     // since the last connection
     sendAT(GF("+CASTATE?"));

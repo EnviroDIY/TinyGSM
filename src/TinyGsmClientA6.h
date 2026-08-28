@@ -643,6 +643,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t* dynamicMux,
                         int timeout_s) {
+    // NOTE: Don't validate mux!  It's not the real one yet!
     uint32_t startMillis = millis();
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
 
@@ -672,11 +673,13 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   }
 
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     sendAT(GF("+CIPCLOSE="), mux);
     return waitResponse(maxWaitMs) == 1;
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     return waitResponse(2000L, GF("\r\n>")) == 1;
   }
