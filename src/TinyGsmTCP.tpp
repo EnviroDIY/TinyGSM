@@ -454,10 +454,13 @@ class TinyGsmTCP {
               send_attempts);
         }
 #endif
-        bytesSent += min(attempted,
-                         confirmed);         // bump up number of bytes sent
-        txPtr += min(attempted, confirmed);  // bump up the pointer
-        send_success &= min(attempted, confirmed) > 0;
+        // A modem implementation can report a negative value on failure.
+        // Never move the pointer or the counter backwards.
+        int16_t accepted = min(attempted, confirmed);
+        if (accepted < 0) { accepted = 0; }
+        bytesSent += accepted;  // bump up number of bytes sent
+        txPtr += accepted;      // bump up the pointer
+        send_success &= accepted > 0;
         send_attempts++;
       }
       // if we failed after 3 attempts at the same chunk, bail from the whole
@@ -888,6 +891,14 @@ class GsmClient : public Client {
     TINY_GSM_YIELD();
     // If data is already in the FIFO, peek at it
     if (rx.size() > 0) { return rx.peek(); }
+    // Without a modem buffer, the FIFO is only filled while parsing URCs.
+    if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
+      if (!sock_connected) { return -1; }
+      is_mid_send = false;  // Any calls to the AT when mid-send will cause
+                            // the send to fail
+      at->maintain();
+      return (rx.size() > 0) ? rx.peek() : -1;
+    }
     // For modes that use the modem buffer, try to refill the FIFO
     // if the modem has available data
     if (TcpConfig::kBufferMode != TinyGsmTcpBufferMode::NoModemBuffer &&
