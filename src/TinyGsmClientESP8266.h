@@ -89,8 +89,6 @@
  * select the next available one.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
- *
- * @todo In `handleURCs()`: deal with buffer overflow
  */
 /* clang-format on */
 
@@ -553,11 +551,9 @@ class TinyGsmESP8266
 
     if (cert_name[ns_length] != '.') { goto parsing_error; }
     if (cert_name[ns_length + 1] == '0') {
-      parsed_type   = CertificateType::UNKNOWN;
       parsed_number = 0;
       return;
     } else if (cert_name[ns_length + 1] == '1') {
-      parsed_type   = CertificateType::UNKNOWN;
       parsed_number = 1;
       return;
     } else {
@@ -596,13 +592,11 @@ class TinyGsmESP8266
         break;
       }
       case CertificateType::CLIENT_CERTIFICATE: {
-        const char* client_cert_namespace = "client_cert";
         strcpy(cert_name, ModemConfig::CLIENT_CERT_NAMESPACE);
         break;
       }
       case CertificateType::CA_CERTIFICATE:
       default: {
-        const char* ca_cert_namespace = "client_ca";
         strcpy(cert_name, ModemConfig::CA_CERT_NAMESPACE);
         break;
       }

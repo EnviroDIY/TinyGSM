@@ -77,8 +77,6 @@
  * will select the next available channel or use modulo assignment.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
- *
- * @todo In `handleURCs()`: deal with buffer overflow
  */
 /* clang-format on */
 
