@@ -728,6 +728,13 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
           len = sockets[mux]->rx.free();
         }
         moveCharsFromStreamToFifo(mux, len);
+        // Drain surplus payload bytes if buffer overflow occurred
+        if (len < len_reported) {
+          int16_t surplus = len_reported - len;
+          for (int16_t i = 0; i < surplus && stream.available(); i++) {
+            stream.read();
+          }
+        }
       }
       data = "";
       DBG("### Got Data: ", len_reported, "on", mux);

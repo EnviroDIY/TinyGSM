@@ -89,7 +89,6 @@
  * @todo In `gprsConnectImpl()`: configure DNS settings if needed
  * @todo In `gprsDisconnectImpl()`: There is no command in AT command set
  * @todo In `modemConnectImpl()`: no need for loop?
- * @todo In `handleURCs()`: deal with buffer overflow
  */
 /* clang-format on */
 
@@ -676,7 +675,13 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
           len = sockets[mux]->rx.free();
         }
         moveCharsFromStreamToFifo(mux, len);
-        // TODO(SRGDamia1): deal with buffer overflow
+        // Drain surplus payload bytes if buffer overflow occurred
+        if (len < len_reported) {
+          int16_t surplus = len_reported - len;
+          for (int16_t i = 0; i < surplus && stream.available(); i++) {
+            stream.read();
+          }
+        }
       }
       data = "";
       return true;
