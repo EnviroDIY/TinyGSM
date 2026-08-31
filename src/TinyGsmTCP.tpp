@@ -682,6 +682,8 @@ class GsmClient : public Client {
     // Dumping the modem buffer will also clear the rx fifo.
     dumpModemBuffer(maxWaitMs);
     uint32_t elapsed       = millis() - startMillis;
+    // NOTE: Always give the modem at least 1 second to close the connection, even if
+    // the maxWaitMs has already elapsed.
     uint32_t remainingWait = (elapsed >= maxWaitMs) ? 1000L
                                                     : (maxWaitMs - elapsed);
     at->modemStop(mux, remainingWait);
