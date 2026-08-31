@@ -387,10 +387,6 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
    * Utilities
    */
  protected:
-  bool handleURCs(String& data) {
-    return thisModem().handleURCs(data);
-  }
-
  public:
   /// Stream used to communicate with the modem.
   Stream& stream;
