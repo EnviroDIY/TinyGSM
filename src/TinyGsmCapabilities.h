@@ -78,7 +78,7 @@ namespace TinyGsmCapabilities {
  */
 template <typename T, T v>
 struct integral_constant {
-  static const T            value = v;
+  static constexpr T        value = v;
   typedef T                 value_type;
   typedef integral_constant type;
 };
