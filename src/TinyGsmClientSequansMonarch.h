@@ -898,7 +898,6 @@ class TinyGsmSequansMonarch
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
-    if (!isValidMux(mux)) { return false; }
     // This single command always returns the connection status of all
     // six possible sockets.
     sendAT(GF("+SQNSS"));
