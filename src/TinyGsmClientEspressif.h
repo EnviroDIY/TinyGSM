@@ -17,6 +17,10 @@
 #include "TinyGsmModem.tpp"
 #include "TinyGsmWifi.tpp"
 
+/// The length of a SSL/TLS certificate filename, not including the namespace.
+/// This is a dot and a single digit number (0 or 1).
+#define TINY_GSM_ESP_SSL_FILENAME_SIZE 2
+
 /**
  * @brief Parent class for the Espressif ESP8266 and ESP32 modules
  *

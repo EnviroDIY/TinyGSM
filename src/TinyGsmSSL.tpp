@@ -25,6 +25,47 @@
 #define TINY_GSM_MODEM_CAN_LOAD_CERTS
 #endif
 
+#ifndef TINY_GSM_CERT_NAME_LENGTH
+/**
+ * @brief The maximum length of a certificate file name - 32 characters plus a
+ * null terminator.
+ *
+ * This is the maximum length of a certificate file name used to refer to the
+ * certificate in the modems flash memory, not the certificate itself.  The file
+ * name length limit varies by modem; some list a limit of 64 characters others
+ * don't list one.  Increase this value if you want to use longer file names.
+ */
+#define TINY_GSM_CERT_NAME_LENGTH 33
+#endif
+
+#ifndef TINY_GSM_PSK_IDENTITY_LENGTH
+/**
+ * @brief The maximum length of the pre-shared key (PSK) identity
+ * (identifier/hing) - 32 characters plus a null terminator.
+ *
+ * This is the maximum length of the identity value itself, not a reference or
+ * file name. There is not a standard for the maximum length of a PSK identity,
+ * but 32 characters is a common limit.  The null terminator is added to the end
+ * of the string to indicate the end of the string.  Increase this value if you
+ * need a longer hint value
+ */
+#define TINY_GSM_PSK_IDENTITY_LENGTH 33
+#endif
+
+#ifndef TINY_GSM_PSK_LENGTH
+/**
+ * @brief The maximum length of the pre-shared key (PSK) - 32 characters plus a
+ * null terminator.
+ *
+ * This is the maximum length of the key itself, not a reference or file name.
+ * 32 characters is a common limit for the length of a PSK, though 64-255
+ * characters can be used in IPsec PSK (Palo Alto).    Increase this value if
+ * you need to use a longer key.
+ */
+
+#define TINY_GSM_PSK_LENGTH 33
+#endif
+
 #ifndef TINY_GSM_DEFAULT_SSL_CTX
 /**
  * @brief The default SSL context to use for SSL connections.
@@ -58,6 +99,10 @@ enum class CertificateType : int8_t {
   /// The client pre-shared key identity is used in conjunction with the client
   /// PSK for authentication in TLS-PSK connections.
   CLIENT_PSK_IDENTITY = 4,
+  /// The UNKNOWN type is used to indicate that the certificate type is not
+  /// recognized or is not specified. It is a placeholder for error handling or
+  /// default cases.
+  UNKNOWN = -1
 };
 
 /**
@@ -172,7 +217,7 @@ class TinyGsmSSL {
     return thisModem().loadCertificateImpl(certificateName, cert, len);
   }
   /// @copydoc loadCertificate(const char*, const char*, const uint16_t)
-  bool loadCertificate(String certificateName, String cert,
+  bool loadCertificate(const String& certificateName, const String& cert,
                        const uint16_t len) {
     return loadCertificate(certificateName.c_str(), cert.c_str(), len);
   }
@@ -190,7 +235,7 @@ class TinyGsmSSL {
     return thisModem().deleteCertificateImpl(filename);
   }
   /// @copydoc deleteCertificate(const char*)
-  bool deleteCertificate(String filename) {
+  bool deleteCertificate(const String& filename) {
     return deleteCertificate(filename.c_str());
   }
 
@@ -209,7 +254,7 @@ class TinyGsmSSL {
     return thisModem().printCertificateImpl(filename, print_stream);
   }
   /// @copydoc printCertificate(const char*, Stream&)
-  bool printCertificate(String filename, Stream& print_stream) {
+  bool printCertificate(const String& filename, Stream& print_stream) {
     return printCertificate(filename.c_str(), print_stream);
   }
 
@@ -230,7 +275,7 @@ class TinyGsmSSL {
     return thisModem().convertCertificateImpl(cert_type, filename);
   }
   /// @copydoc convertCertificate(CertificateType, const char*)
-  bool convertCertificate(CertificateType cert_type, String filename) {
+  bool convertCertificate(CertificateType cert_type, const String& filename) {
     return convertCertificate(cert_type, filename.c_str());
   }
   /**
@@ -244,7 +289,7 @@ class TinyGsmSSL {
     return thisModem().convertCACertificateImpl(ca_cert_name);
   }
   /// @copydoc convertCACertificate(const char*)
-  bool convertCACertificate(String ca_cert_name) {
+  bool convertCACertificate(const String& ca_cert_name) {
     return convertCACertificate(ca_cert_name.c_str());
   }
   /**
@@ -264,8 +309,8 @@ class TinyGsmSSL {
                                                      client_cert_key);
   }
   /// @copydoc convertClientCertificates(const char*, const char*)
-  bool convertClientCertificates(String client_cert_name,
-                                 String client_cert_key) {
+  bool convertClientCertificates(const String& client_cert_name,
+                                 const String& client_cert_key) {
     return convertClientCertificates(client_cert_name.c_str(),
                                      client_cert_key.c_str());
   }
@@ -285,7 +330,7 @@ class TinyGsmSSL {
     return thisModem().convertPSKandIDImpl(psk, pskIdent);
   }
   /// @copydoc convertPSKandID(const char*, const char*)
-  bool convertPSKandID(String psk, String pskIdent) {
+  bool convertPSKandID(const String& psk, const String& pskIdent) {
     return convertPSKandID(psk.c_str(), pskIdent.c_str());
   }
   /**
@@ -301,7 +346,7 @@ class TinyGsmSSL {
     return thisModem().convertPSKTableImpl(psk_table_name);
   }
   /// @copydoc convertPSKTable(const char*)
-  bool convertPSKTable(String psk_table_name) {
+  bool convertPSKTable(const String& psk_table_name) {
     return convertPSKTable(psk_table_name.c_str());
   }
   /**@}*/
@@ -365,12 +410,12 @@ class GsmSecureClient {
     sslCtxConfigured = false;
     sslAuthMode      = SSLAuthMode::NO_VALIDATION;
     sslVersion       = SSLVersion::TLS1_2;
-    CAcertName       = nullptr;
-    clientCertName   = nullptr;
-    clientKeyName    = nullptr;
-    pskIdent         = nullptr;
-    psKey            = nullptr;
-    pskTableName     = nullptr;
+    memset(CAcertName, '\0', sizeof(CAcertName));
+    memset(clientCertName, '\0', sizeof(clientCertName));
+    memset(clientKeyName, '\0', sizeof(clientKeyName));
+    memset(pskIdent, '\0', sizeof(pskIdent));
+    memset(psKey, '\0', sizeof(psKey));
+    memset(pskTableName, '\0', sizeof(pskTableName));
   }
 
   /**
@@ -416,11 +461,12 @@ class GsmSecureClient {
    * @param CAcertName The CA certificate name
    */
   virtual void setCACertName(const char* CAcertName) {
-    this->CAcertName = CAcertName;
+    // copy the certificate name into owned buffer
+    strncpy(this->CAcertName, CAcertName, sizeof(this->CAcertName) - 1);
     sslCtxConfigured = false;
   }
   /// @copydoc setCACertName(const char*)
-  virtual void setCACertName(String CAcertName) {
+  virtual void setCACertName(const String& CAcertName) {
     setCACertName(CAcertName.c_str());
   }
 
@@ -429,11 +475,13 @@ class GsmSecureClient {
    * @param clientCertName The client certificate name
    */
   virtual void setClientCertName(const char* clientCertName) {
-    this->clientCertName = clientCertName;
-    sslCtxConfigured     = false;
+    // copy the certificate name into owned buffer
+    strncpy(this->clientCertName, clientCertName,
+            sizeof(this->clientCertName) - 1);
+    sslCtxConfigured = false;
   }
   /// @copydoc setClientCertName(const char*)
-  virtual void setClientCertName(String clientCertName) {
+  virtual void setClientCertName(const String& clientCertName) {
     setClientCertName(clientCertName.c_str());
   }
 
@@ -442,11 +490,13 @@ class GsmSecureClient {
    * @param clientKeyName The client private key name
    */
   virtual void setPrivateKeyName(const char* clientKeyName) {
-    this->clientKeyName = clientKeyName;
-    sslCtxConfigured    = false;
+    // copy the key name into owned buffer
+    strncpy(this->clientKeyName, clientKeyName,
+            sizeof(this->clientKeyName) - 1);
+    sslCtxConfigured = false;
   }
   /// @copydoc setPrivateKeyName(const char*)
-  virtual void setPrivateKeyName(String clientKeyName) {
+  virtual void setPrivateKeyName(const String& clientKeyName) {
     setPrivateKeyName(clientKeyName.c_str());
   }
   /**@}*/
@@ -462,11 +512,12 @@ class GsmSecureClient {
    * @param pskTableName The PSK table name
    */
   virtual void setPSKTableName(const char* pskTableName) {
-    this->pskTableName = pskTableName;
-    sslCtxConfigured   = false;
+    // copy the PSK table name into owned buffer
+    strncpy(this->pskTableName, pskTableName, sizeof(this->pskTableName) - 1);
+    sslCtxConfigured = false;
   }
   /// @copydoc setPSKTableName(const char*)
-  virtual void setPSKTableName(String pskTableName) {
+  virtual void setPSKTableName(const String& pskTableName) {
     setPSKTableName(pskTableName.c_str());
   }
 
@@ -478,12 +529,13 @@ class GsmSecureClient {
    * @param psKey The pre-shared key
    */
   virtual void setPreSharedKey(const char* pskIdent, const char* psKey) {
-    this->pskIdent   = pskIdent;
-    this->psKey      = psKey;
+    // copy the PSK identity and key into owned buffers
+    strncpy(this->pskIdent, pskIdent, sizeof(this->pskIdent) - 1);
+    strncpy(this->psKey, psKey, sizeof(this->psKey) - 1);
     sslCtxConfigured = false;
   }
   /// @copydoc setPreSharedKey(const char*, const char*)
-  virtual void setPreSharedKey(String pskIdent, String psKey) {
+  virtual void setPreSharedKey(const String& pskIdent, const String& psKey) {
     setPreSharedKey(pskIdent.c_str(), psKey.c_str());
   }
   /**@}*/
@@ -502,17 +554,18 @@ class GsmSecureClient {
   SSLVersion sslVersion;
   /// The FILE NAME of the certificate authority certificate loaded onto the
   /// module
-  const char* CAcertName;
+  char CAcertName[TINY_GSM_CERT_NAME_LENGTH] = "\0";
   /// The FILE NAME of the client certificate loaded onto the module
-  const char* clientCertName;
+  char clientCertName[TINY_GSM_CERT_NAME_LENGTH] = "\0";
   /// The FILE NAME of the client private key loaded onto the module
-  const char* clientKeyName;
+  char clientKeyName[TINY_GSM_CERT_NAME_LENGTH] = "\0";
   /// The FILE NAME of an identity for PSK cipher suites
-  const char* pskTableName;
-  /// The identity VALUE for PSK cipher suites
-  const char* pskIdent;
+  char pskTableName[TINY_GSM_CERT_NAME_LENGTH] = "\0";
+  /// The pre-shared key identifier VALUE for PSK cipher suites (also called
+  /// identity, identifier hint, or hint).
+  char pskIdent[TINY_GSM_PSK_IDENTITY_LENGTH] = "\0";
   /// The VALUE of the key in hex for PSK cipher suites
-  const char* psKey;
+  char psKey[TINY_GSM_PSK_LENGTH] = "\0";
 };
 
 
@@ -588,5 +641,7 @@ class GsmSecureClient {
     setSSLVersion(sslVersion);                                                \
     setPSKTableName(pskTableName);                                            \
   }
+
+// cSpell:words Palo
 
 #endif  // SRC_TINYGSMSSL_TPP_

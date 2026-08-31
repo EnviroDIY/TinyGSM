@@ -80,7 +80,7 @@
  *   - You can reduce the risk of losing data by setting this library's buffer
  * to be as large as possible; this will increase the memory footprint of your
  * program.
- *   - Change the buffer size by defining TINY_GSM_RX_BUFFER in your sketch
+ *   - Change the buffer size by defining this->TINY_GSM_RX_FER in your sketch
  * before including any TinyGSM header file.
  * - Socket Numbering:
  *   - The modem uses user-specified MUX channel numbers for socket connections.
@@ -130,11 +130,25 @@ struct TinyGsmESP8266ModemConfig
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Espressif";
   /// The modem model
   static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "ESP8266";
+
+  /// The set namespace for the certificate authority (CA) certificate
+  static constexpr char CA_CERT_NAMESPACE[] TINY_GSM_PROGMEM = "client_ca";
+  /// The set namespace for the client certificate
+  static constexpr char CLIENT_CERT_NAMESPACE[] TINY_GSM_PROGMEM =
+      "client_cert";
+  /// The set namespace for the client key
+  static constexpr char CLIENT_KEY_NAMESPACE[] TINY_GSM_PROGMEM = "client_key";
 };
 
 constexpr char TinyGsmESP8266ModemConfig::MODEM_MANUFACTURER[]
     __attribute__((weak));
 constexpr char TinyGsmESP8266ModemConfig::MODEM_MODEL[] __attribute__((weak));
+constexpr char TinyGsmESP8266ModemConfig::CA_CERT_NAMESPACE[]
+    __attribute__((weak));
+constexpr char TinyGsmESP8266ModemConfig::CLIENT_CERT_NAMESPACE[]
+    __attribute__((weak));
+constexpr char TinyGsmESP8266ModemConfig::CLIENT_KEY_NAMESPACE[]
+    __attribute__((weak));
 
 /**
  * @brief TCP behavior and limits for the ESP8266 family.
@@ -300,21 +314,23 @@ class TinyGsmESP8266
     /// @copydoc GsmSecureClient::setCACertName(const char*)
     /// @warning The CA certificate name must be either "client_ca.0" or
     /// "client_ca.1".
-    void setCACertName(const char* CAcertName) override {
+    void setCACertName(const char* in_CAcertName) override {
       if (at == nullptr) { return; }
-      if (CAcertName == nullptr || strlen(CAcertName) == 0) { return; }
+      // parse the certificate name
+      CertificateType parsed_type = CertificateType::UNKNOWN;
+      uint8_t         certNumber  = 0;
+      at->parseCertificateName(in_CAcertName, parsed_type, certNumber);
+      if (parsed_type != CertificateType::CA_CERTIFICATE || certNumber > 1) {
+        return;
+      }
       // copy the certificate name into owned buffer
-      strncpy(CAcertNameBuf, CAcertName, sizeof(CAcertNameBuf) - 1);
-      CAcertNameBuf[sizeof(CAcertNameBuf) - 1] = '\0';
-      this->CAcertName                         = CAcertNameBuf;
-      // parse the certificate name into a number and namespace
-      char    cert_namespace[14] = {};
-      uint8_t certNumber         = 0;
-      at->parseCertificateName(CAcertName, cert_namespace, certNumber);
-      ca_number = certNumber;
+      strncpy(this->CAcertName, in_CAcertName, sizeof(this->CAcertName) - 1);
+      this->CAcertName[sizeof(this->CAcertName) - 1] = '\0';
+      // set the number for the CA certificate
+      this->ca_number = certNumber;
     }
     /// @copydoc GsmClientSecureESP8266::setCACertName(const char*)
-    void setCACertName(String CAcertName) override {
+    void setCACertName(const String& CAcertName) override {
       setCACertName(CAcertName.c_str());
     }
 
@@ -327,30 +343,34 @@ class TinyGsmESP8266
      * setClientCertName() or setPrivateKeyName() will set the other
      * to the equivalent name with the same number.
      */
-    void setClientCertName(const char* clientCertName) override {
+    void setClientCertName(const char* in_clientCertName) override {
       if (at == nullptr) { return; }
-      if (clientCertName == nullptr || strlen(clientCertName) == 0) { return; }
+      // parse the certificate name
+      CertificateType parsed_type = CertificateType::UNKNOWN;
+      uint8_t         certNumber  = 0;
+      at->parseCertificateName(in_clientCertName, parsed_type, certNumber);
+      if (parsed_type != CertificateType::CLIENT_CERTIFICATE ||
+          certNumber > 1) {
+        return;
+      }
       // copy the certificate name into owned buffer
-      strncpy(clientCertNameBuf, clientCertName, sizeof(clientCertNameBuf) - 1);
-      clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
-      this->clientCertName                             = clientCertNameBuf;
-      // parse the certificate name into a number and namespace
-      char    cert_namespace[14] = {};
-      uint8_t certNumber         = 0;
-      at->parseCertificateName(clientCertName, cert_namespace, certNumber);
-      // set the private key number
+      strncpy(this->clientCertName, in_clientCertName,
+              sizeof(this->clientCertName) - 1);
+      this->clientCertName[sizeof(this->clientCertName) - 1] = '\0';
+      // set thenumber for the client certificate and private key (only 1 var,
+      // they must be the same)
       pki_number = certNumber;
       // generate the matching client private key name from the certificate
       // number and type
       char cert_name[16] = {};
-      at->getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
-                             cert_namespace);
-      strncpy(clientKeyNameBuf, cert_name, sizeof(clientKeyNameBuf) - 1);
-      clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
-      clientKeyName                                  = clientKeyNameBuf;
+      at->getCertificateName(CertificateType::CLIENT_KEY, certNumber,
+                             cert_name);
+      // set the client key name in the owned buffer
+      strncpy(this->clientKeyName, cert_name, sizeof(this->clientKeyName) - 1);
+      this->clientKeyName[sizeof(this->clientKeyName) - 1] = '\0';
     }
     /// @copydoc GsmClientSecureESP8266::setClientCertName(const char*)
-    void setClientCertName(String clientCertName) override {
+    void setClientCertName(const String& clientCertName) override {
       setClientCertName(clientCertName.c_str());
     }
 
@@ -365,29 +385,32 @@ class TinyGsmESP8266
      */
     void setPrivateKeyName(const char* clientKeyName) override {
       if (at == nullptr) { return; }
-      if (clientKeyName == nullptr || strlen(clientKeyName) == 0) { return; }
+      // parse the certificate name
+      CertificateType parsed_type = CertificateType::UNKNOWN;
+      uint8_t         certNumber  = 0;
+      at->parseCertificateName(clientKeyName, parsed_type, certNumber);
+      if (parsed_type != CertificateType::CLIENT_KEY || certNumber > 1) {
+        return;
+      }
       // copy the key name into owned buffer
-      strncpy(clientKeyNameBuf, clientKeyName, sizeof(clientKeyNameBuf) - 1);
-      clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
-      this->clientKeyName                            = clientKeyNameBuf;
-      // parse the certificate name into a number and namespace
-      char    cert_namespace[14] = {};
-      uint8_t certNumber         = 0;
-      at->parseCertificateName(clientKeyName, cert_namespace, certNumber);
-      // set the private key number
+      strncpy(this->clientKeyName, clientKeyName,
+              sizeof(this->clientKeyName) - 1);
+      this->clientKeyName[sizeof(this->clientKeyName) - 1] = '\0';
+      // set thenumber for the client certificate and private key (only 1 var,
+      // they must be the same)
       pki_number = certNumber;
       // generate the matching client certificate name from the private key
       // number and type
       char cert_name[16] = {};
       at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
-                             cert_name, cert_namespace);
-      // set the client certificate name
-      strncpy(clientCertNameBuf, cert_name, sizeof(clientCertNameBuf) - 1);
-      clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
-      clientCertName                                   = clientCertNameBuf;
+                             cert_name);
+      // set the client certificate name in the owned buffer
+      strncpy(this->clientCertName, cert_name,
+              sizeof(this->clientCertName) - 1);
+      this->clientCertName[sizeof(this->clientCertName) - 1] = '\0';
     }
     /// @copydoc GsmClientSecureESP8266::setPrivateKeyName(const char*)
-    void setPrivateKeyName(String clientKeyName) override {
+    void setPrivateKeyName(const String& clientKeyName) override {
       setPrivateKeyName(clientKeyName.c_str());
     }
 
@@ -401,13 +424,11 @@ class TinyGsmESP8266
       ca_number = certNumber;
       // convert the certificate number and type into the proper certificate
       // names for the ESP32
-      char cert_name[16]      = {};
-      char cert_namespace[14] = {};
+      char cert_name[16] = {};
       at->getCertificateName(CertificateType::CA_CERTIFICATE, certNumber,
-                             cert_name, cert_namespace);
-      memcpy(CAcertNameBuf, cert_name, sizeof(CAcertNameBuf));
-      CAcertNameBuf[sizeof(CAcertNameBuf) - 1] = '\0';
-      CAcertName                               = CAcertNameBuf;
+                             cert_name);
+      memcpy(this->CAcertName, cert_name, sizeof(this->CAcertName));
+      this->CAcertName[sizeof(this->CAcertName) - 1] = '\0';
     }
     /**
      * @brief Set the client certificate number to use for this connection
@@ -422,19 +443,16 @@ class TinyGsmESP8266
       if (certNumber > 1) { return; }
       pki_number = certNumber;
       // generate and set the name for the client certificate from the number
-      char cert_name[16]      = {};
-      char cert_namespace[14] = {};
+      char cert_name[16] = {};
       at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
-                             cert_name, cert_namespace);
-      memcpy(clientCertNameBuf, cert_name, sizeof(clientCertNameBuf));
-      clientCertNameBuf[sizeof(clientCertNameBuf) - 1] = '\0';
-      clientCertName                                   = clientCertNameBuf;
+                             cert_name);
+      memcpy(this->clientCertName, cert_name, sizeof(this->clientCertName));
+      this->clientCertName[sizeof(this->clientCertName) - 1] = '\0';
       // generate and set the name for the client private key from the number
-      at->getCertificateName(CertificateType::CLIENT_KEY, certNumber, cert_name,
-                             cert_namespace);
-      memcpy(clientKeyNameBuf, cert_name, sizeof(clientKeyNameBuf));
-      clientKeyNameBuf[sizeof(clientKeyNameBuf) - 1] = '\0';
-      clientKeyName                                  = clientKeyNameBuf;
+      at->getCertificateName(CertificateType::CLIENT_KEY, certNumber,
+                             cert_name);
+      memcpy(this->clientKeyName, cert_name, sizeof(this->clientKeyName));
+      this->clientKeyName[sizeof(this->clientKeyName) - 1] = '\0';
     }
     /**
      * @brief Set the client private key number to use for this connection
@@ -451,9 +469,6 @@ class TinyGsmESP8266
    protected:
     int8_t ca_number  = 0;
     int8_t pki_number = 0;
-    char   CAcertNameBuf[16];
-    char   clientCertNameBuf[16];
-    char   clientKeyNameBuf[16];
   };
 
   /*
@@ -516,59 +531,84 @@ class TinyGsmESP8266
 #undef TINY_GSM_MODEM_CAN_LOAD_CERTS
 
  protected:
-  void parseCertificateName(const char* cert_name, char* parsed_namespace,
+  void parseCertificateName(const char* cert_name, CertificateType& parsed_type,
                             uint8_t& parsed_number) {
-    size_t name_len = (cert_name == nullptr) ? 0 : strlen(cert_name);
-    if (name_len < 3) {
-      parsed_namespace[0] = '\0';
-      parsed_number       = 0;
-      return;
+    uint8_t ns_length = 0;
+    // look for the namespace in the name and determine the certificate type
+    if (strncmp(cert_name, ModemConfig::CA_CERT_NAMESPACE,
+                strlen(ModemConfig::CA_CERT_NAMESPACE)) == 0) {
+      parsed_type = CertificateType::CA_CERTIFICATE;
+      ns_length   = strlen(ModemConfig::CA_CERT_NAMESPACE);
+    } else if (strncmp(cert_name, ModemConfig::CLIENT_CERT_NAMESPACE,
+                       strlen(ModemConfig::CLIENT_CERT_NAMESPACE)) == 0) {
+      parsed_type = CertificateType::CLIENT_CERTIFICATE;
+      ns_length   = strlen(ModemConfig::CLIENT_CERT_NAMESPACE);
+    } else if (strncmp(cert_name, ModemConfig::CLIENT_KEY_NAMESPACE,
+                       strlen(ModemConfig::CLIENT_KEY_NAMESPACE)) == 0) {
+      parsed_type = CertificateType::CLIENT_KEY;
+      ns_length   = strlen(ModemConfig::CLIENT_KEY_NAMESPACE);
+    } else {
+      goto parsing_error;
     }
-    // pull the namespace out of the name
-    memcpy(parsed_namespace, cert_name, name_len - 2);
-    parsed_namespace[name_len - 2] = '\0';
-    // pull the number out of the name
-    char certNumber[2];
-    memcpy(certNumber, cert_name + strlen(cert_name) - 1, 1);
-    // Null terminate
-    memset(certNumber + 1, '\0', 1);
-    parsed_number = atoi(certNumber);
+
+    if (cert_name[ns_length] != '.') { goto parsing_error; }
+    if (cert_name[ns_length + 1] == '0') {
+      parsed_type   = CertificateType::UNKNOWN;
+      parsed_number = 0;
+      return;
+    } else if (cert_name[ns_length + 1] == '1') {
+      parsed_type   = CertificateType::UNKNOWN;
+      parsed_number = 1;
+      return;
+    } else {
+      goto parsing_error;
+    }
+    return;
+
+  parsing_error:
+    parsed_type   = CertificateType::UNKNOWN;
+    parsed_number = static_cast<uint8_t>(-1);
+    return;
   }
 
   void getCertificateName(CertificateType cert_type, uint8_t certNumber,
-                          char* cert_name, char* cert_namespace) {
+                          char* cert_name) {
+    // Validate certNumber is 0 or 1 to prevent buffer overflow in itoa()
+    if (certNumber > 1) {
+      if (cert_name != nullptr) { cert_name[0] = '\0'; }
+      return;
+    }
     char cert_number[2];  // Must be '0' or '1', so 2 bytes is enough
     itoa(certNumber, cert_number, 10);
 
+    // put the set certificate namespace and name into the provided buffers
+    // based on the certificate type
     switch (cert_type) {
       case CertificateType::CLIENT_PSK_IDENTITY:
       case CertificateType::CLIENT_PSK: {
         // The ESP32 does not support SSL using pre-shared keys with AT
         // firmware.
-        strcpy(cert_namespace, "\0");
         strcpy(cert_name, "\0");
         return;
       }
       case CertificateType::CLIENT_KEY: {
-        const char* client_key_namespace = "client_key";
-        strcpy(cert_namespace, client_key_namespace);
-        strcpy(cert_name, client_key_namespace);
+        strcpy(cert_name, ModemConfig::CLIENT_KEY_NAMESPACE);
         break;
       }
       case CertificateType::CLIENT_CERTIFICATE: {
         const char* client_cert_namespace = "client_cert";
-        strcpy(cert_namespace, client_cert_namespace);
-        strcpy(cert_name, client_cert_namespace);
+        strcpy(cert_name, ModemConfig::CLIENT_CERT_NAMESPACE);
         break;
       }
       case CertificateType::CA_CERTIFICATE:
       default: {
         const char* ca_cert_namespace = "client_ca";
-        strcpy(cert_namespace, ca_cert_namespace);
-        strcpy(cert_name, ca_cert_namespace);
+        strcpy(cert_name, ModemConfig::CA_CERT_NAMESPACE);
         break;
       }
     }
+    // append the certificate number to the name to create the full certificate
+    // name (e.g., "client_cert.0")
     strcat(cert_name, ".");
     strcat(cert_name, cert_number);
     return;
