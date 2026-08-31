@@ -192,6 +192,7 @@ class TinyGsmTCP {
       return false;
     }
     if (oldMux == requestedMux || thisModem().sockets[oldMux] == nullptr) {
+      DBG(GF("INFO: Nothing to move for socket:"), oldMux);
       if (assignedMux) { *assignedMux = oldMux; }
       return true;  // Nothing to do, but not an error
     }

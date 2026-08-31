@@ -339,19 +339,20 @@ class TinyGsmSaraR5
       // return false and set the assignedMux to -1 if the mux number is invalid
       // or the connection fails
       sock_connected = at->modemConnect(host, port, &assignedMux, timeout_s);
-      if (sock_connected) {
-        uint8_t oldMux = mux;
-        // move any existing client at the assigned mux number to the next
-        // available slot
-        // set the requested mux to -1 to get the next available mux number
+      if (sock_connected && assignedMux != mux) {
+        // If we successfully connected, and the assigned mux number is
+        // different from the requested mux number, we need to move any existing
+        // client at the assigned mux number before we can insert this client
+        // into the sockets array at the assigned mux.
+        // Set the requested mux to -1 to get the next available mux number.
+        // If there was no existing client at the assigned mux number, this will
+        // do nothing.
         at->moveSocket(assignedMux, static_cast<uint8_t>(-1));
-        // if the old mux number is different from the assigned mux number, and
-        // the old mux number is valid, and the pointer to this client is still
-        // in the old mux position in the sockets array, set that position to
-        // null
-        if (oldMux != assignedMux && oldMux < TcpConfig::kMuxCount &&
-            at->sockets[oldMux] == this) {
-          at->sockets[oldMux] = nullptr;
+        // If the original mux number was valid, and the pointer to this client
+        // is still in the original mux position in the sockets array, set the
+        // pointer in that position to null.
+        if (mux < TcpConfig::kMuxCount && at->sockets[mux] == this) {
+          at->sockets[mux] = nullptr;
         }
         // set the client's internal mux number and insert it into the array
         at->sockets[assignedMux] = this;
