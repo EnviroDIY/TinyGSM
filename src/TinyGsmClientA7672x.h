@@ -1154,6 +1154,9 @@ class TinyGsmA7672X
           sockets[mux]->prev_check = 0;
         }
       }
+      data = "";
+      DBG("### Got receive event");
+      return true;
     } else if (data.endsWith(GF("+CCHRECV: 0,0\r\n"))) {
       int16_t mux = data.substring(data.lastIndexOf(',') + 1).toInt();
       if (isValidMux(mux)) { sockets[mux]->sock_connected = true; }
