@@ -144,7 +144,7 @@ class TinyGsmEspressif
     // read the hardware from the Bin version
     thisModem().streamSkipUntil('(');  // skip the text "Bin version"
     String wroom = stream.readStringUntil(
-        ')');  // read the WRoom version in the parethesis
+        ')');  // read the WRoom version in the parenthesis
     thisModem().streamSkipUntil('(');            // skip the bin version itself
     if (thisModem().waitResponse(1000L) == 1) {  // wait for the ending OK
       return wroom;

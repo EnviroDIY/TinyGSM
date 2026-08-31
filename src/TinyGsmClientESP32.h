@@ -980,11 +980,9 @@ class TinyGsmESP32
 
     if (cert_name[ns_length] != '.') { goto parsing_error; }
     if (cert_name[ns_length + 1] == '0') {
-      parsed_type   = CertificateType::UNKNOWN;
       parsed_number = 0;
       return;
     } else if (cert_name[ns_length + 1] == '1') {
-      parsed_type   = CertificateType::UNKNOWN;
       parsed_number = 1;
       return;
     } else {
@@ -1000,7 +998,7 @@ class TinyGsmESP32
 
   void getCertificateName(CertificateType cert_type, uint8_t certNumber,
                           char* cert_name) {
-    // Validate certNumber is 0 or 1 to prevent buffer overflow in itoa()
+    // Validate certNumber is 0 or 1
     if (certNumber > 1) {
       if (cert_name != nullptr) { cert_name[0] = '\0'; }
       return;
@@ -1023,13 +1021,11 @@ class TinyGsmESP32
         break;
       }
       case CertificateType::CLIENT_CERTIFICATE: {
-        const char* client_cert_namespace = "client_cert";
         strcpy(cert_name, ModemConfig::CLIENT_CERT_NAMESPACE);
         break;
       }
       case CertificateType::CA_CERTIFICATE:
       default: {
-        const char* ca_cert_namespace = "client_ca";
         strcpy(cert_name, ModemConfig::CA_CERT_NAMESPACE);
         break;
       }
