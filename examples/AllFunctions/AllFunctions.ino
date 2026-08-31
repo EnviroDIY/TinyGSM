@@ -608,17 +608,17 @@ rqXRfboQnoZsG4q5WTP468SQvvG5
     if (modem.getGsmLocation(&gsm_latitude, &gsm_longitude, &gsm_accuracy,
                              &gsm_year, &gsm_month, &gsm_day, &gsm_hour,
                              &gsm_minute, &gsm_second)) {
-      DBG("Latitude:", String(gsm_latitude, 8),
-          "\tLongitude:", String(gsm_longitude, 8));
-      DBG("Accuracy:", gsm_accuracy);
-      DBG("Year:", gsm_year, "\tMonth:", gsm_month, "\tDay:", gsm_day);
-      DBG("Hour:", gsm_hour, "\tMinute:", gsm_minute, "\tSecond:", gsm_second);
       break;
-    } else {
+    } else if (i > 1) {
       DBG("Couldn't get GSM location, retrying in 15s.");
       delay(15000L);
     }
   }
+  DBG("Latitude:", String(gsm_latitude, 8),
+      "\tLongitude:", String(gsm_longitude, 8));
+  DBG("Accuracy:", gsm_accuracy);
+  DBG("Year:", gsm_year, "\tMonth:", gsm_month, "\tDay:", gsm_day);
+  DBG("Hour:", gsm_hour, "\tMinute:", gsm_minute, "\tSecond:", gsm_second);
   DBG("Retrieving GSM location again as a string");
   String location = modem.getGsmLocation();
   DBG("GSM Based Location String:", location);
@@ -650,7 +650,7 @@ rqXRfboQnoZsG4q5WTP468SQvvG5
                      &gps_vsat, &gps_usat, &gps_accuracy, &gps_year, &gps_month,
                      &gps_day, &gps_hour, &gps_minute, &gps_second)) {
       break;
-    } else {
+    } else if (i > 1) {
       DBG("Couldn't get GPS/GNSS/GLONASS location, retrying in 15s.");
       delay(15000L);
     }
@@ -689,15 +689,15 @@ rqXRfboQnoZsG4q5WTP468SQvvG5
     DBG("Requesting current network time");
     if (modem.getNetworkTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour,
                              &ntp_min, &ntp_sec, &ntp_timezone)) {
-      DBG("Year:", ntp_year, "\tMonth:", ntp_month, "\tDay:", ntp_day);
-      DBG("Hour:", ntp_hour, "\tMinute:", ntp_min, "\tSecond:", ntp_sec);
-      DBG("Timezone:", ntp_timezone);
       break;
-    } else {
+    } else if (i > 1) {
       DBG("Couldn't get network time, retrying in 15s.");
       delay(15000L);
     }
   }
+  DBG("Year:", ntp_year, "\tMonth:", ntp_month, "\tDay:", ntp_day);
+  DBG("Hour:", ntp_hour, "\tMinute:", ntp_min, "\tSecond:", ntp_sec);
+  DBG("Timezone:", ntp_timezone);
   DBG("Retrieving time again as a string");
   String time = modem.getGSMDateTime(TinyGSMDateTimeFormat::DATE_FULL);
   DBG("Current Network Time:", time);
