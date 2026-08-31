@@ -263,16 +263,21 @@ class TinyGsmSequansMonarch
       // that mux number isn't in use (or it's already this), accept the mux
       // number
       if (mux >= 1 && mux <= TcpConfig::kMuxCount &&
-          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
+          (at->sockets[mux % TcpConfig::kMuxCount] == nullptr ||
+           at->sockets[mux % TcpConfig::kMuxCount] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
         // one
-      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
-        this->mux = at->findFirstUnassignedMux();
       } else {
-        // If we can't find anything available, overwrite something, using mod
-        // to make sure we're in range
-        this->mux = (mux % TcpConfig::kMuxCount);
+        uint8_t next_available_mux = at->findFirstUnassignedMux();
+        if (next_available_mux != static_cast<uint8_t>(-1)) {
+          this->mux = next_available_mux;
+        } else {
+          // If we can't find anything available, overwrite something, using mod
+          // to make sure we're in range and adding 1 for the 1-indexed mux
+          // numbers
+          this->mux = (mux % TcpConfig::kMuxCount) + 1;
+        }
       }
       at->sockets[this->mux % TcpConfig::kMuxCount] = this;
 
@@ -982,6 +987,17 @@ class TinyGsmSequansMonarch
   bool isValidMux(int8_t mux) {
     return mux > 0 && mux <= TcpConfig::kMuxCount &&
         sockets[mux % TcpConfig::kMuxCount] != nullptr;
+  }
+  uint8_t findFirstUnassignedMux() {
+    // Try to iterate through the assigned client sockets to find the next spot
+    // in the array of client pointers that has not been linked to an object.
+    for (int next_mux = 1; next_mux <= TcpConfig::kMuxCount; next_mux++) {
+      if (sockets[next_mux % TcpConfig::kMuxCount] == nullptr) {
+        return next_mux;
+      }
+    }
+    DBG("### WARNING: No empty mux sockets found!");
+    return static_cast<uint8_t>(-1);
   }
 };
 
