@@ -843,6 +843,13 @@ class TinyGsmSim7080
     sendAT(GF("+CNTP=\""), server, GF("\","), TimeZone * 4, GF(",0,2"));
     if (waitResponse(10000L) != 1) { return false; }
 
+    // TODO: Should we have a "quick fail" here? We don't want to wait for the
+    // time sync to finish here, but if we don't wait up to the maximum possible
+    // response time, will the "+CNTP:" end up mangled in the responses to a
+    // later command?  The waitForTimeSync() function calls the exact command
+    // repeatedly waiting for a response within 10s each time.  Are those going
+    // to cause trouble?
+
     // Request network synchronization - execution command
     sendAT(GF("+CNTP"));
     if (waitResponse(10000L, GF("+CNTP:"))) {
