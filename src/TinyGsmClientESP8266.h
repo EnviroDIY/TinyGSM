@@ -425,8 +425,10 @@ class TinyGsmESP8266
       char cert_name[16] = {};
       at->getCertificateName(CertificateType::CA_CERTIFICATE, certNumber,
                              cert_name);
-      memcpy(this->CAcertName, cert_name, sizeof(this->CAcertName));
-      this->CAcertName[sizeof(this->CAcertName) - 1] = '\0';
+      memcpy(this->CAcertName, cert_name,
+             TinyGsmMin(sizeof(this->CAcertName), sizeof(cert_name)));
+      this->CAcertName[TinyGsmMin(sizeof(this->CAcertName), sizeof(cert_name)) -
+                       1] = '\0';
     }
     /**
      * @brief Set the client certificate number to use for this connection
@@ -444,13 +446,19 @@ class TinyGsmESP8266
       char cert_name[16] = {};
       at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
                              cert_name);
-      memcpy(this->clientCertName, cert_name, sizeof(this->clientCertName));
-      this->clientCertName[sizeof(this->clientCertName) - 1] = '\0';
+      memcpy(this->clientCertName, cert_name,
+             TinyGsmMin(sizeof(this->clientCertName), sizeof(cert_name)));
+      this->clientCertName[TinyGsmMin(sizeof(this->clientCertName),
+                                      sizeof(cert_name)) -
+                           1] = '\0';
       // generate and set the name for the client private key from the number
       at->getCertificateName(CertificateType::CLIENT_KEY, certNumber,
                              cert_name);
-      memcpy(this->clientKeyName, cert_name, sizeof(this->clientKeyName));
-      this->clientKeyName[sizeof(this->clientKeyName) - 1] = '\0';
+      memcpy(this->clientKeyName, cert_name,
+             TinyGsmMin(sizeof(this->clientKeyName), sizeof(cert_name)));
+      this->clientKeyName[TinyGsmMin(sizeof(this->clientKeyName),
+                                     sizeof(cert_name)) -
+                          1] = '\0';
     }
     /**
      * @brief Set the client private key number to use for this connection
