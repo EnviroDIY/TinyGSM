@@ -173,8 +173,6 @@ class TinyGsmNTP {
       if (index > 0) { result.remove(index); }
       result.trim();
       if (TinyGsmIsValidNumber(result)) { return result.toInt() == 1; }
-    } else {
-      return false;
     }
     return false;
   }
