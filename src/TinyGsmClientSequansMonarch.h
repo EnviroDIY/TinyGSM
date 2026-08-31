@@ -432,14 +432,18 @@ class TinyGsmSequansMonarch
   }
 
   void maintainImpl() {
+    bool check_connections = false;
     for (uint8_t mux = 1; mux <= TcpConfig::kMuxCount; mux++) {
       GsmClientSequansMonarch* sock = sockets[mux % TcpConfig::kMuxCount];
       if (sock && sock->got_data) {
         sock->got_data       = false;
         sock->sock_available = modemGetAvailable(mux);
-        // modemGetConnected() always checks the state of ALL socks
-        modemGetConnected(1);
+        check_connections    = true;
       }
+    }
+    if (check_connections) {
+      // modemGetConnected() always checks the state of ALL socks
+      modemGetConnected(1);
     }
     while (stream.available()) { waitResponse(15, nullptr, nullptr); }
   }
