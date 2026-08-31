@@ -465,7 +465,7 @@ class TinyGsmTCP {
 #endif
         // A modem implementation can report a negative value on failure.
         // Never move the pointer or the counter backwards.
-        int16_t accepted = min(attempted, confirmed);
+        int16_t accepted = TinyGsmMin(attempted, confirmed);
         if (accepted < 0) { accepted = 0; }
         bytesSent += accepted;  // bump up number of bytes sent
         txPtr += accepted;      // bump up the pointer
