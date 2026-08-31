@@ -829,6 +829,7 @@ class TinyGsmSequansMonarch
   }
 #if 0
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
     return waitResponse(10000L, GF("\r\n> ")) == 1;
   }

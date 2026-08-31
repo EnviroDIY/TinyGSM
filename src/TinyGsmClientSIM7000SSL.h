@@ -1112,6 +1112,7 @@ class TinyGsmSim7000SSL
   }
 
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+    if (!isValidMux(mux)) { return false; }
     // Same command for both secure and non-secure sockets
     sendAT(GF("+CACLOSE="), mux);
     return waitResponse(TinyGsmMin(maxWaitMs, static_cast<uint32_t>(3000))) ==
@@ -1119,6 +1120,7 @@ class TinyGsmSim7000SSL
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
+    if (!isValidMux(mux)) { return false; }
     // send data on prompt
     sendAT(GF("+CASEND="), mux, ',', (uint16_t)len);
     return waitResponse(GF(">")) == 1;

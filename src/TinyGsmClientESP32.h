@@ -1479,6 +1479,7 @@ class TinyGsmESP32
   using TinyGsmEspressif<TinyGsmESP32, TinyGsmESP32ModemConfig>::modemStopImpl;
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSEND="), mux, ',', len);
     return waitResponse(GF(">")) == 1;
   }
