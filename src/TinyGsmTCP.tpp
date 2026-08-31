@@ -368,6 +368,8 @@ class TinyGsmTCP {
     // allow up to 3 timeouts on individual characters before we quit the whole
     // read operation
     while (len && char_failures < 3) {
+      // never consume a partial hex pair
+      if (len < static_cast<size_t>(readCharLen)) { break; }
       // if something is available, read it
       if (thisModem().stream.available() >= readCharLen) {
 #ifdef TINY_GSM_USE_HEX
