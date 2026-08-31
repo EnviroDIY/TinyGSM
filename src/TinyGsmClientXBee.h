@@ -1706,17 +1706,26 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         String open_socks = stream.readStringUntil('\r');
         open_socks.replace(String(GFP(ModemConfig::GSM_NL)), "");
         open_socks.trim();
+#if 0
+        // TODO:  Why was this implemented? The data isn't kept.
         if (open_socks != "") {
           // In transparent mode, only socket 0 should be possible
           sendAT(GF("SI0"));
-          streamSkipUntil('\r');  //  socket id
-          streamSkipUntil('\r');  //  socket state
-          streamSkipUntil('\r');  //  socket protocol (TCP/UDP)
-          streamSkipUntil('\r');  //  local port number
-          streamSkipUntil('\r');  //  remote port number
-          streamSkipUntil('\r');  //  remote ip address
+          // read socket id
+          String sock_id = stream.readStringUntil('\r');
+          // read socket state
+          String sock_state = stream.readStringUntil('\r');
+          // read socket protocol (TCP/UDP)
+          String sock_protocol = stream.readStringUntil('\r');
+          // read local port number
+          String local_port = stream.readStringUntil('\r');
+          // read remote port number
+          String remote_port = stream.readStringUntil('\r');
+          // read remote ip address
+          String remoted_address = stream.readStringUntil('\r');
           streamSkipUntil('\r');  // final carriage return
         }
+#endif
 
         // 0x00 = The socket is definitely open
         if (ci == 0x00) {
