@@ -1207,13 +1207,13 @@ class TinyGsmESP32
     sendAT(GF("+CIPSNTPTIME?"));
     if (waitResponse(2000L, GF("+CIPSNTPTIME:")) != 1) { return false; }
 
-    int iyear     = 0;
-    int imonth    = 0;
-    int iday      = 0;
-    int ihour     = 0;
-    int imin      = 0;
-    int isec      = 0;
-    int itimezone = 0;
+    int   iyear     = 0;
+    int   imonth    = 0;
+    int   iday      = 0;
+    int   ihour     = 0;
+    int   imin      = 0;
+    int   isec      = 0;
+    float itimezone = 0;
 
     // Date & Time
     streamSkipUntil(' ');  // skip the day of the week
