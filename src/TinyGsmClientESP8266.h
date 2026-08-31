@@ -668,7 +668,7 @@ class TinyGsmESP8266
   }
 
  protected:
-  bool waitForTimeSyncImpl(int timeout_s) {
+  bool waitForTimeSyncImpl(uint16_t timeout_s) {
     // if we're not connected, we'll never get the time
     if (!isNetworkConnected()) {
       DBG(GF("### Not connected to network; cannot sync time!"));
