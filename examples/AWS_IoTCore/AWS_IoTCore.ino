@@ -105,9 +105,9 @@ uint16_t port = 8883;
 // the client ID should be the name of your "thing" in AWS IoT Core
 const char* clientId = THING_NAME;
 
-static const char topicInit[] TINY_GSM_PROGMEM      = THING_NAME "/init";
-static const char topicLed[] TINY_GSM_PROGMEM       = THING_NAME "/led";
-static const char topicLedStatus[] TINY_GSM_PROGMEM = THING_NAME "/ledStatus";
+static const char topicInit[]      = THING_NAME "/init";
+static const char topicLed[]       = THING_NAME "/led";
+static const char topicLedStatus[] = THING_NAME "/ledStatus";
 
 // whether to print certs after uploading
 // not all modules support printing the content of certificates after uploading
