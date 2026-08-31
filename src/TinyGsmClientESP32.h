@@ -1350,10 +1350,6 @@ class TinyGsmESP32
     }
 
     if (ssl) {
-      if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) { return false; }
-      // TODO: Implement PSK and PSK Identity
-
-
       // SSL certificate checking will not work without a valid timestamp!
       if (sockets[requested_mux] != nullptr &&
           (sslAuthMode != SSLAuthMode::NO_VALIDATION) &&
@@ -1396,7 +1392,7 @@ class TinyGsmESP32
         sendAT(GF("+CIPSSLCCONF="), requested_mux, ',',
                static_cast<uint8_t>(sslAuthMode), ',', pki_number, ',',
                ca_number);
-      } else {
+      } else {  // pre-shared keys
         // NOTE: Support for this is firmware dependent!
         // AT+CIPSSLCPSK=<link ID>,<"psk">,<"hint">
         if (psKey == nullptr || pskIdent == nullptr) {
