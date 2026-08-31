@@ -104,7 +104,7 @@
  *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
  *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
  *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
- * - Client-related functions
+ * - SSL client functions
  *     - @ref TinyGsmSim7000SSL::configureSSLContext "configureSSLContext()"
  *     - @ref TinyGsmSim7000SSL::applySSLCertificates "applySSLCertificates()"
  *     - @ref TinyGsmSim7000SSL::applySSLPSK "applySSLPSK()"
@@ -829,13 +829,27 @@ class TinyGsmSim7000SSL
         s70x_ssl_version = 3;
         break;
       }
+      case SSLVersion::TLS1_3: {
+        s70x_ssl_version = 6;
+        break;
+      }
       default: {
         s70x_ssl_version = 0;
         break;
       }
     }
     sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, ',', s70x_ssl_version);
-    success &= waitResponse(5000L) == 1;
+    if (waitResponse(5000L) != 1) {
+      if (sslVersion != SSLVersion::TLS1_3) {
+        success = false;
+      } else {
+        // try lowering the SSL version to TLS 1.2 - not all firmwares
+        // support 1.3
+        sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, GF(",3"));
+        sslVersion = SSLVersion::TLS1_2;
+        success &= waitResponse(5000L) == 1;
+      }
+    }
 
     // set the SSL protocol
     // AT+CSSLCFG="PROTOCOL",<ctxindex>,<protocol>
@@ -856,9 +870,9 @@ class TinyGsmSim7000SSL
 
     if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
       const char* ciphersuites[8] = {
-           "0xC0A9", "0xC0A8", "0xC0A5", "0xC0A4", "0xC095", "0xC094",
-           "0x00B1", "0x00B0", /*"0x00AF", "0x00AE", "0x00A9", "0x00A8",
-           "0x008D", "0x008C", "0x008B", "0x008A", "0x002C"*/};
+        "0xC0A9", "0xC0A8", "0xC0A5", "0xC0A4", "0xC095", "0xC094",
+        "0x00B1", "0x00B0", /*"0x00AF", "0x00AE", "0x00A9", "0x00A8",
+        "0x008D", "0x008C", "0x008B", "0x008A", "0x002C"*/};
       for (uint8_t i = 0; i < 8; i++) {
         sendAT(GF("+CSSLCFG=\"ciphersuite\","), context_id, ',', i, ',',
                ciphersuites[i]);
