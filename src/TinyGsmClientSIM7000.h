@@ -605,7 +605,7 @@ class TinyGsmSim7000
     waitResponse(GF("+CIPSTATUS"));
     int8_t res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),
                               GF(",\"CLOSING\""), GF(",\"REMOTE CLOSING\""),
-                              GF(",\"INITIAL\""));
+                              GF(",\"INITIAL\""), GFP(ModemConfig::GSM_ERROR));
     waitResponse();
     return 1 == res;
   }

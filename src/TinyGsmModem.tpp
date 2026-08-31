@@ -1007,7 +1007,8 @@ class TinyGsmModem {
     thisModem().sendAT('+', regCommand, '?');
     // check for any of the three for simplicity
     int8_t resp = thisModem().waitResponse(GF("+CREG:"), GF("+CGREG:"),
-                                           GF("+CEREG:"));
+                                           GF("+CEREG:"),
+                                           GFP(ModemConfig::GSM_ERROR));
     if (resp != 1 && resp != 2 && resp != 3) { return -1; }
     thisModem().streamSkipUntil(','); /* Skip format (0) */
     int status = thisModem().stream.parseInt();

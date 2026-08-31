@@ -215,9 +215,9 @@ class TinyGsmGPRS {
         delay(1000);
         continue;
       }
-      int8_t status =
-          thisModem().waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"),
-                                   GF("NOT INSERTED"), GF("NOT READY"));
+      int8_t status = thisModem().waitResponse(
+          GF("READY"), GF("SIM PIN"), GF("SIM PUK"), GF("NOT INSERTED"),
+          GF("NOT READY"), GFP(ModemConfig::GSM_ERROR));
       thisModem().waitResponse();
       switch (status) {
         case 2:

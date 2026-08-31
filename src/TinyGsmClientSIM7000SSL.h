@@ -701,7 +701,8 @@ class TinyGsmSim7000SSL
     while (!res && ntries < 5) {
       sendAT(GF("+CNACT=1,\""), apn, '"');
       res = waitResponse(60000L, GF("+APP PDP: ACTIVE"),
-                         GF("+APP PDP: DEACTIVE")) == 1;
+                         GF("+APP PDP: DEACTIVE"),
+                         GFP(ModemConfig::GSM_ERROR)) == 1;
       waitResponse();
       ntries++;
     }
