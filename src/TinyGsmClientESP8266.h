@@ -80,8 +80,7 @@
  *   - You can reduce the risk of losing data by setting this library's buffer
  * to be as large as possible; this will increase the memory footprint of your
  * program.
- *   - Change the buffer size by defining this->TINY_GSM_RX_FER in your sketch
- * before including any TinyGSM header file.
+ *   - Change the buffer size by defining TINY_GSM_RX_BUFFER in your sketch before including any TinyGSM header file.
  * - Socket Numbering:
  *   - The modem uses user-specified MUX channel numbers for socket connections.
  *   - If you attempt to create a new client with a channel number that is
