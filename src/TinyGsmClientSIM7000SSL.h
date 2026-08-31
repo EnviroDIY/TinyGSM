@@ -559,8 +559,8 @@ class TinyGsmSim7000SSL
       } while (millis() - _startMillis < 50);
       // Check for timeout before writing
       if (c < 0) { break; }  // if we run out of characters, stop
-      // Print the file to the buffer
 #ifndef DUMP_AT_COMMANDS
+      // Print the file to the buffer
       // NOTE: Only do this if we're not dumping the all AT, or we'll double
       // print
       print_stream.write(c);
