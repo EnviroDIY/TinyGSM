@@ -1063,13 +1063,20 @@ class TinyGsmSim7080
     bool success = true;
 
     // Re-convert the certificates, just in case
-    if (CAcertName != nullptr) { convertCACertificate(CAcertName); }
-    if (clientCertName != nullptr && clientKeyName != nullptr) {
+    if (CAcertName != nullptr &&
+        strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
+      convertCACertificate(CAcertName);
+    }
+    if (clientCertName != nullptr &&
+        strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
+        clientKeyName != nullptr &&
+        strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
       convertClientCertificates(clientCertName, clientKeyName);
     }
 
     // apply the correct certificates to the connection
     if (CAcertName != nullptr &&
+        strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
         (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
          sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       // AT+CASSLCFG=<cid>,"CACERT",<caname>
@@ -1079,6 +1086,7 @@ class TinyGsmSim7080
       success &= waitResponse() == 1;
     }
     if (clientCertName != nullptr &&
+        strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       // AT+CASSLCFG=<cid>,"CERT",<certname>
       // <cid> Application connection ID (set with AT+CACID above)
@@ -1103,7 +1111,7 @@ class TinyGsmSim7080
     bool success = true;
 
     // SRGD WARNING: UNTESTED!!
-    if (pskTableName != nullptr) {
+    if (strnlen(pskTableName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
       // Re-convert the psk, just in case
       convertPSKTable(pskTableName);
 
