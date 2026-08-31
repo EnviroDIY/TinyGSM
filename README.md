@@ -432,7 +432,7 @@ Use this:
 
 ```cpp
 char buffer[128] = "";
-int len = snprintf(buffer, sizeof(buffer), "GET %s HTTP/1.1\r\n", your_url_host);
+int len = snprintf(buffer, sizeof(buffer), "GET %s HTTP/1.1\r\n", resource);
 client.write((uint8_t*)buffer, len);
 ```
 
