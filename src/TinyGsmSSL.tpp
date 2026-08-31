@@ -462,7 +462,10 @@ class GsmSecureClient {
    */
   virtual void setCACertName(const char* CAcertName) {
     // copy the certificate name into owned buffer
-    strncpy(this->CAcertName, CAcertName, sizeof(this->CAcertName) - 1);
+    memset(this->CAcertName, '\0', sizeof(this->CAcertName));
+    if (CAcertName != nullptr) {
+      strncpy(this->CAcertName, CAcertName, sizeof(this->CAcertName) - 1);
+    }
     sslCtxConfigured = false;
   }
   /// @copydoc setCACertName(const char*)
@@ -476,8 +479,11 @@ class GsmSecureClient {
    */
   virtual void setClientCertName(const char* clientCertName) {
     // copy the certificate name into owned buffer
-    strncpy(this->clientCertName, clientCertName,
-            sizeof(this->clientCertName) - 1);
+    memset(this->clientCertName, '\0', sizeof(this->clientCertName));
+    if (clientCertName != nullptr) {
+      strncpy(this->clientCertName, clientCertName,
+              sizeof(this->clientCertName) - 1);
+    }
     sslCtxConfigured = false;
   }
   /// @copydoc setClientCertName(const char*)
@@ -491,8 +497,11 @@ class GsmSecureClient {
    */
   virtual void setPrivateKeyName(const char* clientKeyName) {
     // copy the key name into owned buffer
-    strncpy(this->clientKeyName, clientKeyName,
-            sizeof(this->clientKeyName) - 1);
+    memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
+    if (clientKeyName != nullptr) {
+      strncpy(this->clientKeyName, clientKeyName,
+              sizeof(this->clientKeyName) - 1);
+    }
     sslCtxConfigured = false;
   }
   /// @copydoc setPrivateKeyName(const char*)
