@@ -853,7 +853,7 @@ class TinyGsmSim7080
 
     // Request network synchronization - execution command
     sendAT(GF("+CNTP"));
-    if (waitResponse(10000L, GF("+CNTP:"))) {
+    if (waitResponse(10000L, GF("+CNTP:")) == 1) {
       String result = stream.readStringUntil('\n');
       // Check for ',' in case the module appends the time next to the return
       // code. Eg: +CNTP: <code>[,<time>]
@@ -1270,7 +1270,7 @@ class TinyGsmSim7080
     // send buffer (that we can soon fill up with our next send attempt)
     sendAT(GF("+CASEND="), mux);
     if (waitResponse(GF("+CASEND:")) != 1) {
-      return TcpConfig::kSendMaxSize;  // return 0?
+      return 0;  // return TcpConfig::kSendMaxSize?
     }
     size_t leftsize = streamGetIntBefore('\n');
     waitResponse();  // final ok
