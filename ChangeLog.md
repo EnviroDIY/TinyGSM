@@ -18,7 +18,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     - Client functions have been renamed to "setXX**Name**" to clarify that what you are selecting is the file name of a certificate that has been pre-loaded onto the module, not the certificate data itself.
     - A new parent class has been created for sockets
     - All enums have been moved into a separate file
-- Made date/time enums and SSL enums enum classes, requiring the class name to be included when calling them.
+- **BREAKING** Made date/time enums and SSL enums enum classes, requiring the class name to be included when calling them.
 - Separated Espressif into **3** modules:
   - the ESP32 (requiring AT firmware >= 3.2),
   - the ESP8266 using the final release of its AT firmware ([v2.2.1_esp8266](https://github.com/espressif/esp-at/releases/tag/v2.2.1.0_esp8266)),
@@ -32,7 +32,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **BREAKING** Renamed the function `setURAT` to `setRadioAccessTechnology` for u-blox SARA R4 modules.
 - **BREAKING** Changed the inputs and outputs of `getCurrentRadioAccessTechnology` for the u-blox SARA R5 modules and made functional.
 - **Potentially breaking** Changed the response type of NTPServerSync from a byte with inconsistent meaning to a boolean indicating success.  Using a boolean test against this may now return inverted results. Previously, Espressif and BG96 modules returned a falsy '0' byte indicating success, but SIMCom modules returned a truthy '1' byte for success.
-- Converted all enums into enum classes
 
 ### Added
 

@@ -41,7 +41,7 @@
 #ifndef TINY_GSM_PSK_IDENTITY_LENGTH
 /**
  * @brief The maximum length of the pre-shared key (PSK) identity
- * (identifier/hing) - 32 characters plus a null terminator.
+ * (identifier/hint) - 32 characters plus a null terminator.
  *
  * This is the maximum length of the identity value itself, not a reference or
  * file name. There is not a standard for the maximum length of a PSK identity,
