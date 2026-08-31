@@ -186,8 +186,8 @@ const T& TinyGsmMax(const T& a, const T& b) {
  * ensure consistent baud rate selection across the library.
  */
 static const uint32_t TINY_GSM_AUTOBAUD_RATES[] TINY_GSM_PROGMEM = {
-    115200, 57600,  9600,   921600, 38400,  19200,  460800, 230400,
-    74400,  74880,  2400,   4800,   14400,  28800};
+    115200, 57600, 9600,  921600, 38400, 19200, 460800,
+    230400, 74400, 74880, 2400,   4800,  14400, 28800};
 
 /**
  * @brief Attempts to automatically find the baud rate for the modem.
@@ -204,7 +204,8 @@ uint32_t TinyGsmAutoBaud(T& at_serial, uint32_t minimum = 9600,
                          uint32_t maximum = 921600) {
   static const uint32_t* rates = TINY_GSM_AUTOBAUD_RATES;
 
-  for (uint8_t i = 0; i < 14; i++) {  // sizeof(TINY_GSM_AUTOBAUD_RATES)/sizeof(uint32_t)
+  for (uint8_t i = 0; i < 14;
+       i++) {  // sizeof(TINY_GSM_AUTOBAUD_RATES)/sizeof(uint32_t)
     uint32_t rate = rates[i];
     if (rate < minimum || rate > maximum) continue;
 

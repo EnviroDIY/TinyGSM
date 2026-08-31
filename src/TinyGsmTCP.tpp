@@ -132,10 +132,10 @@ class TinyGsmTCP {
     return static_cast<uint8_t>(query_mux) == known_mux;
   }
   bool isExpectedMux(uint16_t query_mux, uint8_t known_mux) {
-    return static_cast<uint8_t>(query_mux) == known_mux;
+    return query_mux == static_cast<uint16_t>(known_mux);
   }
   bool isExpectedMux(int16_t query_mux, uint8_t known_mux) {
-    return static_cast<uint8_t>(query_mux) == known_mux;
+    return query_mux >= 0 && query_mux == static_cast<int16_t>(known_mux);
   }
 
   /**
