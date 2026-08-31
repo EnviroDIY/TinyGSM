@@ -80,6 +80,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TINY_GSM_TEST_GPRS true
 #define TINY_GSM_TEST_WIFI false
 #define TINY_GSM_TEST_TCP true
+#define TEST_BUILD_ADD_CERTS true
 #define TINY_GSM_TEST_SSL true
 #define TINY_GSM_TEST_CALL true
 #define TINY_GSM_TEST_SMS true
@@ -448,38 +449,66 @@ void loop() {
   secureClient.setSSLAuthMode(SSLAuthMode::CA_VALIDATION);
 
 #if defined(TEST_BUILD_ADD_CERTS) && defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
-  // WARNING:  Never run this section with an actual board attached!!
-  // If you run this, you could overwrite already installed certificates with
-  // junk and cause SSL to stop working on your module.
-  static const char fake_certificate[] TINY_GSM_PROGMEM = R"EOF(
+
+// For Espressif modules, only two certificate sets are supported and the
+// certificates must be named "client_ca.{0|1}", "client_cert.{0|1}", or
+// "client_key.{0|1}"
+#ifdef TINY_GSM_MODEM_ESP32
+  const char* root_ca_name     = "client_ca.1";
+  const char* client_cert_name = "client_cert.1";
+  const char* client_key_name  = "client_key.1";
+#else
+  // For most modules the actual filename doesn't matter much but it CANNOT
+  // HAVE SPACES and should be less than 64 characters.
+  // Some modules will not accept filenames with special characters so avoid
+  // those, too.
+  // NOTE: The certificate names as they are downloaded from AWS IoT Core are
+  // often too long for the modem to handle. Pick something shorter.
+  const char* root_ca_name = "AmazonRootCA1.pem";
+  // const char* client_cert_name = THING_NAME "-certificate.pem.crt";
+  // const char* client_key_name  = THING_NAME "-private-key.pem.key";
+#endif
+
+  static const char amazon_root_certificate[] TINY_GSM_PROGMEM = R"EOF(
   -----BEGIN CERTIFICATE-----
-  XXX
+MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF
+ADA5MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6
+b24gUm9vdCBDQSAxMB4XDTE1MDUyNjAwMDAwMFoXDTM4MDExNzAwMDAwMFowOTEL
+MAkGA1UEBhMCVVMxDzANBgNVBAoTBkFtYXpvbjEZMBcGA1UEAxMQQW1hem9uIFJv
+b3QgQ0EgMTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALJ4gHHKeNXj
+ca9HgFB0fW7Y14h29Jlo91ghYPl0hAEvrAIthtOgQ3pOsqTQNroBvo3bSMgHFzZM
+9O6II8c+6zf1tRn4SWiw3te5djgdYZ6k/oI2peVKVuRF4fn9tBb6dNqcmzU5L/qw
+IFAGbHrQgLKm+a/sRxmPUDgH3KKHOVj4utWp+UhnMJbulHheb4mjUcAwhmahRWa6
+VOujw5H5SNz/0egwLX0tdHA114gk957EWW67c4cX8jJGKLhD+rcdqsq08p8kDi1L
+93FcXmn/6pUCyziKrlA4b9v7LWIbxcceVOF34GfID5yHI9Y/QCB/IIDEgEw+OyQm
+jgSubJrIqg0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMC
+AYYwHQYDVR0OBBYEFIQYzIU07LwMlJQuCFmcx7IQTgoIMA0GCSqGSIb3DQEBCwUA
+A4IBAQCY8jdaQZChGsV2USggNiMOruYou6r4lK5IpDB/G/wkjUu0yKGX9rbxenDI
+U5PMCCjjmCXPI6T53iHTfIUJrU6adTrCC2qJeHZERxhlbI1Bjjt/msv0tadQ1wUs
+N+gDS63pYaACbvXy8MWy7Vu33PqUXHeeE6V/Uq2V8viTO96LXFvKWlJbYK8U90vv
+o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU
+5MsI+yMRQ+hDKXJioaldXgjUkK642M4UwtBV8ob2xJNDd2ZhwLnoQdeXeGADbkpy
+rqXRfboQnoZsG4q5WTP468SQvvG5
   -----END CERTIFICATE-----
   )EOF";
-  const char*       fake_cert_name                      = "myFakeCert.crt";
 
-  modem.addCACert(fake_cert_name, fake_certificate, strlen(fake_certificate));
-  modem.convertCACertificate(fake_cert_name);
+  modem.loadCertificate(root_ca_name, amazon_root_certificate,
+                        strlen(amazon_root_certificate));
+  modem.convertCACertificate(root_ca_name);
+  // modem.loadCertificate(client_cert_name, client_cert,
+  //                       strlen(client_cert));
+  // modem.loadCertificate(client_key_name, client_key,
+  //                       strlen(client_key));
+  // modem.convertClientCertificates(client_cert_name, client_key_name);
+  // modem.convertPSKandID(psk_name, psk_hint_name);
 
-  modem.addClientCert(fake_cert_name, fake_certificate,
-                      strlen(fake_certificate));
-  modem.addPrivateKey(fake_cert_name, fake_certificate,
-                      strlen(fake_certificate));
-  modem.convertClientCertificates(fake_cert_name, fake_cert_name);
+  modem.deleteCertificate(root_ca_name);
 
-  modem.addPSK(fake_cert_name, fake_certificate, strlen(fake_certificate));
-  modem.addPSKID(fake_cert_name, fake_certificate, strlen(fake_certificate));
-  modem.convertPSKandID(fake_certificate, fake_certificate);
-
-  modem.deleteCertificate(fake_cert_name);
-
-  secureClient.setCACertName(fake_cert_name);
-  secureClient.setClientCertName(fake_cert_name);
-  secureClient.setPrivateKeyName(fake_cert_name);
-  secureClient.setPSK(fake_certificate);
-  secureClient.setPSKID(fake_certificate);
-  secureClient.setPreSharedKey(fake_certificate, fake_certificate);
-  secureClient.setPSKID(fake_certificate);
+  secureClient.setCACertName(root_ca_name);
+  // secureClient.setClientCertName(client_cert_name);
+  // secureClient.setPrivateKeyName(client_key_name);
+  // secureClient.setPreSharedKey(pre_shared_key_hint_text,
+  // pre_shared_key_text);
 #endif
 #endif
 
@@ -620,19 +649,19 @@ void loop() {
     if (modem.getGPS(&gps_latitude, &gps_longitude, &gps_speed, &gps_altitude,
                      &gps_vsat, &gps_usat, &gps_accuracy, &gps_year, &gps_month,
                      &gps_day, &gps_hour, &gps_minute, &gps_second)) {
-      DBG("Latitude:", String(gps_latitude, 8),
-          "\tLongitude:", String(gps_longitude, 8));
-      DBG("Speed:", gps_speed, "\tAltitude:", gps_altitude);
-      DBG("Visible Satellites:", gps_vsat, "\tUsed Satellites:", gps_usat);
-      DBG("Accuracy:", gps_accuracy);
-      DBG("Year:", gps_year, "\tMonth:", gps_month, "\tDay:", gps_day);
-      DBG("Hour:", gps_hour, "\tMinute:", gps_minute, "\tSecond:", gps_second);
       break;
     } else {
       DBG("Couldn't get GPS/GNSS/GLONASS location, retrying in 15s.");
       delay(15000L);
     }
   }
+  DBG("Latitude:", String(gps_latitude, 8),
+      "\tLongitude:", String(gps_longitude, 8));
+  DBG("Speed:", gps_speed, "\tAltitude:", gps_altitude);
+  DBG("Visible Satellites:", gps_vsat, "\tUsed Satellites:", gps_usat);
+  DBG("Accuracy:", gps_accuracy);
+  DBG("Year:", gps_year, "\tMonth:", gps_month, "\tDay:", gps_day);
+  DBG("Hour:", gps_hour, "\tMinute:", gps_minute, "\tSecond:", gps_second);
   DBG("Retrieving GPS/GNSS/GLONASS location again as a string");
   String gps_raw = modem.getGPSraw();
   (void)gps_raw;
