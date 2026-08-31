@@ -1756,6 +1756,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         // 0x25 = Unknown server - DNS lookup failed (0x22 for UDP socket!)
         if (ci == 0x02 || ci == 0x12 || ci == 0x25) {
           savedIP = IPAddress(0, 0, 0, 0);  // force a lookup next time!
+          // also invalidate the cached host lookup, or modemConnectImpl will
+          // keep reusing the stale address for up to 12 hours
+          savedHostIP          = IPAddress(0, 0, 0, 0);
+          lastHostLookupMillis = 0;
         }
 
         // exit command mode
