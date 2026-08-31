@@ -573,7 +573,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     // By default, MC60 expects IP address as 'host' parameter.
     // If it is a domain name, "AT+QIDNSIP=1" should be executed.
     // "AT+QIDNSIP=0" is for dotted decimal IP address.
@@ -592,7 +592,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
   }
 
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+QICLOSE="), mux);
     int8_t rsp = waitResponse((maxWaitMs), GF("CLOSED"), GF("CLOSE OK"),
                               GF("ERROR"));
@@ -600,7 +600,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+QISEND="), mux, ',', (uint16_t)len);
     return waitResponse(GF(">")) == 1;
   }
@@ -608,7 +608,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     if (waitResponse(GF("SEND OK")) != 1) { return 0; }
 
     bool allAcknowledged = false;
@@ -633,7 +633,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
   }
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     // TODO(?):  Does this even work????
     // AT+QIRD=<id>,<sc>,<sid>,<len>
     // id = GPRS context number = 0, set in GPRS connect
@@ -675,7 +675,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
   // }
 
   bool modemGetConnectedImpl(uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+QISTATE=1,"), mux);
     // +QISTATE: 0,"TCP","151.139.237.11",80,5087,4,1,0,0,"uart1"
 

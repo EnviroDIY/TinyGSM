@@ -1021,14 +1021,14 @@ class TinyGsmSaraR5
   }
 
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     // Same command for both secure and non-secure sockets
     sendAT(GF("+USOCL="), mux);
     return waitResponse(maxWaitMs) == 1;
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+USOWR="), mux, ',', (uint16_t)len);
     if (waitResponse(GF("@")) != 1) { return 0; }
     // 50ms delay, see AT manual section 25.10.4
@@ -1039,7 +1039,7 @@ class TinyGsmSaraR5
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     if (waitResponse(GF("+USOWR:")) != 1) { return 0; }
     int16_t  ret_mux = streamGetIntBefore(',');   // check mux
     uint16_t sent    = streamGetIntBefore('\n');  // check send length
@@ -1051,7 +1051,7 @@ class TinyGsmSaraR5
   }
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     size_t len_read = 0;
 
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
@@ -1084,7 +1084,7 @@ class TinyGsmSaraR5
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USORD="), mux, ",0");
     size_t  result = 0;
@@ -1104,7 +1104,7 @@ class TinyGsmSaraR5
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USOCTL="), mux, ",10");
     uint8_t res = waitResponse(GF("+USOCTL:"));

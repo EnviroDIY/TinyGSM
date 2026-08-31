@@ -796,7 +796,7 @@ class TinyGsmSim5360
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     // Make sure we'll be getting data manually on this connection
     sendAT(GF("+CIPRXGET=1"));
     if (waitResponse() != 1) { return false; }
@@ -811,13 +811,13 @@ class TinyGsmSim5360
   }
 
   bool modemStopImpl(uint8_t mux, uint32_t /*maxWaitMs*/) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPCLOSE="), mux);
     return waitResponse() == 1;  // should return within 1s
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     return waitResponse(GF(">")) == 1;
   }
@@ -825,7 +825,7 @@ class TinyGsmSim5360
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     if (waitResponse(GF("+CIPSEND:")) != 1) { return 0; }
     int16_t ret_mux = streamGetIntBefore(',');  // check mux
     streamSkipUntil(',');                       // Skip requested bytes to send
@@ -836,7 +836,7 @@ class TinyGsmSim5360
   }
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     size_t len_read = 0;
 
 #ifdef TINY_GSM_USE_HEX
@@ -873,7 +873,7 @@ class TinyGsmSim5360
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     sendAT(GF("+CIPRXGET=4,"), mux);
     size_t result = 0;
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
@@ -889,7 +889,7 @@ class TinyGsmSim5360
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     // Read the status of all sockets at once
     sendAT(GF("+CIPCLOSE?"));
     if (waitResponse(GF("+CIPCLOSE:")) != 1) { return false; }
@@ -899,7 +899,6 @@ class TinyGsmSim5360
       if (sockets[muxNo]) { sockets[muxNo]->sock_connected = muxState; }
     }
     waitResponse();  // Should be an OK at the end
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     return sockets[mux]->sock_connected;
   }
 

@@ -736,18 +736,14 @@ class TinyGsmSequansMonarch
   }
 
   bool modemStopImpl(uint8_t mux, uint32_t /*maxWaitMs*/) {
-    if (mux > TcpConfig::kMuxCount || !sockets[mux % TcpConfig::kMuxCount]) {
-      return false;
-    }
+    if (!isValidMux(mux)) { return false; }
     // Same command for both secure and non-secure sockets
     sendAT(GF("+SQNSH="), mux);
     return waitResponse() == 1;  // should return within 1s
   }
 
   size_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
-    if (mux > TcpConfig::kMuxCount || !sockets[mux % TcpConfig::kMuxCount]) {
-      return false;
-    }
+    if (!isValidMux(mux)) { return 0; }
     if (sockets[mux % TcpConfig::kMuxCount]->sock_connected == false) {
       DBG("### Sock closed, cannot send data!");
       return 0;
@@ -837,9 +833,7 @@ class TinyGsmSequansMonarch
 #endif
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
-    if (mux > TcpConfig::kMuxCount || !sockets[mux % TcpConfig::kMuxCount]) {
-      return 0;
-    }
+    if (!isValidMux(mux)) { return 0; }
     size_t len_read = 0;
 
     sendAT(GF("+SQNSRECV="), mux, ',', (uint16_t)size);
@@ -872,9 +866,7 @@ class TinyGsmSequansMonarch
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
-    if (mux > TcpConfig::kMuxCount || !sockets[mux % TcpConfig::kMuxCount]) {
-      return 0;
-    }
+    if (!isValidMux(mux)) { return 0; }
     sendAT(GF("+SQNSI="), mux);
     size_t  result  = 0;
     int16_t ret_mux = -1;
@@ -891,9 +883,7 @@ class TinyGsmSequansMonarch
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
-    if (mux > TcpConfig::kMuxCount || !sockets[mux % TcpConfig::kMuxCount]) {
-      return false;
-    }
+    if (!isValidMux(mux)) { return false; }
     // This single command always returns the connection status of all
     // six possible sockets.
     sendAT(GF("+SQNSS"));

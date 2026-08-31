@@ -842,7 +842,7 @@ class TinyGsmESP8266
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
 
@@ -970,7 +970,7 @@ class TinyGsmESP8266
                          TinyGsmESP8266ModemConfig>::modemStopImpl;
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSEND="), mux, ',', len);
     return waitResponse(GF(">")) == 1;
   }
@@ -991,7 +991,7 @@ class TinyGsmESP8266
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSTATE?"));
     // initialize the connection array assuming no connections are active
     bool verified_connections[TcpConfig::kMuxCount] = {0};
