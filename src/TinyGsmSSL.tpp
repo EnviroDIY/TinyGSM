@@ -563,18 +563,18 @@ class GsmSecureClient {
   SSLVersion sslVersion;
   /// The FILE NAME of the certificate authority certificate loaded onto the
   /// module
-  char CAcertName[TINY_GSM_CERT_NAME_LENGTH] = "\0";
+  char CAcertName[TINY_GSM_CERT_NAME_LENGTH];
   /// The FILE NAME of the client certificate loaded onto the module
-  char clientCertName[TINY_GSM_CERT_NAME_LENGTH] = "\0";
+  char clientCertName[TINY_GSM_CERT_NAME_LENGTH];
   /// The FILE NAME of the client private key loaded onto the module
-  char clientKeyName[TINY_GSM_CERT_NAME_LENGTH] = "\0";
+  char clientKeyName[TINY_GSM_CERT_NAME_LENGTH];
   /// The FILE NAME of an identity for PSK cipher suites
-  char pskTableName[TINY_GSM_CERT_NAME_LENGTH] = "\0";
+  char pskTableName[TINY_GSM_CERT_NAME_LENGTH];
   /// The pre-shared key identifier VALUE for PSK cipher suites (also called
   /// identity, identifier hint, or hint).
-  char pskIdent[TINY_GSM_PSK_IDENTITY_LENGTH] = "\0";
+  char pskIdent[TINY_GSM_PSK_IDENTITY_LENGTH];
   /// The VALUE of the key in hex for PSK cipher suites
-  char psKey[TINY_GSM_PSK_LENGTH] = "\0";
+  char psKey[TINY_GSM_PSK_LENGTH];
 };
 
 
