@@ -376,12 +376,6 @@ class TinyGsmEspressif
   /*
    * Utilities
    */
- protected:
-#if 0
-  bool handleURCs(String& data) {
-    return thisModem().handleURCs(data);
-  }
-#endif
 
  public:
   /// Stream used to communicate with the modem.
