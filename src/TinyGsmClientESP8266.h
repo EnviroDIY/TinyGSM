@@ -679,8 +679,8 @@ class TinyGsmESP8266
     // NOTE: We don't actually enable the time here, because doing so would
     // change any user settings for the timezone and time servers.
     sendAT(GF("+CIPSNTPCFG?"));
-    waitResponse(2000L, GF("+CIPSNTPCFG:"));
-    int8_t is_enabled = streamGetIntBefore(',');
+    int8_t is_enabled = waitResponse(2000L, GF("+CIPSNTPCFG:")) == 1;
+    is_enabled &= streamGetIntBefore(',');
     waitResponse(5000L);  // returns OK at the end
     if (!is_enabled) {
       DBG(GF("### SNTP sync not enabled; cannot sync time!"));
