@@ -179,7 +179,7 @@ class TinyGsmNTP {
     return false;
   }
 
-  bool waitForTimeSyncImpl(int timeout_s) {
+  bool waitForTimeSyncImpl(uint16_t timeout_s) {
     // if we're not connected, we'll never get the time
     if (!thisModem().isNetworkConnected()) { return false; }
     // if we're sure we should be able to get the time, wait for it

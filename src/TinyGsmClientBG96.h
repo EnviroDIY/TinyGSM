@@ -1040,7 +1040,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     return false;
   }
 
-  bool waitForTimeSyncImpl(int timeout_s) {
+  bool waitForTimeSyncImpl(uint16_t timeout_s) {
     // if we're not connected, we'll never get the time
     if (!isNetworkConnected()) {
       DBG(GF("### Not connected to network; cannot sync time!"));
