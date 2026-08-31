@@ -259,11 +259,20 @@ class TinyGsmSequansMonarch
       is_mid_send    = false;
 
       // adjust for zero indexed socket array vs Sequans' 1 indexed mux numbers
-      // using modulus will force 6 back to 0
-      if (mux >= 1 && mux <= TcpConfig::kMuxCount) {
+      // using modulus will force 6 back to 0// if it's a valid mux number, and
+      // that mux number isn't in use (or it's already this), accept the mux
+      // number
+      if (mux >= 1 && mux <= TcpConfig::kMuxCount &&
+          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
+        // If the mux number is in use or out of range, find the next available
+        // one
+      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
+        this->mux = at->findFirstUnassignedMux();
       } else {
-        this->mux = (mux % TcpConfig::kMuxCount) + 1;
+        // If we can't find anything available, overwrite something, using mod
+        // to make sure we're in range
+        this->mux = (mux % TcpConfig::kMuxCount);
       }
       at->sockets[this->mux % TcpConfig::kMuxCount] = this;
 
