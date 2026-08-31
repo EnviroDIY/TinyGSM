@@ -519,7 +519,7 @@ class TinyGsmSim7000
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
     if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     sendAT(GF("+CIPCLOSE="), mux);
-    return waitResponse(min(maxWaitMs, static_cast<uint32_t>(3000))) ==
+    return waitResponse(TinyGsmMin(maxWaitMs, static_cast<uint32_t>(3000))) ==
         1;  // should return within 3s
   }
 

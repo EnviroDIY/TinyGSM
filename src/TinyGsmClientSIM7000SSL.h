@@ -1098,7 +1098,7 @@ class TinyGsmSim7000SSL
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
     // Same command for both secure and non-secure sockets
     sendAT(GF("+CACLOSE="), mux);
-    return waitResponse(min(maxWaitMs, static_cast<uint32_t>(3000))) ==
+    return waitResponse(TinyGsmMin(maxWaitMs, static_cast<uint32_t>(3000))) ==
         1;  // should return within 3s
   }
 
@@ -1179,8 +1179,9 @@ class TinyGsmSim7000SSL
         // if the first returned mux isn't 0 (or is higher than expected)
         // we need to fill in the missing muxes
         if (ret_mux > muxNo) {
-          for (int16_t extra_mux = muxNo;
-               extra_mux < min(ret_mux, TcpConfig::kMuxCount); extra_mux++) {
+          for (int16_t extra_mux = muxNo; extra_mux <
+               TinyGsmMin(ret_mux, static_cast<int16_t>(TcpConfig::kMuxCount));
+               extra_mux++) {
             GsmClientSim7000SSL* isock = sockets[extra_mux];
             if (isock) { isock->sock_available = 0; }
           }
@@ -1234,8 +1235,9 @@ class TinyGsmSim7000SSL
         // if the first returned mux isn't 0 (or is higher than expected)
         // we need to fill in the missing muxes
         if (ret_mux > muxNo) {
-          for (int16_t extra_mux = muxNo;
-               extra_mux < min(ret_mux, TcpConfig::kMuxCount); extra_mux++) {
+          for (int16_t extra_mux = muxNo; extra_mux <
+               TinyGsmMin(ret_mux, static_cast<int16_t>(TcpConfig::kMuxCount));
+               extra_mux++) {
             GsmClientSim7000SSL* isock = sockets[extra_mux];
             if (isock) { isock->sock_connected = false; }
           }

@@ -1245,7 +1245,7 @@ class TinyGsmSim7080
     if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     // Same command for both secure and non-secure sockets
     sendAT(GF("+CACLOSE="), mux);
-    return waitResponse(min(maxWaitMs, static_cast<uint32_t>(3000))) ==
+    return waitResponse(TinyGsmMin(maxWaitMs, static_cast<uint32_t>(3000))) ==
         1;  // should return within 3s
   }
 
@@ -1264,7 +1264,7 @@ class TinyGsmSim7080
     return len;
   }
   size_t modemGetSendLengthImpl(uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
     // Sending only the mux number will return the number of bytes left in the
     // send buffer (that we can soon fill up with our next send attempt)
     sendAT(GF("+CASEND="), mux);
@@ -1359,8 +1359,9 @@ class TinyGsmSim7080
         // if the first returned mux isn't 0 (or is higher than expected)
         // we need to fill in the missing muxes
         if (ret_mux > muxNo) {
-          for (int16_t extra_mux = muxNo;
-               extra_mux < min(ret_mux, TcpConfig::kMuxCount); extra_mux++) {
+          for (int16_t extra_mux = muxNo; extra_mux <
+               TinyGsmMin(ret_mux, static_cast<int16_t>(TcpConfig::kMuxCount));
+               extra_mux++) {
             GsmClientSim7080* isock = sockets[extra_mux];
             if (isock) { isock->sock_available = 0; }
           }
@@ -1414,8 +1415,9 @@ class TinyGsmSim7080
         // if the first returned mux isn't 0 (or is higher than expected)
         // we need to fill in the missing muxes
         if (ret_mux > muxNo) {
-          for (int16_t extra_mux = muxNo;
-               extra_mux < min(ret_mux, TcpConfig::kMuxCount); extra_mux++) {
+          for (int16_t extra_mux = muxNo; extra_mux <
+               TinyGsmMin(ret_mux, static_cast<int16_t>(TcpConfig::kMuxCount));
+               extra_mux++) {
             GsmClientSim7080* isock = sockets[extra_mux];
             if (isock) { isock->sock_connected = false; }
           }
