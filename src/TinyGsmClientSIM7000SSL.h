@@ -335,6 +335,7 @@ class TinyGsmSim7000SSL
       return sock_connected;
     }
   };
+
   /// Typedef for backward compatibility
   using GsmClientSecureSIM7000SSL = GsmClientSecureSim7000SSL;
 
@@ -779,7 +780,7 @@ class TinyGsmSim7000SSL
   // No functions of this type supported
 
   /*
-   * Client-related functions
+   * SSL client functions
    */
  public:
   /**
@@ -1012,7 +1013,7 @@ class TinyGsmSim7000SSL
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
 
@@ -1124,7 +1125,7 @@ class TinyGsmSim7000SSL
   }
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
 
     sendAT(GF("+CARECV="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+CARECV:")) != 1) { return 0; }
@@ -1155,7 +1156,7 @@ class TinyGsmSim7000SSL
 
   size_t modemGetAvailableImpl(uint8_t mux) {
     // If the socket doesn't exist, just return
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     // We need to check if there are any connections open *before* checking for
     // available characters.  The SIM7000 *will crash* if you ask about data
     // when there are no open connections.
@@ -1212,7 +1213,7 @@ class TinyGsmSim7000SSL
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     // NOTE:  This gets the state of all connections that have been opened
     // since the last connection
     sendAT(GF("+CASTATE?"));

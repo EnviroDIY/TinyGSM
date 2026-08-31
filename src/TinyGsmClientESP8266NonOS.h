@@ -448,7 +448,7 @@ class TinyGsmESP8266NonOS
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
     if (ssl) {
@@ -475,7 +475,7 @@ class TinyGsmESP8266NonOS
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) { return false; }
     // after "STATUS:" it should return the status number (0,1,2,3,4,5),
@@ -523,7 +523,7 @@ class TinyGsmESP8266NonOS
                          TinyGsmESP8266NonOSModemConfig>::modemStopImpl;
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSEND="), mux, ',', len);
     return waitResponse(GF(">")) == 1;
   }

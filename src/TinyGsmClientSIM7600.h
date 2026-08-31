@@ -1074,7 +1074,7 @@ class TinyGsmSim7600
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     bool     success    = false;
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
@@ -1133,7 +1133,7 @@ class TinyGsmSim7600
   // modemGetAvailable(...) are almost completely different for SSL and
   // unsecured sockets.
   bool modemStopImpl(uint8_t mux, uint32_t /*maxWaitMs*/) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     bool ssl = sockets[mux]->is_secure;
     if (ssl) {
       sendAT(GF("+CCHCLOSE="), mux);
@@ -1144,7 +1144,7 @@ class TinyGsmSim7600
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     bool ssl = sockets[mux]->is_secure;
     if (ssl) {
       sendAT(GF("+CCHSEND="), mux, ',', (uint16_t)len);
@@ -1157,7 +1157,7 @@ class TinyGsmSim7600
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     if (waitResponse() != 1) { return 0; }
     bool ssl = sockets[mux]->is_secure;
     if (ssl) {
@@ -1184,7 +1184,7 @@ class TinyGsmSim7600
   }
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     bool    ssl           = sockets[mux]->is_secure;
     int16_t len_reported  = 0;
     int16_t len_remaining = 0;
@@ -1260,7 +1260,7 @@ class TinyGsmSim7600
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     bool   ssl    = sockets[mux]->is_secure;
     size_t result = 0;
     if (ssl) {
@@ -1304,7 +1304,7 @@ class TinyGsmSim7600
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     // TODO(SRGD): I think this only returns the TCP socket connection status,
     // not the SSL connection status
     // Read the status of all sockets at once
@@ -1318,7 +1318,6 @@ class TinyGsmSim7600
       }
     }
     waitResponse();  // Should be an OK at the end
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
     return sockets[mux]->sock_connected;
   }
 

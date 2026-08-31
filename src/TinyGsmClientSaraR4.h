@@ -943,7 +943,7 @@ class TinyGsmSaraR4
   }
 
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     // We want to use an async socket close because the synchronous close of
     // an open socket is INCREDIBLY SLOW and the modem can freeze up.  But we
     // only attempt the async close if we already KNOW the socket is open
@@ -974,7 +974,7 @@ class TinyGsmSaraR4
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+USOWR="), mux, ',', (uint16_t)len);
     if (waitResponse(GF("@")) != 1) { return 0; }
     // 50ms delay, see AT manual section 25.10.4
@@ -985,7 +985,7 @@ class TinyGsmSaraR4
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     if (waitResponse(GF("+USOWR:")) != 1) { return 0; }
     int16_t  ret_mux = streamGetIntBefore(',');   // check mux
     uint16_t sent    = streamGetIntBefore('\n');  // check send length
@@ -997,7 +997,7 @@ class TinyGsmSaraR4
   }
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     size_t len_read = 0;
 
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
@@ -1030,7 +1030,7 @@ class TinyGsmSaraR4
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
+    if (!isValidMux(mux)) { return 0; }
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USORD="), mux, ",0");
     size_t  result = 0;
@@ -1050,7 +1050,7 @@ class TinyGsmSaraR4
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
-    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return false; }
+    if (!isValidMux(mux)) { return false; }
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USOCTL="), mux, ",10");
     uint8_t res = waitResponse(GF("+USOCTL:"));
