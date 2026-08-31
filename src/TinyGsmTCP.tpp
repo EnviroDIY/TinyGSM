@@ -42,6 +42,15 @@ enum class TinyGsmTcpMuxMode {
 
 /**
  * @brief Template class for modem TCP config traits.
+ *
+ * @tparam bufferMode How the modem exposes its receive buffer.
+ * @tparam muxMode Whether the caller or the modem assigns mux channels.
+ * @tparam muxCount The number of simultaneous TCP channels.
+ * @tparam sendMaxSize The maximum number of bytes in one send command.
+ * @tparam connectTimeoutS The connection timeout, in seconds.
+ * @tparam stopTimeoutS The clean-disconnect timeout, in seconds.
+ * @tparam minFreeTxBuffer The minimum free send-buffer space, in bytes,
+ * required before a send is attempted.
  */
 template <TinyGsmTcpBufferMode bufferMode, TinyGsmTcpMuxMode muxMode,
           uint8_t muxCount, size_t sendMaxSize = 1500, int connectTimeoutS = 75,
