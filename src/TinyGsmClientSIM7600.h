@@ -947,7 +947,7 @@ class TinyGsmSim7600
     sendAT(GF("+CPMUTEMP"));
     if (waitResponse(GF("+CPMUTEMP:")) != 1) { return 0; }
     // return temperature in C
-    float res = streamGetIntBefore('\n');
+    float res = streamGetFloatBefore('\n');
     // Wait for final OK
     waitResponse();
     return res;
