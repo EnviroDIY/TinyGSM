@@ -676,7 +676,7 @@ class TinyGsmSim800
    * @return True if the operation was successful, false otherwise.
    */
   bool setMicVolume(uint8_t channel, uint8_t level) {
-    if (channel > 4) { return 0; }
+    if (channel > 4) { return false; }
     sendAT(GF("+CMIC="), channel, ',', level);
     return waitResponse() == 1;
   }
@@ -839,7 +839,7 @@ class TinyGsmSim800
 
     if (isValidMux(ret_mux)) {
       // get the amount available after reading
-      sockets[ret_mux]->sock_available = modemGetAvailable(ret_mux);
+      sockets[ret_mux]->sock_available = len_remaining;
       // sockets[mux]->sock_available = modemGetAvailable(mux);
     }
     if (!isExpectedMux(ret_mux, mux)) {
