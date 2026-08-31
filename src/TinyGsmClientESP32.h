@@ -403,17 +403,17 @@ class TinyGsmESP32
     /// @copydoc GsmSecureClient::setCACertName(const char*)
     /// @warning The CA certificate name must be either "client_ca.0" or
     /// "client_ca.1".
-    void setCACertName(const char* in_CAcertName) override {
-      if (at == nullptr) { return; }
+    void setCACertName(const char* CAcertName) override {
+      if (at == nullptr || CAcertName == nullptr) { return; }
       // parse the certificate name
       CertificateType parsed_type = CertificateType::UNKNOWN;
       uint8_t         certNumber  = 0;
-      at->parseCertificateName(in_CAcertName, parsed_type, certNumber);
+      at->parseCertificateName(CAcertName, parsed_type, certNumber);
       if (parsed_type != CertificateType::CA_CERTIFICATE || certNumber > 1) {
         return;
       }
       // copy the certificate name into owned buffer
-      strncpy(this->CAcertName, in_CAcertName, sizeof(this->CAcertName) - 1);
+      strncpy(this->CAcertName, CAcertName, sizeof(this->CAcertName) - 1);
       this->CAcertName[sizeof(this->CAcertName) - 1] = '\0';
       // set the number for the CA certificate
       this->ca_number = certNumber;
@@ -432,18 +432,18 @@ class TinyGsmESP32
      * setClientCertName() or setPrivateKeyName() will set the other
      * to the equivalent name with the same number.
      */
-    void setClientCertName(const char* in_clientCertName) override {
-      if (at == nullptr) { return; }
+    void setClientCertName(const char* clientCertName) override {
+      if (at == nullptr || clientCertName == nullptr) { return; }
       // parse the certificate name
       CertificateType parsed_type = CertificateType::UNKNOWN;
       uint8_t         certNumber  = 0;
-      at->parseCertificateName(in_clientCertName, parsed_type, certNumber);
+      at->parseCertificateName(clientCertName, parsed_type, certNumber);
       if (parsed_type != CertificateType::CLIENT_CERTIFICATE ||
           certNumber > 1) {
         return;
       }
       // copy the certificate name into owned buffer
-      strncpy(this->clientCertName, in_clientCertName,
+      strncpy(this->clientCertName, clientCertName,
               sizeof(this->clientCertName) - 1);
       this->clientCertName[sizeof(this->clientCertName) - 1] = '\0';
       // set thenumber for the client certificate and private key (only 1 var,
@@ -473,7 +473,7 @@ class TinyGsmESP32
      * to the equivalent name with the same number.
      */
     void setPrivateKeyName(const char* clientKeyName) override {
-      if (at == nullptr) { return; }
+      if (at == nullptr || clientKeyName == nullptr) { return; }
       // parse the certificate name
       CertificateType parsed_type = CertificateType::UNKNOWN;
       uint8_t         certNumber  = 0;
