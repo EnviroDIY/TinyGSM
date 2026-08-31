@@ -1123,6 +1123,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 
     // apply the correct certificates to the connection
     if (CAcertName != nullptr &&
+        strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
         (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
          sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       // AT+QSSLCFG="cacert",<sslctxID>,<cacertpath>
@@ -1134,6 +1135,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     }
     // SRGD WARNING: UNTESTED!!
     if (clientCertName != nullptr &&
+        strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       // AT+QSSLCFG="clientcert",<sslctxID>,<client_cert_path>
       sendAT(GF("+QSSLCFG=\"clientcert\","), context_id, GF(",\""),
@@ -1142,6 +1144,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     }
     // SRGD WARNING: UNTESTED!!
     if (clientKeyName != nullptr &&
+        strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       // AT+QSSLCFG="clientkey",<sslctxID>[,<client_key_path>]
       sendAT(GF("+QSSLCFG=\"clientkey\","), context_id, GF(",\""),

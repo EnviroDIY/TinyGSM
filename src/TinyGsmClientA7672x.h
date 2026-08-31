@@ -780,6 +780,7 @@ class TinyGsmA7672X
 
     // apply the correct certificates to the connection
     if (CAcertName != nullptr &&
+        strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
         (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
          sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       /* Configure the server root CA of the specified SSL context
@@ -788,12 +789,14 @@ class TinyGsmA7672X
       success &= waitResponse(5000L) == 1;
     }
     if (clientCertName != nullptr &&
+        strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
          sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
       sendAT(GF("+CSSLCFG=\"clientcert\","), context_id, ',', clientCertName);
       success &= waitResponse(5000L) == 1;
     }
     if (clientKeyName != nullptr &&
+        strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
          sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
       sendAT(GF("+CSSLCFG=\"clientkey\","), context_id, ',', clientKeyName);

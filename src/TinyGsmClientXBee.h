@@ -1427,18 +1427,26 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       if (sslAuthMode == SSLAuthMode::NO_VALIDATION) {
         changesMade |= changeSettingIfNeeded(GF("$0"), GF(";;"));
       } else if (sslAuthMode == SSLAuthMode::CA_VALIDATION &&
-                 CAcertName != nullptr) {
+                 CAcertName != nullptr &&
+                 strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
         String newTLSProfile;
-        newTLSProfile.reserve(strlen(CAcertName) + 3);
+        newTLSProfile.reserve(strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) +
+                              3);
         newTLSProfile = CAcertName;
         newTLSProfile += GF(";;");
         changesMade |= changeSettingIfNeeded(GF("$0"), newTLSProfile);
       } else if (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION &&
-                 CAcertName != nullptr && clientCertName != nullptr &&
-                 clientKeyName != nullptr) {
+                 CAcertName != nullptr &&
+                 strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
+                 clientCertName != nullptr &&
+                 strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
+                 clientKeyName != nullptr &&
+                 strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
         String newTLSProfile;
-        newTLSProfile.reserve(strlen(CAcertName) + strlen(clientCertName) +
-                              strlen(clientKeyName) + 3);
+        newTLSProfile.reserve(
+            strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) +
+            strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) +
+            strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) + 3);
         newTLSProfile = CAcertName;
         newTLSProfile += ';';
         newTLSProfile += clientCertName;
