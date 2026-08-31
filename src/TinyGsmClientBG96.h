@@ -1331,7 +1331,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       // amount of data available.
       if (len_reported < size) { sockets[mux]->sock_available = len_reported; }
       len_read = moveCharsFromStreamToFifo(mux, len_reported);
-      sockets[mux]->sock_available -= len_read;
+      sockets[mux]->sock_available -= TinyGsmMin(
+          static_cast<size_t>(sockets[mux]->sock_available), len_read);
       // ^^ Decrease the characters available after moving from modem's FIFO to
       // our FIFO
       waitResponse();  // ends with an OK
