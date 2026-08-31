@@ -975,11 +975,11 @@ class TinyGsmSim7000SSL
   bool applySSLPSK(uint8_t mux, const char* pskTableName) {
     bool success = true;
 
-    // Re-convert the psk, just in case
-    convertPSKTable(pskTableName);
-
     // SRGD WARNING: UNTESTED!!
     if (pskTableName != nullptr) {
+      // Re-convert the psk, just in case
+      convertPSKTable(pskTableName);
+
       // AT+CASSLCFG=<cid>,"PSKTABLE",<pskTableName>
       // <cid> Application connection ID (set with AT+CACID above)
       // <pskTableName> Alphanumeric ASCII text string up to 64 characters.

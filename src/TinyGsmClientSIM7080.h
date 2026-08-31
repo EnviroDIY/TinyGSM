@@ -1094,11 +1094,11 @@ class TinyGsmSim7080
   bool applySSLPSK(uint8_t mux, const char* pskTableName) {
     bool success = true;
 
-    // Re-convert the psk, just in case
-    convertPSKTable(pskTableName);
-
     // SRGD WARNING: UNTESTED!!
     if (pskTableName != nullptr) {
+      // Re-convert the psk, just in case
+      convertPSKTable(pskTableName);
+
       // AT+CASSLCFG=<cid>,"PSKTABLE",<pskTableName>
       // <cid> Application connection ID (set with AT+CACID above)
       // <pskTableName> Alphanumeric ASCII text string up to 64 characters.
@@ -1271,6 +1271,7 @@ class TinyGsmSim7080
   }
 
   size_t modemWaitForSendImpl(uint8_t mux, uint32_t timeout_ms) {
+    if (mux >= TcpConfig::kMuxCount || !sockets[mux]) { return 0; }
     size_t sendLength = modemGetSendLength(mux);
 #if defined(TINY_GSM_DEBUG)
     if (sendLength != sockets[mux]->realMaxSendSize) {
