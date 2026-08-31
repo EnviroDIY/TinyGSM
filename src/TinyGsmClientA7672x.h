@@ -1123,6 +1123,7 @@ class TinyGsmA7672X
         return false;
       }
     } else if (data.endsWith(GF("RECV EVENT\r\n"))) {
+#if USE_SUBMITTED_A7672X
       // WHAT??? No, no, no, you can't issue a sendAT/waitResponse here!! The
       // handle URC's function is the module-unique part of the general purpose
       // waitResponse function.
@@ -1141,6 +1142,18 @@ class TinyGsmA7672X
       data = "";
       DBG("### Got Data:", len, "on", mux);
       return true;
+#endif
+      // SRGD Note: I don't have this module to test this, but the above code is
+      // what was submitted by a user.  I think if we get this receive event
+      // notification without any detail, we should just set the got_data flag
+      // and reset the prev_check so the next read or available call will get
+      // the data.
+      for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; mux++) {
+        if (isValidMux(mux)) {
+          sockets[mux]->got_data   = true;
+          sockets[mux]->prev_check = 0;
+        }
+      }
     } else if (data.endsWith(GF("+CCHRECV: 0,0\r\n"))) {
       int16_t mux = data.substring(data.lastIndexOf(',') + 1).toInt();
       if (isValidMux(mux)) { sockets[mux]->sock_connected = true; }
