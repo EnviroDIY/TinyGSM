@@ -315,10 +315,19 @@ class TinyGsmSaraR4
       // or the connection fails
       sock_connected = at->modemConnect(host, port, &assignedMux, timeout_s);
       if (sock_connected) {
+        uint8_t oldMux = mux;
         // move any existing client at the assigned mux number to the next
         // available slot
         // set the requested mux to -1 to get the next available mux number
         at->moveSocket(assignedMux, static_cast<uint8_t>(-1));
+        // if the old mux number is different from the assigned mux number, and
+        // the old mux number is valid, and the pointer to this client is still
+        // in the old mux position in the sockets array, set that position to
+        // null
+        if (oldMux != assignedMux && oldMux < TcpConfig::kMuxCount &&
+            at->sockets[oldMux] == this) {
+          at->sockets[oldMux] = nullptr;
+        }
         // set the client's internal mux number and insert it into the array
         at->sockets[assignedMux] = this;
         mux                      = assignedMux;
