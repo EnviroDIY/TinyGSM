@@ -839,10 +839,23 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     int   imin         = 0;
     float secondWithSS = 0;
 
-    // UTC date & Time
-    ihour        = streamGetIntLength(2);      // Two digit hour
-    imin         = streamGetIntLength(2);      // Two digit minute
-    secondWithSS = streamGetFloatBefore(',');  // 6 digit second with subseconds
+    // UTC Time
+    char dt_portion[11] = {0};
+    memset(dt_portion, '\0', sizeof(dt_portion));
+    size_t bytes_read = stream.readBytesUntil(',', dt_portion,
+                                              sizeof(dt_portion));
+    if (bytes_read == 10) {
+      char dt_substr[7] = {0};
+      memcpy(dt_substr, dt_portion, 2);
+      dt_substr[2] = '\0';
+      ihour        = atoi(dt_substr);  // Two digit hour
+      memcpy(dt_substr, dt_portion + 2, 2);
+      dt_substr[2] = '\0';
+      imin         = atoi(dt_substr);  // Two digit minute
+      memcpy(dt_substr, dt_portion + 4, 6);
+      dt_substr[6] = '\0';
+      secondWithSS = atof(dt_substr);  // 6 digit second with subseconds
+    }
 
     ilat      = streamGetFloatBefore(',');  // Latitude
     ilon      = streamGetFloatBefore(',');  // Longitude
@@ -853,9 +866,22 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     streamSkipUntil(',');  // Speed Over Ground in Km/h
     ispeed = streamGetFloatBefore(',');  // Speed Over Ground in knots
 
-    iday   = streamGetIntLength(2);    // Two digit day
-    imonth = streamGetIntLength(2);    // Two digit month
-    iyear  = streamGetIntBefore(',');  // Two digit year
+    // UTC Date
+    memset(dt_portion, '\0', sizeof(dt_portion));
+    size_t bytes_read = stream.readBytesUntil(',', dt_portion,
+                                              sizeof(dt_portion));
+    if (bytes_read == 6) {
+      char dt_substr[3] = {0};
+      memcpy(dt_substr, dt_portion, 2);
+      dt_substr[2] = '\0';
+      iday         = atoi(dt_substr);  // Two digit day
+      memcpy(dt_substr, dt_portion + 2, 2);
+      dt_substr[2] = '\0';
+      imonth       = atoi(dt_substr);  // Two digit month
+      memcpy(dt_substr, dt_portion + 4, 2);
+      dt_substr[2] = '\0';
+      iyear        = atoi(dt_substr);  // Two digit year
+    }
 
     iusat = streamGetIntBefore(',');  // Number of satellites,
     streamSkipUntil('\n');  // The error code of the operation. If it is not

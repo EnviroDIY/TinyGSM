@@ -309,78 +309,105 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
     if (thisModem().waitResponse(10000L, GF("+CGNSINF:")) != 1) {
       return false;
     }
+    // <GNSS run status>
+    //  - 0 GNSS off.
+    //  - 1 GNSS on.
+    // <Fix status>
+    //  - 0 Not fixed position.
+    //  - 1 Fixed position.
 
-    thisModem().streamSkipUntil(',');                // GNSS run status
-    if (thisModem().streamGetIntBefore(',') == 1) {  // fix status
-      // init variables
-      float ilat         = 0;
-      float ilon         = 0;
-      float ispeed       = 0;
-      float ialt         = 0;
-      int   ivsat        = 0;
-      int   iusat        = 0;
-      float iaccuracy    = 0;
-      int   iyear        = 0;
-      int   imonth       = 0;
-      int   iday         = 0;
-      int   ihour        = 0;
-      int   imin         = 0;
-      float secondWithSS = 0;
+#if defined(TINY_GSM_DEBUG) && TINY_GSM_DEBUG
+    int16_t run_status = thisModem().streamGetIntBefore(',');
+    DBG("GNSS run status:", run_status);
+#else
+    thisModem().streamSkipUntil(',');  // GNSS run status
+#endif
+    int16_t fix_status = thisModem().streamGetIntBefore(',');  // fix status
+    DBG("Fix status:", fix_status);
 
-      // UTC date & Time
-      iyear        = thisModem().streamGetIntLength(4);  // Four digit year
-      imonth       = thisModem().streamGetIntLength(2);  // Two digit month
-      iday         = thisModem().streamGetIntLength(2);  // Two digit day
-      ihour        = thisModem().streamGetIntLength(2);  // Two digit hour
-      imin         = thisModem().streamGetIntLength(2);  // Two digit minute
-      secondWithSS = thisModem().streamGetFloatBefore(
-          ',');  // 6 digit second with subseconds
+    // init variables
+    float ilat         = 0;
+    float ilon         = 0;
+    float ispeed       = 0;
+    float ialt         = 0;
+    int   ivsat        = 0;
+    int   iusat        = 0;
+    float iaccuracy    = 0;
+    int   iyear        = 0;
+    int   imonth       = 0;
+    int   iday         = 0;
+    int   ihour        = 0;
+    int   imin         = 0;
+    float secondWithSS = 0;
 
-      ilat = thisModem().streamGetFloatBefore(',');  // Latitude
-      ilon = thisModem().streamGetFloatBefore(',');  // Longitude
-      ialt = thisModem().streamGetFloatBefore(
-          ',');  // MSL Altitude. Unit is meters
-      ispeed = thisModem().streamGetFloatBefore(
-          ',');                          // Speed Over Ground. Unit is knots.
-      thisModem().streamSkipUntil(',');  // Course Over Ground. Degrees.
-      thisModem().streamSkipUntil(',');  // Fix Mode
-      thisModem().streamSkipUntil(',');  // Reserved1
-      iaccuracy = thisModem().streamGetFloatBefore(
-          ',');                          // Horizontal Dilution Of Precision
-      thisModem().streamSkipUntil(',');  // Position Dilution Of Precision
-      thisModem().streamSkipUntil(',');  // Vertical Dilution Of Precision
-      thisModem().streamSkipUntil(',');  // Reserved2
-      ivsat = thisModem().streamGetIntBefore(',');  // GNSS Satellites in View
-      iusat = thisModem().streamGetIntBefore(',');  // GNSS Satellites Used
-      thisModem().streamSkipUntil(',');             // GLONASS Satellites Used
-      thisModem().streamSkipUntil(',');             // Reserved3
-      thisModem().streamSkipUntil(',');             // C/N0 max
-      thisModem().streamSkipUntil(',');             // HPA
-      thisModem().streamSkipUntil('\n');            // VPA
-
-      // Set pointers
-      if (lat != nullptr) *lat = ilat;
-      if (lon != nullptr) *lon = ilon;
-      if (speed != nullptr) *speed = ispeed;
-      if (alt != nullptr) *alt = ialt;
-      if (vsat != nullptr) *vsat = ivsat;
-      if (usat != nullptr) *usat = iusat;
-      if (accuracy != nullptr) *accuracy = iaccuracy;
-      if (iyear < 2000) iyear += 2000;
-      if (year != nullptr) *year = iyear;
-      if (month != nullptr) *month = imonth;
-      if (day != nullptr) *day = iday;
-      if (hour != nullptr) *hour = ihour;
-      if (minute != nullptr) *minute = imin;
-      if (second != nullptr) *second = static_cast<int>(secondWithSS);
-
-      thisModem().waitResponse();
-      return true;
+    // UTC date & Time
+    char dt_portion[21] = {0};
+    memset(dt_portion, '\0', sizeof(dt_portion));
+    size_t bytes_read = thisModem().stream.readBytesUntil(',', dt_portion,
+                                                          sizeof(dt_portion));
+    if (bytes_read == 20) {
+      char dt_substr[7] = {0};
+      memcpy(dt_substr, dt_portion, 4);
+      dt_substr[4] = '\0';
+      iyear        = atoi(dt_substr);  // Four digit year
+      memcpy(dt_substr, dt_portion + 4, 2);
+      dt_substr[2] = '\0';
+      imonth       = atoi(dt_substr);  // Two digit month
+      memcpy(dt_substr, dt_portion + 6, 2);
+      dt_substr[2] = '\0';
+      iday         = atoi(dt_substr);  // Two digit day
+      memcpy(dt_substr, dt_portion + 8, 2);
+      dt_substr[2] = '\0';
+      ihour        = atoi(dt_substr);  // Two digit hour
+      memcpy(dt_substr, dt_portion + 10, 2);
+      dt_substr[2] = '\0';
+      imin         = atoi(dt_substr);  // Two digit minute
+      memcpy(dt_substr, dt_portion + 12, 6);
+      dt_substr[6] = '\0';
+      secondWithSS = atof(dt_substr);  // 6 digit second with subseconds
     }
 
-    thisModem().streamSkipUntil('\n');  // toss the row of commas
+    ilat = thisModem().streamGetFloatBefore(',');  // Latitude
+    ilon = thisModem().streamGetFloatBefore(',');  // Longitude
+    ialt =
+        thisModem().streamGetFloatBefore(',');  // MSL Altitude. Unit is meters
+    ispeed = thisModem().streamGetFloatBefore(
+        ',');                          // Speed Over Ground. Unit is knots.
+    thisModem().streamSkipUntil(',');  // Course Over Ground. Degrees.
+    thisModem().streamSkipUntil(',');  // Fix Mode
+    thisModem().streamSkipUntil(',');  // Reserved1
+    iaccuracy = thisModem().streamGetFloatBefore(
+        ',');                          // Horizontal Dilution Of Precision
+    thisModem().streamSkipUntil(',');  // Position Dilution Of Precision
+    thisModem().streamSkipUntil(',');  // Vertical Dilution Of Precision
+    thisModem().streamSkipUntil(',');  // Reserved2
+    ivsat = thisModem().streamGetIntBefore(',');  // GNSS Satellites in View
+    iusat = thisModem().streamGetIntBefore(',');  // GNSS Satellites Used
+    thisModem().streamSkipUntil(',');             // GLONASS Satellites Used
+    thisModem().streamSkipUntil(',');             // Reserved3
+    thisModem().streamSkipUntil(',');             // C/N0 max
+    thisModem().streamSkipUntil(',');             // HPA
+    thisModem().streamSkipUntil('\n');            // VPA
+
+    // Set pointers
+    if (lat != nullptr) *lat = ilat;
+    if (lon != nullptr) *lon = ilon;
+    if (speed != nullptr) *speed = ispeed;
+    if (alt != nullptr) *alt = ialt;
+    if (vsat != nullptr) *vsat = ivsat;
+    if (usat != nullptr) *usat = iusat;
+    if (accuracy != nullptr) *accuracy = iaccuracy;
+    if (iyear < 2000) iyear += 2000;
+    if (year != nullptr) *year = iyear;
+    if (month != nullptr) *month = imonth;
+    if (day != nullptr) *day = iday;
+    if (hour != nullptr) *hour = ihour;
+    if (minute != nullptr) *minute = imin;
+    if (second != nullptr) *second = static_cast<int>(secondWithSS);
+
     thisModem().waitResponse();
-    return false;
+
+    return fix_status == 1;  // return true if we have a fix
   }
 
   /*

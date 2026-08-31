@@ -797,78 +797,98 @@ class TinyGsmSim7600
 
     uint8_t fixMode = streamGetIntBefore(',');  // mode 2=2D Fix or 3=3DFix
                                                 // TODO(?) Can 1 be returned
-    if (fixMode == 1 || fixMode == 2 || fixMode == 3) {
-      // init variables
-      float ilat = 0;
-      char  north;
-      float ilon = 0;
-      char  east;
-      float ispeed       = 0;
-      float ialt         = 0;
-      int   ivsat        = 0;
-      int   iusat        = 0;
-      float iaccuracy    = 0;
-      int   iyear        = 0;
-      int   imonth       = 0;
-      int   iday         = 0;
-      int   ihour        = 0;
-      int   imin         = 0;
-      float secondWithSS = 0;
 
-      streamSkipUntil(',');               // GPS satellite valid numbers
-      streamSkipUntil(',');               // GLONASS satellite valid numbers
-      streamSkipUntil(',');               // BEIDOU satellite valid numbers
-      ilat  = streamGetFloatBefore(',');  // Latitude in ddmm.mmmmmm
-      north = stream.readStringUntil(',').charAt(
-          0);                            // N/S Indicator, N=north or S=south
-      ilon = streamGetFloatBefore(',');  // Longitude in ddmm.mmmmmm
-      east = stream.readStringUntil(',').charAt(
-          0);  // E/W Indicator, E=east or W=west
+    // init variables
+    float ilat = 0;
+    char  north;
+    float ilon = 0;
+    char  east;
+    float ispeed       = 0;
+    float ialt         = 0;
+    int   ivsat        = 0;
+    int   iusat        = 0;
+    float iaccuracy    = 0;
+    int   iyear        = 0;
+    int   imonth       = 0;
+    int   iday         = 0;
+    int   ihour        = 0;
+    int   imin         = 0;
+    float secondWithSS = 0;
 
-      // Date. Output format is ddmmyy
-      iday   = streamGetIntLength(2);    // Two digit day
-      imonth = streamGetIntLength(2);    // Two digit month
-      iyear  = streamGetIntBefore(',');  // Two digit year
+    streamSkipUntil(',');               // GPS satellite valid numbers
+    streamSkipUntil(',');               // GLONASS satellite valid numbers
+    streamSkipUntil(',');               // BEIDOU satellite valid numbers
+    ilat  = streamGetFloatBefore(',');  // Latitude in ddmm.mmmmmm
+    north = stream.readStringUntil(',').charAt(
+        0);                            // N/S Indicator, N=north or S=south
+    ilon = streamGetFloatBefore(',');  // Longitude in ddmm.mmmmmm
+    east = stream.readStringUntil(',').charAt(
+        0);  // E/W Indicator, E=east or W=west
 
-      // UTC Time. Output format is hhmmss.s
-      ihour = streamGetIntLength(2);  // Two digit hour
-      imin  = streamGetIntLength(2);  // Two digit minute
-      secondWithSS =
-          streamGetFloatBefore(',');  // 4 digit second with subseconds
-
-      ialt   = streamGetFloatBefore(',');  // MSL Altitude. Unit is meters
-      ispeed = streamGetFloatBefore(',');  // Speed Over Ground. Unit is knots.
-      streamSkipUntil(',');                // Course Over Ground. Degrees.
-      iaccuracy = streamGetFloatBefore(',');  // Position Dilution Of Precision
-      streamSkipUntil(',');   // Horizontal Dilution Of Precision
-      streamSkipUntil('\n');  // Vertical Dilution Of Precision
-
-      // Set pointers
-      if (lat != nullptr)
-        *lat = (floor(ilat / 100) + fmod(ilat, 100.) / 60) *
-            (north == 'N' ? 1 : -1);
-      if (lon != nullptr)
-        *lon = (floor(ilon / 100) + fmod(ilon, 100.) / 60) *
-            (east == 'E' ? 1 : -1);
-      if (speed != nullptr) *speed = ispeed;
-      if (alt != nullptr) *alt = ialt;
-      if (vsat != nullptr) *vsat = ivsat;
-      if (usat != nullptr) *usat = iusat;
-      if (accuracy != nullptr) *accuracy = iaccuracy;
-      if (iyear < 2000) iyear += 2000;
-      if (year != nullptr) *year = iyear;
-      if (month != nullptr) *month = imonth;
-      if (day != nullptr) *day = iday;
-      if (hour != nullptr) *hour = ihour;
-      if (minute != nullptr) *minute = imin;
-      if (second != nullptr) *second = static_cast<int>(secondWithSS);
-
-      waitResponse();
-      return true;
+    // Date. Output format is ddmmyy
+    char dt_portion[11] = {0};
+    memset(dt_portion, '\0', sizeof(dt_portion));
+    size_t bytes_read = stream.readBytesUntil(',', dt_portion,
+                                              sizeof(dt_portion));
+    if (bytes_read == 6) {
+      char dt_substr[3] = {0};
+      memcpy(dt_substr, dt_portion, 2);
+      dt_substr[2] = '\0';
+      iday         = atoi(dt_substr);  // Two digit day
+      memcpy(dt_substr, dt_portion + 2, 2);
+      dt_substr[2] = '\0';
+      imonth       = atoi(dt_substr);  // Two digit month
+      memcpy(dt_substr, dt_portion + 4, 2);
+      dt_substr[2] = '\0';
+      iyear        = atoi(dt_substr);  // Two digit year
     }
 
+    // UTC Time. Output format is hhmmss.s
+    memset(dt_portion, '\0', sizeof(dt_portion));
+    size_t bytes_read = stream.readBytesUntil(',', dt_portion,
+                                              sizeof(dt_portion));
+    if (bytes_read == 10) {
+      char dt_substr[7] = {0};
+      memcpy(dt_substr, dt_portion, 2);
+      dt_substr[2] = '\0';
+      ihour        = atoi(dt_substr);  // Two digit hour
+      memcpy(dt_substr, dt_portion + 2, 2);
+      dt_substr[2] = '\0';
+      imin         = atoi(dt_substr);  // Two digit minute
+      memccpy(dt_substr, dt_portion + 4, '\0', 6);
+      dt_substr[6] = '\0';
+      secondWithSS = atof(dt_substr);  // 4 or 6 digit second with subseconds
+    }
+
+    ialt   = streamGetFloatBefore(',');     // MSL Altitude. Unit is meters
+    ispeed = streamGetFloatBefore(',');     // Speed Over Ground. Unit is knots.
+    streamSkipUntil(',');                   // Course Over Ground. Degrees.
+    iaccuracy = streamGetFloatBefore(',');  // Position Dilution Of Precision
+    streamSkipUntil(',');                   // Horizontal Dilution Of Precision
+    streamSkipUntil('\n');                  // Vertical Dilution Of Precision
+
+    // Set pointers
+    if (lat != nullptr)
+      *lat = (floor(ilat / 100) + fmod(ilat, 100.) / 60) *
+          (north == 'N' ? 1 : -1);
+    if (lon != nullptr)
+      *lon = (floor(ilon / 100) + fmod(ilon, 100.) / 60) *
+          (east == 'E' ? 1 : -1);
+    if (speed != nullptr) *speed = ispeed;
+    if (alt != nullptr) *alt = ialt;
+    if (vsat != nullptr) *vsat = ivsat;
+    if (usat != nullptr) *usat = iusat;
+    if (accuracy != nullptr) *accuracy = iaccuracy;
+    if (iyear < 2000) iyear += 2000;
+    if (year != nullptr) *year = iyear;
+    if (month != nullptr) *month = imonth;
+    if (day != nullptr) *day = iday;
+    if (hour != nullptr) *hour = ihour;
+    if (minute != nullptr) *minute = imin;
+    if (second != nullptr) *second = static_cast<int>(secondWithSS);
+
     waitResponse();
-    return false;
+    return (fixMode == 1 || fixMode == 2 || fixMode == 3);
   }
 
   /*
