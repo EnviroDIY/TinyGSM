@@ -326,7 +326,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       }
       // NOTE:  Not calling stop() or yield() here
       at->streamClear();  // Empty anything in the buffer before starting
-      sock_connected = at->modemConnectXBee(ip, port, mux);
+      sock_connected = at->modemConnectXBee(ip, port);
       return sock_connected;
     }
     /// @copydoc GsmClient::connect(IPAddress, uint16_t)
@@ -1473,12 +1473,16 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux = 0,
                         int timeout_s = TcpConfig::kConnectTimeoutS) {
+    if (mux != 0) {
+      DBG("XBee only supports 1 IP channel in transparent mode!");
+    }
+
     // check if the host is an IP address already - if so, we can skip the DNS
     // lookup and just connect
     IPAddress hostIP = TinyGsmIpFromString(String(host));
     if (hostIP != IPAddress(0, 0, 0, 0)) {
       DBG("Host is already an IP address; connecting directly");
-      return modemConnectXBee(hostIP, port, mux);
+      return modemConnectXBee(hostIP, port);
     }
 
     bool retVal = false;
@@ -1528,7 +1532,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     // If we now have a valid IP address, use it to connect
     if (savedHostIP != IPAddress(0, 0, 0, 0)) {
       // Only re-set connection information if we have an IP address
-      retVal = modemConnectXBee(savedHostIP, port, mux);
+      retVal = modemConnectXBee(savedHostIP, port);
     }
 
     XBEE_COMMAND_END_DECORATOR
@@ -1536,12 +1540,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     return retVal;
   }
 
-  bool modemConnectXBee(IPAddress ip, uint16_t port, uint8_t mux = 0) {
+  bool modemConnectXBee(IPAddress ip, uint16_t port) {
     bool success = true;
-
-    if (mux != 0) {
-      DBG("XBee only supports 1 IP channel in transparent mode!");
-    }
 
     // empty the saved currenty-in-use destination address
     savedOperatingIP = IPAddress(0, 0, 0, 0);
@@ -1561,7 +1561,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       host += ip[2];
       host += '.';
       host += ip[3];
-      bool ssl = sockets[mux]->is_secure;
+      bool ssl = sockets[0]->is_secure;
       success &= configureConnection(host.c_str(), port, ssl);
       DBG("Attempting to ping the host");
       sendAT(GF("PG"), host);
@@ -1581,7 +1581,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       success &= (ci == 0x00 || ci == 0xFF || ci == 0x28);
     }
 
-    if (success) { sockets[mux]->sock_connected = true; }
+    if (success) { sockets[0]->sock_connected = true; }
 
     XBEE_COMMAND_END_DECORATOR
 
