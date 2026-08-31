@@ -367,7 +367,11 @@ class TinyGsmESP32
       // calls modemGetAvailable on every read to update sock_available, once
       // sock_available=0 modemGetAvailable calls modemGetConnected, and
       // modemGetConnected updates sock_connected for all sockets.)
-      if (sock_connected) { at->modemStop(mux, maxWaitMs - elapsed); }
+      // NOTE: Always give the modem at least 1 second to close the connection,
+      // even if the maxWaitMs has already elapsed.
+      if (sock_connected) {
+        at->modemStop(mux, elapsed >= maxWaitMs ? 1000L : maxWaitMs - elapsed);
+      }
       sock_connected = false;
     }
 
