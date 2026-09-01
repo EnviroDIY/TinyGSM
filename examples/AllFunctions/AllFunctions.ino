@@ -454,9 +454,9 @@ void loop() {
 // certificates must be named "client_ca.{0|1}", "client_cert.{0|1}", or
 // "client_key.{0|1}"
 #ifdef TINY_GSM_MODEM_ESP32
-  const char* root_ca_name = "client_ca.1";
-  // const char* client_cert_name = "client_cert.1";
-  // const char* client_key_name  = "client_key.1";
+  const char* root_ca_name = "client_ca.0";
+  // const char* client_cert_name = "client_cert.0";
+  // const char* client_key_name  = "client_key.0";
 #else
   // For most modules the actual filename doesn't matter much but it CANNOT
   // HAVE SPACES.
@@ -512,7 +512,9 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
   // modem.convertClientCertificates(client_cert_name, client_key_name);
   // modem.convertPSKandID(psk_name, psk_hint_name);
 
+#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_BG96)
   modem.deleteCertificate(root_ca_name);
+#endif
 
   secureClient.setCACertName(root_ca_name);
   // secureClient.setClientCertName(client_cert_name);
