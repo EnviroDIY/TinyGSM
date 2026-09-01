@@ -804,6 +804,8 @@ class TinyGsmESP32
   bool loadCertificateByNumber(CertificateType cert_type, uint8_t certNumber,
                                const char* cert, const uint16_t len) {
     if (certNumber > 1) { return false; }
+    char cert_number_char = certNumber + '0';
+
     // delete any old text in the cert first
     deleteCertificateByNumber(cert_type, certNumber);
 
@@ -826,20 +828,20 @@ class TinyGsmESP32
       }
       case CertificateType::CA_CERTIFICATE: {
         sendAT(GF("+SYSMFG=2,\""), ModemConfig::CA_CERT_NAMESPACE, GF("\",\""),
-               ModemConfig::CA_CERT_NAMESPACE, '.', certNumber + '0',
+               ModemConfig::CA_CERT_NAMESPACE, '.', cert_number_char,
                GF("\",8,"), len);
         break;
       }
       case CertificateType::CLIENT_CERTIFICATE: {
         sendAT(GF("+SYSMFG=2,\""), ModemConfig::CLIENT_CERT_NAMESPACE,
                GF("\",\""), ModemConfig::CLIENT_CERT_NAMESPACE, '.',
-               certNumber + '0', GF("\",8,"), len);
+               cert_number_char, GF("\",8,"), len);
         break;
       }
       case CertificateType::CLIENT_KEY: {
         sendAT(GF("+SYSMFG=2,\""), ModemConfig::CLIENT_KEY_NAMESPACE,
                GF("\",\""), ModemConfig::CLIENT_KEY_NAMESPACE, '.',
-               certNumber + '0', GF("\",8,"), len);
+               cert_number_char, GF("\",8,"), len);
         break;
       }
       default: {
@@ -865,6 +867,7 @@ class TinyGsmESP32
   bool deleteCertificateByNumber(CertificateType cert_type,
                                  uint8_t         certNumber) {
     if (certNumber > 1) { return false; }
+    char cert_number_char = certNumber + '0';
 
     // AT+SYSMFG=<operation>,<"namespace">[,<"key">]
     // operation = 0 for erase
@@ -877,19 +880,19 @@ class TinyGsmESP32
       }
       case CertificateType::CA_CERTIFICATE: {
         sendAT(GF("+SYSMFG=0,\""), ModemConfig::CA_CERT_NAMESPACE, GF("\",\""),
-               ModemConfig::CA_CERT_NAMESPACE, '.', certNumber + '0');
+               ModemConfig::CA_CERT_NAMESPACE, '.', cert_number_char, '"');
         break;
       }
       case CertificateType::CLIENT_CERTIFICATE: {
         sendAT(GF("+SYSMFG=0,\""), ModemConfig::CLIENT_CERT_NAMESPACE,
                GF("\",\""), ModemConfig::CLIENT_CERT_NAMESPACE, '.',
-               certNumber + '0');
+               cert_number_char, '"');
         break;
       }
       case CertificateType::CLIENT_KEY: {
         sendAT(GF("+SYSMFG=0,\""), ModemConfig::CLIENT_KEY_NAMESPACE,
                GF("\",\""), ModemConfig::CLIENT_KEY_NAMESPACE, '.',
-               certNumber + '0');
+               cert_number_char, '"');
         break;
       }
       default: {
@@ -912,6 +915,8 @@ class TinyGsmESP32
   bool printCertificateByNumber(CertificateType cert_type, uint8_t certNumber,
                                 Stream& print_stream) {
     if (certNumber > 1) { return false; }
+    char cert_number_char = certNumber + '0';
+
     // AT+SYSMFG=<operation>,<"namespace">,<"key">,<type>,<value>
     // operation = 1 for read
     // type = 8 for binary (ie, the certificates must be stored in binary,
@@ -927,19 +932,19 @@ class TinyGsmESP32
       }
       case CertificateType::CA_CERTIFICATE: {
         sendAT(GF("+SYSMFG=1,\""), ModemConfig::CA_CERT_NAMESPACE, GF("\",\""),
-               ModemConfig::CA_CERT_NAMESPACE, '.', certNumber + '0');
+               ModemConfig::CA_CERT_NAMESPACE, '.', cert_number_char, '"');
         break;
       }
       case CertificateType::CLIENT_CERTIFICATE: {
         sendAT(GF("+SYSMFG=1,\""), ModemConfig::CLIENT_CERT_NAMESPACE,
                GF("\",\""), ModemConfig::CLIENT_CERT_NAMESPACE, '.',
-               certNumber + '0');
+               cert_number_char, '"');
         break;
       }
       case CertificateType::CLIENT_KEY: {
         sendAT(GF("+SYSMFG=1,\""), ModemConfig::CLIENT_KEY_NAMESPACE,
                GF("\",\""), ModemConfig::CLIENT_KEY_NAMESPACE, '.',
-               certNumber + '0');
+               cert_number_char, '"');
         break;
       }
       default: {
@@ -1228,10 +1233,15 @@ class TinyGsmESP32
     String mon_abbrev = stream.readStringUntil(' ');
     imonth            = getMonthFromAbbrev(mon_abbrev);
     iday              = streamGetIntBefore(' ');
-    ihour             = streamGetIntBefore(':');
-    imin              = streamGetIntBefore(':');
-    isec              = streamGetIntBefore(' ');
-    iyear             = streamGetIntLength(4);
+    if (iday == -9999) {
+      // there may be multiple spaces between the month and day, so try a second
+      // time
+      iday = streamGetIntBefore(' ');
+    }
+    ihour = streamGetIntBefore(':');
+    imin  = streamGetIntBefore(':');
+    isec  = streamGetIntBefore(' ');
+    iyear = streamGetIntLength(4);
 
     // Final OK
     waitResponse();
@@ -1297,26 +1307,11 @@ class TinyGsmESP32
     uint32_t start = millis();
     while (stream.available() < 9 && millis() - start < 10000L) {}
 
-    uint32_t modem_time = 0;
-    char     buf[12]    = {0};
-
-    size_t bytesRead = stream.readBytesUntil('\n', buf,
-                                             static_cast<size_t>(12));
-
-    // if we read 12 or more bytes, it's an overflow
-    if (bytesRead && bytesRead < 12) {
-      buf[bytesRead] = '\0';
-
-      for (size_t i = 0; i < bytesRead; ++i) {
-        modem_time = modem_time * 10 + buf[i] - '0';
-      }
-    }
+    uint32_t modem_time = streamGetULBefore('\r');
 
     waitResponse();
 
-    DBG(GF("### Modem Raw Time:"), buf, '(', modem_time, ')');
-
-    if (modem_time != 0) {
+    if (modem_time != static_cast<uint32_t>(-1)) {
       switch (epoch) {
         case TinyGSM_EpochStart::UNIX: modem_time += 0; break;
         case TinyGSM_EpochStart::Y2K: modem_time += 946684800; break;
