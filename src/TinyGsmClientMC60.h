@@ -47,6 +47,7 @@
  * - Utilities (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamDump "streamDump()"
  * - SIM card functions (TinyGsmGPRS.tpp)
  *     - @ref TinyGsmGPRS<modemType>::simUnlock "simUnlock()"
  *     - @ref TinyGsmGPRS<modemType>::getSimCCID "getSimCCID()"

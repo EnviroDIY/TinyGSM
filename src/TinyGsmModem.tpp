@@ -643,13 +643,57 @@ class TinyGsmModem {
   }
 
   /**
-   * @brief Clear the modem stream.
+   * @brief Clear the modem stream attempting to parse any URC's in it.
+   *
+   * @warning Never call this inside of a waitResponse() call or a URC parser!
+   * @todo Should this be protected?
    */
   inline void streamClear() {
     while (thisModem().stream.available()) {
       thisModem().waitResponse(50, nullptr, nullptr);
     }
   }
+
+  /**
+   * @brief Dump the modem stream, completely discarding any data in it without
+   * attempting to parse any URC's in it.
+   *
+   * This is good for discarding an expected number of characters from the
+   * stream without waiting a full timeout for each character.
+   *
+   * @param expected_len The number of characters to discard from the stream.
+   * @todo Should this be protected?
+   */
+  inline void streamDump(int16_t expected_len) {
+    uint32_t startMillis   = millis();
+    size_t   len           = expected_len;
+    size_t   len_read      = 0;
+    uint8_t  char_failures = 0;
+
+    // allow up to 3 timeouts on individual characters before we quit the whole
+    // read operation
+    while (len && char_failures < 3) {
+      // if something is available, read it
+      if (thisModem().stream.available()) {
+        int readCharLen = thisModem().stream.read();
+        len -= readCharLen;
+        len_read += readCharLen;
+        continue;
+      }
+      // wait for a new character to be available on the stream
+      while (thisModem().stream.available() &&
+             (millis() - startMillis < thisModem().stream._timeout)) {
+        TINY_GSM_YIELD();
+      }
+      if (thisModem().stream.available()) {
+        DBG("### ERROR: Timed out waiting for character from stream!");
+        char_failures++;
+      }
+    }
+
+    if (len_read) { DBG("### Discarded", len_read, "characters"); }
+  }
+
 
  protected:
   inline bool streamGetLength(char* buf, int8_t numChars,

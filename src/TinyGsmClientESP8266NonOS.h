@@ -48,6 +48,7 @@
  * - Utilities (TinyGsmModem.tpp)
  *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
  *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamDump "streamDump()"
  * - WiFi functions (TinyGsmWifi.tpp)
  *     - @ref TinyGsmWifi<modemType>::networkConnect "networkConnect()"
  *     - @ref TinyGsmWifi<modemType>::networkDisconnect "networkDisconnect()"
