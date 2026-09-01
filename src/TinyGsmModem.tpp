@@ -817,6 +817,84 @@ class TinyGsmModem {
     return negative ? -res : res;
   }
 
+  /**
+   * @brief Reads a fixed-length unsigned long integer from the modem stream.
+   *
+   * Reads exactly @p numChars characters from the modem stream and converts
+   * them to an unsigned long integer. Leading and trailing non-digits
+   * are ignored.
+   *
+   * @param numChars   Number of characters to read and convert. Valid values
+   *                   are 1 through 12.
+   * @param timeout_ms Maximum time, in milliseconds, to wait for the requested
+   *                   characters.
+   *
+   * @return The parsed unsigned long or -1 on failure
+   */
+  inline uint32_t streamGetULLength(int8_t         numChars,
+                                    const uint32_t timeout_ms = 1000L) {
+    // max 12 digits for unsigned long
+    if (numChars <= 0 || numChars > 12) { return static_cast<uint32_t>(-1); }
+
+    char buf[numChars];
+
+    if (!streamGetLength(buf, numChars, timeout_ms)) {
+      return static_cast<uint32_t>(-1);
+    }
+
+    uint32_t res = 0;
+    uint8_t  i   = 0;
+
+    // Skip leading non-digits (accept only 0-9).
+    while (i < numChars && (buf[i] < 0x30 || buf[i] > 0x39)) { ++i; }
+
+    // Parse until the first non-digit (accept only 0-9).
+    for (; i < numChars && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
+      res = res * 10 + buf[i] - '0';
+    }
+
+    return res;
+  }
+
+
+  /**
+   * @brief Reads a unsigned long integer from the modem stream up to a
+   * delimiter.
+   *
+   * Reads characters from the modem stream until @p lastChar is encountered
+   * and converts the characters preceding it to an unsigned long decimal
+   * integer. Leading and trailing non-digits are ignored.
+   *
+   * The input buffer is limited to 13 characters, allowing for a sign and
+   * up to 12 numeric characters.
+   *
+   * @param lastChar Character that terminates the numeric response.
+   *
+   * @return The parsed unsigned long integer, or -9999 if no characters were
+   *         received before the delimiter.
+   */
+  inline uint32_t streamGetULBefore(char lastChar) {
+    char buf[13] = {};
+
+    size_t bytesRead = thisModem().stream.readBytesUntil(lastChar, buf,
+                                                         sizeof(buf));
+
+    if (!bytesRead) { return static_cast<uint32_t>(-1); }
+
+    uint32_t res = 0;
+    uint8_t  i   = 0;
+
+    // Skip leading non-digits (accept only 0-9).
+    while (i < bytesRead && (buf[i] < 0x30 || buf[i] > 0x39)) { ++i; }
+
+    // Parse until the first non-digit (accept only 0-9).
+    for (; i < bytesRead && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
+      res = res * 10 + buf[i] - '0';
+    }
+
+    return res;
+  }
+
 
   /**
    * @brief Reads a fixed-length decimal floating-point value.
