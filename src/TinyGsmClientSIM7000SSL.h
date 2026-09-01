@@ -1120,6 +1120,11 @@ class TinyGsmSim7000SSL
     int8_t res = streamGetIntBefore('\n');
     waitResponse();
 
+    if (!isExpectedMux(ret_mux, mux) || 0 != res) {
+      DBG(GF("### Connection failed for mux"), mux);
+      DBG(GF("Instead got"), ret_mux, GF("with result"), res);
+    }
+
     return isExpectedMux(ret_mux, mux) && 0 == res;
   }
 

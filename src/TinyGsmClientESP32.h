@@ -1255,6 +1255,12 @@ class TinyGsmESP32
     if (second != nullptr) *second = isec;
     if (timezone != nullptr) *timezone = itimezone;
 
+#if 0
+    DBG(GF("Year:"), iyear, GF("	Month:"), imonth, GF("	Day:"), iday);
+    DBG(GF("Hour:"), ihour, GF("	Minute:"), imin, GF("	Second:"), isec);
+    DBG(GF("Timezone:"), static_cast<float>(itimezone) / 4.0);
+#endif
+
     // Validate parsed values
     // NOTE: This is a basic validation and does not account for leap years or
     // the number of days in each month.

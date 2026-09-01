@@ -907,6 +907,16 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     if (second != nullptr) *second = static_cast<int>(secondWithSS);
 
     waitResponse();  // Final OK
+
+#if 0
+    DBG(GF("Latitude:"), String(ilat, 8), GF("\tLongitude:"), String(ilon, 8),
+        GF("\tAltitude:"), String(ialt, 4));
+    DBG(GF("VSAT:"), 0, GF("\tUSAT:"), iusat, GF("\tAccuracy:"), iaccuracy);
+    DBG(GF("Year:"), iyear, GF("\tMonth:"), imonth, GF("\tDay:"), iday);
+    DBG(GF("Hour:"), ihour, GF("\tMinute:"), imin, GF("\tSecond:"),
+        String(secondWithSS, 3));
+#endif
+
     return true;
   }
 
@@ -975,6 +985,12 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     // Final OK
     waitResponse();  // Ends with OK
 
+#if 0
+    DBG(GF("Year:"), iyear, GF("	Month:"), imonth, GF("	Day:"), iday);
+    DBG(GF("Hour:"), ihour, GF("	Minute:"), imin, GF("	Second:"), isec);
+    DBG(GF("Timezone:"), static_cast<float>(itimezone) / 4.0);
+#endif
+
     // Validate parsed values
     // NOTE: This is a basic validation and does not account for leap years or
     // the number of days in each month.
@@ -1025,6 +1041,12 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 
     // Final OK
     waitResponse();  // Ends with OK
+
+#if 0
+    DBG(GF("Year:"), iyear, GF("	Month:"), imonth, GF("	Day:"), iday);
+    DBG(GF("Hour:"), ihour, GF("	Minute:"), imin, GF("	Second:"), isec);
+    DBG(GF("Timezone:"), static_cast<float>(itimezone) / 4.0);
+#endif
 
     // Validate parsed values
     // NOTE: This is a basic validation and does not account for leap years or
