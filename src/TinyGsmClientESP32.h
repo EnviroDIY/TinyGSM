@@ -1283,21 +1283,30 @@ class TinyGsmESP32
   }
 
   uint32_t getNetworkEpochImpl(TinyGSM_EpochStart epoch) {
-    // Returns unix timestamp.  Will match SNTP after SNTP syncs.
+    // Returns unix timestamp. Will match SNTP after SNTP syncs.
     sendAT(GF("+SYSTIMESTAMP?"));
     if (waitResponse(2000L, GF("+SYSTIMESTAMP:")) != 1) { return 0; }
+
     uint32_t start = millis();
     while (stream.available() < 9 && millis() - start < 10000L) {}
+
     uint32_t modem_time = 0;
     char     buf[12]    = {0};
-    size_t   bytesRead  = stream.readBytesUntil('\n', buf,
-                                                static_cast<size_t>(12));
+
+    size_t bytesRead = stream.readBytesUntil('\n', buf,
+                                             static_cast<size_t>(12));
+
     // if we read 12 or more bytes, it's an overflow
     if (bytesRead && bytesRead < 12) {
       buf[bytesRead] = '\0';
-      modem_time     = strtoul(buf, nullptr, 10);
+
+      for (size_t i = 0; i < bytesRead; ++i) {
+        modem_time = modem_time * 10 + buf[i] - '0';
+      }
     }
+
     waitResponse();
+
     DBG(GF("### Modem Raw Time:"), buf, '(', modem_time, ')');
 
     if (modem_time != 0) {
@@ -1307,6 +1316,7 @@ class TinyGsmESP32
         case TinyGSM_EpochStart::GPS: modem_time += 315878400; break;
       }
     }
+
     DBG(GF("### Modem Epoch Time:"), modem_time);
 
     return modem_time;

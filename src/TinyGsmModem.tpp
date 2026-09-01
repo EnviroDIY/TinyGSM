@@ -671,78 +671,197 @@ class TinyGsmModem {
     return false;
   }
 
+  /**
+   * @brief Reads a fixed-length decimal integer from the modem stream.
+   *
+   * Reads exactly @p numChars characters from the modem stream and converts
+   * them to a signed 16-bit decimal integer. A leading '-' is supported.
+   *
+   * This is a lightweight replacement for strtol()/atoi() intended for
+   * parsing the small decimal integer fields returned by modems. It does
+   * not perform general-purpose numeric parsing or require a null-terminated
+   * string.
+   *
+   * @param numChars   Number of characters to read and convert. Valid values
+   *                   are 1 through 6.
+   * @param timeout_ms Maximum time, in milliseconds, to wait for the requested
+   *                   characters.
+   *
+   * @return The parsed signed 16-bit integer, or -9999 if the requested
+   *         character count is invalid or the characters could not be read
+   *         from the stream.
+   */
   inline int16_t streamGetIntLength(int8_t         numChars,
                                     const uint32_t timeout_ms = 1000L) {
     // max 6 digits for int16_t (-32767)
     if (numChars <= 0 || numChars > 6) { return -9999; }
-    char buf[numChars + 1];
-    if (streamGetLength(buf, numChars, timeout_ms)) {
-      buf[numChars] = '\0';
-#if defined(TINY_GSM_USE_STRTOX)
-      char*   endptr;
-      int16_t res = strtol(buf, &endptr, 10);
-      if (endptr == buf + numChars) { return res; }
-#else
-      return atoi(buf);
-#endif
+
+    char buf[numChars];
+
+    if (!streamGetLength(buf, numChars, timeout_ms)) { return -9999; }
+
+    int16_t res      = 0;
+    bool    negative = false;
+    uint8_t i        = 0;
+
+    if (buf[0] == '-') {
+      negative = true;
+      i        = 1;
     }
 
-    return -9999;
+    for (; i < numChars; ++i) { res = res * 10 + buf[i] - '0'; }
+
+    return negative ? -res : res;
   }
 
+
+  /**
+   * @brief Reads a decimal integer from the modem stream up to a delimiter.
+   *
+   * Reads characters from the modem stream until @p lastChar is encountered
+   * and converts the characters preceding it to a signed 16-bit decimal
+   * integer. A leading '-' is supported.
+   *
+   * This is a lightweight replacement for strtol()/atoi() intended for
+   * parsing the small decimal integer fields returned by modems. It does
+   * not require a null-terminated string.
+   *
+   * The input buffer is limited to seven characters, allowing for a sign and
+   * up to six numeric characters.
+   *
+   * @param lastChar Character that terminates the numeric response.
+   *
+   * @return The parsed signed 16-bit integer, or -9999 if no characters were
+   *         received before the delimiter.
+   */
   inline int16_t streamGetIntBefore(char lastChar) {
-    char   buf[7];
-    size_t bytesRead = thisModem().stream.readBytesUntil(
-        lastChar, buf, static_cast<size_t>(7));
-    // if we read 7 or more bytes, it's an overflow
-    if (bytesRead && bytesRead < 7) {
-      buf[bytesRead] = '\0';
-#if defined(TINY_GSM_USE_STRTOX)
-      char*   endptr;
-      int16_t res = strtol(buf, &endptr, 10);
-      if (endptr == buf + bytesRead) { return res; }
-#else
-      return atoi(buf);
-#endif
+    char buf[7];
+
+    size_t bytesRead = thisModem().stream.readBytesUntil(lastChar, buf,
+                                                         sizeof(buf));
+
+    if (!bytesRead) { return -9999; }
+
+    int16_t res      = 0;
+    bool    negative = false;
+    uint8_t i        = 0;
+
+    if (buf[0] == '-') {
+      negative = true;
+      i        = 1;
     }
 
-    return -9999;
+    for (; i < bytesRead; ++i) { res = res * 10 + buf[i] - '0'; }
+
+    return negative ? -res : res;
   }
 
+
+  /**
+   * @brief Reads a fixed-length decimal floating-point value.
+   *
+   * Reads exactly @p numChars characters from the modem stream and converts
+   * them to a floating-point value. A leading '-' or '+' and a decimal point
+   * are supported.
+   *
+   * This is a lightweight replacement for strtof()/atof() intended for
+   * parsing the ordinary decimal values returned by modems, including
+   * NMEA-like latitude, longitude, altitude, speed, accuracy, and time fields.
+   * Scientific notation is intentionally not supported.
+   *
+   * @param numChars   Number of characters to read and convert.
+   * @param timeout_ms Maximum time, in milliseconds, to wait for the requested
+   *                   characters.
+   *
+   * @return The parsed floating-point value, or -9999.0F if the requested
+   *         characters could not be read from the stream.
+   */
   inline float streamGetFloatLength(int8_t         numChars,
                                     const uint32_t timeout_ms = 1000L) {
-    char buf[numChars + 1];
-    if (streamGetLength(buf, numChars, timeout_ms)) {
-      buf[numChars] = '\0';
-#if defined(TINY_GSM_USE_STRTOX)
-      char* endptr;
-      float res = strtof(buf, &endptr);
-      if (endptr == buf + numChars) { return res; }
-#else
-      return atof(buf);
-#endif
+    char buf[numChars];
+
+    if (!streamGetLength(buf, numChars, timeout_ms)) { return -9999.0F; }
+
+    float   result   = 0.0F;
+    uint8_t decimals = 0;
+    bool    negative = false;
+    bool    decimal  = false;
+    uint8_t i        = 0;
+
+    if (buf[0] == '-' || buf[0] == '+') {
+      negative = buf[0] == '-';
+      i        = 1;
     }
 
-    return -9999.0F;
+    for (; i < numChars; ++i) {
+      char c = buf[i];
+
+      if (c == '.') {
+        decimal = true;
+      } else {
+        result = result * 10.0F + c - '0';
+        if (decimal) { ++decimals; }
+      }
+    }
+
+    while (decimals--) { result *= 0.1F; }
+
+    return negative ? -result : result;
   }
 
+
+  /**
+   * @brief Reads a decimal floating-point value up to a delimiter.
+   *
+   * Reads characters from the modem stream until @p lastChar is encountered
+   * and converts the characters preceding it to a floating-point value.
+   * A leading '-' or '+' and a decimal point are supported.
+   *
+   * This is a lightweight replacement for strtof()/atof() intended for
+   * parsing the ordinary decimal values returned by modems, including
+   * NMEA-like latitude, longitude, altitude, speed, accuracy, and time fields.
+   * Scientific notation is intentionally not supported.
+   *
+   * The input buffer is limited to 16 characters.
+   *
+   * @param lastChar Character that terminates the numeric response.
+   *
+   * @return The parsed floating-point value, or -9999.0F if no characters were
+   *         received before the delimiter.
+   */
   inline float streamGetFloatBefore(char lastChar) {
-    char   buf[16];
-    size_t bytesRead = thisModem().stream.readBytesUntil(
-        lastChar, buf, static_cast<size_t>(16));
-    // if we read 16 or more bytes, it's an overflow
-    if (bytesRead && bytesRead < 16) {
-      buf[bytesRead] = '\0';
-#if defined(TINY_GSM_USE_STRTOX)
-      char* endptr;
-      float res = strtof(buf, &endptr);
-      if (endptr == buf + bytesRead) { return res; }
-#else
-      return atof(buf);
-#endif
+    char buf[16];
+
+    size_t bytesRead = thisModem().stream.readBytesUntil(lastChar, buf,
+                                                         sizeof(buf));
+
+    if (!bytesRead) { return -9999.0F; }
+
+    float   result   = 0.0F;
+    uint8_t decimals = 0;
+    bool    negative = false;
+    bool    decimal  = false;
+    uint8_t i        = 0;
+
+    if (buf[0] == '-' || buf[0] == '+') {
+      negative = buf[0] == '-';
+      i        = 1;
     }
 
-    return -9999.0F;
+    for (; i < bytesRead; ++i) {
+      char c = buf[i];
+
+      if (c == '.') {
+        decimal = true;
+      } else {
+        result = result * 10.0F + c - '0';
+        if (decimal) { ++decimals; }
+      }
+    }
+
+    while (decimals--) { result *= 0.1F; }
+
+    return negative ? -result : result;
   }
 
   inline bool streamSkipUntil(const char c, const uint32_t timeout_ms = 1000L) {
