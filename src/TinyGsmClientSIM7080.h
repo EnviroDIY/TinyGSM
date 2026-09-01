@@ -1248,8 +1248,8 @@ class TinyGsmSim7080
     // variable, so we need to account for that when waiting for the buffer to
     // be available.
     sockets[mux]->realMaxSendSize = modemGetSendLength(mux);
-    DBG(GF("### Real max send size for mux"), mux, GF("is"),
-        sockets[mux]->realMaxSendSize);
+    // DBG(GF("### Real max send size for mux"), mux, GF("is"),
+    //     sockets[mux]->realMaxSendSize);
 
     if (!isExpectedMux(ret_mux, mux) || 0 != res) {
       DBG(GF("### Connection failed for mux"), mux);
