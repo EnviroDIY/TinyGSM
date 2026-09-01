@@ -70,7 +70,7 @@ class TinyGsmFifo {
   }
 
   /**
-   * @brief Add multiple items to be buffer
+   * @brief Add multiple items to the buffer
    *
    * @param p Pointer to the items to add
    * @param n The number of items to add

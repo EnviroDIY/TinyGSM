@@ -352,75 +352,135 @@ class TinyGsmTCP {
   /**
    * @brief Move a block of characters from the stream to the mux FIFO.
    *
-   * This moves characters from the stream to the FIFO of the specified mux
-   * socket. It will wait for characters to be available on the stream, up to
-   * the timeout period of the socket. If the modem is configured to use hex
-   * mode, (i.e., compiled with `TINY_GSM_USE_HEX`) it will convert two received
-   * hex characters into one char before putting them into the FIFO.
+   * Moves characters from the modem stream to the FIFO of the specified mux
+   * socket in blocks. If the modem is configured to use hex mode (i.e.,
+   * compiled with `TINY_GSM_USE_HEX`), each pair of received hexadecimal
+   * characters is converted into one byte before being placed into the FIFO.
    *
-   * @note This function will stop before reaching the expected length if it
-   * encounters a timeout waiting for characters or if the FIFO fills up. The
-   * actual number of characters read is returned.
+   * Data already available on the stream is transferred without waiting for
+   * additional characters. If insufficient data is available, the function
+   * waits for more data, up to the timeout period of the socket. Transfers are
+   * limited by the available FIFO space and a small temporary buffer.
+   *
+   * @note In hex mode, a partial hex pair is never consumed.
+   *
+   * @note The temporary buffer is deliberately limited to 32 bytes to keep
+   *       stack RAM usage low while substantially reducing the number of
+   *       stream and FIFO operations.
    *
    * @param mux The mux socket number to put characters into.
-   * @param expected_len The expected number of characters to read from the
-   * stream.
-   * @return The number of characters actually read from the stream.
+   * @param expected_len The expected number of decoded characters to read from
+   *                     the stream.
+   * @return The number of decoded characters actually placed into the FIFO.
    */
   size_t moveCharsFromStreamToFifo(uint8_t mux, size_t expected_len) {
     if (!thisModem().sockets[mux]) { return 0; }
+
     uint32_t startMillis   = millis();
     size_t   len           = expected_len;
     size_t   len_read      = 0;
     uint8_t  char_failures = 0;
+    uint8_t  buf[32];
+
 #ifdef TINY_GSM_USE_HEX
     // DBG("### Reading input in HEX mode");
-    int readCharLen = 2;
+    constexpr size_t readCharLen = 2;
 #else
     // DBG("### Reading input in ASCII mode");
-    int readCharLen = 1;
+    constexpr size_t readCharLen = 1;
 #endif
     // allow up to 3 timeouts on individual characters before we quit the whole
     // read operation
     while (len && char_failures < 3) {
-      // never consume a partial hex pair
-      if (len < static_cast<size_t>(readCharLen)) { break; }
-      // if something is available, read it
-      if (thisModem().stream.available() >= readCharLen) {
+      // never consume a partial hex pair.
+      if (len < readCharLen) { break; }
+
+      // Limit the transfer to the space currently available in the FIFO.
+      size_t fifo_free = thisModem().sockets[mux]->rx.free();
+      if (!fifo_free) { break; }
+
+      size_t available = thisModem().stream.available();
+
+      if (available >= readCharLen) {
+        // Limit the number of decoded bytes to the amount requested, FIFO
+        // space, and the temporary buffer capacity.
+        size_t count = len;
+        if (count > fifo_free) { count = fifo_free; }
+        if (count > sizeof(buf) / readCharLen) {
+          count = sizeof(buf) / readCharLen;
+        }
+
+        // Determine how many encoded characters to read based on what's
+        // available
+        count *= readCharLen;
+        if (count > available) { count = available; }
+
 #ifdef TINY_GSM_USE_HEX
-        // Read 2 hex characters and convert to one byte.
-        uint8_t c = thisModem().stream.read();
-        c         = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
-        c <<= 4;
-        uint8_t d = thisModem().stream.read();
-        c |= (d <= '9') ? d - '0' : d - 'A' + 10;
-#else
-        // just read the character
-        char c = thisModem().stream.read();
+        // Never intentionally consume a partial hex pair.
+        count &= ~static_cast<size_t>(1);
+#endif
+
+        if (count < readCharLen) { continue; }
+
+        size_t bytesRead = thisModem().stream.read(buf, count);
+
+        // Keep only complete decoded characters
+        bytesRead -= bytesRead % readCharLen;
+
+#ifdef TINY_GSM_USE_HEX
+        // Decode the hex characters in place.
+        for (size_t i = 0; i < bytesRead; i += 2) {
+          // Read 2 hex characters at a time and convert to one byte.
+          uint8_t c = buf[i];
+          uint8_t d = buf[i + 1];
+
+          c = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+          d = (d <= '9') ? d - '0' : (d & 0x0F) + 9;
+
+          buf[i >> 1] = (c << 4) | d;
+        }
+
+        bytesRead >>= 1;
 #endif
         // NOTE: We can't directly memcpy into the rx fifo!
         // The fifo is a template class that can hold any data type and the
         // actual memory space of the buffer is protected.
-        thisModem().sockets[mux]->rx.put(c);
-        len -= readCharLen;
-        len_read += readCharLen;
-      } else {
-        // wait for a new character to be available on the stream
-        while (thisModem().stream.available() < readCharLen &&
-               (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
-          TINY_GSM_YIELD();
+        if (bytesRead) {
+          int added = thisModem().sockets[mux]->rx.put(
+              buf, static_cast<int>(bytesRead));
+
+          if (added != static_cast<int>(bytesRead)) {
+            DBG("### ERROR: FIFO full, could not put all characters into mux "
+                "FIFO!");
+          }
+
+          len -= added;
+          len_read += added;
+
+          if (added != static_cast<int>(bytesRead)) { break; }
         }
-        if (thisModem().stream.available() < readCharLen) {
-          DBG("### ERROR: Timed out waiting for character from stream!");
-          char_failures++;
-        }
+
+        continue;
+      }
+
+      // Wait for enough data for at least one character (or hex pair).
+      while (thisModem().stream.available() < readCharLen &&
+             (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
+        TINY_GSM_YIELD();
+      }
+
+      if (thisModem().stream.available() < readCharLen) {
+        DBG("### ERROR: Timed out waiting for character from stream!");
+        char_failures++;
       }
     }
+
     if (len_read) { DBG("### READ:", len_read, "from", mux); }
     if (expected_len != len_read) {
       DBG("\n### Different number of characters received than expected: ",
           len_read, "read vs ", expected_len, "expected");
     }
+
     return len_read;
   }
 
