@@ -349,12 +349,26 @@ class TinyGsmTCP {
     }
   }
 
-  // Yields up to a time-out period and then reads a block of characters from
-  // the stream into the mux FIFO
-  // If TINY_GSM_USE_HEX is defined, this will convert two received hex
-  // characters into one char.
+  /**
+   * @brief Move a block of characters from the stream to the mux FIFO.
+   *
+   * This moves characters from the stream to the FIFO of the specified mux
+   * socket. It will wait for characters to be available on the stream, up to
+   * the timeout period of the socket. If the modem is configured to use hex
+   * mode, (i.e., compiled with `TINY_GSM_USE_HEX`) it will convert two received
+   * hex characters into one char before putting them into the FIFO.
+   *
+   * @note This function will stop before reaching the expected length if it
+   * encounters a timeout waiting for characters or if the FIFO fills up. The
+   * actual number of characters read is returned.
+   *
+   * @param mux The mux socket number to put characters into.
+   * @param expected_len The expected number of characters to read from the
+   * stream.
+   * @return The number of characters actually read from the stream.
+   */
   size_t moveCharsFromStreamToFifo(uint8_t mux, size_t expected_len) {
-    if (!thisModem().sockets[mux]) { return false; }
+    if (!thisModem().sockets[mux]) { return 0; }
     uint32_t startMillis   = millis();
     size_t   len           = expected_len;
     size_t   len_read      = 0;
@@ -374,13 +388,12 @@ class TinyGsmTCP {
       // if something is available, read it
       if (thisModem().stream.available() >= readCharLen) {
 #ifdef TINY_GSM_USE_HEX
-        // read 2 bytes and convert from hex to char
-        char buf[3] = {
-            0,
-        };
-        buf[0] = thisModem().stream.read();
-        buf[1] = thisModem().stream.read();
-        char c = strtol(buf, nullptr, 16);
+        // Read 2 hex characters and convert to one byte.
+        uint8_t c = thisModem().stream.read();
+        c         = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+        c <<= 4;
+        uint8_t d = thisModem().stream.read();
+        c |= (d <= '9') ? d - '0' : d - 'A' + 10;
 #else
         // just read the character
         char c = thisModem().stream.read();
@@ -681,9 +694,9 @@ class GsmClient : public Client {
     // to give the user a chance to recover the data if they want it.
     // Dumping the modem buffer will also clear the rx fifo.
     dumpModemBuffer(maxWaitMs);
-    uint32_t elapsed       = millis() - startMillis;
-    // NOTE: Always give the modem at least 1 second to close the connection, even if
-    // the maxWaitMs has already elapsed.
+    uint32_t elapsed = millis() - startMillis;
+    // NOTE: Always give the modem at least 1 second to close the connection,
+    // even if the maxWaitMs has already elapsed.
     uint32_t remainingWait = (elapsed >= maxWaitMs) ? 1000L
                                                     : (maxWaitMs - elapsed);
     at->modemStop(mux, remainingWait);

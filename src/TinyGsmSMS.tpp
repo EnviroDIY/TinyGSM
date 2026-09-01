@@ -88,75 +88,79 @@ class TinyGsmSMS {
 
 
   /**
-   * @anchor sms_utilities
-   * @name Utilities
+   * @anchor sms_hex_utilities
+   * @name Hex Decoding Utilities
    */
   /**@{*/
  protected:
   static inline String TinyGsmDecodeHex7bit(const String& instr) {
-    String result;
-    byte   reminder = 0;
-    int8_t bitstate = 7;
-    for (uint8_t i = 0; i < instr.length(); i += 2) {
-      char buf[4] = {
-          0,
-      };
-      buf[0] = instr[i];
-      buf[1] = instr[i + 1];
-      byte b = strtol(buf, nullptr, 16);
+    String  result;
+    uint8_t remainder = 0;
+    int8_t  bitstate  = 7;
 
-      byte bb = b << (7 - bitstate);
-      char c  = (bb + reminder) & 0x7F;
-      result += c;
-      reminder = b >> bitstate;
-      bitstate--;
-      if (bitstate == 0) {
-        char cc = reminder;
-        result += cc;
-        reminder = 0;
-        bitstate = 7;
+    for (uint16_t i = 0; i < instr.length(); i += 2) {
+      char    c = instr[i];
+      uint8_t b = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+      c         = instr[i + 1];
+      b         = (b << 4) | ((c <= '9') ? c - '0' : (c & 0x0F) + 9);
+
+      result += (char)(((b << (7 - bitstate)) + remainder) & 0x7F);
+      remainder = b >> bitstate;
+
+      if (--bitstate == 0) {
+        result += (char)remainder;
+        remainder = 0;
+        bitstate  = 7;
       }
     }
+
     return result;
   }
 
   static inline String TinyGsmDecodeHex8bit(const String& instr) {
     String result;
+
     for (uint16_t i = 0; i < instr.length(); i += 2) {
-      char buf[4] = {
-          0,
-      };
-      buf[0] = instr[i];
-      buf[1] = instr[i + 1];
-      char b = strtol(buf, nullptr, 16);
-      result += b;
+      char    c = instr[i];
+      uint8_t b = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+      c         = instr[i + 1];
+      b         = (b << 4) | ((c <= '9') ? c - '0' : (c & 0x0F) + 9);
+
+      result += (char)b;
     }
+
     return result;
   }
 
   static inline String TinyGsmDecodeHex16bit(const String& instr) {
     String result;
+
     for (uint16_t i = 0; i < instr.length(); i += 4) {
-      char buf[4] = {
-          0,
-      };
-      buf[0] = instr[i];
-      buf[1] = instr[i + 1];
-      char b = strtol(buf, nullptr, 16);
-      if (b) {  // If high byte is non-zero, we can't handle it ;(
+      char    c = instr[i];
+      uint8_t b = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+      c         = instr[i + 1];
+      b         = (b << 4) | ((c <= '9') ? c - '0' : (c & 0x0F) + 9);
+
+      if (b) {
 #if defined(TINY_GSM_UNICODE_TO_HEX)
         result += "\\x";
-        result += instr.substring(i, i + 4);
+        result += instr[i];
+        result += instr[i + 1];
+        result += instr[i + 2];
+        result += instr[i + 3];
 #else
         result += '?';
 #endif
       } else {
-        buf[0] = instr[i + 2];
-        buf[1] = instr[i + 3];
-        b      = strtol(buf, nullptr, 16);
-        result += b;
+        c = instr[i + 2];
+        b = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+        c = instr[i + 3];
+        b = (b << 4) | ((c <= '9') ? c - '0' : (c & 0x0F) + 9);
+
+        result += (char)b;
       }
     }
+
     return result;
   }
   /**@}*/
