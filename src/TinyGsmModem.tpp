@@ -700,6 +700,9 @@ class TinyGsmModem {
                               const uint32_t timeout_ms = 1000L) {
     if (!buf) { return false; }
 
+    // Clear the buffer before reading into it
+    memset(buf, 0, numChars);
+
     int8_t   numCharsReady = -1;
     uint32_t startMillis   = millis();
     while (millis() - startMillis < timeout_ms &&
@@ -719,7 +722,8 @@ class TinyGsmModem {
    * @brief Reads a fixed-length decimal integer from the modem stream.
    *
    * Reads exactly @p numChars characters from the modem stream and converts
-   * them to a signed 16-bit decimal integer. A leading '-' is supported.
+   * them to a signed 16-bit decimal integer. Leading and trailing spaces are
+   * ignored. A leading '-' is supported.
    *
    * This is a lightweight replacement for strtol()/atoi() intended for
    * parsing the small decimal integer fields returned by modems. It does
@@ -748,12 +752,18 @@ class TinyGsmModem {
     bool    negative = false;
     uint8_t i        = 0;
 
-    if (buf[0] == '-') {
+    // Skip leading spaces.
+    while (i < numChars && buf[i] == ' ') { ++i; }
+
+    if (i < numChars && buf[i] == '-') {
       negative = true;
-      i        = 1;
+      ++i;
     }
 
-    for (; i < numChars; ++i) { res = res * 10 + buf[i] - '0'; }
+    // Parse until the first trailing space.
+    for (; i < numChars && buf[i] != ' '; ++i) {
+      res = res * 10 + buf[i] - '0';
+    }
 
     return negative ? -res : res;
   }
@@ -764,7 +774,8 @@ class TinyGsmModem {
    *
    * Reads characters from the modem stream until @p lastChar is encountered
    * and converts the characters preceding it to a signed 16-bit decimal
-   * integer. A leading '-' is supported.
+   * integer. Leading and trailing spaces are ignored. A leading '-' is
+   * supported.
    *
    * This is a lightweight replacement for strtol()/atoi() intended for
    * parsing the small decimal integer fields returned by modems. It does
@@ -779,7 +790,7 @@ class TinyGsmModem {
    *         received before the delimiter.
    */
   inline int16_t streamGetIntBefore(char lastChar) {
-    char buf[7];
+    char buf[7] = {};
 
     size_t bytesRead = thisModem().stream.readBytesUntil(lastChar, buf,
                                                          sizeof(buf));
@@ -790,12 +801,18 @@ class TinyGsmModem {
     bool    negative = false;
     uint8_t i        = 0;
 
-    if (buf[0] == '-') {
+    // Skip leading spaces.
+    while (i < bytesRead && buf[i] == ' ') { ++i; }
+
+    if (i < bytesRead && buf[i] == '-') {
       negative = true;
-      i        = 1;
+      ++i;
     }
 
-    for (; i < bytesRead; ++i) { res = res * 10 + buf[i] - '0'; }
+    // Parse until the first trailing space.
+    for (; i < bytesRead && buf[i] != ' '; ++i) {
+      res = res * 10 + buf[i] - '0';
+    }
 
     return negative ? -res : res;
   }
@@ -805,8 +822,8 @@ class TinyGsmModem {
    * @brief Reads a fixed-length decimal floating-point value.
    *
    * Reads exactly @p numChars characters from the modem stream and converts
-   * them to a floating-point value. A leading '-' or '+' and a decimal point
-   * are supported.
+   * them to a floating-point value. Leading and trailing spaces are ignored.
+   * A leading '-' or '+' and a decimal point are supported.
    *
    * This is a lightweight replacement for strtof()/atof() intended for
    * parsing the ordinary decimal values returned by modems, including
@@ -832,12 +849,16 @@ class TinyGsmModem {
     bool    decimal  = false;
     uint8_t i        = 0;
 
-    if (buf[0] == '-' || buf[0] == '+') {
-      negative = buf[0] == '-';
-      i        = 1;
+    // Skip leading spaces.
+    while (i < numChars && buf[i] == ' ') { ++i; }
+
+    if (i < numChars && (buf[i] == '-' || buf[i] == '+')) {
+      negative = buf[i] == '-';
+      ++i;
     }
 
-    for (; i < numChars; ++i) {
+    // Parse until the first trailing space.
+    for (; i < numChars && buf[i] != ' '; ++i) {
       char c = buf[i];
 
       if (c == '.') {
@@ -859,7 +880,8 @@ class TinyGsmModem {
    *
    * Reads characters from the modem stream until @p lastChar is encountered
    * and converts the characters preceding it to a floating-point value.
-   * A leading '-' or '+' and a decimal point are supported.
+   * Leading and trailing spaces are ignored. A leading '-' or '+' and a
+   * decimal point are supported.
    *
    * This is a lightweight replacement for strtof()/atof() intended for
    * parsing the ordinary decimal values returned by modems, including
@@ -874,7 +896,7 @@ class TinyGsmModem {
    *         received before the delimiter.
    */
   inline float streamGetFloatBefore(char lastChar) {
-    char buf[16];
+    char buf[16] = {};
 
     size_t bytesRead = thisModem().stream.readBytesUntil(lastChar, buf,
                                                          sizeof(buf));
@@ -887,12 +909,16 @@ class TinyGsmModem {
     bool    decimal  = false;
     uint8_t i        = 0;
 
-    if (buf[0] == '-' || buf[0] == '+') {
-      negative = buf[0] == '-';
-      i        = 1;
+    // Skip leading spaces.
+    while (i < bytesRead && buf[i] == ' ') { ++i; }
+
+    if (i < bytesRead && (buf[i] == '-' || buf[i] == '+')) {
+      negative = buf[i] == '-';
+      ++i;
     }
 
-    for (; i < bytesRead; ++i) {
+    // Parse until the first trailing space.
+    for (; i < bytesRead && buf[i] != ' '; ++i) {
       char c = buf[i];
 
       if (c == '.') {
