@@ -225,6 +225,7 @@ def build_custom_matrix(config: dict) -> list[dict]:
             "example": [
                 os.path.join("extras", "tools", "AT_Debug"),
                 os.path.join("extras", "tools", "AT_Spy"),
+                os.path.join("extras", "tools", "EspressifUpdateFirmware"),
             ],  # never build these examples in CI, they are for debugging only
             "board": boards,
             "inline_defines": modem_list,
