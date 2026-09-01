@@ -268,7 +268,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
     if (thisModem().waitResponse(GFP(SIM70xxModemConfig::GSM_NL)) != 1) {
       return "";
     }
-    String res = stream.readStringUntil('\n');
+    String res = thisModem().stream.readStringUntil('\n');
     thisModem().waitResponse();
     res.trim();
     return res;
@@ -316,14 +316,12 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
     //  - 0 Not fixed position.
     //  - 1 Fixed position.
 
-#if defined(TINY_GSM_DEBUG) && TINY_GSM_DEBUG
+#if defined(TINY_GSM_DEBUG) && 0
     int16_t run_status = thisModem().streamGetIntBefore(',');
-    DBG("GNSS run status:", run_status);
 #else
     thisModem().streamSkipUntil(',');  // GNSS run status
 #endif
     int16_t fix_status = thisModem().streamGetIntBefore(',');  // fix status
-    DBG("Fix status:", fix_status);
 
     // init variables
     float   ilat         = 0;
@@ -408,6 +406,8 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
     thisModem().waitResponse();
 
 #if 0
+    DBG("GNSS run status:", run_status);
+    DBG("Fix status:", fix_status);
     DBG(GF("Latitude:"), String(ilat, 8), GF("\tLongitude:"), String(ilon, 8),
         GF("\tAltitude:"), String(ialt, 4));
     DBG(GF("VSAT:"), ivsat, GF("\tUSAT:"), iusat, GF("\tAccuracy:"), iaccuracy);

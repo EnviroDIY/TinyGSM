@@ -190,14 +190,12 @@ class TinyGsmSim808 : public TinyGsmSim800,
     sendAT(GF("+CGNSINF"));
     if (waitResponse(10000L, GF("+CGNSINF:")) != 1) { return false; }
 
-#if defined(TINY_GSM_DEBUG) && TINY_GSM_DEBUG
+#if defined(TINY_GSM_DEBUG) && 0
     int16_t run_status = streamGetIntBefore(',');
-    DBG("GNSS run status:", run_status);
 #else
     streamSkipUntil(',');  // GNSS run status
 #endif
     int16_t fix_status = streamGetIntBefore(',');  // fix status
-    DBG("Fix status:", fix_status);
 
     // init variables
     float   ilat         = 0;
@@ -279,6 +277,8 @@ class TinyGsmSim808 : public TinyGsmSim800,
     waitResponse();
 
 #if 0
+    DBG("GNSS run status:", run_status);
+    DBG("Fix status:", fix_status);
     DBG(GF("Latitude:"), String(ilat, 8), GF("\tLongitude:"), String(ilon, 8),
         GF("\tAltitude:"), String(ialt, 4));
     DBG(GF("VSAT:"), ivsat, GF("\tUSAT:"), iusat, GF("\tAccuracy:"), iaccuracy);
