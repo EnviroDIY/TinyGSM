@@ -876,12 +876,12 @@ class TinyGsmSim5360
     int16_t len_remaining = streamGetIntBefore('\n');
     // ^^ The data length which not read in the buffer
     if (isValidMux(ret_mux)) {
-      // move the data to the socket buffer of the returned mux as long as the
+      // Move the data to the socket buffer of the returned mux as long as the
       // returned mux is valid, even if it doesn't match the expected mux.
       len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
       // update the amount remaining for the returned mux, even if it doesn't
       // match the expected mux.
-      sockets[ret_mux]->sock_available = len_remaining;
+      sockets[ret_mux]->sock_available = len_remaining >= 0 ? len_remaining : 0;
     }
     waitResponse();  // ending OK; the waitResponse function will toss all the
                      // characters before the OK if the mux was invalid

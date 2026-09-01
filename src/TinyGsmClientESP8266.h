@@ -1041,22 +1041,17 @@ class TinyGsmESP8266
     if (data.endsWith(GF("+IPD,"))) {
       int16_t mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(':');
-      int16_t len          = len_reported;
       if (isValidMux(mux)) {
-        if (len > sockets[static_cast<uint8_t>(mux)]->rx.free()) {
-          DBG("### Buffer overflow: ", len, "->",
-              sockets[static_cast<uint8_t>(mux)]->rx.free());
-          // reset the len to read to the amount free
-          len = sockets[static_cast<uint8_t>(mux)]->rx.free();
-        }
-        moveCharsFromStreamToFifo(mux, len);
-        // Drain surplus payload bytes if buffer overflow occurred
-        if (len < len_reported) {
-          int16_t surplus = len_reported - len;
-          for (int16_t i = 0; i < surplus && stream.available(); i++) {
-            stream.read();
-          }
-        }
+        // This will handle an invalid len_reported value and will drain the
+        // stream if there's a buffer overflow, so we don't need to validate
+        // len_reported or check for overflow here.  We just need to make sure
+        // the mux is valid before we call it.
+        moveCharsFromStreamToFifo(mux, len_reported);
+      } else {
+        do {  // If the mux is invalid, throw away the stream data
+          stream.read();
+          TINY_GSM_YIELD();
+        } while (stream.available());
       }
       data = "";
       return true;

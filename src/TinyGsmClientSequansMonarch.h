@@ -857,7 +857,7 @@ class TinyGsmSequansMonarch
     int16_t ret_mux      = streamGetIntBefore(',');  // mux
     int16_t len_reported = streamGetIntBefore('\n');
     if (isValidMux(ret_mux)) {
-      // move the data to the socket buffer of the returned mux as long as the
+      // Move the data to the socket buffer of the returned mux as long as the
       // returned mux is valid, even if it doesn't match the expected mux.
       len_read = moveCharsFromStreamToFifo(ret_mux % TcpConfig::kMuxCount,
                                            len_reported);

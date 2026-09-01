@@ -681,7 +681,6 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
         sockets[mux]->sock_available = len_reported;
       }
       size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
-      // Never wrap the unsigned available counter
       sockets[mux]->sock_available -= TinyGsmMin(
           static_cast<size_t>(sockets[mux]->sock_available), len_read);
       // ^^ Decrease the characters available after moving from modem's FIFO to

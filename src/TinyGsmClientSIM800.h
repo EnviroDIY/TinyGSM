@@ -833,7 +833,7 @@ class TinyGsmSim800
     // the first number is the number of bytes returned and the second is the
     // number of bytes that will be remaining in the buffer after the read.
     if (isValidMux(ret_mux)) {
-      // move the data to the socket buffer of the returned mux as long as the
+      // Move the data to the socket buffer of the returned mux as long as the
       // returned mux is valid, even if it doesn't match the expected mux.
       len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
     }

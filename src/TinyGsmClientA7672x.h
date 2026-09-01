@@ -1007,7 +1007,7 @@ class TinyGsmA7672X
       // buffer.
     }
     if (isValidMux(ret_mux)) {
-      // move the data to the socket buffer of the returned mux as long as the
+      // Move the data to the socket buffer of the returned mux as long as the
       // returned mux is valid, even if it doesn't match the expected mux.
       len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
     }

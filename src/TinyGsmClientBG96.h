@@ -1345,9 +1345,9 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
-    size_t len_reported = 0;
-    size_t len_read     = 0;
-    bool   ssl          = sockets[mux]->is_secure;
+    int16_t len_reported = 0;
+    size_t  len_read     = 0;
+    bool    ssl          = sockets[mux]->is_secure;
     if (ssl) {
       sendAT(GF("+QSSLRECV="), mux, ',', (uint16_t)size);
       if (waitResponse(GF("+QSSLRECV:")) != 1) {
