@@ -454,16 +454,15 @@ void loop() {
 // certificates must be named "client_ca.{0|1}", "client_cert.{0|1}", or
 // "client_key.{0|1}"
 #ifdef TINY_GSM_MODEM_ESP32
-  const char* root_ca_name     = "client_ca.1";
-  const char* client_cert_name = "client_cert.1";
-  const char* client_key_name  = "client_key.1";
+  const char* root_ca_name = "client_ca.1";
+  // const char* client_cert_name = "client_cert.1";
+  // const char* client_key_name  = "client_key.1";
 #else
   // For most modules the actual filename doesn't matter much but it CANNOT
-  // HAVE SPACES and should be less than 64 characters.
+  // HAVE SPACES.
   // Some modules will not accept filenames with special characters so avoid
   // those, too.
-  // NOTE: The certificate names as they are downloaded from AWS IoT Core are
-  // often too long for the modem to handle. Pick something shorter.
+  // This library restricts file names to 32 characters.
   const char* root_ca_name = "isrgrootx1.pem";
   // const char* client_cert_name = THING_NAME "-certificate.pem.crt";
   // const char* client_key_name  = THING_NAME "-private-key.pem.key";
