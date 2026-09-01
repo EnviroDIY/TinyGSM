@@ -744,6 +744,16 @@ class TinyGsmSim5360
     if (second != nullptr) *second = static_cast<int>(secondWithSS);
 
     waitResponse();
+
+#if 0
+    DBG(GF("Latitude:"), String(ilat, 8), GF("\tLongitude:"), String(ilon, 8),
+        GF("\tAltitude:"), String(ialt, 4));
+    DBG(GF("VSAT:"), ivsat, GF("\tUSAT:"), iusat, GF("\tAccuracy:"), -9999);
+    DBG(GF("Year:"), iyear, GF("\tMonth:"), imonth, GF("\tDay:"), iday);
+    DBG(GF("Hour:"), ihour, GF("\tMinute:"), imin, GF("\tSecond:"),
+        String(secondWithSS, 3));
+#endif
+
     return ilat != -9999.0F;
   }
 

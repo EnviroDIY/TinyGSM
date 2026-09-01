@@ -1251,6 +1251,11 @@ class TinyGsmSim7080
     DBG(GF("### Real max send size for mux"), mux, GF("is"),
         sockets[mux]->realMaxSendSize);
 
+    if (!isExpectedMux(ret_mux, mux) || 0 != res) {
+      DBG(GF("### Connection failed for mux"), mux);
+      DBG(GF("Instead got"), ret_mux, GF("with result"), res);
+    }
+
     return isExpectedMux(ret_mux, mux) && 0 == res;
   }
 

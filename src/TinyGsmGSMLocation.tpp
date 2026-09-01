@@ -208,6 +208,13 @@ class TinyGsmGSMLocation {
     if (minute != nullptr) *minute = imin;
     if (second != nullptr) *second = isec;
 
+#if 0
+    DBG(GF("Latitude:"), String(ilat, 8), GF("\tLongitude:"), String(ilon, 8),
+        GF("\tAccuracy:"), iaccuracy);
+    DBG(GF("Year:"), iyear, GF("\tMonth:"), imonth, GF("\tDay:"), iday);
+    DBG(GF("Hour:"), ihour, GF("\tMinute:"), imin, GF("\tSecond:"), isec);
+#endif
+
     // Final OK
     thisModem().waitResponse();
     return true;
