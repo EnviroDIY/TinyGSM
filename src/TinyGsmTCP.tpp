@@ -469,12 +469,13 @@ class TinyGsmTCP {
       }
 
       // Wait for at least one complete character (or HEX pair).
-      while (thisModem().stream.available() < readCharLen &&
+      while (static_cast<size_t>(thisModem().stream.available()) <
+                 readCharLen &&
              (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
         TINY_GSM_YIELD();
       }
 
-      if (thisModem().stream.available() < readCharLen) {
+      if (static_cast<size_t>(thisModem().stream.available()) < readCharLen) {
         DBG("### ERROR: Timed out waiting for character from stream!");
         ++char_failures;
       }
