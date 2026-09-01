@@ -664,20 +664,20 @@ class TinyGsmSim5360
     if (waitResponse(GF("+CGPSINFO:")) != 1) { return false; }
     delay(30);
 
-    float ilat = 0;
-    char  north;
-    float ilon = 0;
-    char  east;
-    float ispeed       = 0;
-    float ialt         = 0;
-    int   ivsat        = 0;
-    int   iusat        = 0;
-    int   iyear        = 0;
-    int   imonth       = 0;
-    int   iday         = 0;
-    int   ihour        = 0;
-    int   imin         = 0;
-    float secondWithSS = 0;
+    float   ilat = 0;
+    char    north;
+    float   ilon = 0;
+    char    east;
+    float   ispeed       = 0;
+    float   ialt         = 0;
+    int16_t ivsat        = 0;
+    int16_t iusat        = 0;
+    int16_t iyear        = 0;
+    int16_t imonth       = 0;
+    int16_t iday         = 0;
+    int16_t ihour        = 0;
+    int16_t imin         = 0;
+    float   secondWithSS = 0;
 
     ilat  = streamGetFloatBefore(',');  // Latitude in ddmm.mmmmmm
     north = stream.read();              // N/S Indicator, N=north or S=south

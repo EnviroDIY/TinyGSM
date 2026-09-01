@@ -830,18 +830,18 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     }
 
     // init variables
-    float ilat         = 0;
-    float ilon         = 0;
-    float ispeed       = 0;
-    float ialt         = 0;
-    int   iusat        = 0;
-    float iaccuracy    = 0;
-    int   iyear        = 0;
-    int   imonth       = 0;
-    int   iday         = 0;
-    int   ihour        = 0;
-    int   imin         = 0;
-    float secondWithSS = 0;
+    float   ilat         = 0;
+    float   ilon         = 0;
+    float   ispeed       = 0;
+    float   ialt         = 0;
+    int16_t iusat        = 0;
+    float   iaccuracy    = 0;
+    int16_t iyear        = 0;
+    int16_t imonth       = 0;
+    int16_t iday         = 0;
+    int16_t ihour        = 0;
+    int16_t imin         = 0;
+    float   secondWithSS = 0;
 
     // UTC Time
     char dt_portion[11] = {0};
@@ -944,24 +944,22 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     sendAT(GF("+QLTS=1"));
     if (waitResponse(2000L, GF("+QLTS: \"")) != 1) { return false; }
 
-    int iyear     = 0;
-    int imonth    = 0;
-    int iday      = 0;
-    int ihour     = 0;
-    int imin      = 0;
-    int isec      = 0;
-    int itimezone = 0;
+    int16_t iyear     = 0;
+    int16_t imonth    = 0;
+    int16_t iday      = 0;
+    int16_t ihour     = 0;
+    int16_t imin      = 0;
+    int16_t isec      = 0;
+    int16_t itimezone = 0;
 
     // Date & Time
-    iyear       = streamGetIntBefore('/');
-    imonth      = streamGetIntBefore('/');
-    iday        = streamGetIntBefore(',');
-    ihour       = streamGetIntBefore(':');
-    imin        = streamGetIntBefore(':');
-    isec        = streamGetIntLength(2);
-    char tzSign = stream.read();
-    itimezone   = streamGetIntBefore(',');
-    if (tzSign == '-') { itimezone = itimezone * -1; }
+    iyear     = streamGetIntBefore('/');
+    imonth    = streamGetIntBefore('/');
+    iday      = streamGetIntBefore(',');
+    ihour     = streamGetIntBefore(':');
+    imin      = streamGetIntBefore(':');
+    isec      = streamGetIntLength(2);
+    itimezone = streamGetIntBefore(',');
     streamSkipUntil('\n');  // DST flag
 
     // Set pointers
@@ -976,6 +974,16 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 
     // Final OK
     waitResponse();  // Ends with OK
+
+    // Validate parsed values
+    // NOTE: This is a basic validation and does not account for leap years or
+    // the number of days in each month.
+    if (iyear < 2000 || imonth < 1 || imonth > 12 || iday < 1 || iday > 31 ||
+        ihour < 0 || ihour > 23 || imin < 0 || imin > 59 || isec < 0 ||
+        isec > 59 || itimezone < -48 || itimezone > 56) {
+      return false;
+    }
+
     return true;
   }
 
@@ -987,24 +995,22 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     sendAT(GF("+QLTS=2"));
     if (waitResponse(2000L, GF("+QLTS: \"")) != 1) { return false; }
 
-    int iyear     = 0;
-    int imonth    = 0;
-    int iday      = 0;
-    int ihour     = 0;
-    int imin      = 0;
-    int isec      = 0;
-    int itimezone = 0;
+    int16_t iyear     = 0;
+    int16_t imonth    = 0;
+    int16_t iday      = 0;
+    int16_t ihour     = 0;
+    int16_t imin      = 0;
+    int16_t isec      = 0;
+    int16_t itimezone = 0;
 
     // Date & Time
-    iyear       = streamGetIntBefore('/');
-    imonth      = streamGetIntBefore('/');
-    iday        = streamGetIntBefore(',');
-    ihour       = streamGetIntBefore(':');
-    imin        = streamGetIntBefore(':');
-    isec        = streamGetIntLength(2);
-    char tzSign = stream.read();
-    itimezone   = streamGetIntBefore(',');
-    if (tzSign == '-') { itimezone = itimezone * -1; }
+    iyear     = streamGetIntBefore('/');
+    imonth    = streamGetIntBefore('/');
+    iday      = streamGetIntBefore(',');
+    ihour     = streamGetIntBefore(':');
+    imin      = streamGetIntBefore(':');
+    isec      = streamGetIntLength(2);
+    itimezone = streamGetIntBefore(',');
     streamSkipUntil('\n');  // DST flag
 
     // Set pointers
