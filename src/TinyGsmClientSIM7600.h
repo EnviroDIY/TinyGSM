@@ -848,8 +848,7 @@ class TinyGsmSim7600
 
     // UTC Time. Output format is hhmmss.s
     memset(dt_portion, '\0', sizeof(dt_portion));
-    size_t bytes_read = stream.readBytesUntil(',', dt_portion,
-                                              sizeof(dt_portion));
+    bytes_read = stream.readBytesUntil(',', dt_portion, sizeof(dt_portion));
     if (bytes_read == 10) {
       char dt_substr[7] = {0};
       memcpy(dt_substr, dt_portion, 2);
