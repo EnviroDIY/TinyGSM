@@ -722,8 +722,8 @@ class TinyGsmModem {
    * @brief Reads a fixed-length decimal integer from the modem stream.
    *
    * Reads exactly @p numChars characters from the modem stream and converts
-   * them to a signed 16-bit decimal integer. Leading and trailing spaces are
-   * ignored. A leading '-' is supported.
+   * them to a signed 16-bit decimal integer. Leading and trailing non-digits
+   * are ignored. A leading '-' or '+' are supported.
    *
    * This is a lightweight replacement for strtol()/atoi() intended for
    * parsing the small decimal integer fields returned by modems. It does
@@ -752,16 +752,16 @@ class TinyGsmModem {
     bool    negative = false;
     uint8_t i        = 0;
 
-    // Skip leading spaces.
-    while (i < numChars && buf[i] == ' ') { ++i; }
+    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
+    while (i < numChars && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
 
-    if (i < numChars && buf[i] == '-') {
-      negative = true;
+    if (i < numChars && (buf[i] == '-' || buf[i] == '+')) {
+      negative = buf[i] == '-';
       ++i;
     }
 
-    // Parse until the first trailing space.
-    for (; i < numChars && buf[i] != ' '; ++i) {
+    // Parse until the first non-digit (accept only 0-9).
+    for (; i < numChars && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
       res = res * 10 + buf[i] - '0';
     }
 
@@ -774,8 +774,8 @@ class TinyGsmModem {
    *
    * Reads characters from the modem stream until @p lastChar is encountered
    * and converts the characters preceding it to a signed 16-bit decimal
-   * integer. Leading and trailing spaces are ignored. A leading '-' is
-   * supported.
+   * integer. Leading and trailing non-digits are ignored. A leading '-' or '+'
+   * are supported.
    *
    * This is a lightweight replacement for strtol()/atoi() intended for
    * parsing the small decimal integer fields returned by modems. It does
@@ -801,16 +801,16 @@ class TinyGsmModem {
     bool    negative = false;
     uint8_t i        = 0;
 
-    // Skip leading spaces.
-    while (i < bytesRead && buf[i] == ' ') { ++i; }
+    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
+    while (i < bytesRead && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
 
-    if (i < bytesRead && buf[i] == '-') {
-      negative = true;
+    if (i < bytesRead && (buf[i] == '-' || buf[i] == '+')) {
+      negative = buf[i] == '-';
       ++i;
     }
 
-    // Parse until the first trailing space.
-    for (; i < bytesRead && buf[i] != ' '; ++i) {
+    // Parse until the first non-digit (accept only 0-9).
+    for (; i < bytesRead && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
       res = res * 10 + buf[i] - '0';
     }
 
@@ -822,8 +822,8 @@ class TinyGsmModem {
    * @brief Reads a fixed-length decimal floating-point value.
    *
    * Reads exactly @p numChars characters from the modem stream and converts
-   * them to a floating-point value. Leading and trailing spaces are ignored.
-   * A leading '-' or '+' and a decimal point are supported.
+   * them to a floating-point value. Leading and trailing non-digits are
+   * ignored. A leading '-' or '+' and a decimal point are supported.
    *
    * This is a lightweight replacement for strtof()/atof() intended for
    * parsing the ordinary decimal values returned by modems, including
@@ -849,16 +849,16 @@ class TinyGsmModem {
     bool    decimal  = false;
     uint8_t i        = 0;
 
-    // Skip leading spaces.
-    while (i < numChars && buf[i] == ' ') { ++i; }
+    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
+    while (i < numChars && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
 
     if (i < numChars && (buf[i] == '-' || buf[i] == '+')) {
       negative = buf[i] == '-';
       ++i;
     }
 
-    // Parse until the first trailing space.
-    for (; i < numChars && buf[i] != ' '; ++i) {
+    // Parse until the first non-digit (also accept '.' and '/')
+    for (; i < numChars && (buf[i] >= 0x2E && buf[i] <= 0x39); ++i) {
       char c = buf[i];
 
       if (c == '.') {
@@ -880,7 +880,7 @@ class TinyGsmModem {
    *
    * Reads characters from the modem stream until @p lastChar is encountered
    * and converts the characters preceding it to a floating-point value.
-   * Leading and trailing spaces are ignored. A leading '-' or '+' and a
+   * Leading and trailing non-digits are ignored. A leading '-' or '+' and a
    * decimal point are supported.
    *
    * This is a lightweight replacement for strtof()/atof() intended for
@@ -909,16 +909,16 @@ class TinyGsmModem {
     bool    decimal  = false;
     uint8_t i        = 0;
 
-    // Skip leading spaces.
-    while (i < bytesRead && buf[i] == ' ') { ++i; }
+    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
+    while (i < bytesRead && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
 
     if (i < bytesRead && (buf[i] == '-' || buf[i] == '+')) {
       negative = buf[i] == '-';
       ++i;
     }
 
-    // Parse until the first trailing space.
-    for (; i < bytesRead && buf[i] != ' '; ++i) {
+    // Parse until the first non-digit (also accept '.' and '/')
+    for (; i < bytesRead && (buf[i] >= 0x2E && buf[i] <= 0x39); ++i) {
       char c = buf[i];
 
       if (c == '.') {
