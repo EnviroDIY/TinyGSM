@@ -1532,8 +1532,8 @@ class TinyGsmESP32
     sendAT(GF("+CIPRECVDATA="), mux, ',', (uint16_t)size);
     // +CIPRECVDATA:<actual_len>,<"remote IP">,<remote port>,<data>
     if (waitResponse(GF("+CIPRECVDATA:")) != 1) { return 0; }
-    size_t len_reported = streamGetIntBefore(',');
-    size_t len_read     = moveCharsFromStreamToFifo(mux, len_reported);
+    int16_t len_reported = streamGetIntBefore(',');
+    size_t  len_read     = moveCharsFromStreamToFifo(mux, len_reported);
     waitResponse();  // final ok
 
     // Check how much is left in the buffer after reading.

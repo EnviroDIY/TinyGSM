@@ -650,7 +650,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
       streamSkipUntil(',');  // skip port
       streamSkipUntil(',');  // skip connection type (TCP/UDP)
       // read the real length of the retrieved data
-      uint16_t len_reported = streamGetIntBefore('\n');
+      int16_t len_reported = streamGetIntBefore('\n');
       // It's possible that the real length available is less than expected
       // This is quite likely if the buffer is broken into packets - which may
       // be different sizes.
