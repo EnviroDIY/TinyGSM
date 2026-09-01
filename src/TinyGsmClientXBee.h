@@ -1318,15 +1318,14 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     XBEE_COMMAND_START_DECORATOR(5, static_cast<float>(-9999))
     String res = sendATGetString(GF("TP"));
     if (res == "") { return static_cast<float>(-9999); }
-    char buf[5] = {
-        0,
-    };
-    res.toCharArray(buf, 5);
-    int8_t intRes = (int8_t)strtol(
-        buf, 0,
-        16);  // degrees Celsius displayed in 8-bit two's complement format.
+
+    char    c      = res[0];
+    uint8_t intRes = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+    c              = res[1];
+    intRes         = (intRes << 4) | ((c <= '9') ? c - '0' : (c & 0x0F) + 9);
+
     XBEE_COMMAND_END_DECORATOR
-    return static_cast<float>(intRes);
+    return static_cast<float>(static_cast<int8_t>(intRes));
   }
 
   /*
@@ -1950,16 +1949,20 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    * @param timeout_ms The maximum time to wait for a response, in milliseconds.
    * @return The response from the XBee module as an integer.
    */
-  int16_t readResponseInt(uint32_t timeout_ms = 1000) {
-    String res = readResponseString(
-        timeout_ms);  // it just works better reading a string first
-    if (res == "") res = "FF";
-    char buf[5] = {
-        0,
-    };
-    res.toCharArray(buf, 5);
-    int16_t intRes = strtol(buf, 0, 16);
-    return intRes;
+  int16_t readResponseInt(uint32_t timeout = 1000L) {
+    String res = readResponseString(timeout);
+    if (res == "") { return -1; }
+
+    int16_t result = 0;
+
+    for (uint16_t i = 0; i < res.length(); ++i) {
+      char c = res[i];
+
+      result <<= 4;
+      result |= (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+    }
+
+    return result;
   }
 
   /**
