@@ -734,18 +734,18 @@ class TinyGsmSaraR4
     // <jamming_status>
 
     // init variables
-    float ilat         = 0;
-    float ilon         = 0;
-    float ispeed       = 0;
-    float ialt         = 0;
-    int   iusat        = 0;
-    float iaccuracy    = 0;
-    int   iyear        = 0;
-    int   imonth       = 0;
-    int   iday         = 0;
-    int   ihour        = 0;
-    int   imin         = 0;
-    float secondWithSS = 0;
+    float   ilat         = 0;
+    float   ilon         = 0;
+    float   ispeed       = 0;
+    float   ialt         = 0;
+    int16_t iusat        = 0;
+    float   iaccuracy    = 0;
+    int16_t iyear        = 0;
+    int16_t imonth       = 0;
+    int16_t iday         = 0;
+    int16_t ihour        = 0;
+    int16_t imin         = 0;
+    float   secondWithSS = 0;
 
     // Date & Time
     iday         = streamGetIntBefore('/');    // Two digit day

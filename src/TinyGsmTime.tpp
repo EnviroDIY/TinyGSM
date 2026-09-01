@@ -173,24 +173,22 @@ class TinyGsmTime {
     thisModem().sendAT(GF("+CCLK?"));
     if (thisModem().waitResponse(2000L, GF("+CCLK: \"")) != 1) { return false; }
 
-    int iyear     = 0;
-    int imonth    = 0;
-    int iday      = 0;
-    int ihour     = 0;
-    int imin      = 0;
-    int isec      = 0;
-    int itimezone = 0;
+    int16_t iyear     = 0;
+    int16_t imonth    = 0;
+    int16_t iday      = 0;
+    int16_t ihour     = 0;
+    int16_t imin      = 0;
+    int16_t isec      = 0;
+    int16_t itimezone = 0;
 
     // Date & Time
-    iyear       = thisModem().streamGetIntBefore('/');
-    imonth      = thisModem().streamGetIntBefore('/');
-    iday        = thisModem().streamGetIntBefore(',');
-    ihour       = thisModem().streamGetIntBefore(':');
-    imin        = thisModem().streamGetIntBefore(':');
-    isec        = thisModem().streamGetIntLength(2);
-    char tzSign = thisModem().stream.read();
-    itimezone   = thisModem().streamGetIntBefore('\n');
-    if (tzSign == '-') { itimezone = itimezone * -1; }
+    iyear     = thisModem().streamGetIntBefore('/');
+    imonth    = thisModem().streamGetIntBefore('/');
+    iday      = thisModem().streamGetIntBefore(',');
+    ihour     = thisModem().streamGetIntBefore(':');
+    imin      = thisModem().streamGetIntBefore(':');
+    isec      = thisModem().streamGetIntLength(2);
+    itimezone = thisModem().streamGetIntBefore('\n');
 
     // Set pointers
     if (iyear < 2000) iyear += 2000;
