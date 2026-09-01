@@ -871,8 +871,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 
     // UTC Date
     memset(dt_portion, '\0', sizeof(dt_portion));
-    size_t bytes_read = stream.readBytesUntil(',', dt_portion,
-                                              sizeof(dt_portion));
+    bytes_read = stream.readBytesUntil(',', dt_portion, sizeof(dt_portion));
     if (bytes_read == 6) {
       char dt_substr[3] = {0};
       memcpy(dt_substr, dt_portion, 2);
