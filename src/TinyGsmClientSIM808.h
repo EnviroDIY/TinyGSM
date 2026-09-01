@@ -212,31 +212,23 @@ class TinyGsmSim808 : public TinyGsmSim800,
     int16_t imin         = 0;
     float   secondWithSS = 0;
 
-
-    char dt_portion[21] = {0};
-    memset(dt_portion, '\0', sizeof(dt_portion));
-    size_t bytes_read = stream.readBytesUntil(',', dt_portion,
-                                              sizeof(dt_portion));
-    if (bytes_read == 20) {
-      char dt_substr[7] = {0};
-      memcpy(dt_substr, dt_portion, 4);
-      dt_substr[4] = '\0';
-      iyear        = atoi(dt_substr);  // Four digit year
-      memcpy(dt_substr, dt_portion + 4, 2);
-      dt_substr[2] = '\0';
-      imonth       = atoi(dt_substr);  // Two digit month
-      memcpy(dt_substr, dt_portion + 6, 2);
-      dt_substr[2] = '\0';
-      iday         = atoi(dt_substr);  // Two digit day
-      memcpy(dt_substr, dt_portion + 8, 2);
-      dt_substr[2] = '\0';
-      ihour        = atoi(dt_substr);  // Two digit hour
-      memcpy(dt_substr, dt_portion + 10, 2);
-      dt_substr[2] = '\0';
-      imin         = atoi(dt_substr);  // Two digit minute
-      memcpy(dt_substr, dt_portion + 12, 6);
-      dt_substr[6] = '\0';
-      secondWithSS = atof(dt_substr);  // 6 digit second with subseconds
+    // UTC date & Time
+    // If the modem hasn't gotten a fix, the date and time might be missing.
+    // Before we parse the date and time by the expecte d number of characters,
+    // check if the date and time is present by checking if the next character
+    // is a comma.  If it is a comma, then the date and time is missing and we
+    // will skip parsing it.
+    bool hasDateTime = stream.peek() != ',';
+    if (hasDateTime) {
+      iyear  = streamGetIntLength(4);  // Four digit year
+      imonth = streamGetIntLength(2);  // Two digit month
+      iday   = streamGetIntLength(2);  // Two digit day
+      ihour  = streamGetIntLength(2);  // Two digit hour
+      imin   = streamGetIntLength(2);  // Two digit minute
+      secondWithSS =
+          streamGetFloatBefore(',');  // 6 digit second with subseconds
+    } else {
+      stream.read();  // Throw away the comma
     }
 
     ilat   = streamGetFloatBefore(',');     // Latitude

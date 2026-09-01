@@ -687,38 +687,25 @@ class TinyGsmSim5360
     streamSkipUntil(',');               // BEIDOU satellite valid numbers
 
     // Date. Output format is ddmmyy
-    char dt_portion[11] = {0};
-    memset(dt_portion, '\0', sizeof(dt_portion));
-    size_t bytes_read = stream.readBytesUntil(',', dt_portion,
-                                              sizeof(dt_portion));
-    if (bytes_read == 6) {
-      char dt_substr[3] = {0};
-      memcpy(dt_substr, dt_portion, 2);
-      dt_substr[2] = '\0';
-      iday         = atoi(dt_substr);  // Two digit day
-      memcpy(dt_substr, dt_portion + 2, 2);
-      dt_substr[2] = '\0';
-      imonth       = atoi(dt_substr);  // Two digit month
-      memcpy(dt_substr, dt_portion + 4, 2);
-      dt_substr[2] = '\0';
-      iyear        = atoi(dt_substr);  // Two digit year
-    }
+    // Read the whole date portion into a single uint32_t, then parse it into
+    // day, month, year.  By doing it this way, we avoid issues of attempting to
+    // read a set number of characters for each portion of the date if the date
+    // is missing or malformed.
+    uint32_t idate = streamGetULBefore(',');
+    iday           = static_cast<int16_t>(idate / 10000);  // Two digit day
+    imonth = static_cast<int16_t>((idate / 100) % 100);    // Two digit month
+    iyear  = static_cast<int16_t>(idate % 100);            // Two digit year
 
     // UTC Time. Output format is hhmmss.s
-    memset(dt_portion, '\0', sizeof(dt_portion));
-    bytes_read = stream.readBytesUntil(',', dt_portion, sizeof(dt_portion));
-    if (bytes_read == 10) {
-      char dt_substr[7] = {0};
-      memcpy(dt_substr, dt_portion, 2);
-      dt_substr[2] = '\0';
-      ihour        = atoi(dt_substr);  // Two digit hour
-      memcpy(dt_substr, dt_portion + 2, 2);
-      dt_substr[2] = '\0';
-      imin         = atoi(dt_substr);  // Two digit minute
-      memccpy(dt_substr, dt_portion + 4, '\0', 6);
-      dt_substr[6] = '\0';
-      secondWithSS = atof(dt_substr);  // 4 or 6 digit second with subseconds
-    }
+    // Again, read the whole time portion into a single float, then parse that
+    // into the hour, minute, and second portions.
+    float    itime     = streamGetFloatBefore(',');
+    uint32_t itime_int = static_cast<uint32_t>(itime * 1000);
+    // ^^ Multiply by 1000 to avoid floating point modulo
+    ihour = static_cast<int16_t>(itime_int / 1000000);       // Two digit hour
+    imin = static_cast<int16_t>((itime_int / 10000) % 100);  // Two digit minute
+    secondWithSS = static_cast<float>(
+        (itime_int % 10000) / 1000.0);  // Two digit second with subseconds
 
     ialt   = streamGetFloatBefore(',');  // MSL Altitude. Unit is meters
     ispeed = streamGetFloatBefore(',');  // Speed Over Ground. Unit is knots.
