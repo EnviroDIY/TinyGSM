@@ -665,27 +665,29 @@ class TinyGsmModem {
    * @todo Should this be protected?
    */
   inline void streamDump(int16_t expected_len) {
-    uint32_t startMillis   = millis();
-    size_t   len           = expected_len;
-    size_t   len_read      = 0;
-    uint8_t  char_failures = 0;
+    if (expected_len <= 0) { return; }
+    size_t  len           = static_cast<size_t>(expected_len);
+    size_t  len_read      = 0;
+    uint8_t char_failures = 0;
 
     // allow up to 3 timeouts on individual characters before we quit the whole
     // read operation
     while (len && char_failures < 3) {
       // if something is available, read it
       if (thisModem().stream.available()) {
-        int readCharLen = thisModem().stream.read();
-        len -= readCharLen;
-        len_read += readCharLen;
+        if (thisModem().stream.read() >= 0) {
+          len--;
+          len_read++;
+        }
         continue;
       }
       // wait for a new character to be available on the stream
-      while (thisModem().stream.available() &&
-             (millis() - startMillis < thisModem().stream._timeout)) {
+      uint32_t startMillis = millis();
+      while (!thisModem().stream.available() &&
+             (millis() - startMillis < 1000L)) {
         TINY_GSM_YIELD();
       }
-      if (thisModem().stream.available()) {
+      if (!thisModem().stream.available()) {
         DBG("### ERROR: Timed out waiting for character from stream!");
         char_failures++;
       }
