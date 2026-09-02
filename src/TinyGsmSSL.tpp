@@ -525,7 +525,10 @@ class GsmSecureClient {
    */
   virtual void setPSKTableName(const char* pskTableName) {
     // copy the PSK table name into owned buffer
-    strncpy(this->pskTableName, pskTableName, sizeof(this->pskTableName) - 1);
+    memset(this->pskTableName, '\0', sizeof(this->pskTableName));
+    if (pskTableName != nullptr) {
+      strncpy(this->pskTableName, pskTableName, sizeof(this->pskTableName) - 1);
+    }
     sslCtxConfigured = false;
   }
   /// @copydoc setPSKTableName(const char*)
