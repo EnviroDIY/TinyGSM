@@ -68,7 +68,7 @@ class TinyGsmNTP {
    * @param timeout_s The timeout in seconds
    * @return True if the modem synchronized successfully, false otherwise.
    */
-  bool waitForTimeSync(int timeout_s = 120) {
+  bool waitForTimeSync(uint16_t timeout_s = 120) {
     return thisModem().waitForTimeSyncImpl(timeout_s);
   }
   /**
