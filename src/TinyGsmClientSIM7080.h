@@ -534,13 +534,13 @@ class TinyGsmSim7080
     //<index> 3: "/customer/" (always use customer for certificates)
     //<file name> File name length should less or equal 230 characters
     sendAT(GF("+CFSGFIS=3,\""), certificateName, '"');
+    // Response: +CFSGFIS: <file_size>
     success &= waitResponse(5000L, GF("+CFSGFIS:")) == 1;
     if (success) {
-      uint16_t len_confirmed = stream.parseInt();
-      streamSkipUntil('\n');
+      int16_t len_confirmed = streamGetIntBefore('\n');
       success &= len_confirmed == len;
+      success &= waitResponse(5000L) == 1;
     }
-    success &= waitResponse(5000L) == 1;
 
     // Release AT relates to file system functions.
     // NOTE: We need to do this even if we didn't successfully write the file
@@ -587,10 +587,7 @@ class TinyGsmSim7080
     // <position> The starting position that will be read in the file.
     sendAT(GF("+CFSRFILE=3,\""), filename, GF("\",0,10240,0"));
     success &= waitResponse(5000L, GF("+CFSRFILE:")) == 1;
-    if (success) {
-      print_len = stream.parseInt();
-      streamSkipUntil('\n');
-    }
+    if (success) { print_len = streamGetIntBefore('\n'); }
 
     // wait for some characters to be available
     uint32_t start = millis();
@@ -858,20 +855,18 @@ class TinyGsmSim7080
     // Request network synchronization - execution command
     sendAT(GF("+CNTP"));
     if (waitResponse(10000L, GF("+CNTP:")) == 1) {
-      String result = stream.readStringUntil('\n');
-      // Check for ',' in case the module appends the time next to the return
-      // code. Eg: +CNTP: <code>[,<time>]
+      // Return: +CNTP: <code>[,<time>]
       // <code> - Result code of the NTP synchronization
-      //        - 1 UTC time synchronization is successful
-      //        - 61 Network Error
-      //        - 62 DNS resolution error
-      //        - 63 Connection Error
-      //        - 64 Service response error
-      //        - 65 Service Response Timeout
-      int index = result.indexOf(',');
-      if (index > 0) { result.remove(index); }
-      result.trim();
-      if (TinyGsmIsValidNumber(result)) { return result.toInt() == 1; }
+      //    - 1 UTC time synchronization is successful
+      //    - 61 Network Error
+      //    - 62 DNS resolution error
+      //    - 63 Connection Error
+      //    - 64 Service response error
+      //    - 65 Service Response Timeout
+      int code = stream.parseInt();
+      // Throw away the rest of the line, since we don't care about it here
+      streamSkipUntil('\n');
+      return code == 1;
     }
     return false;
   }

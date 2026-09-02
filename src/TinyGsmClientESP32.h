@@ -1547,6 +1547,7 @@ class TinyGsmESP32
     if (!isValidMux(mux)) { return 0; }
     size_t result = 0;
     sendAT(GF("+CIPRECVLEN?"));
+    // +CIPRECVLEN:<data length of link>[...][,<data length of link>]
     if (waitResponse(GF("+CIPRECVLEN:")) != 1) { return result; }
     for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
       long mux_avail = stream.parseInt();

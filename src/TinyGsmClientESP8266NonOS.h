@@ -343,19 +343,14 @@ class TinyGsmESP8266NonOS
  protected:
   ESP8266NonOSRegStatus getRegistrationStatusImpl() {
     sendAT(GF("+CIPSTATUS"));
-    if (waitResponse(3000, GF("STATUS:")) != 1)
-      return ESP8266NonOSRegStatus::REG_UNKNOWN;
-    // after "STATUS:" it should return the status number (0,1,2,3,4,5),
-    // followed by an OK
-    // Since there are more possible status number codes than the arguments for
-    // waitResponse, we'll capture the response in a string and then parse it.
-    String res;
-    if (waitResponse(3000L, res) != 1) {
+    if (waitResponse(3000, GF("STATUS:")) != 1) {
       return ESP8266NonOSRegStatus::REG_UNKNOWN;
     }
-    res.trim();
-    int8_t status = res.toInt();
-    return static_cast<ESP8266NonOSRegStatus>(status);
+    // after "STATUS:" it should return the status number (0,1,2,3,4,5),
+    // followed by an OK
+    int16_t statusCode = streamGetIntBefore('\n');
+    waitResponse();  // wait for the OK or ERROR
+    return static_cast<ESP8266NonOSRegStatus>(statusCode);
   }
 
   bool isNetworkConnectedImpl() {

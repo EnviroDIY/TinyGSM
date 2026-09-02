@@ -268,7 +268,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
     if (thisModem().waitResponse(GFP(SIM70xxModemConfig::GSM_NL)) != 1) {
       return "";
     }
-    String res = thisModem().stream.readStringUntil('\n');
+    String res = stream.readStringUntil('\n');
     thisModem().waitResponse();
     res.trim();
     return res;
@@ -344,7 +344,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
     // check if the date and time is present by checking if the next character
     // is a comma.  If it is a comma, then the date and time is missing and we
     // will skip parsing it.
-    bool hasDateTime = thisModem().stream.peek() != ',';
+    bool hasDateTime = stream.peek() != ',';
     if (hasDateTime) {
       iyear        = thisModem().streamGetIntLength(4);  // Four digit year
       imonth       = thisModem().streamGetIntLength(2);  // Two digit month
@@ -354,7 +354,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
       secondWithSS = thisModem().streamGetFloatBefore(
           ',');  // 6 digit second with subseconds
     } else {
-      thisModem().stream.read();  // Throw away the comma
+      stream.read();  // Throw away the comma
     }
 
     ilat = thisModem().streamGetFloatBefore(',');  // Latitude

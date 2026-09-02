@@ -1278,7 +1278,8 @@ class TinyGsmModem {
                                            GFP(ModemConfig::GSM_ERROR));
     if (resp != 1 && resp != 2 && resp != 3) { return -1; }
     thisModem().streamSkipUntil(','); /* Skip format (0) */
-    int status = thisModem().stream.parseInt();
+    // int status = thisModem().stream.parseInt();
+    int status = thisModem().streamGetIntBefore(ModemConfig::GSM_NL[0]);
     thisModem().waitResponse();
     return status;
   }

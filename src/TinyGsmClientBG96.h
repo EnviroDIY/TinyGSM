@@ -639,7 +639,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     bool success = true;
     success &= waitResponse(GF("+QFUPL:")) == 1;
     if (success) {
-      uint16_t len_confirmed = stream.parseInt();
+      uint16_t len_confirmed = streamGetIntBefore(',');
       streamSkipUntil('\n');  // skip the checksum
       success &= len_confirmed == len;
     }
@@ -1066,10 +1066,9 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       // if we get the response within 10s, check the error code to see if it
       // was successful
       if (waitResponse(GF("+QNTP:")) == 1) {
-        String result = stream.readStringUntil(',');
-        streamSkipUntil('\n');
-        result.trim();
-        if (TinyGsmIsValidNumber(result)) { return result.toInt() == 0; }
+        int16_t err_code = streamGetIntBefore(',');
+        streamSkipUntil('\n');  // skip the rest of the response
+        return err_code == 0;
       }
     }
     // if we don't get the response within 10s, or if the error code was not 0,
