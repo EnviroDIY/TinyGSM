@@ -371,11 +371,15 @@ class TinyGsmA7672X
       if (!sslCtxConfigured) {
         if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
           DBG("### The A7672x does not support SSL using pre-shared keys.");
-          sslCtxConfigured = false;
+          return 0;
         } else {
           sslCtxConfigured = at->configureSSLContext(
               sslCtxIndex, host, sslAuthMode, sslVersion, CAcertName,
               clientCertName, clientKeyName);
+          if (!sslCtxConfigured) {
+            DBG("### Failed to configure the SSL context!");
+            return 0;
+          }
         }
       }
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
