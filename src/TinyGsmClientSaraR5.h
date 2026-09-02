@@ -651,6 +651,7 @@ class TinyGsmSaraR5
     // the loop and use that PDP context identifier.
     int  rcid = -1;
     char strApn[128];
+    bool found = false;
     while (waitResponse(1000, GF("+CGDCONT:")) == 1) {
       rcid = streamGetIntBefore(',');
       streamSkipUntil('\"');  // skip to the opening quote
@@ -662,9 +663,12 @@ class TinyGsmSaraR5
       size_t len  = stream.readBytesUntil('\"', strApn, sizeof(strApn) - 1);
       strApn[len] = '\0';
       streamSkipUntil('\n');  // throw away the rest of the line
-      if (!strcmp(strApn, apn)) { break; }
+      if (!strcmp(strApn, apn)) {
+        found = true;
+        break;
+      }
     }
-
+    if (!found) { rcid = -1; }
 #if 0
     String response;
     response.reserve(1024);
