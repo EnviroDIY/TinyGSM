@@ -976,19 +976,8 @@ class TinyGsmSequansMonarch
   const char* gsmNL = "\n";
 
   // over-ride because mux numbers start at 1
-  bool isValidMux(uint8_t mux) {
-    return mux > 0 && mux <= TcpConfig::kMuxCount &&
-        sockets[mux % TcpConfig::kMuxCount] != nullptr;
-  }
-  bool isValidMux(uint16_t mux) {
-    return mux > 0 && mux <= TcpConfig::kMuxCount &&
-        sockets[mux % TcpConfig::kMuxCount] != nullptr;
-  }
-  bool isValidMux(int16_t mux) {
-    return mux > 0 && mux <= TcpConfig::kMuxCount &&
-        sockets[mux % TcpConfig::kMuxCount] != nullptr;
-  }
-  bool isValidMux(int8_t mux) {
+  template <typename T>
+  bool isValidMux(T mux) {
     return mux > 0 && mux <= TcpConfig::kMuxCount &&
         sockets[mux % TcpConfig::kMuxCount] != nullptr;
   }
