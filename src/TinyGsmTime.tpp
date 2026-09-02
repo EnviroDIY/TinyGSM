@@ -113,7 +113,8 @@ class TinyGsmTime {
    * @brief Get the Date/Time as an epoch value
    *
    * @param epoch The epoch start to use.
-   * @return *uint32_t* The offset from the start of the epoch
+   * @return *uint32_t* The offset from the start of the epoch or 0 if the epoch
+   * could not be retrieved.
    */
   uint32_t
   getNetworkEpoch(TinyGSM_EpochStart epoch = TinyGSM_EpochStart::UNIX) {
