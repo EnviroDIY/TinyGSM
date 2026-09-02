@@ -646,10 +646,12 @@ class TinyGsmSim7000
                               data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
                                                data.length() - 8));
       int16_t coma = data.indexOf(',', nl + 2);
-      int16_t mux  = data.substring(nl + 2, coma).toInt();
-      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
+      if (coma > nl + 2) {
+        int16_t mux = data.substring(nl + 2, coma).toInt();
+        if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
+        DBG("### Closed: ", mux);
+      }
       data = "";
-      DBG("### Closed: ", mux);
       return true;
     } else if (data.endsWith(GF("*PSNWID:"))) {
       streamSkipUntil('\n');  // Refresh network name by network
