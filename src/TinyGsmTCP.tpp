@@ -396,7 +396,10 @@ class TinyGsmTCP {
 
 #ifdef TINY_GSM_USE_HEX
     // DBG("### Reading input in HEX mode");
-    constexpr size_t readCharLen = 2;
+    constexpr size_t readCharLen    = 2;
+    char             hanging_nibble = '\0';
+    // ^^ Used to store a single nibble if we get an odd number of hex
+    // characters from the stream
 #else
     // DBG("### Reading input in ASCII mode");
     constexpr size_t readCharLen = 1;
@@ -429,17 +432,40 @@ class TinyGsmTCP {
 
         size_t bytesRead = thisModem().stream.readBytes(buf, count);
 
+#ifdef TINY_GSM_USE_HEX
+        // Detect short reads with odd byte count that would break hex alignment
+        if (bytesRead & 1) {
+          // truncate to even
+          bytesRead &= ~static_cast<size_t>(1);
+          // save the hanging nibble into the buffer for the next read
+          hanging_nibble = buf[bytesRead];
+        } else {
+          hanging_nibble = '\0';
+        }
+#endif
+
         bytesRead -= bytesRead % readCharLen;
 
 #ifdef TINY_GSM_USE_HEX
         for (size_t i = 0; i < bytesRead; i += 2) {
-          uint8_t c = buf[i];
-          uint8_t d = buf[i + 1];
+          if (hanging_nibble != '\0' && i == 0) {
+            // If we have a hanging nibble from the previous read, use it as the
+            // first nibble of this pair.
+            uint8_t c = hanging_nibble;
+            uint8_t d = buf[i];
+          } else {
+            uint8_t c = buf[i];
+            uint8_t d = buf[i + 1];
+          }
 
           c = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
           d = (d <= '9') ? d - '0' : (d & 0x0F) + 9;
 
           buf[i >> 1] = (c << 4) | d;
+
+          // if we used a hanging nibble, we need to step i back by 1 so that
+          // the next iteration uses the correct index
+          if (hanging_nibble != '\0' && i == 0) { i -= 1; }
         }
 
         bytesRead >>= 1;
