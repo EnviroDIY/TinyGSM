@@ -788,14 +788,18 @@ class TinyGsmSequansMonarch
           send_attempts++;
           continue;
         }
-        // Translate bytes into char to be able to send them as an hex string
-        char char_command[3];
+
+        // Translate bytes into char to be able to send them as a hex string
+        static const char hex[] = "0123456789ABCDEF";
+        char              char_command[2];
+
         for (size_t i = 0; i < sendLength; i++) {
-          memset(&char_command, 0, sizeof(char_command));
-          sprintf(&char_command[0], "%02X",
-                  reinterpret_cast<const uint8_t*>(txPtr)[i]);
+          uint8_t b       = txPtr[i];
+          char_command[0] = hex[b >> 4];
+          char_command[1] = hex[b & 0x0F];
           stream.write(char_command, 2);
         }
+
         stream.flush();
         send_success = waitResponse() == 1;
         if (send_success) {
