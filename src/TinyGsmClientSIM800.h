@@ -665,12 +665,10 @@ class TinyGsmSim800
   uint8_t getVolume() {
     // Get speaker volume
     sendAT(GF("+CLVL?"));
-    if (waitResponse(GFP(ModemConfig::GSM_NL)) != 1) { return 0; }
-    String res = stream.readStringUntil('\n');
+    if (waitResponse(GF("+CLVL:")) != 1) { return 0; }
+    int16_t res = streamGetIntBefore('\n');
     waitResponse();
-    res.replace("+CLVL:", "");
-    res.trim();
-    return res.toInt();
+    return static_cast<uint8_t>(res);
   }
 
   /**

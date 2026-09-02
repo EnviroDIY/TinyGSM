@@ -660,12 +660,10 @@ class TinyGsmSequansMonarch
  protected:
   float getTemperatureImpl() {
     sendAT(GF("+SMDTH"));
-    if (waitResponse(10000L, GF("+SMDTH: ")) != 1) {
-      return static_cast<float>(-9999);
-    }
+    if (waitResponse(10000L, GF("+SMDTH: ")) != 1) { return -9999.0f; }
     String res;
-    if (waitResponse(1000L, res) != 1) { return static_cast<float>(-9999); }
-    if (res.indexOf("ERROR") >= 0) { return static_cast<float>(-9999); }
+    if (waitResponse(1000L, res) != 1) { return -9999.0f; }
+    if (res.indexOf("ERROR") >= 0) { return -9999.0f; }
     return res.toFloat();
   }
 

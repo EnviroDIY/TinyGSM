@@ -253,8 +253,9 @@ class TinyGsmEspressif
     thisModem().streamSkipUntil(',');  // Skip SSID
     thisModem().streamSkipUntil(',');  // Skip BSSID/MAC address
     thisModem().streamSkipUntil(',');  // Skip Chanel number
-    int8_t res2 = stream.parseInt();   // Read RSSI
-    thisModem().waitResponse();        // Returns an OK after the value
+    int8_t res2 = thisModem().streamGetIntBefore(',');  // Read RSSI
+    thisModem().streamSkipUntil('\n');                  // Skip the rest
+    thisModem().waitResponse();  // Returns an OK after the value
     return res2;
   }
 

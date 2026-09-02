@@ -715,11 +715,9 @@ class TinyGsmA7672X
    */
  protected:
   float getTemperatureImpl() {
-    String res = "";
     sendAT(GF("+CPMUTEMP"));
-    if (waitResponse(1000L, res)) { return 0; }
-    res        = res.substring(res.indexOf(':'), res.indexOf('\r'));
-    float temp = res.toFloat();
+    if (waitResponse(GF("+CPMUTEMP:")) != 1) { return -9999.0f; }
+    float temp = streamGetFloatBefore('\n');
     waitResponse();
     return temp;
   }
