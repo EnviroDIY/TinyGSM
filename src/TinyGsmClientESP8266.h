@@ -812,8 +812,8 @@ class TinyGsmESP8266
     if (modem_time != static_cast<uint32_t>(-1)) {
       switch (epoch) {
         case TinyGSM_EpochStart::UNIX: modem_time += 0; break;
-        case TinyGSM_EpochStart::Y2K: modem_time += 946684800; break;
-        case TinyGSM_EpochStart::GPS: modem_time += 315878400; break;
+        case TinyGSM_EpochStart::Y2K: modem_time -= 946684800; break;
+        case TinyGSM_EpochStart::GPS: modem_time -= 315964800; break;
       }
     }
 
