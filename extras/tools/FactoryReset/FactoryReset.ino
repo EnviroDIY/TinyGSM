@@ -85,7 +85,7 @@ void setup() {
   SerialMon.println(
       F("***********************************************************"));
   SerialMon.print(F(" Return settings to Factory Defaults: "));
-  SerialMon.println((ret) ? "OK" : "FAIL");
+  SerialMon.println((ret) ? F("OK") : F("FAIL"));
   SerialMon.println(
       F("***********************************************************"));
 }

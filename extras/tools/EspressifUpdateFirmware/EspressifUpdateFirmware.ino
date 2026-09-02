@@ -127,6 +127,7 @@ void loop() {
     SerialMon.println(GF("Failed to restart modem, delaying 10s and retrying"));
     // restart autobaud in case GSM just rebooted
     // TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
+    delay(10000L);
     return;
   }
 
