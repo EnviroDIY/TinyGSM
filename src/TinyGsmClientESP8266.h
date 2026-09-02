@@ -81,7 +81,8 @@
  *   - You can reduce the risk of losing data by setting this library's buffer
  * to be as large as possible; this will increase the memory footprint of your
  * program.
- *   - Change the buffer size by defining TINY_GSM_RX_BUFFER in your sketch before including any TinyGSM header file.
+ *   - Change the buffer size by defining TINY_GSM_RX_BUFFER in your sketch
+ * before including any TinyGSM header file.
  * - Socket Numbering:
  *   - The modem uses user-specified MUX channel numbers for socket connections.
  *   - If you attempt to create a new client with a channel number that is
@@ -251,8 +252,8 @@ class TinyGsmESP8266
       sock_connected = false;
       is_mid_send    = false;
 
-      // The ESP8266 (as supported) generally lets you choose the mux number,
-      // but we want to try to find an empty place in the socket array for it.
+      // The ESP8266 (as supported) uses the the mux number you assign, but we
+      // want to try to find an empty place in the socket array for it.
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
@@ -580,7 +581,7 @@ class TinyGsmESP8266
 
   void getCertificateName(CertificateType cert_type, uint8_t certNumber,
                           char* cert_name) {
-    // Validate certNumber is 0 or 1 to prevent buffer overflow in itoa()
+    // Validate certNumber is 0 or 1
     if (certNumber > 1) {
       if (cert_name != nullptr) { cert_name[0] = '\0'; }
       return;
@@ -838,7 +839,7 @@ class TinyGsmESP8266
   /*
    * BLE functions
    */
-  // No functions of this type implemented
+  // No functions of this type supported
 
   /*
    * Battery functions
@@ -881,10 +882,7 @@ class TinyGsmESP8266
         return false;
       }
       // SSL certificate checking will not work without a valid timestamp!
-      if (sockets[mux] != nullptr &&
-          (sslAuthMode == SSLAuthMode::CLIENT_VALIDATION ||
-           sslAuthMode == SSLAuthMode::CA_VALIDATION ||
-           sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION) &&
+      if ((sslAuthMode != SSLAuthMode::NO_VALIDATION) &&
           !waitForTimeSync(timeout_s)) {
         DBG("### WARNING: The module timestamp must be valid for SSL auth. "
             "Please use setTimeZone(...) or NTPServerSync(...) to enable "
@@ -916,10 +914,10 @@ class TinyGsmESP8266
       // (or were not) put into the customized certificate partitions.
       // The default firmware comes with espressif certificates in slots 0
       // and 1.
-      if (sockets[mux] == nullptr ||
-          (sslAuthMode == SSLAuthMode::NO_VALIDATION)) {
+      if ((sslAuthMode == SSLAuthMode::NO_VALIDATION)) {
         sendAT(GF("+CIPSSLCCONF="), mux, GF(",0"));
       } else {
+        // For auth modes 1, 2, and 3, we need to specify the PKI and CA numbers
         sendAT(GF("+CIPSSLCCONF="), mux, ',', static_cast<uint8_t>(sslAuthMode),
                ',', pki_number, ',', ca_number);
       }
@@ -966,9 +964,10 @@ class TinyGsmESP8266
     );
 
     String data;
-    int8_t rsp = waitResponse(timeout_ms, data, GFP(ModemConfig::GSM_OK),
-                              GFP(ModemConfig::GSM_ERROR),
-                              GF("ALREADY CONNECT"));
+    int8_t rsp     = waitResponse(timeout_ms, data, GFP(ModemConfig::GSM_OK),
+                                  GFP(ModemConfig::GSM_ERROR),
+                                  GF("ALREADY CONNECT"));
+    bool   success = rsp == 1 || rsp == 3;  // OK or ALREADY CONNECT
     if (rsp == 1 && data.length() > 8) {
       int16_t coma          = data.indexOf(',');
       int16_t connected_mux = data.substring(0, coma).toInt();
@@ -977,7 +976,7 @@ class TinyGsmESP8266
             mux);
       }
     }
-    return (1 == rsp || 3 == rsp);  // OK or ALREADY CONNECT
+    return success;
   }
 
   // Disambiguate modemStopImpl by using the Espressif implementation
@@ -1057,9 +1056,10 @@ class TinyGsmESP8266
         } while (stream.available());
       }
       data = "";
+      DBG("### Got Data:", len_reported, "on", mux);
       return true;
     } else if (data.endsWith(GF("CLOSED"))) {
-      int muxStart =
+      int16_t muxStart =
           TinyGsmMax(0,
                      data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
                                       data.length() - 8));
