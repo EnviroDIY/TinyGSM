@@ -242,9 +242,9 @@ class TinyGsmEspressif
       thisModem().waitResponse();
       thisModem().sendAT(GF("+CWJAP_CUR?"));  // attempt "current" as used by
                                               // some Non-OS firmware versions
-      int8_t res1 = thisModem().waitResponse(GF("No AP"), GF("+CWJAP_CUR:"),
-                                             GFP(ModemConfig::GSM_OK),
-                                             GFP(ModemConfig::GSM_ERROR));
+      res1 = thisModem().waitResponse(GF("No AP"), GF("+CWJAP_CUR:"),
+                                      GFP(ModemConfig::GSM_OK),
+                                      GFP(ModemConfig::GSM_ERROR));
       if (res1 != 2) {
         thisModem().waitResponse();
         return 0;

@@ -929,6 +929,7 @@ class TinyGsmESP8266
       waitResponse();
     }
 
+    String resolved_ip;
     // If you need to use a domain name and the length of the domain name
     // exceeds 64 bytes, use the AT+CIPDOMAIN command to obtain the IP address
     // corresponding to the domain name, and then use the IP address to
@@ -938,11 +939,11 @@ class TinyGsmESP8266
       sendAT(GF("+CIPDOMAIN=\""), host, '"');
       // +CIPDOMAIN:<"IP address"> then OK
       if (waitResponse(GF("+CIPDOMAIN:\"")) != 1) { return false; }
-      String ip = stream.readStringUntil('"');
+      resolved_ip = stream.readStringUntil('"');
       streamSkipUntil('\n');  // skip the rest of the line
       waitResponse();         // ends with OK
-      if (ip.length() > 0) {
-        host = ip.c_str();
+      if (resolved_ip.length() > 0) {
+        host = resolved_ip.c_str();
       } else {
         return false;
       }
