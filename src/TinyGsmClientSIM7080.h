@@ -253,7 +253,9 @@ class TinyGsmSim7080
      * @brief Create a new TCP client and bind it to a modem and optionally a
      * multiplexing channel.
      * @param modem Modem instance used by this client.
-     * @param mux Multiplexing channel to use.
+     * @param mux The **zero-indexed** position of this client in the
+     * corresponding modem's socket array.  This is identical to the identifier
+     * the modem uses internally to identify the socket for the SIM7080.
      *
      * @note The SIM7080 and similar variants allow you choose the multiplexing
      * channel number, but if the input mux channel number is already in use and
@@ -1049,7 +1051,8 @@ class TinyGsmSim7080
   }
   /**
    * @brief Apply SSL certificates to the specified connection.
-   * @param mux The connection ID (mux).
+   * @param mux The **zero-indexed** position of the client in the modem's
+   * socket array.
    * @param sslAuthMode The SSL authentication mode.
    * @param CAcertName The CA certificate name.
    * @param clientCertName The client certificate name.
@@ -1102,7 +1105,8 @@ class TinyGsmSim7080
 
   /**
    * @brief Apply SSL pre-shared key (PSK) to the specified connection.
-   * @param mux The connection ID (mux).
+   * @param mux The **zero-indexed** position of the client in the modem's
+   * socket array.
    * @param pskTableName The PSK table name.
    * @return True if the operation was successful, false otherwise.
    */
@@ -1129,7 +1133,8 @@ class TinyGsmSim7080
 
   /**
    * @brief Link the SSL context to a specific connection (mux).
-   * @param mux The connection identifier (mux).
+   * @param mux The **zero-indexed** position of the client in the modem's
+   * socket array.
    * @param context_id The SSL context ID.
    * @return True if the operation was successful, false otherwise.
    */

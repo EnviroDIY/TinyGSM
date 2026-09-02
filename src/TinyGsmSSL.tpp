@@ -424,8 +424,18 @@ class GsmSecureClient {
    */
   /**@{*/
   /**
-   * @brief Set the SSL context index to use for this connection
+   * @brief Set the SSL context index or identifier to use for this connection
    * @param sslCtxIndex The SSL context index
+   *
+   * @important The SSL context index set here must be **exactly what the modem
+   * will use as the context identifier within AT commands**.  Use whatever
+   * indexing the modem uses. This library will **not** adjust or validate the
+   * index for you.  If unspecified, this library will use whatever context
+   * index is used in the examples in the modem's SSL documentation.
+   *
+   * @note This is not the same as the position of the client in the modem's
+   * socket array (the mux) or the connection identifier. The context index is a
+   * separate identifier used by the modem to manage groups of SSL settings.
    */
   virtual void setSSLContextIndex(uint8_t sslCtxIndex) {
     this->sslCtxIndex = sslCtxIndex;

@@ -189,7 +189,9 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
      * @brief Create a new TCP client and bind it to a modem and optionally a
      * multiplexing channel.
      * @param modem Modem instance used by this client.
-     * @param mux Multiplexing channel to use.
+     * @param mux The **zero-indexed** position of this client in the
+     * corresponding modem's socket array.  This is identical to the identifier
+     * the modem uses internally to identify the socket for the M590.
      *
      * @note The M590 allows you choose the multiplexing channel number, but if
      * the input mux channel number is already in use and other mux channels are
