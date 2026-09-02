@@ -563,11 +563,13 @@ class TinyGsmESP8266NonOS
                      data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
                                       data.length() - 8));
       int16_t coma = data.indexOf(',', muxStart);
-      int16_t mux  = data.substring(muxStart, coma).toInt();
-      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
+      if (coma > muxStart + 2) {
+        int16_t mux = data.substring(muxStart + 2, coma).toInt();
+        if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
+        DBG("### Closed: ", mux);
+      }
       streamSkipUntil('\n');  // throw away the new line
       data = "";
-      DBG("### Closed: ", mux);
       return true;
     } else if (data.endsWith(GF("busy p..."))) {
       streamSkipUntil('\n');
