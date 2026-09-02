@@ -815,6 +815,9 @@ class TinyGsmESP8266
         case TinyGSM_EpochStart::Y2K: modem_time -= 946684800; break;
         case TinyGSM_EpochStart::GPS: modem_time -= 315964800; break;
       }
+    } else {
+      // return 0 if we couldn't get a valid time from the modem
+      modem_time = 0;
     }
 
     return modem_time;
