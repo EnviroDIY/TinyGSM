@@ -578,7 +578,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
    * @param preferred The preferred RAT mode.
    * @return True if the command was successful, false otherwise.
    */
-  bool setRadioAccessTechnology(int selected, int preferred) {
+  bool setRadioAccessTechnology(uint8_t selected, uint8_t preferred) {
     sendAT(GF("+URAT="), selected, ',', preferred);
     if (waitResponse() != 1) { return false; }
     return true;
@@ -586,17 +586,17 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
 
   /**
    * @brief Get the current radio access technology (RAT) of the modem.
-   * @param rat A reference to an integer to store the current RAT mode.
+   * @param rat A reference to a uint8_t to store the current RAT mode.
    * @return True if the command was successful, false otherwise.
    */
-  bool getCurrentRadioAccessTechnology(int& rat) {
+  bool getCurrentRadioAccessTechnology(uint8_t& rat) {
     sendAT(GF("+URAT?"));
     if (waitResponse(10000L, GF("+URAT:")) != 1) { return false; }
 
     int16_t parsedRat = streamGetIntBefore('\n');
     if (waitResponse() != 1 || parsedRat == -9999) { return false; }
 
-    rat = parsedRat;
+    rat = static_cast<uint8_t>(parsedRat);
     return true;
   }
 
