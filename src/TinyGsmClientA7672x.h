@@ -421,8 +421,8 @@ class TinyGsmA7672X
           return 0;
         } else {
           sslCtxConfigured = at->configureSSLContext(
-              sslCtxIndex, host, sslAuthMode, sslVersion, CAcertName,
-              clientCertName, clientKeyName);
+              sslCtxIndex, sslAuthMode, sslVersion, CAcertName, clientCertName,
+              clientKeyName);
           if (!sslCtxConfigured) {
             DBG("### Failed to configure the SSL context!");
             return 0;
@@ -787,9 +787,9 @@ class TinyGsmA7672X
    * @param clientKeyName The client key name.
    * @return True if the operation was successful, false otherwise.
    */
-  bool configureSSLContext(uint8_t     context_id, const char*,
-                           SSLAuthMode sslAuthMode, SSLVersion sslVersion,
-                           const char* CAcertName, const char* clientCertName,
+  bool configureSSLContext(uint8_t context_id, SSLAuthMode sslAuthMode,
+                           SSLVersion sslVersion, const char* CAcertName,
+                           const char* clientCertName,
                            const char* clientKeyName) {
     bool success = true;
 
