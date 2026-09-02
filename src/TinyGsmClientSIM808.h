@@ -218,6 +218,7 @@ class TinyGsmSim808 : public TinyGsmSim800,
     // check if the date and time is present by checking if the next character
     // is a comma.  If it is a comma, then the date and time is missing and we
     // will skip parsing it.
+    TINY_GSM_YIELD();
     bool hasDateTime = stream.peek() != ',';
     if (hasDateTime) {
       iyear  = streamGetIntLength(4);  // Four digit year
