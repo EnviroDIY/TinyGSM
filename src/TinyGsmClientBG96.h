@@ -1376,7 +1376,9 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       // completely full. Chances are, this is not true and there's really not
       // that much there. In that case, make sure we make sure we re-set the
       // amount of data available.
-      if (len_reported < size) { sockets[mux]->sock_available = len_reported; }
+      if (len_reported >= 0 && static_cast<size_t>(len_reported) < size) {
+        sockets[mux]->sock_available = static_cast<uint16_t>(len_reported);
+      }
       len_read = moveCharsFromStreamToFifo(mux, len_reported);
       sockets[mux]->sock_available -= TinyGsmMin(
           static_cast<size_t>(sockets[mux]->sock_available), len_read);
