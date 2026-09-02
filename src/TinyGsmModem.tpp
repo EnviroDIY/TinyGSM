@@ -870,7 +870,7 @@ class TinyGsmModem {
    *
    * @param lastChar Character that terminates the numeric response.
    *
-   * @return The parsed unsigned long integer, or -9999 if no characters were
+   * @return The parsed unsigned long integer, or -1 if no characters were
    *         received before the delimiter.
    */
   inline uint32_t streamGetULBefore(char lastChar) {
