@@ -228,7 +228,7 @@ And of course, contributions are welcome ;)
   - [FStefanni](https://github.com/FStefanni/)
 - Sequans Monarch:
   - [nootropicdesign](https://github.com/nootropicdesign/)
-- Quectel M9C60
+- Quectel MC60
   - [V1pr](https://github.com/V1pr)
 - Quectel M95
   - [replicadeltd](https://github.com/replicadeltd)
