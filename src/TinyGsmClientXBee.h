@@ -1483,6 +1483,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
                         int timeout_s = TcpConfig::kConnectTimeoutS) {
     if (mux != 0) {
       DBG("XBee only supports 1 IP channel in transparent mode!");
+      return false;
     }
 
     // check if the host is an IP address already - if so, we can skip the DNS
@@ -1914,10 +1915,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     sendAT(GF("HS"));  // Get the "Hardware Series";
     int16_t intRes = readResponseInt();
     // if no response from module, then try again
-    if (0xff == intRes) {
+    if (0xff == intRes || -1 == intRes) {
       sendAT(GF("HS"));  // Get the "Hardware Series";
       intRes = readResponseInt();
-      if (0xff == intRes) {
+      if (0xff == intRes || -1 == intRes) {
         // Still no response, leave a known value - should reset
         intRes = static_cast<int16_t>(XBeeType::XBEE_UNKNOWN);
       }

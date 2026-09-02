@@ -1094,7 +1094,7 @@ class TinyGsmSim7000SSL
     // <conn_type> "TCP" or "UDP"
     // NOTE:  the "TCP" can't be included
     sendAT(GF("+CAOPEN="), mux, GF(",\""), host, GF("\","), port);
-    if (waitResponse(timeout_ms, GF("+CAOPEN:")) != 1) { return 0; }
+    if (waitResponse(timeout_ms, GF("+CAOPEN:")) != 1) { return false; }
     // returns OK/r/n/r/n+CAOPEN: <cid>,<result>
     // <result> 0: Success
     //          1: Socket error
@@ -1144,6 +1144,7 @@ class TinyGsmSim7000SSL
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
+    if (!isValidMux(mux)) { return 0; }
     // after posting data, module responds with:
     //+CASEND: <cid>,<result>,<sendlen>
     if (waitResponse(GF("+CASEND:")) != 1) { return 0; }
