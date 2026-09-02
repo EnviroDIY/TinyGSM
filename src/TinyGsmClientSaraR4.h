@@ -577,7 +577,7 @@ class TinyGsmSaraR4
    * - 9: GPRS / eGPRS
    * @return True if the command was successful, false otherwise.
    */
-  bool setRadioAccessTechnology(uint8_t urat) {
+  bool setRadioAccessTechnology(uint8_t urat, uint8_t) {
     // AT+URAT=<SelectedAcT>[,<PreferredAct>[,<2ndPreferredAct>]]
 
     sendAT(GF("+COPS=2"));  // Deregister from network
