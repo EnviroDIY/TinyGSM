@@ -536,7 +536,8 @@ class GsmSecureClient {
   virtual void setPSKTableName(const char* pskTableName) {
     // copy the PSK table name into owned buffer
     memset(this->pskTableName, '\0', sizeof(this->pskTableName));
-    if (pskTableName != nullptr) {
+    if (pskTableName != nullptr &&
+        strnlen(pskTableName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
       strncpy(this->pskTableName, pskTableName, sizeof(this->pskTableName) - 1);
     }
     sslCtxConfigured = false;
@@ -554,9 +555,17 @@ class GsmSecureClient {
    * @param psKey The pre-shared key
    */
   virtual void setPreSharedKey(const char* pskIdent, const char* psKey) {
+    memset(this->pskIdent, '\0', sizeof(this->pskIdent));
+    memset(this->psKey, '\0', sizeof(this->psKey));
     // copy the PSK identity and key into owned buffers
-    strncpy(this->pskIdent, pskIdent, sizeof(this->pskIdent) - 1);
-    strncpy(this->psKey, psKey, sizeof(this->psKey) - 1);
+    if (pskIdent != nullptr &&
+        strnlen(pskIdent, TINY_GSM_PSK_IDENTITY_LENGTH) != 0 &&
+        psKey != nullptr && strnlen(psKey, TINY_GSM_PSK_LENGTH) != 0) {
+      // require BOTH the identity and key to be non-null and non-empty to set
+      // them
+      strncpy(this->pskIdent, pskIdent, sizeof(this->pskIdent) - 1);
+      strncpy(this->psKey, psKey, sizeof(this->psKey) - 1);
+    }
     sslCtxConfigured = false;
   }
   /// @copydoc setPreSharedKey(const char*, const char*)
