@@ -618,7 +618,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
       sendAT(GF("+QISACK="), mux);  // If 'mux' is not specified, MC60 returns
                                     // 'ERRROR' (for QIMUX == 1)
       if (waitResponse(5000L, GF("+QISACK:")) != 1) {
-        return -1;
+        return 0;
       } else {
         streamSkipUntil(','); /** Skip total */
         streamSkipUntil(','); /** Skip acknowledged data size */
@@ -652,11 +652,18 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
       streamSkipUntil(',');  // skip connection type (TCP/UDP)
       // read the real length of the retrieved data
       int16_t len_reported = streamGetIntBefore('\n');
+      if (len_reported <= 0) {
+        sockets[mux]->sock_available = 0;
+        waitResponse();  // ends with an OK
+        return 0;
+      }
       // It's possible that the real length available is less than expected
       // This is quite likely if the buffer is broken into packets - which may
       // be different sizes.
       // If so, make sure we make sure we re-set the amount of data available.
-      if (len_reported < size) { sockets[mux]->sock_available = len_reported; }
+      if (static_cast<size_t>(len_reported) < size) {
+        sockets[mux]->sock_available = len_reported;
+      }
       size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
       sockets[mux]->sock_available -= TinyGsmMin(
           static_cast<size_t>(sockets[mux]->sock_available), len_read);
@@ -726,10 +733,12 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
                               data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
                                                data.length() - 8));
       int16_t coma = data.indexOf(',', nl + 2);
-      int16_t mux  = data.substring(nl + 2, coma).toInt();
-      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
+      if (coma > nl + 2) {
+        int16_t mux = data.substring(nl + 2, coma).toInt();
+        if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
+        DBG("### Closed: ", mux);
+      }
       data = "";
-      DBG("### Closed: ", mux);
       return true;
     } else if (data.endsWith(GF("+QNITZ:"))) {
       streamSkipUntil('\n');  // URC for time sync
