@@ -91,8 +91,6 @@
  * - NTP server functions (TinyGsmNTP.tpp)
  *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
  *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
- * - NTP Utilities (TinyGsmNTP.tpp)
- *     - @ref TinyGsmNTP<modemType>::TinyGsmIsValidNumber "TinyGsmIsValidNumber()"
  * - Battery functions (TinyGsmBattery.tpp)
  *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
  *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
@@ -100,8 +98,55 @@
  *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
  * - Temperature functions (TinyGsmTemperature.tpp)
  *     - @ref TinyGsmTemperature<modemType>::getTemperature "getTemperature()"
- * - SSL client functions
+ * - SSL context functions
  *     - @ref TinyGsmBG96::configureSSLContext "configureSSLContext()"
+ * - @ref GsmClientBG96 "GsmClientBG96"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::remoteIP "remoteIP()"
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
+ * - @ref GsmClientSecureBG96 "GsmClientSecureBG96"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::remoteIP "remoteIP()"
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
+ *   - Client SSL configuration functions (TinyGsmSSL.tpp)
+ *     - @ref GsmSecureClient::setSSLContextIndex "setSSLContextIndex()"
+ *     - @ref GsmSecureClient::setSSLAuthMode "setSSLAuthMode()"
+ *     - @ref GsmSecureClient::setSSLVersion "setSSLVersion()"
+ *   - Client certificate assignment functions (TinyGsmSSL.tpp)
+ *     - @ref GsmSecureClient::setCACertName "setCACertName()"
+ *     - @ref GsmSecureClient::setClientCertName "setClientCertName()"
+ *     - @ref GsmSecureClient::setPrivateKeyName "setPrivateKeyName()"
+ *   - Client PSK assignment functions (TinyGsmSSL.tpp)
+ *     - @ref GsmSecureClient::setPSKTableName "setPSKTableName()"
+ *     - @ref GsmSecureClient::setPreSharedKey "setPreSharedKey()"
  *
  * # Connection Information
  *
@@ -1142,7 +1187,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   }
 
   /*
-   * SSL client functions
+   * SSL context functions
    */
  public:
   /**

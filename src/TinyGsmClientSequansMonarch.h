@@ -70,6 +70,44 @@
  *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
  * - Temperature functions (TinyGsmTemperature.tpp)
  *     - @ref TinyGsmTemperature<modemType>::getTemperature "getTemperature()"
+ * - @ref GsmClientSequansMonarch "GsmClientSequansMonarch"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::remoteIP "remoteIP()"
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
+ * - @ref GsmClientSecureSequansMonarch "GsmClientSecureSequansMonarch"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::remoteIP "remoteIP()"
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
+ *   - Client SSL configuration functions
+ *     - @ref GsmClientSecureSequansMonarch::setStrictSSL "setStrictSSL()"
  *
  * # Connection Information
  *
@@ -378,6 +416,10 @@ class TinyGsmSequansMonarch
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
+
+    /*
+     * Client SSL configuration functions
+     */
 
     /**
      * @brief Require minimum of TLS 1.2

@@ -81,8 +81,6 @@
  *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
  *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
  *     - @ref TinyGsmNTP<modemType>::ShowNTPError "ShowNTPError()"
- * - NTP Utilities (TinyGsmNTP.tpp)
- *     - @ref TinyGsmNTP<modemType>::TinyGsmIsValidNumber "TinyGsmIsValidNumber()"
  * - Battery functions (TinyGsmBattery.tpp)
  *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
  *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
@@ -90,10 +88,28 @@
  *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
  * - Temperature functions (TinyGsmTemperature.tpp)
  *     - @ref TinyGsmTemperature<modemType>::getTemperature "getTemperature()"
- * - Generic network functions
+ * - Network mode / type / technology functions
  *     - @ref TinyGsmSim5360::getNetworkModes "getNetworkModes()"
  *     - @ref TinyGsmSim5360::getNetworkMode "getNetworkMode()"
  *     - @ref TinyGsmSim5360::setNetworkMode "setNetworkMode()"
+ * - @ref GsmClientSim5360 "GsmClientSim5360"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::remoteIP "remoteIP()"
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
  *
  * # Connection Information
  *
@@ -418,6 +434,18 @@ class TinyGsmSim5360
             s == Sim5360RegStatus::REG_OK_ROAMING);
   }
 
+  String getLocalIPImpl() {
+    sendAT(GF("+IPADDR"));  // Inquire Socket PDP address
+    // sendAT(GF("+CGPADDR=1"));  // Show PDP address
+    String res;
+    if (waitResponse(10000L, res) != 1) { return ""; }
+    cleanResponseString(res);
+    return res;
+  }
+
+  /*
+   * Network mode / type / technology functions
+   */
  public:
   /**
    * @brief Get the available network modes of the modem.
@@ -451,16 +479,6 @@ class TinyGsmSim5360
   bool setNetworkMode(uint8_t mode) {
     sendAT(GF("+CNMP="), mode);
     return waitResponse() == 1;
-  }
-
- protected:
-  String getLocalIPImpl() {
-    sendAT(GF("+IPADDR"));  // Inquire Socket PDP address
-    // sendAT(GF("+CGPADDR=1"));  // Show PDP address
-    String res;
-    if (waitResponse(10000L, res) != 1) { return ""; }
-    cleanResponseString(res);
-    return res;
   }
 
   /*

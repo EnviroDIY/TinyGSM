@@ -64,7 +64,7 @@
  *     - @ref TinyGsmGPS<modemType>::getGPSraw "getGPSraw()"
  *     - @ref TinyGsmGPS<modemType>::getGPS "getGPS()"
  *     - @ref TinyGsmGPS<modemType>::getGPSTime "getGPSTime()"
- * - Generic network functions
+ * - Network mode / type / technology functions
  *     - @ref TinyGsmSim70xx::getNetworkModes "getNetworkModes()"
  *     - @ref TinyGsmSim70xx::getNetworkMode "getNetworkMode()"
  *     - @ref TinyGsmSim70xx::setNetworkMode "setNetworkMode()"
@@ -86,8 +86,6 @@
  *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
  *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
  *     - @ref TinyGsmNTP<modemType>::ShowNTPError "ShowNTPError()"
- * - NTP Utilities (TinyGsmNTP.tpp)
- *     - @ref TinyGsmNTP<modemType>::TinyGsmIsValidNumber "TinyGsmIsValidNumber()"
  * - GSM location functions (TinyGsmGSMLocation.tpp)
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationRaw "getGsmLocationRaw()"
  *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocation "getGsmLocation()"
@@ -97,6 +95,24 @@
  *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
  *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
  *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
+ * - @ref GsmClientSim7000 "GsmClientSim7000"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::remoteIP "remoteIP()"
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
  *
  * # Connection Information
  *

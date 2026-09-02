@@ -70,20 +70,67 @@
  *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
  * - Temperature functions (TinyGsmTemperature.tpp)
  *     - @ref TinyGsmTemperature<modemType>::getTemperature "getTemperature()"
- * - XBee Type functions
+ * - XBee identifier functions
  *     - @ref TinyGsmXBee::getBeeType "getBeeType()"
  *     - @ref TinyGsmXBee::getBeeName "getBeeName()"
- * - Utilities
+ *     - @ref TinyGsmXBee::getSeries "getSeries()"
+ * - XBee specific utilities
  *     - @ref TinyGsmXBee::commandMode "commandMode()"
  *     - @ref TinyGsmXBee::writeChanges "writeChanges()"
  *     - @ref TinyGsmXBee::exitCommand "exitCommand()"
  *     - @ref TinyGsmXBee::exitAndFail "exitAndFail()"
- *     - @ref TinyGsmXBee::getSeries "getSeries()"
  *     - @ref TinyGsmXBee::readResponseString "readResponseString()"
  *     - @ref TinyGsmXBee::readResponseInt "readResponseInt()"
  *     - @ref TinyGsmXBee::sendATGetString "sendATGetString()"
  *     - @ref TinyGsmXBee::changeSettingIfNeeded "changeSettingIfNeeded()"
  *     - @ref TinyGsmXBee::gotIPforSavedHost "gotIPforSavedHost()"
+ * - @ref GsmClientXBee "GsmClientXBee"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::remoteIP "remoteIP()"
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
+ * - @ref GsmClientSecureXBee "GsmClientSecureXBee"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::remoteIP "remoteIP()"
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
+ *   - Client SSL configuration functions (TinyGsmSSL.tpp)
+ *     - @ref GsmSecureClient::setSSLContextIndex "setSSLContextIndex()"
+ *     - @ref GsmSecureClient::setSSLAuthMode "setSSLAuthMode()"
+ *     - @ref GsmSecureClient::setSSLVersion "setSSLVersion()"
+ *   - Client certificate assignment functions (TinyGsmSSL.tpp)
+ *     - @ref GsmSecureClient::setCACertName "setCACertName()"
+ *     - @ref GsmSecureClient::setClientCertName "setClientCertName()"
+ *     - @ref GsmSecureClient::setPrivateKeyName "setPrivateKeyName()"
+ *   - Client PSK assignment functions (TinyGsmSSL.tpp)
+ *     - @ref GsmSecureClient::setPSKTableName "setPSKTableName()"
+ *     - @ref GsmSecureClient::setPreSharedKey "setPreSharedKey()"
  *
  * # Connection Information
  *
@@ -730,7 +777,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   */
 
   /*
-   * XBee Type functions
+   * XBee identifier functions
    */
  public:
   /**
@@ -747,6 +794,23 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    */
   String getBeeName() {
     return getModemNameImpl();
+  }
+
+  /// Get the series of the XBee module and store it internally
+  void getSeries(void) {
+    sendAT(GF("HS"));  // Get the "Hardware Series";
+    int16_t intRes = readResponseInt();
+    // if no response from module, then try again
+    if (0xff == intRes || -1 == intRes) {
+      sendAT(GF("HS"));  // Get the "Hardware Series";
+      intRes = readResponseInt();
+      if (0xff == intRes || -1 == intRes) {
+        // Still no response, leave a known value - should reset
+        intRes = static_cast<int16_t>(XBeeType::XBEE_UNKNOWN);
+      }
+    }
+    beeType = static_cast<XBeeType>(intRes);
+    DBG(GF("### Modem: "), getModemName(), intRes);
   }
 
   /*
@@ -1814,6 +1878,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     }
   }
 
+  /*
+   * XBee specific utilities
+   */
+ public:
   /**
    * @brief Put the XBee into command mode.
    *
@@ -1908,23 +1976,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   bool exitAndFail(void) {
     exitCommand();  // Exit command mode
     return false;
-  }
-
-  /// Get the series of the XBee module and store it internally
-  void getSeries(void) {
-    sendAT(GF("HS"));  // Get the "Hardware Series";
-    int16_t intRes = readResponseInt();
-    // if no response from module, then try again
-    if (0xff == intRes || -1 == intRes) {
-      sendAT(GF("HS"));  // Get the "Hardware Series";
-      intRes = readResponseInt();
-      if (0xff == intRes || -1 == intRes) {
-        // Still no response, leave a known value - should reset
-        intRes = static_cast<int16_t>(XBeeType::XBEE_UNKNOWN);
-      }
-    }
-    beeType = static_cast<XBeeType>(intRes);
-    DBG(GF("### Modem: "), getModemName(), intRes);
   }
 
   /**

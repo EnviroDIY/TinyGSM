@@ -131,6 +131,9 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
             s == Sim70xxRegStatus::REG_OK_ROAMING);
   }
 
+  /*
+   * Network mode / type / technology functions
+   */
  public:
   /**
    * @brief Get the available network modes of the modem.

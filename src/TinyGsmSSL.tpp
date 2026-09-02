@@ -351,6 +351,12 @@ class TinyGsmSSL {
   }
   /**@}*/
 
+  /*
+   * SSL context functions
+   */
+  // At this time, we have no templates for these functions, so they are
+  // implemented in the modem-specific classes.
+
 
  protected:
   // destructor (protected!)

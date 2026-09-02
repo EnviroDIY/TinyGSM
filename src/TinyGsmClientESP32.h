@@ -69,8 +69,6 @@
  *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
  *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
  *     - @ref TinyGsmNTP<modemType>::ShowNTPError "ShowNTPError()"
- * - NTP Utilities (TinyGsmNTP.tpp)
- *     - @ref TinyGsmNTP<modemType>::TinyGsmIsValidNumber "TinyGsmIsValidNumber()"
  * - Secure socket layer (SSL) certificate management functions
  *     - @ref TinyGsmESP32::loadCACert "loadCACert()"
  *     - @ref TinyGsmESP32::loadClientCert "loadClientCert()"
@@ -81,6 +79,57 @@
  * - Time functions
  *     - @ref TinyGsmESP32::setTimeZone "setTimeZone()"
  *     - @ref TinyGsmESP32::setTimeSyncInterval "setTimeSyncInterval()"
+ * - @ref GsmClientESP32 "GsmClientESP32"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::remoteIP "remoteIP()"
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
+ * - @ref GsmClientSecureESP32 "GsmClientSecureESP32"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::remoteIP "remoteIP()"
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
+ *   - Client SSL configuration functions (TinyGsmSSL.tpp)
+ *     - @ref GsmSecureClient::setSSLContextIndex "setSSLContextIndex()"
+ *     - @ref GsmSecureClient::setSSLAuthMode "setSSLAuthMode()"
+ *     - @ref GsmSecureClient::setSSLVersion "setSSLVersion()"
+ *   - Client certificate assignment functions (TinyGsmSSL.tpp)
+ *     - @ref GsmSecureClient::setCACertName "setCACertName()"
+ *     - @ref GsmSecureClient::setClientCertName "setClientCertName()"
+ *     - @ref GsmSecureClient::setPrivateKeyName "setPrivateKeyName()"
+ *   - Client PSK assignment functions (TinyGsmSSL.tpp)
+ *     - @ref GsmSecureClient::setPSKTableName "setPSKTableName()"
+ *     - @ref GsmSecureClient::setPreSharedKey "setPreSharedKey()"
+ *   - Client certificate assignment functions
+ *     - @ref GsmClientSecureESP32::setCACertificateNumber "setCACertificateNumber()"
+ *     - @ref GsmClientSecureESP32::setClientCertificateNumber "setClientCertificateNumber()"
+ *     - @ref GsmClientSecureESP32::setPrivateKeyNumber "setPrivateKeyNumber()"
  *
  * # Connection Information
  *
@@ -356,6 +405,10 @@ class TinyGsmESP32
     // Because we have the same potetial range of mux numbers for secure and
     // insecure connections, we don't need to re-check for mux number
     // availability.
+
+    /*
+     * Client certificate assignment functions
+     */
 
     /// @copydoc GsmSecureClient::setCACertName(const char*)
     /// @warning The CA certificate name must be either "client_ca.0" or
