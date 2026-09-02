@@ -72,7 +72,7 @@ void setup() {
   SerialMon.println(GF("Wait..."));
   delay(500L);
 
-  SerialMon.println(F("All functions example for TinyGSM..."));
+  SerialMon.println(F("Espressif firmware update tool for TinyGSM..."));
   SerialMon.println(F("The current version of TinyGSM is " TINYGSM_VERSION));
   SerialMon.print(F("The configured modem is "));
   SerialMon.println(modem.getConfiguredModem());
