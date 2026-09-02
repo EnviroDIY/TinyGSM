@@ -1,6 +1,6 @@
-# Espressif Update Firmare<!--! {#tool_esp_update} -->
+# Espressif Firmware Update<!--! {#tool_esp_update} -->
 
-This sketch runs a series of diagnostic tests on t modem and prints the results
+This sketch connects to WiFi and attempts to update the firmware for an Espressif module.
 _______
 
 <!--! @section tool_esp_update_code The Complete Code -->

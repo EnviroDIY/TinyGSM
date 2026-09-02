@@ -2,6 +2,8 @@
 
 This example downloads a remote file in chunks and validates data integrity using CRC32 checksums.
 
+The example server requires SSL/TLS.
+
 _______
 
 <!--! @section example_file_download_code The Complete Code -->
