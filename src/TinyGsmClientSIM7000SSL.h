@@ -975,7 +975,8 @@ class TinyGsmSim7000SSL
       sendAT(GF("+CASSLCFG="), mux, ",\"cacert\",\"", CAcertName, '"');
       success &= waitResponse() == 1;
     }
-    if (strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
+    if (clientCertName != nullptr &&
+        strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       // AT+CASSLCFG=<cid>,"CERT",<certname>
       // <cid> Application connection ID (set with AT+CACID above)

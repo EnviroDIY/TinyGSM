@@ -1110,7 +1110,8 @@ class TinyGsmSim7080
     bool success = true;
 
     // SRGD WARNING: UNTESTED!!
-    if (strnlen(pskTableName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
+    if (pskTableName != nullptr &&
+        strnlen(pskTableName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
       // Re-convert the psk, just in case
       convertPSKTable(pskTableName);
 
@@ -1237,6 +1238,12 @@ class TinyGsmSim7080
     int8_t res = streamGetIntBefore('\n');
     waitResponse();
 
+    if (!isExpectedMux(ret_mux, mux) || 0 != res) {
+      DBG(GF("### Connection failed for mux"), mux);
+      DBG(GF("Instead got"), ret_mux, GF("with result"), res);
+      return false;
+    }
+
     // Immediately after connecting, before sending any data, we need to check
     // actual the send buffer size, so we can wait for it to be available. The
     // actual size is smaller than the size in the manual and seems to be
@@ -1246,12 +1253,7 @@ class TinyGsmSim7080
     // DBG(GF("### Real max send size for mux"), mux, GF("is"),
     //     sockets[mux]->realMaxSendSize);
 
-    if (!isExpectedMux(ret_mux, mux) || 0 != res) {
-      DBG(GF("### Connection failed for mux"), mux);
-      DBG(GF("Instead got"), ret_mux, GF("with result"), res);
-    }
-
-    return isExpectedMux(ret_mux, mux) && 0 == res;
+    return true;
   }
 
   bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
