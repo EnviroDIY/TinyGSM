@@ -630,6 +630,8 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
       delay(15000L);
     }
   }
+  // Print the coordinates, date, and time, even if the overall query failed, to
+  // show which portions were filled in
   DBG("Latitude:", String(gsm_latitude, 8),
       "\tLongitude:", String(gsm_longitude, 8));
   DBG("Accuracy:", gsm_accuracy);
@@ -671,6 +673,8 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
       delay(15000L);
     }
   }
+  // Print the NMEA information, even if the overall query failed, to show which
+  // portions were filled in
   DBG("Latitude:", String(gps_latitude, 8),
       "\tLongitude:", String(gps_longitude, 8));
   DBG("Speed:", gps_speed, "\tAltitude:", gps_altitude);
@@ -711,6 +715,8 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
       delay(15000L);
     }
   }
+  // Print the date and time, even if the overall query failed, to show which
+  // portions were filled in
   DBG("Year:", ntp_year, "\tMonth:", ntp_month, "\tDay:", ntp_day);
   DBG("Hour:", ntp_hour, "\tMinute:", ntp_min, "\tSecond:", ntp_sec);
   DBG("Timezone:", ntp_timezone);
