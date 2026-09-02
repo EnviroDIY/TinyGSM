@@ -804,7 +804,9 @@ class TinyGsmSequansMonarch
           bytesSent += sendLength;  // bump up number of bytes sent
           txPtr += sendLength;      // bump up the pointer
         }
-        send_attempts++;
+        // The payload is already on the wire. Do not repeat this chunk,
+        // because the modem may have accepted it without returning OK.
+        break;
       }
       // if we failed after 3 attempts at the same chunk, bail from the whole
       // thing
