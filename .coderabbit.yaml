@@ -51,10 +51,11 @@ reviews:
         Treat Arduino code in ino files as C++ code.
         Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
         Since this is an Arduino project, never suggest using the standard library (std::).
-        For memory savings, prefer defines to const variables, and prefer using the F() macro for string literals longer than a single character.
         Files should be formatted according to the .clang-format file in the repo.
-        Template files used as includes should have the .tpp extension, and should not be included directly by the user.
-        Credential information should be removed by local smudge filters in the filters folder.
+        Template files used as includes should have the .tpp extension, and should not be included in ino files.
+        Credential information should never be committed.
+        When analyzing on a local machine, confirm that credential information will be removed by local smudge filters in the filters folder.
+        When evaluating a pull request, confirm that no credential information is present.
     - path: '**/*.h'
       instructions: >-
         Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
