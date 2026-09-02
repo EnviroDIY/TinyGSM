@@ -149,7 +149,11 @@ TinyGsm modem(SerialAT);
 
 void setup() {
   // Set console baud rate
+#if defined(__AVR__)
+  SerialMon.begin(115200);
+#else
   SerialMon.begin(921600);
+#endif
   while (!SerialMon && millis() < 10000L) {}
   delay(10);
 
@@ -448,7 +452,7 @@ void loop() {
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
   secureClient.setSSLAuthMode(SSLAuthMode::CA_VALIDATION);
 
-#if defined(TEST_BUILD_ADD_CERTS) && defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
+#if TEST_BUILD_ADD_CERTS && defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
 
 // For Espressif modules, only two certificate sets are supported and the
 // certificates must be named "client_ca.{0|1}", "client_cert.{0|1}", or
@@ -469,7 +473,7 @@ void loop() {
 #endif
 
   static const char isrgrootx1_certificate[] TINY_GSM_PROGMEM = R"EOF(
-  -----BEGIN CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
 MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
 TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
 cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
@@ -499,8 +503,8 @@ oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq
 4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA
 mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
 emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
-  -----END CERTIFICATE-----
-  )EOF";
+-----END CERTIFICATE-----
+)EOF";
 
   modem.loadCertificate(root_ca_name, isrgrootx1_certificate,
                         strlen(isrgrootx1_certificate));
