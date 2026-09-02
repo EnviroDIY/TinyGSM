@@ -77,7 +77,6 @@
  *     - @ref GsmClient::flush "flush()"
  *     - @ref GsmClient::connected "connected()"
  *   - Extended Client API (TinyGsmTCP.tpp)
- *     - @ref GsmClient::remoteIP "remoteIP()"
  *     - @ref GsmClient::getMux "getMux()"
  *     - @ref GsmClient::getConnectionID "getConnectionID()"
  *     - @ref GsmClient::beginWrite "beginWrite()"
@@ -95,7 +94,6 @@
  *     - @ref GsmClient::flush "flush()"
  *     - @ref GsmClient::connected "connected()"
  *   - Extended Client API (TinyGsmTCP.tpp)
- *     - @ref GsmClient::remoteIP "remoteIP()"
  *     - @ref GsmClient::getMux "getMux()"
  *     - @ref GsmClient::getConnectionID "getConnectionID()"
  *     - @ref GsmClient::beginWrite "beginWrite()"
