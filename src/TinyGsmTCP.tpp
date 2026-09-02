@@ -160,12 +160,12 @@ class TinyGsmTCP {
    * After moving a socket, the pointer in the array at the old mux position
    * will be set to nullptr.
    *
-   * @param oldMux The mux socket number to move from.
-   * @param requestedMux The mux socket number to move to. Use
+   * @param oldMux The zero-indexed socket number to move from.
+   * @param requestedMux The zero-indexed socket number to move to. Use
    * static_cast<uint8_t>(-1) [255] to find and move to the next available mux
    * socket.
-   * @param assignedMux Optional pointer to a variable to receive the actual mux
-   * socket number that was assigned to the client after the move.
+   * @param assignedMux Optional pointer to a variable to receive the actual
+   * zero-indexed socket number that was assigned to the client after the move.
    * @return true if the move was successful, false otherwise.
    */
   bool moveSocket(uint8_t oldMux, uint8_t requestedMux,
@@ -207,6 +207,25 @@ class TinyGsmTCP {
     return true;
   }
 
+  /**
+   * @brief Convert a multiplexing channel number to the modem's internal
+   * connection identifier.
+   * @param mux The multiplexing channel number
+   * @return The modem's internal connection identifier
+   */
+  inline uint8_t muxToConnectionId(uint8_t mux) {
+    return mux;
+  };
+  /**
+   * @brief Convert the modem's internal connection identifier to a multiplexing
+   * channel number.
+   * @param connId The modem's internal connection identifier
+   * @return The multiplexing channel number
+   */
+  inline uint8_t connectionIdToMux(uint8_t connId) {
+    return connId;
+  };
+
   bool modemConnect(const char* host, uint16_t port, uint8_t staticMux,
                     int timeout_s = TcpConfig::kConnectTimeoutS) {
     return thisModem().modemConnectImpl(host, port, staticMux, timeout_s);
@@ -231,7 +250,8 @@ class TinyGsmTCP {
    *
    * @param buff The buffer of data to send
    * @param len The length of the buffer
-   * @param mux The socket number
+   * @param mux The **zero-indexed** position of the client in the modem's
+   * socket array.
    * @return The number of bytes sent
    */
   size_t modemSend(const uint8_t* buff, size_t len, uint8_t mux) {
@@ -359,7 +379,8 @@ class TinyGsmTCP {
    *       data is consumed and discarded. The return value reports only the
    *       number of characters actually placed into the FIFO.
    *
-   * @param mux The mux socket number to put characters into.
+   * @param mux The **zero-indexed** position in the modem's socket array of the
+   * client whose FIFO the characters will be placed in.
    * @param expected_len The number of decoded characters reported by the modem.
    *                     A negative value indicates an invalid/error length.
    * @return The number of decoded characters actually placed into the FIFO.
@@ -636,17 +657,27 @@ class GsmClient : public Client {
    * @brief Create a new TCP client and bind it to a modem and optionally a
    * multiplexing channel.
    * @param modem Modem instance used by this client.
-   * @param mux Multiplexing channel to use.
+   * @param mux The **zero-indexed** position of this client in the
+   * corresponding modem's socket array.  For most modules, this is identical to
+   * the identifier the modem uses internally to identify the socket, but some
+   * modules (e.g., Sequans Monarch) use a 1-indexed identifier for the socket,
+   * so the mux number is not necessarily the same as the modem's internal
+   * socket identifier.
    */
   explicit GsmClient(modemType& modem, uint8_t mux = 0) : at(&modem), mux(mux) {
     is_secure = false;
   }
 
   /**
-   * @brief Initialize this client with modem context and channel state.
+   * @brief Initialize this client with modem context and multiplexing channel.
    *
    * @param modem Pointer to the modem instance.
-   * @param mux Multiplexing channel to assign.
+   * @param mux The **zero-indexed** position of this client in the
+   * corresponding modem's socket array.  For most modules, this is identical to
+   * the identifier the modem uses internally to identify the socket, but some
+   * modules (e.g., Sequans Monarch) use a 1-indexed identifier for the socket,
+   * so the mux number is not necessarily the same as the modem's internal
+   * socket identifier.
    * @return true if initialization completed.
    */
   virtual bool init(modemType* modem, uint8_t mux) = 0;
@@ -1049,10 +1080,20 @@ class GsmClient : public Client {
   virtual String remoteIP() = 0;
 
   /**
-   * @brief Get the socket number of the connected client
-   * @return The socket number as a uint8_t
+   * @brief Get the **zero-indexed** position of the client in the corresponding
+   * modem's socket array.
+   * @return The socket position as a uint8_t
    */
   uint8_t getMux() {
+    return mux;
+  }
+  /**
+   * @brief Get the number that the modem uses internally to identify the
+   * connection.  In most cases, this is the same as the socket position.
+   * @return The internal connection number as a uint8_t
+   */
+  uint8_t getConnectionID() {
+    if (at != nullptr) { return at->muxToConnectionId(mux); }
     return mux;
   }
 
