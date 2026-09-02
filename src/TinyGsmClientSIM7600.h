@@ -91,8 +91,6 @@
  *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
  *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
  *     - @ref TinyGsmNTP<modemType>::ShowNTPError "ShowNTPError()"
- * - NTP Utilities (TinyGsmNTP.tpp)
- *     - @ref TinyGsmNTP<modemType>::TinyGsmIsValidNumber "TinyGsmIsValidNumber()"
  * - Battery functions (TinyGsmBattery.tpp)
  *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
  *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
@@ -103,14 +101,61 @@
  *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
  *     - @ref TinyGsmCalling<modemType>::callHangup "callHangup()"
  *     - @ref TinyGsmCalling<modemType>::dtmfSend "dtmfSend()"
- * - Generic network functions
+ * - Network mode / type / technology functions
  *     - @ref TinyGsmSim7600::getNetworkModes "getNetworkModes()"
  *     - @ref TinyGsmSim7600::getNetworkMode "getNetworkMode()"
  *     - @ref TinyGsmSim7600::setNetworkMode "setNetworkMode()"
  *     - @ref TinyGsmSim7600::getNetworkSystemMode "getNetworkSystemMode()"
- * - SSL client functions
+ * - SSL context functions
  *     - @ref TinyGsmSim7600::configureSSLContext "configureSSLContext()"
  *     - @ref TinyGsmSim7600::linkSSLContext "linkSSLContext()"
+ * - @ref GsmClientSim7600 "GsmClientSim7600"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::remoteIP "remoteIP()"
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
+ * - @ref GsmClientSecureSim7600 "GsmClientSecureSim7600"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::remoteIP "remoteIP()"
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
+ *   - Client SSL configuration functions (TinyGsmSSL.tpp)
+ *     - @ref GsmSecureClient::setSSLContextIndex "setSSLContextIndex()"
+ *     - @ref GsmSecureClient::setSSLAuthMode "setSSLAuthMode()"
+ *     - @ref GsmSecureClient::setSSLVersion "setSSLVersion()"
+ *   - Client certificate assignment functions (TinyGsmSSL.tpp)
+ *     - @ref GsmSecureClient::setCACertName "setCACertName()"
+ *     - @ref GsmSecureClient::setClientCertName "setClientCertName()"
+ *     - @ref GsmSecureClient::setPrivateKeyName "setPrivateKeyName()"
+ *   - Client PSK assignment functions (TinyGsmSSL.tpp)
+ *     - @ref GsmSecureClient::setPSKTableName "setPSKTableName()"
+ *     - @ref GsmSecureClient::setPreSharedKey "setPreSharedKey()"
  *
  * # Connection Information
  *
@@ -496,6 +541,19 @@ class TinyGsmSim7600
             s == Sim7600RegStatus::REG_OK_ROAMING);
   }
 
+  String getLocalIPImpl() {
+    sendAT(GF("+IPADDR"));  // Inquire Socket PDP address
+    // sendAT(GF("+CGPADDR=1"));  // Show PDP address
+    String res;
+    if (waitResponse(10000L, res) != 1) { return ""; }
+    cleanResponseString(res);
+    res.trim();
+    return res;
+  }
+
+  /*
+   * Network mode / type / technology functions
+   */
  public:
   /**
    * @brief Get the available network modes of the modem.
@@ -549,17 +607,6 @@ class TinyGsmSim7600
     stat = streamGetIntBefore('\n');
     waitResponse();
     return true;
-  }
-
- protected:
-  String getLocalIPImpl() {
-    sendAT(GF("+IPADDR"));  // Inquire Socket PDP address
-    // sendAT(GF("+CGPADDR=1"));  // Show PDP address
-    String res;
-    if (waitResponse(10000L, res) != 1) { return ""; }
-    cleanResponseString(res);
-    res.trim();
-    return res;
   }
 
   /*
@@ -977,7 +1024,7 @@ class TinyGsmSim7600
   }
 
   /*
-   * SSL client functions
+   * SSL context functions
    */
  public:
   /**

@@ -83,9 +83,45 @@
  * - Battery functions (TinyGsmBattery.tpp)
  *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
  *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
- * - Generic network functions
+ * - Network mode / type / technology functions
  *     - @ref TinyGsmSaraR5::setRadioAccessTechnology "setRadioAccessTechnology()"
  *     - @ref TinyGsmSaraR5::getCurrentRadioAccessTechnology "getCurrentRadioAccessTechnology()"
+ * - @ref GsmClientSaraR5 "GsmClientSaraR5"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::remoteIP "remoteIP()"
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
+ * - @ref GsmClientSecureSaraR5 "GsmClientSecureSaraR5"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::remoteIP "remoteIP()"
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
  *
  * # Connection Information
  *
@@ -518,44 +554,6 @@ class TinyGsmSaraR5
   /*
    * Generic network functions
    */
- public:
-  /**
-   * @brief Set the radio access technology (RAT) for the modem.
-   *
-   * Possible values for selected and preferred are:
-   * - 3: LTE
-   * - 7: LTE Cat M1
-   * - 8: LTE Cat NB1
-   * - 9: GPRS / eGPRS
-   *
-   * @param selected The selected RAT mode.
-   * @param preferred The preferred RAT mode.
-   * @return True if the command was successful, false otherwise.
-   */
-  bool setRadioAccessTechnology(int selected, int preferred) {
-    sendAT(GF("+URAT="), selected, ',', preferred);
-    if (waitResponse() != 1) { return false; }
-    return true;
-  }
-
-  /**
-   * @brief Get the current radio access technology (RAT) of the modem.
-   * @param rat An integer reference to store the current RAT value. Possible
-   * values are:
-   * - 3: LTE
-   * - 7: LTE Cat M1
-   * - 8: LTE Cat NB1
-   * - 9: GPRS / eGPRS
-   * @return True if the command was successful, false otherwise.
-   */
-  bool getCurrentRadioAccessTechnology(int& rat) {
-    sendAT(GF("+URAT?"));
-    if (waitResponse(10000L, GF("+URAT:")) != 1) { return false; }
-    int16_t parsedRat = streamGetIntBefore('\n');
-    if (waitResponse() != 1 || parsedRat == -9999) { return false; }
-    rat = parsedRat;
-    return true;
-  }
 
  protected:
   SaraR5RegStatus getRegistrationStatusImpl() {
@@ -595,6 +593,48 @@ class TinyGsmSaraR5
     String res = stream.readStringUntil('\"');
     if (waitResponse() != 1) { return ""; }
     return res;
+  }
+
+  /*
+   * Network mode / type / technology functions
+   */
+ public:
+  /**
+   * @brief Set the radio access technology (RAT) for the modem.
+   *
+   * Possible values for selected and preferred are:
+   * - 3: LTE
+   * - 7: LTE Cat M1
+   * - 8: LTE Cat NB1
+   * - 9: GPRS / eGPRS
+   *
+   * @param selected The selected RAT mode.
+   * @param preferred The preferred RAT mode.
+   * @return True if the command was successful, false otherwise.
+   */
+  bool setRadioAccessTechnology(int selected, int preferred) {
+    sendAT(GF("+URAT="), selected, ',', preferred);
+    if (waitResponse() != 1) { return false; }
+    return true;
+  }
+
+  /**
+   * @brief Get the current radio access technology (RAT) of the modem.
+   * @param rat An integer reference to store the current RAT value. Possible
+   * values are:
+   * - 3: LTE
+   * - 7: LTE Cat M1
+   * - 8: LTE Cat NB1
+   * - 9: GPRS / eGPRS
+   * @return True if the command was successful, false otherwise.
+   */
+  bool getCurrentRadioAccessTechnology(int& rat) {
+    sendAT(GF("+URAT?"));
+    if (waitResponse(10000L, GF("+URAT:")) != 1) { return false; }
+    int16_t parsedRat = streamGetIntBefore('\n');
+    if (waitResponse() != 1 || parsedRat == -9999) { return false; }
+    rat = parsedRat;
+    return true;
   }
 
   /*
