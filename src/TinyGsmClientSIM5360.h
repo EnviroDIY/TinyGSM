@@ -700,12 +700,13 @@ class TinyGsmSim5360
     // Again, read the whole time portion into a single float, then parse that
     // into the hour, minute, and second portions.
     float    itime     = streamGetFloatBefore(',');
-    uint32_t itime_int = static_cast<uint32_t>(itime * 1000);
+    uint32_t itime_int = static_cast<uint32_t>(itime) * 1000UL;
     // ^^ Multiply by 1000 to avoid floating point modulo
-    ihour = static_cast<int16_t>(itime_int / 1000000);       // Two digit hour
-    imin = static_cast<int16_t>((itime_int / 10000) % 100);  // Two digit minute
+    ihour = static_cast<int16_t>(itime_int / 10000000);  // Two digit hour
+    imin =
+        static_cast<int16_t>((itime_int / 100000) % 100);  // Two digit minute
     secondWithSS = static_cast<float>(
-        (itime_int % 10000) / 1000.0);  // Two digit second with subseconds
+        (itime_int % 100000) / 1000.0);  // Two digit second with subseconds
 
     ialt   = streamGetFloatBefore(',');  // MSL Altitude. Unit is meters
     ispeed = streamGetFloatBefore(',');  // Speed Over Ground. Unit is knots.

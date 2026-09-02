@@ -849,12 +849,13 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     // avoid issues of attempting to read a set number of characters for each
     // portion of the time if the time is missing or malformed.
     float    itime     = streamGetFloatBefore(',');
-    uint32_t itime_int = static_cast<uint32_t>(itime * 1000);
+    uint32_t itime_int = static_cast<uint32_t>(itime) * 1000UL;
     // ^^ Multiply by 1000 to avoid floating point modulo
-    ihour = static_cast<int16_t>(itime_int / 1000000);       // Two digit hour
-    imin = static_cast<int16_t>((itime_int / 10000) % 100);  // Two digit minute
+    ihour = static_cast<int16_t>(itime_int / 10000000);  // Two digit hour
+    imin =
+        static_cast<int16_t>((itime_int / 100000) % 100);  // Two digit minute
     secondWithSS = static_cast<float>(
-        (itime_int % 10000) / 1000.0);  // Two digit second with subseconds
+        (itime_int % 100000) / 1000.0);  // Two digit second with subseconds
 
     ilat      = streamGetFloatBefore(',');  // Latitude
     ilon      = streamGetFloatBefore(',');  // Longitude
