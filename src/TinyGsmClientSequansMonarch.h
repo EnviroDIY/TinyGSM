@@ -107,6 +107,9 @@
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
+/// The default SSL context to use for SSL connections.
+#define TINY_GSM_MONARCH_DEFAULT_SSL_CTX 1
+
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
@@ -227,7 +230,12 @@ class TinyGsmSequansMonarch
      * @brief Create a new TCP client and bind it to a modem and optionally a
      * multiplexing channel.
      * @param modem Modem instance used by this client.
-     * @param mux Multiplexing channel to use.
+     * @param mux The **zero-indexed** position of this client in the
+     * corresponding modem's socket array.  This is **NOT** the identifier the
+     * Monarch uses internally to identify the socket.  The Monarch uses
+     * 1-indexed multiplexing channel numbers, so this library will convert the
+     * 0-indexed mux number to a 1-indexed multiplexing channel number for the
+     * Monarch.
      *
      * @note The Monarch allows you choose the multiplexing channel number, but
      * if the input mux channel number is already in use and other mux channels
@@ -259,28 +267,27 @@ class TinyGsmSequansMonarch
       got_data       = false;
       is_mid_send    = false;
 
-      // adjust for zero indexed socket array vs Sequans' 1 indexed mux numbers
-      // using modulus will force 6 back to 0// if it's a valid mux number, and
-      // that mux number isn't in use (or it's already this), accept the mux
-      // number
-      if (mux >= 1 && mux <= TcpConfig::kMuxCount &&
-          (at->sockets[mux % TcpConfig::kMuxCount] == nullptr ||
-           at->sockets[mux % TcpConfig::kMuxCount] == this)) {
+      // The Monarch honors the given connection number, but we want to try
+      // to find an empty place in the socket array for it.
+
+      // if it's a valid mux number, and that mux number isn't in use (or it's
+      // already this), accept the mux number
+      if (mux < TcpConfig::kMuxCount &&
+          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
         // one
       } else {
-        uint8_t next_available_mux = at->findFirstUnassignedMux();
-        if (next_available_mux != static_cast<uint8_t>(-1)) {
-          this->mux = next_available_mux;
+        uint8_t nextMux = at->findFirstUnassignedMux();
+        if (nextMux != static_cast<uint8_t>(-1)) {
+          this->mux = nextMux;
         } else {
           // If we can't find anything available, overwrite something, using mod
-          // to make sure we're in range and adding 1 for the 1-indexed mux
-          // numbers
-          this->mux = (mux % TcpConfig::kMuxCount) + 1;
+          // to make sure we're in range
+          this->mux = (mux % TcpConfig::kMuxCount);
         }
       }
-      at->sockets[this->mux % TcpConfig::kMuxCount] = this;
+      at->sockets[this->mux] = this;
 
       return true;
     }
@@ -335,7 +342,8 @@ class TinyGsmSequansMonarch
     }
 
    protected:
-    bool strictSSL = false;
+    bool    strictSSL   = false;
+    uint8_t sslCtxIndex = TINY_GSM_MONARCH_DEFAULT_SSL_CTX;
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
@@ -345,17 +353,22 @@ class TinyGsmSequansMonarch
       rx.clear();
 
       // configure security profile 1 with parameters:
+      // +SQNSPCFG:<spId>,<version>,<cipherSpecs>,<certValidLevel>,
+      //           <caCertificateID>,<clientCertificateID>,
+      //           <clientPrivateKeyID>,<psk>
       if (strictSSL) {
         // require minimum of TLS 1.2 (3)
         // only support cipher suite 0x3D: TLS_RSA_WITH_AES_256_CBC_SHA256
         // verify server certificate against imported CA certs 0 and enforce
         // validity period (3)
-        at->sendAT(GF("+SQNSPCFG=1,3,\"0x3D\",3,0,,,\"\",\"\""));
+        at->sendAT(GF("+SQNSPCFG="), sslCtxIndex,
+                   GF(",3,\"0x3D\",3,0,,,\"\",\"\""));
       } else {
         // use TLS 1.0 or higher (1)
         // support wider variety of cipher suites
         // do not verify server certificate (0)
-        at->sendAT(GF("+SQNSPCFG=1,1,\"0x2F;0x35;0x3C;0x3D\",0,,,,\"\",\"\""));
+        at->sendAT(GF("+SQNSPCFG="), sslCtxIndex,
+                   GF(",1,\"0x2F;0x35;0x3C;0x3D\",0,,,,\"\",\"\""));
       }
       if (at->waitResponse() != 1) {
         DBG("failed to configure security profile");
@@ -448,8 +461,8 @@ class TinyGsmSequansMonarch
 
   void maintainImpl() {
     bool check_connections = false;
-    for (uint8_t mux = 1; mux <= TcpConfig::kMuxCount; mux++) {
-      GsmClientSequansMonarch* sock = sockets[mux % TcpConfig::kMuxCount];
+    for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; mux++) {
+      GsmClientSequansMonarch* sock = sockets[mux];
       if (sock && sock->got_data) {
         sock->got_data       = false;
         sock->sock_available = modemGetAvailable(mux);
@@ -673,19 +686,18 @@ class TinyGsmSequansMonarch
  protected:
   bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
-    if (mux == 0 || mux > TcpConfig::kMuxCount ||
-        !sockets[mux % TcpConfig::kMuxCount]) {
-      return false;
-    }
+    if (!isValidMux(mux)) { return false; }
     int8_t   rsp;
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
-    bool     ssl         = sockets[mux % TcpConfig::kMuxCount]->is_secure;
+    bool     ssl         = sockets[mux]->is_secure;
+    uint8_t  sslCtxIndex = TINY_GSM_MONARCH_DEFAULT_SSL_CTX;
     uint32_t startMillis = millis();
+    uint8_t  connId      = muxToConnectionId(mux);
 
     if (ssl) {
       // enable SSL and use security profile 1
       // AT+SQNSSCFG=<connId>,<enable>,<spId>
-      sendAT(GF("+SQNSSCFG="), mux, GF(",1,1"));
+      sendAT(GF("+SQNSSCFG="), connId, GF(",1,"), sslCtxIndex);
       if (waitResponse() != 1) {
         DBG("### WARNING: failed to configure secure socket");
         return false;
@@ -703,7 +715,7 @@ class TinyGsmSequansMonarch
     //           = 600 (default)
     // <txTo1> = Data sending timeout in hundreds of milliseconds,
     // used for online data mode only = 50 (default)
-    sendAT(GF("+SQNSCFG="), mux, GF(",3,300,90,600,50"));
+    sendAT(GF("+SQNSCFG="), connId, GF(",3,300,90,600,50"));
     waitResponse(5000L);
 
     // Socket configuration extended
@@ -715,7 +727,7 @@ class TinyGsmSequansMonarch
     // <keepalive1> = unused = 0
     // <listenAutoRsp1> = Listen auto-response mode = 0 - deactivated
     // <sendDataMode1> = Send data mode = 1  - data as hex (0 for text)
-    sendAT(GF("+SQNSCFGEXT="), mux, GF(",1,0,0,0,1"));
+    sendAT(GF("+SQNSCFGEXT="), connId, GF(",1,0,0,0,1"));
     waitResponse(5000L);
 
     // Socket dial
@@ -730,7 +742,7 @@ class TinyGsmSequansMonarch
     // <lPort> = UDP connection local port, has no effect for TCP connections.
     // <connMode> = Connection mode = 1 - command mode connection
     // <acceptAnyRemote> = Applies to UDP only
-    sendAT(GF("+SQNSD="), mux, GF(",0,"), port, ',', '"', host, '"',
+    sendAT(GF("+SQNSD="), connId, GF(",0,"), port, ',', '"', host, '"',
            GF(",0,0,1"));
     rsp = waitResponse((timeout_ms - (millis() - startMillis)),
                        GFP(ModemConfig::GSM_OK), GFP(ModemConfig::GSM_ERROR),
@@ -750,17 +762,21 @@ class TinyGsmSequansMonarch
 
   bool modemStopImpl(uint8_t mux, uint32_t /*maxWaitMs*/) {
     if (!isValidMux(mux)) { return false; }
+    uint8_t connId = muxToConnectionId(mux);
     // Same command for both secure and non-secure sockets
-    sendAT(GF("+SQNSH="), mux);
+    sendAT(GF("+SQNSH="), connId);
     return waitResponse() == 1;  // should return within 1s
   }
 
   size_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
-    if (sockets[mux % TcpConfig::kMuxCount]->sock_connected == false) {
+    if (sockets[mux]->sock_connected == false) {
       DBG("### Sock closed, cannot send data!");
       return 0;
     }
+
+    uint8_t connId = muxToConnectionId(mux);
+
     // Pointer to where in the buffer we're up to
     // A const cast is need to cast-away the constant-ness of the buffer (ie,
     // modify it).
@@ -780,7 +796,7 @@ class TinyGsmSequansMonarch
           sendLength = const_cast<uint8_t*>(buff) + len - txPtr;
         }
 
-        sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)sendLength);
+        sendAT(GF("+SQNSSENDEXT="), connId, ',', (uint16_t)sendLength);
         send_success = waitResponse(10000L, GF("\r\n> ")) == 1;
         if (!send_success) {
           send_attempts++;
@@ -811,14 +827,13 @@ class TinyGsmSequansMonarch
       // if we failed after 3 attempts at the same chunk, bail from the whole
       // thing
       if (!send_success) { break; }
-    } while (bytesSent < len &&
-             sockets[mux % TcpConfig::kMuxCount]->sock_connected);
+    } while (bytesSent < len && sockets[mux]->sock_connected);
     return bytesSent;
 
     // uint8_t nAttempts = 5;
     // bool gotPrompt = false;
     // while (nAttempts > 0 && !gotPrompt) {
-    //   sendAT(GF("+SQNSSEND="), mux);
+    //   sendAT(GF("+SQNSSEND="), connId);
     //   if (waitResponse(5000, GF("\r\n> ")) == 1) {
     //     gotPrompt = true;
     //   }
@@ -827,7 +842,7 @@ class TinyGsmSequansMonarch
     // }
     // if (gotPrompt) {
     //   stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-    //   stream.write(reinterpret_cast<char>0x1A);
+    //   stream.write(reinterpret_cast<const char*>(0x1A), 1);
     //   stream.flush();
     //   if (waitResponse() != 1) {
     //     DBG("### no OK after send");
@@ -837,10 +852,12 @@ class TinyGsmSequansMonarch
     // }
     // return 0;
   }
+
 #if 0
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
-    sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
+    uint8_t connId = muxToConnectionId(mux);
+    sendAT(GF("+SQNSSENDEXT="), connId, ',', (uint16_t)len);
     return waitResponse(10000L, GF("\r\n> ")) == 1;
   }
   size_t modemEndSendImpl(size_t len, uint8_t) {
@@ -854,47 +871,50 @@ class TinyGsmSequansMonarch
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
-    size_t len_read = 0;
+    uint8_t connId   = muxToConnectionId(mux);
+    size_t  len_read = 0;
 
-    sendAT(GF("+SQNSRECV="), mux, ',', (uint16_t)size);
+    sendAT(GF("+SQNSRECV="), connId, ',', (uint16_t)size);
     if (waitResponse(GF("+SQNSRECV: ")) != 1) { return 0; }
 
-    int16_t ret_mux      = streamGetIntBefore(',');  // mux
+    int16_t ret_connId   = streamGetIntBefore(',');        // connection id
+    int16_t ret_mux      = connectionIdToMux(ret_connId);  // convert to mux
     int16_t len_reported = streamGetIntBefore('\n');
     if (isValidMux(ret_mux)) {
       // Move the data to the socket buffer of the returned mux as long as the
       // returned mux is valid, even if it doesn't match the expected mux.
-      len_read = moveCharsFromStreamToFifo(ret_mux % TcpConfig::kMuxCount,
-                                           len_reported);
+      len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
     }
     waitResponse();  // ending OK; the waitResponse function will toss all the
                      // characters before the OK if the mux was invalid
 
     if (isValidMux(ret_mux)) {
       // get the amount available after reading
-      sockets[ret_mux % TcpConfig::kMuxCount]->sock_available =
-          modemGetAvailable(ret_mux);
+      sockets[ret_mux]->sock_available = modemGetAvailable(ret_mux);
     }
     if (!isExpectedMux(ret_mux, mux)) {
       // if we didn't get a read from the expected mux, set the read length to 0
       // and update the available data for the mux that was requested
-      len_read = 0;
-      sockets[mux % TcpConfig::kMuxCount]->sock_available =
-          modemGetAvailable(mux);
+      len_read                     = 0;
+      sockets[mux]->sock_available = modemGetAvailable(mux);
     }
     return len_read;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
-    sendAT(GF("+SQNSI="), mux);
-    size_t  result  = 0;
-    int16_t ret_mux = -1;
+    uint8_t connId = muxToConnectionId(mux);
+
+    sendAT(GF("+SQNSI="), connId);
+    size_t  result     = 0;
+    int16_t ret_mux    = -1;
+    int16_t ret_connId = -1;
     if (waitResponse(GF("+SQNSI:")) == 1) {
-      ret_mux = streamGetIntBefore(',');  // mux
-      streamSkipUntil(',');               // Skip total sent
-      streamSkipUntil(',');               // Skip total received
-      result = streamGetIntBefore(',');   // keep data not yet read
+      ret_connId = streamGetIntBefore(',');        // connection id
+      ret_mux    = connectionIdToMux(ret_connId);  // convert to mux
+      streamSkipUntil(',');                        // Skip total sent
+      streamSkipUntil(',');                        // Skip total received
+      result = streamGetIntBefore(',');            // keep data not yet read
       waitResponse();
     }
     // DBG("### Available:", result, "on", mux);
@@ -906,15 +926,15 @@ class TinyGsmSequansMonarch
     // This single command always returns the connection status of all
     // six possible sockets.
     sendAT(GF("+SQNSS"));
-    for (uint8_t muxNo = 1; muxNo <= TcpConfig::kMuxCount; muxNo++) {
+    for (uint8_t connId = 1; connId <= TcpConfig::kMuxCount; connId++) {
       if (waitResponse(GFP(ModemConfig::GSM_OK), GF("+SQNSS: ")) != 2) {
         break;
       }
       SocketStatus status = SocketStatus::SOCK_CLOSED;
-      // if (streamGetIntBefore(',') != muxNo) { // check the mux no
+      // if (streamGetIntBefore(',') != connId) { // check the mux no
       //   DBG("### Warning: misaligned mux numbers!");
       // }
-      streamSkipUntil(',');  // skip mux [use muxNo]
+      streamSkipUntil(',');  // skip connection ID [use connId]
       status = static_cast<SocketStatus>(stream.parseInt());  // Read the status
       // if mux is in use, will have comma then other info after the status
       // if not, there will be new line immediately after status
@@ -926,7 +946,8 @@ class TinyGsmSequansMonarch
       // SOCK_LISTENING              = 4,
       // SOCK_INCOMING               = 5,
       // SOCK_OPENING                = 6,
-      GsmClientSequansMonarch* sock = sockets[muxNo % TcpConfig::kMuxCount];
+      uint8_t muxNo = connectionIdToMux(connId);  // convert to mux
+      GsmClientSequansMonarch* sock = sockets[muxNo];
       if (sock) {
         sock->sock_connected = ((status != SocketStatus::SOCK_CLOSED) &&
                                 (status != SocketStatus::SOCK_INCOMING) &&
@@ -934,7 +955,7 @@ class TinyGsmSequansMonarch
       }
     }
     waitResponse();  // Should be an OK at the end
-    GsmClientSequansMonarch* thisSock = sockets[mux % TcpConfig::kMuxCount];
+    GsmClientSequansMonarch* thisSock = sockets[mux];
     return thisSock ? thisSock->sock_connected : false;
   }
 
@@ -944,20 +965,20 @@ class TinyGsmSequansMonarch
  protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+SQNSRING:"))) {
-      int16_t mux = streamGetIntBefore(',');
-      int16_t len = streamGetIntBefore('\n');
+      int16_t connId = streamGetIntBefore(',');
+      uint8_t mux    = connectionIdToMux(connId);
+      int16_t len    = streamGetIntBefore('\n');
       if (isValidMux(mux)) {
-        sockets[mux % TcpConfig::kMuxCount]->got_data       = true;
-        sockets[mux % TcpConfig::kMuxCount]->sock_available = len;
+        sockets[mux]->got_data       = true;
+        sockets[mux]->sock_available = len;
       }
       data = "";
       DBG("### URC Data Received:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("SQNSH: "))) {
-      int16_t mux = streamGetIntBefore('\n');
-      if (isValidMux(mux)) {
-        sockets[mux % TcpConfig::kMuxCount]->sock_connected = false;
-      }
+      int16_t connId = streamGetIntBefore('\n');
+      uint8_t mux    = connectionIdToMux(connId);
+      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       data = "";
       DBG("### URC Sock Closed: ", mux);
       return true;
@@ -975,23 +996,24 @@ class TinyGsmSequansMonarch
   // with SQNSSENDEXT in data mode so use \n
   const char* gsmNL = "\n";
 
-  // over-ride because mux numbers start at 1
-  template <typename T>
-  bool isValidMux(T mux) {
-    return mux > 0 && mux <= TcpConfig::kMuxCount &&
-        sockets[mux % TcpConfig::kMuxCount] != nullptr;
-  }
-  uint8_t findFirstUnassignedMux() {
-    // Try to iterate through the assigned client sockets to find the next spot
-    // in the array of client pointers that has not been linked to an object.
-    for (int next_mux = 1; next_mux <= TcpConfig::kMuxCount; next_mux++) {
-      if (sockets[next_mux % TcpConfig::kMuxCount] == nullptr) {
-        return next_mux;
-      }
-    }
-    DBG("### WARNING: No empty mux sockets found!");
-    return static_cast<uint8_t>(-1);
-  }
+  /**
+   * @brief Convert a multiplexing channel number to the modem's internal
+   * connection identifier.
+   * @param mux The multiplexing channel number (0-indexed).
+   * @return The modem's internal connection identifier (1-indexed).
+   */
+  inline uint8_t muxToConnectionId(uint8_t mux) {
+    return mux + 1;
+  };
+  /**
+   * @brief Convert the modem's internal connection identifier to a multiplexing
+   * channel number.
+   * @param connId The modem's internal connection identifier (1-indexed).
+   * @return The multiplexing channel number (0-indexed).
+   */
+  inline uint8_t connectionIdToMux(uint8_t connId) {
+    return connId - 1;
+  };
 };
 
 // cspell:words SQNSSENDEXT
