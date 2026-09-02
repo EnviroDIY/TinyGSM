@@ -71,11 +71,10 @@
  *   - Change the buffer size by defining TINY_GSM_RX_BUFFER in your sketch
  * before including any TinyGSM header file.
  * - Socket Numbering:
- *   - The ESP8266 uses static mux selection.
- *   - The caller chooses the multiplexing channel number via the constructor or
- * init() function.
- *   - init() honors the requested channel when available; if unavailable, it
- * will select the next available channel or use modulo assignment.
+ *   - The modem uses user-specified MUX channel numbers for socket connections.
+ *   - If you attempt to create a new client with a channel number that is
+ * already in use and other unused channels are available, this library will
+ * select the next available one.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  */
@@ -234,8 +233,8 @@ class TinyGsmESP8266NonOS
       sock_connected = false;
       is_mid_send    = false;
 
-      // The ESP8266 (as supported) generally lets you choose the mux number,
-      // but we want to try to find an empty place in the socket array for it.
+      // The ESP8266 (as supported) uses the the mux number you assign, but we
+      // want to try to find an empty place in the socket array for it.
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
@@ -380,9 +379,7 @@ class TinyGsmESP8266NonOS
   /*
    * Wifi functions
    */
- protected:
   // Follows functions inherited from Espressif
-
 
   /*
    * GPRS functions
@@ -471,6 +468,26 @@ class TinyGsmESP8266NonOS
     return (1 == rsp || 3 == rsp);  // OK or ALREADY CONNECT
   }
 
+  // Disambiguate modemStopImpl by using the Espressif implementation
+  using TinyGsmEspressif<TinyGsmESP8266NonOS,
+                         TinyGsmESP8266NonOSModemConfig>::modemStopImpl;
+
+  bool modemBeginSendImpl(size_t len, uint8_t mux) {
+    if (!isValidMux(mux)) { return false; }
+    sendAT(GF("+CIPSEND="), mux, ',', len);
+    return waitResponse(GF(">")) == 1;
+  }
+  // Between the modemBeginSend and modemEndSend, modemSend calls:
+  // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+  // stream.flush();
+  size_t modemEndSendImpl(size_t len, uint8_t) {
+    if (waitResponse(30000L, GF("SEND OK\r\n"), GF("SEND FAIL\r\n"),
+                     GFP(ModemConfig::GSM_ERROR)) != 1) {
+      return 0;
+    }
+    return len;
+  }
+
   bool modemGetConnectedImpl(uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSTATUS"));
@@ -515,26 +532,6 @@ class TinyGsmESP8266NonOS
     return verified_connections[mux];
   }
 
-  // Disambiguate modemStopImpl by using the Espressif implementation
-  using TinyGsmEspressif<TinyGsmESP8266NonOS,
-                         TinyGsmESP8266NonOSModemConfig>::modemStopImpl;
-
-  bool modemBeginSendImpl(size_t len, uint8_t mux) {
-    if (!isValidMux(mux)) { return false; }
-    sendAT(GF("+CIPSEND="), mux, ',', len);
-    return waitResponse(GF(">")) == 1;
-  }
-  // Between the modemBeginSend and modemEndSend, modemSend calls:
-  // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-  // stream.flush();
-  size_t modemEndSendImpl(size_t len, uint8_t) {
-    if (waitResponse(30000L, GF("SEND OK\r\n"), GF("SEND FAIL\r\n"),
-                     GFP(ModemConfig::GSM_ERROR)) != 1) {
-      return 0;
-    }
-    return len;
-  }
-
   /*
    * Utilities
    */
@@ -565,7 +562,9 @@ class TinyGsmESP8266NonOS
       int16_t coma = data.indexOf(',', muxStart);
       if (coma > muxStart + 2) {
         int16_t mux = data.substring(muxStart + 2, coma).toInt();
-        if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
+        if (isValidMux(mux)) {
+          sockets[static_cast<uint8_t>(mux)]->sock_connected = false;
+        }
         DBG("### Closed: ", mux);
       }
       streamSkipUntil('\n');  // throw away the new line
