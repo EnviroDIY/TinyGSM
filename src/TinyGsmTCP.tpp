@@ -120,31 +120,14 @@ class TinyGsmTCP {
   }
 
  protected:
-  bool isValidMux(uint8_t mux) {
-    return mux < TcpConfig::kMuxCount && thisModem().sockets[mux] != nullptr;
-  }
-  bool isValidMux(int8_t mux) {
+  template <typename T>
+  bool isValidMux(T mux) {
     return mux >= 0 && mux < TcpConfig::kMuxCount &&
         thisModem().sockets[mux] != nullptr;
   }
-  bool isValidMux(uint16_t mux) {
-    return mux < TcpConfig::kMuxCount && thisModem().sockets[mux] != nullptr;
-  }
-  bool isValidMux(int16_t mux) {
-    return mux >= 0 && mux < TcpConfig::kMuxCount &&
-        thisModem().sockets[mux] != nullptr;
-  }
-  bool isExpectedMux(uint8_t query_mux, uint8_t known_mux) {
-    return query_mux == known_mux;
-  }
-  bool isExpectedMux(int8_t query_mux, uint8_t known_mux) {
-    return static_cast<uint8_t>(query_mux) == known_mux;
-  }
-  bool isExpectedMux(uint16_t query_mux, uint8_t known_mux) {
-    return query_mux == static_cast<uint16_t>(known_mux);
-  }
-  bool isExpectedMux(int16_t query_mux, uint8_t known_mux) {
-    return query_mux >= 0 && query_mux == static_cast<int16_t>(known_mux);
+  template <typename T>
+  bool isExpectedMux(T query_mux, uint8_t known_mux) {
+    return query_mux >= 0 && query_mux == static_cast<T>(known_mux);
   }
 
   /**
