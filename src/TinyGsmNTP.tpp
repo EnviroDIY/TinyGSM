@@ -86,7 +86,7 @@ class TinyGsmNTP {
    * @name NTP Utilities
    */
   /**@{*/
-
+ protected:
   /**
    * @brief Check if a string is a valid number
    *
@@ -159,20 +159,18 @@ class TinyGsmNTP {
     // Request network synchronization - execution command
     thisModem().sendAT(GF("+CNTP"));
     if (thisModem().waitResponse(10000L, GF("+CNTP:")) == 1) {
-      String result = thisModem().stream.readStringUntil('\n');
-      // Check for ',' in case the module appends the time next to the return
-      // code. Eg: +CNTP: <code>[,<time>]
+      // Return: +CNTP: <code>[,<time>]
       // <code> - Result code of the NTP synchronization
-      //        - 1 Network time synchronization is successful
-      //        - 61 Network Error
-      //        - 62 DNS resolution error
-      //        - 63 Connection Error
-      //        - 64 Service response error
-      //        - 65 Service Response Timeout
-      int index = result.indexOf(',');
-      if (index > 0) { result.remove(index); }
-      result.trim();
-      if (TinyGsmIsValidNumber(result)) { return result.toInt() == 1; }
+      //    - 1 Network time synchronization is successful
+      //    - 61 Network Error
+      //    - 62 DNS resolution error
+      //    - 63 Connection Error
+      //    - 64 Service response error
+      //    - 65 Service Response Timeout
+      int code = thisModem().stream.parseInt();
+      // Throw away the rest of the line, since we don't care about it here
+      thisModem().streamSkipUntil('\n');
+      return code == 1;
     }
     return false;
   }
@@ -186,15 +184,10 @@ class TinyGsmNTP {
       // Request network synchronization
       thisModem().sendAT(GF("+CNTP"));
       if (thisModem().waitResponse(10000L, GF("+CNTP:")) == 1) {
-        String result = thisModem().stream.readStringUntil('\n');
-        // Check for ',' in case the module appends the time next to the return
-        // code. Eg: +CNTP: <code>[,<time>]
-        int index = result.indexOf(',');
-        if (index > 0) { result.remove(index); }
-        result.trim();
-        if (TinyGsmIsValidNumber(result) && result.toInt() == 1) {
-          return true;
-        }
+        int code = thisModem().stream.parseInt();
+        // Throw away the rest of the line, since we don't care about it here
+        thisModem().streamSkipUntil('\n');
+        if (code == 1) { return true; }
       }
       delay(250);
     }
