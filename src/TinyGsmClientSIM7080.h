@@ -1289,9 +1289,12 @@ class TinyGsmSim7080
     // send buffer (that we can soon fill up with our next send attempt)
     sendAT(GF("+CASEND="), mux);
     if (waitResponse(GF("+CASEND:")) != 1) {
+      // If this returns anything other than `+CASEND: <mux>,<leftsize>`, we
+      // assume the send buffer is empty and we can send the maximum size.  If
+      // the send buffer is empty, the module will definitely return an error.
+      // If the wait times out or returns something else, we treat that
+      // identically.
       return TcpConfig::kSendMaxSize;
-      // this will return an error if the send buffer is empty - that means we
-      // can send the maximum size, so we return that
     }
     size_t leftsize = streamGetIntBefore('\n');
     waitResponse();  // final ok

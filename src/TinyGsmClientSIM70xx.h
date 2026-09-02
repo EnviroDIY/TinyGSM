@@ -345,6 +345,9 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
     // is a comma.  If it is a comma, then the date and time is missing and we
     // will skip parsing it.
     TINY_GSM_YIELD();
+    // NOTE: only wait one 'yield' period for the next character to be
+    // available, not a whole timeout.  This character is in the middle of a
+    // long string set by the modem in a single chunk.
     bool hasDateTime = stream.peek() != ',';
     if (hasDateTime) {
       iyear        = thisModem().streamGetIntLength(4);  // Four digit year
