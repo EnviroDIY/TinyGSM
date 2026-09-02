@@ -93,14 +93,13 @@
  *   - This gives you leeway to pull data from the buffer as needed with less
  * risk of losing data.
  * - Socket Numbering:
- *   - The modem does not allow you to specify the multiplexing channel.
- *   - The modem will automatically assign a channel when the client connects to
- * a server.
+ *   - The modem uses user-specified MUX channel numbers for socket connections.
+ *   - If you attempt to create a new client with a channel number that is
+ * already in use and other unused channels are available, this library will
+ * select the next available one.
  *   - Use the getMux() function to get the assigned multiplexing channel number
  * after a successful connection.
  *
- * @todo In `GsmClientSecureESP32::connect()`: Implement PSK and PSK Identity as
- * they're now supported by newer firmware.
  * @todo In `handleURCs()`: I'm not sure if each +IPD URC reports the amount
  * newly received or the total now in the buffer. It appears to be the latter.
  */
@@ -180,7 +179,7 @@ constexpr char TinyGsmESP32ModemConfig::CLIENT_KEY_NAMESPACE[]
 struct TinyGsmESP32TcpConfig
     : public TinyGsmTcpConfigPreset<
           /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
-          /*muxMode*/ TinyGsmTcpMuxMode::Dynamic,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
           /*muxCount*/ 5,
           /*sendMaxSize*/ 2920,
           /*connectTimeoutS*/ 75,  // default
@@ -265,14 +264,8 @@ class TinyGsmESP32
       sock_connected = false;
       is_mid_send    = false;
 
-      // NOTE: Although the ESP32 would be happy to give us a mux number, we
-      // need to assign a mux number here first so that we can assign the
-      // pointer for the client in the socket array and in-turn allow the modem
-      // to look back at the properties of the client to check if the client
-      // needs SSL and, if so, what the SSL specs are.
-      // If the mux number returned at the end of the connection process is
-      // different from the one we assigned here, we update the position of the
-      // pointer to this in the socket array after the connection finishes.
+      // The ESP32 (as supported) uses the the mux number you assign, but we
+      // want to try to find an empty place in the socket array for it.
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
@@ -300,54 +293,7 @@ class TinyGsmESP32
      * Client API
      */
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) override {
-      if (at == nullptr) { return 0; }
-      is_mid_send = false;
-#if 1
-      // stop if and only if the mux number is valid, the socket pointer is not
-      // null, and the socket is connected
-      if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr &&
-          sock_connected) {
-        stop(TcpConfig::kStopTimeoutS * 1000L);
-      }
-#endif
-      TINY_GSM_YIELD();
-      rx.clear();
-      // attempt to use the requested mux number first
-      uint8_t assignedMux = mux;
-      // modemConnect will validate the mux number returned by the modem and
-      // return false and set the assignedMux to -1 if the mux number is invalid
-      // or the connection fails
-      sock_connected = at->modemConnect(host, port, &assignedMux, timeout_s);
-      if (sock_connected && assignedMux != mux) {
-        // If we successfully connected, and the assigned mux number is
-        // different from the requested mux number, we need to move any existing
-        // client at the assigned mux number before we can insert this client
-        // into the sockets array at the assigned mux.
-        // Set the requested mux to -1 to get the next available mux number.
-        // If there was no existing client at the assigned mux number, this will
-        // do nothing.
-        at->moveSocket(assignedMux, static_cast<uint8_t>(-1));
-        // If the original mux number was valid, and the pointer to this client
-        // is still in the original mux position in the sockets array, set the
-        // pointer in that position to null.
-        if (mux < TcpConfig::kMuxCount && at->sockets[mux] == this) {
-          at->sockets[mux] = nullptr;
-        }
-        // set the client's internal mux number and insert it into the array
-        at->sockets[assignedMux] = this;
-        mux                      = assignedMux;
-      }
-      // NOTE: If the sock didn't connect, DO NOT assign an invalid mux number
-      // or move the pointer to this client in the modem's sockets array.  The
-      // modem still needs to be able to access this client via its mux number
-      // in the socket array to check if it's expected to be an SSL connection
-      // and, if so, what the SSL specs are.  If we set an invalid mux number or
-      // break the alignment between the mux number and the position of the
-      // pointer in the array client in the sockets array when the connection
-      // fails, the modem loses access to the client.
-      return sock_connected;
-    }
+    TINY_GSM_STATIC_TCP_CONNECT
 
     void stop(uint32_t maxWaitMs) override {
       if (at == nullptr) { return; }
@@ -356,7 +302,8 @@ class TinyGsmESP32
       uint32_t startMillis = millis();
       if (sock_connected || sock_available) {
         // Update available data first, because if the socket was closed
-        // externally, the module may have thrown away the data
+        // externally, the module may have thrown away the data (though the
+        // documentation says it should not).
         at->modemGetAvailable(mux);
         // Now we throw away any remaining data in the modem buffer
         // We explicitly toss it here because the socket will appear open in
@@ -625,7 +572,7 @@ class TinyGsmESP32
     success &= waitResponse() == 1;
 
     // Set the data receive mode to have the module buffer data for all
-    // connections AT+CIPRECVTYPE=<link ID>,<mode>
+    // connections AT+CIPRECVTYPE=<link ID>,<mode>[,<data_len_report_mode>]
     // <link ID>: ID of the connection (0 ~ max). For a single connection, <link
     //   ID> is 0. For multiple connections, if the value is max, it means all
     //   connections. Max is 5 by default.
@@ -639,6 +586,13 @@ class TinyGsmESP32
     //    wait for the host MCU to read. If the buffer is full, the socket
     //    transmission will be blocked for TCP/SSL connections, or data will be
     //    lost for UDP connections.
+    // <data_len_report_mode>: data length reporting mode. Default: 0.
+    //  0: The length reported in the +IPD and +CIPRECVLEN messages is the total
+    //    length of socket data currently in the receive buffer.
+    //  1: The length reported in the +IPD and +CIPRECVLEN messages is the
+    //    length of the next datagram. In UDP transmission, setting this to 1
+    //    ensures that the reported length always corresponds to a single
+    //    complete datagram.
     sendAT(GF("+CIPRECVTYPE=5,1"));
     success &= waitResponse() == 1;
 
@@ -1350,21 +1304,17 @@ class TinyGsmESP32
   /*
    * Temperature functions
    */
-  // No functions of this type implemented
+  // No functions of this type supported
 
   /*
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* dynamicMux,
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
-    // Validate dynamicMux before accessing sockets array
-    if (*dynamicMux >= TcpConfig::kMuxCount || !sockets[*dynamicMux]) {
-      return false;
-    }
-    uint32_t timeout_ms    = ((uint32_t)timeout_s) * 1000;
-    uint8_t  requested_mux = *dynamicMux;
-    bool     ssl           = sockets[requested_mux]->is_secure;
+    if (!isValidMux(mux)) { return false; }
+    uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+    bool     ssl        = sockets[mux]->is_secure;
 
     // Blank holders for the SSL auth mode and certificates
     SSLAuthMode sslAuthMode = SSLAuthMode::NO_VALIDATION;
@@ -1375,7 +1325,7 @@ class TinyGsmESP32
     // If we actually have a secure socket populate the above with real values
     if (ssl) {
       const GsmClientSecureESP32* thisClient =
-          static_cast<const GsmClientSecureESP32*>(sockets[requested_mux]);
+          static_cast<const GsmClientSecureESP32*>(sockets[mux]);
       sslAuthMode = thisClient->sslAuthMode;
       ca_number   = thisClient->ca_number;
       pki_number  = thisClient->pki_number;
@@ -1385,8 +1335,7 @@ class TinyGsmESP32
 
     if (ssl) {
       // SSL certificate checking will not work without a valid timestamp!
-      if (sockets[requested_mux] != nullptr &&
-          (sslAuthMode != SSLAuthMode::NO_VALIDATION) &&
+      if ((sslAuthMode != SSLAuthMode::NO_VALIDATION) &&
           !waitForTimeSync(timeout_s)) {
         DBG("### WARNING: The module timestamp must be valid for SSL auth. "
             "Please use setTimeZone(...) or NTPServerSync(...) to enable "
@@ -1418,23 +1367,21 @@ class TinyGsmESP32
       // (or were not) put into the customized certificate partitions.
       // The default firmware comes with espressif certificates in slots 0
       // and 1.
-      if (sockets[requested_mux] == nullptr ||
-          (sslAuthMode == SSLAuthMode::NO_VALIDATION)) {
-        sendAT(GF("+CIPSSLCCONF="), requested_mux, GF(",0"));
-      } else if (sslAuthMode != SSLAuthMode::PRE_SHARED_KEYS) {
-        // For auth modes 1, 2, and 3, we need to specify the PKI and CA numbers
-        sendAT(GF("+CIPSSLCCONF="), requested_mux, ',',
-               static_cast<uint8_t>(sslAuthMode), ',', pki_number, ',',
-               ca_number);
-      } else {  // pre-shared keys
+      if ((sslAuthMode == SSLAuthMode::NO_VALIDATION)) {
+        sendAT(GF("+CIPSSLCCONF="), mux, GF(",0"));
+      } else if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
         // NOTE: Support for this is firmware dependent!
         // AT+CIPSSLCPSK=<link ID>,<"psk">,<"hint">
         if (psKey == nullptr || pskIdent == nullptr) {
           DBG("### PSK authentication requires both a PSK and a PSK identity!");
           return false;
         }
-        sendAT(GF("+CIPSSLCPSK="), requested_mux, GF(",\""), psKey, GF("\",\""),
-               pskIdent, '"');
+        sendAT(GF("+CIPSSLCPSK="), mux, GF(",\""), psKey, GF("\",\""), pskIdent,
+               '"');
+      } else {
+        // For auth modes 1, 2, and 3, we need to specify the PKI and CA numbers
+        sendAT(GF("+CIPSSLCCONF="), mux, ',', static_cast<uint8_t>(sslAuthMode),
+               ',', pki_number, ',', ca_number);
       }
       waitResponse();
 
@@ -1443,10 +1390,11 @@ class TinyGsmESP32
       // AT+CIPSSLCSNI=<link ID>,<"sni">
       // NOTE: On firmware versions above 0.4.2 this happens automatically, but
       // on older versions it must be done manually.
-      sendAT(GF("+CIPSSLCSNI="), requested_mux, GF(",\""), host, '"');
+      sendAT(GF("+CIPSSLCSNI="), mux, GF(",\""), host, '"');
       waitResponse();
     }
 
+    String resolved_ip;
     // If you need to use a domain name and the length of the domain name
     // exceeds 64 bytes, use the AT+CIPDOMAIN command to obtain the IP address
     // corresponding to the domain name, and then use the IP address to
@@ -1456,11 +1404,11 @@ class TinyGsmESP32
       sendAT(GF("+CIPDOMAIN=\""), host, '"');
       // +CIPDOMAIN:<"IP address"> then OK
       if (waitResponse(GF("+CIPDOMAIN:\"")) != 1) { return false; }
-      String ip = stream.readStringUntil('"');
+      resolved_ip = stream.readStringUntil('"');
       streamSkipUntil('\n');  // skip the rest of the line
       waitResponse();         // ends with OK
-      if (ip.length() > 0) {
-        host = ip.c_str();
+      if (resolved_ip.length() > 0) {
+        host = resolved_ip.c_str();
       } else {
         return false;
       }
@@ -1471,8 +1419,8 @@ class TinyGsmESP32
     waitResponse();
 
     // Make the connection
-    sendAT(GF("+CIPSTART="), requested_mux, ',',
-           ssl ? GF("\"SSL") : GF("\"TCP"), GF("\",\""), host, GF("\","), port
+    sendAT(GF("+CIPSTART="), mux, ',', ssl ? GF("\"SSL") : GF("\"TCP"),
+           GF("\",\""), host, GF("\","), port
 #if defined(TINY_GSM_TCP_KEEP_ALIVE)
            ,
            ',', TINY_GSM_TCP_KEEP_ALIVE
@@ -1480,27 +1428,17 @@ class TinyGsmESP32
     );
 
     String data;
-    int8_t connect_rsp =
-        waitResponse(timeout_ms, data, GFP(ModemConfig::GSM_OK),
-                     GFP(ModemConfig::GSM_ERROR), GF("ALREADY CONNECT"));
-    bool success = connect_rsp == 1 ||
-        connect_rsp == 3;  // OK or ALREADY CONNECT
-    if (success && data.length() > 8) {
+    int8_t rsp     = waitResponse(timeout_ms, data, GFP(ModemConfig::GSM_OK),
+                                  GFP(ModemConfig::GSM_ERROR),
+                                  GF("ALREADY CONNECT"));
+    bool   success = rsp == 1 || rsp == 3;  // OK or ALREADY CONNECT
+    if (rsp == 1 && data.length() > 8) {
       int16_t coma          = data.indexOf(',');
       int16_t connected_mux = data.substring(0, coma).toInt();
-
-      // Validate the returned mux
-      if (coma < 0 || connected_mux < 0 ||
-          connected_mux >= TcpConfig::kMuxCount) {
-        DBG(GF("ERROR: Modem returned invalid mux or connection failed"));
-        *dynamicMux = static_cast<uint8_t>(-1);  // Set mux to invalid value
-        return false;  // Return failure when mux is out of range
+      if (!isExpectedMux(connected_mux, mux)) {
+        DBG("WARNING:  Unexpected mux number returned:", connected_mux, "not",
+            mux);
       }
-      *dynamicMux = connected_mux;
-    } else {
-      *dynamicMux =
-          static_cast<uint8_t>(-1);  // Set mux to invalid value on failure
-      return false;
     }
     return success;
   }
@@ -1598,17 +1536,17 @@ class TinyGsmESP32
  protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+IPD,"))) {
-      int16_t  mux = streamGetIntBefore(',');
-      uint16_t len = streamGetIntBefore('\n');
+      int16_t mux          = streamGetIntBefore(',');
+      int16_t len_reported = streamGetIntBefore('\n');
       if (isValidMux(mux)) {
         sockets[static_cast<uint8_t>(mux)]->got_data = true;
         // TODO: I'm not sure if each +IPD URC reports the amount newly received
         // or the total now in the buffer. It appears to be the latter.
         // sockets[mux]->sock_available = sockets[mux]->sock_available + len;
-        sockets[static_cast<uint8_t>(mux)]->sock_available = len;
+        sockets[static_cast<uint8_t>(mux)]->sock_available = len_reported;
       }
       data = "";
-      DBG("### Got Data:", len, "on", mux);
+      DBG("### Got Data:", len_reported, "on", mux);
       return true;
     } else if (data.endsWith(GF("CLOSED"))) {
       int16_t muxStart =
