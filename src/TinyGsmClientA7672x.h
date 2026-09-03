@@ -918,8 +918,10 @@ class TinyGsmA7672X
       sendAT(GF("+CCHSTART"));
       if (waitResponse(2000L) != 1) { return false; }
 
-      linkSSLContext(mux, sslCtxIndex);
-
+      if (!linkSSLContext(mux, sslCtxIndex)) {
+        DBG("### Failed to link the SSL context to mux", mux);
+        return false;
+      }
       // Connect to server
       // AT+CCHOPEN=<session_id>,<host>,<port>[,<client_type>,[<bind_port>]]
       sendAT(GF("+CCHOPEN="), mux, GF(",\""), host, GF("\","), port, GF(",2"));
@@ -1207,8 +1209,9 @@ class TinyGsmA7672X
       data = "";
       DBG("### Got receive event");
       return true;
-    } else if (data.endsWith(GF("+CCHRECV: 0,0\r\n"))) {
-      int16_t mux = data.substring(data.lastIndexOf(',') + 1).toInt();
+    } else if (data.endsWith(GF("+CCHRECV:"))) {
+      int16_t mux = streamGetIntBefore(',');
+      streamSkipUntil('\n');  // skip the error code
       if (isValidMux(mux)) { sockets[mux]->sock_connected = true; }
       data = "";
       DBG("### ACK:", mux);
