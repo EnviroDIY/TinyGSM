@@ -1168,33 +1168,21 @@ class GsmClient : public Client {
     if (expected_size) { return sent_size == expected_size; }
     return true;
   }
-
-  /**
-   * @brief Convert an IPAddress to a String for use in connect()
-   * @param ip The IPAddress to convert
-   * @return A String representation of the IPAddress
-   */
-  static inline String TinyGsmStringFromIp(IPAddress ip) {
-    String host;
-    host.reserve(16);
-    host += ip[0];
-    host += '.';
-    host += ip[1];
-    host += '.';
-    host += ip[2];
-    host += '.';
-    host += ip[3];
-    return host;
-  }
   /**@}*/
 
  protected:
-  // Read and dump anything remaining in the modem's internal buffer.
-  // Using this in the client stop() function.
-  // The socket will appear open in response to connected() even after it
-  // closes until all data is read from the buffer.
-  // Doing it this way allows the external mcu to find and get all of the
-  // data that it wants from the socket even if it was closed externally.
+  /**
+   * @brief Dump any remaining data in the modem's internal buffer.
+   * @param maxWaitMs The maximum time to wait for data to be read, in
+   * milliseconds.
+   *
+   * This is used in the client stop() function to ensure that any remaining
+   * data in the modem's internal buffer is read and discarded before closing
+   * the connection. Unless the data is read or dumped, the socket will appear
+   * open in response to connected() even after it closes until all data is read
+   * from the buffer. This allows the external MCU to retrieve all of the data
+   * that it wants from the socket even if it was closed externally.
+   */
   inline void dumpModemBuffer(uint32_t maxWaitMs) {
     if (at == nullptr) { return; }
     if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
