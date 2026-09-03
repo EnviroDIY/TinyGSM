@@ -163,6 +163,15 @@ enum class SSLVersion : int8_t {
 /**
  * @brief The CRTP parent class for Secure Socket Layer (SSL) functions.
  * @tparam modemType The derived modem class
+ *
+ * @todo create an SSLConfig trait type to control SSL behavior and limits,
+ * similar to TcpConfig.  This would handle:
+ *  - the number of SSL contexts supported by the modem
+ *  - the number of SSL sockets supported by the modem
+ *  - whether the socket numbering is shared between SSL and TCP sockets or
+ * separate
+ *  - the SSL capabilities of the modem (e.g., whether it supports PSK, client
+ * certs, etc.)
  */
 template <class modemType>
 class TinyGsmSSL {
