@@ -22,7 +22,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Separated Espressif into **3** modules:
   - the ESP32 (requiring AT firmware >= 3.2),
   - the ESP8266 using the final release of its AT firmware ([v2.2.1_esp8266](https://github.com/espressif/esp-at/releases/tag/v2.2.1.0_esp8266)),
-  - and the ESP8266 using the original "non-OS" firmware that first version of this library was written for.
+  - and the ESP8266 using the original "non-OS" firmware that the first version of this library was written for.
 - Created missing interface for CRTP for the client related modem functions
 - Made adjustments and corrections to the A7672x based on similar functionality of the SIM7600.
 - Fixed various compiler warnings, where possible
@@ -79,6 +79,7 @@ gsmClient.endWrite(strlen(request));
 
 ### Removed
 
+- **BREAKING** Removed the ShowNTPError function.
 - Removed certificate arrays from the modem objects
 - Only include the SSL template on the modules that support the SSL enhancements and certificate management instead of a bare flag for security.
 

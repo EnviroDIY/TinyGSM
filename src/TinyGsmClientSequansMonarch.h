@@ -274,7 +274,7 @@ class TinyGsmSequansMonarch
      * successful connection.
      */
     explicit GsmClientSequansMonarch(TinyGsmSequansMonarch& modem,
-                                     uint8_t                mux = 1)
+                                     uint8_t                mux = 0)
         : GsmClient<TinyGsmSequansMonarch, TinyGsmSequansMonarchTcpConfig>(
               modem, mux) {
       is_secure = false;
@@ -288,7 +288,7 @@ class TinyGsmSequansMonarch
      * @copydetails GsmClientSequansMonarch::GsmClientSequansMonarch(
      * TinyGsmSequansMonarch&, uint8_t)
      */
-    bool init(TinyGsmSequansMonarch* modem, uint8_t mux = 1) {
+    bool init(TinyGsmSequansMonarch* modem, uint8_t mux = 0) {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;
@@ -373,7 +373,7 @@ class TinyGsmSequansMonarch
      * TinyGsmSequansMonarch&, uint8_t)
      */
     explicit GsmClientSecureSequansMonarch(TinyGsmSequansMonarch& modem,
-                                           uint8_t                mux = 1)
+                                           uint8_t                mux = 0)
         : GsmClientSequansMonarch(modem, mux) {
       is_secure = true;
     }
