@@ -180,8 +180,6 @@
  * @todo In `modemSend()`: make sure requested and confirmed bytes match
  * @todo In `modemGetConnected()`: Does this work?  It's not the right
  * command by the manual
- * @todo In `handleURCs()`: This is a problem, we can't issue a
- * sendAT/waitResponse here.
  */
 /* clang-format on */
 
@@ -351,8 +349,6 @@ class TinyGsmA7672X
       // The A7672x generally lets you choose the mux number, but we want to try
       // to find an empty place in the socket array for it.
 
-      // TODO: Ensure the secure socket mux isn't out of range
-
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
       if (mux < TcpConfig::kMuxCount &&
@@ -402,6 +398,50 @@ class TinyGsmA7672X
     using TcpConfig = TinyGsmA7672XTcpConfig;
 
     TINY_GSM_SECURE_CLIENT_CTORS(A7672X)
+
+    /**
+     * @brief Initialize the SSL client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientA7672X::GsmClientA7672X(TinyGsmA7672X&, uint8_t)
+     * @important The SSL client only supports multiplexing channel numbers 0
+     * and 1.
+     */
+    bool init(TinyGsmA7672X* modem, uint8_t mux = 0) override {
+      if (modem == nullptr) { return false; }
+      this->at       = modem;
+      sock_available = 0;
+      prev_check     = 0;
+      sock_connected = false;
+      got_data       = false;
+      is_mid_send    = false;
+
+      // The A7672x generally lets you choose the mux number, but we want to try
+      // to find an empty place in the socket array for it.
+
+      // if it's a valid mux number, and that mux number isn't in use (or it's
+      // already this), accept the mux number
+      if (mux < 2 &&
+          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
+        this->mux = mux;
+        // if the mux is over 2, or it's 1 and the 1 is taken but 0 is
+        // available, use 0
+      } else if (mux >= 1 && at->sockets[1] != this &&
+                 at->sockets[0] == nullptr) {
+        this->mux = 0;
+        // if we can't use 0, but 1 is available, use 1
+      } else if ((mux == 0 || mux >= 2) && at->sockets[0] != this &&
+                 at->sockets[1] == nullptr) {
+        this->mux = 1;
+        // if both 0 and 1, overwrite 1 and print a warning
+      } else {
+        DBG("### Warning:  Both SSL channels are in use.  Overwriting #1.");
+        this->mux = 1;
+      }
+      at->sockets[this->mux] = this;
+
+      return true;
+    }
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
