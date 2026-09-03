@@ -58,7 +58,7 @@
  *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
  *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
  *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
- * - TCP functions (TinyGsmTCP.tpp)
+ * - Socket listening functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
  *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
@@ -163,9 +163,8 @@
  * after a successful connection.
  *
  * @todo In operator `GsmClientBG96::read()`: Read directly into user buffer?
- * @todo In `modemEndSendImpl()`: Wait for ACK? (AT+QISEND=id,0 or
- * AT+QSSLSEND=id,0)
- * @todo In `modemGetConnectedImpl()`: Verify mux
+ * @todo In `modemEndSend()`: Wait for ACK? (AT+QISEND=id,0 or AT+QSSLSEND=id,0)
+ * @todo In `modemGetConnected()`: Verify mux
  */
 /* clang-format on */
 
@@ -1321,8 +1320,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
    */
 
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
-                        int timeout_s) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t /*static*/ mux,
+                    int timeout_s) {
     if (!isValidMux(mux)) { return false; }
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
@@ -1369,7 +1368,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     return (0 == streamGetIntBefore('\n'));
   }
 
-  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+  bool modemStop(uint8_t mux, uint32_t maxWaitMs) {
     if (!isValidMux(mux)) { return false; }
     bool ssl = sockets[mux]->is_secure;
     if (ssl) {
@@ -1380,7 +1379,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     return waitResponse(maxWaitMs) == 1;
   }
 
-  bool modemBeginSendImpl(size_t len, uint8_t mux) {
+  bool modemBeginSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     bool ssl = sockets[mux]->is_secure;
     if (ssl) {
@@ -1393,13 +1392,13 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  size_t modemEndSendImpl(size_t len, uint8_t) {
+  size_t modemEndSend(size_t len, uint8_t) {
     if (waitResponse(GF("SEND OK")) != 1) { return 0; }
     // TODO(?): Wait for ACK? (AT+QISEND=id,0 or AT+QSSLSEND=id,0)
     return len;
   }
 
-  size_t modemReadImpl(size_t size, uint8_t mux) {
+  size_t modemRead(size_t size, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     int16_t len_reported = 0;
     size_t  len_read     = 0;
@@ -1438,7 +1437,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     return len_read;
   }
 
-  size_t modemGetAvailableImpl(uint8_t mux) {
+  size_t modemGetAvailable(uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     bool   ssl    = sockets[mux]->is_secure;
     size_t result = 0;
@@ -1459,7 +1458,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     return result;
   }
 
-  bool modemGetConnectedImpl(uint8_t mux) {
+  bool modemGetConnected(uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     bool    ssl = sockets[mux]->is_secure;
     int16_t ret_mux;

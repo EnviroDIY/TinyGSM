@@ -55,7 +55,7 @@
  *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
  *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
  *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
- * - TCP functions (TinyGsmTCP.tpp)
+ * - Socket listening functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  * - Phone call functions (TinyGsmCalling.tpp)
  *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
@@ -117,7 +117,7 @@
  *
  * @todo In `gprsConnectImpl()`: wait AT+CGATT?
  * @todo In `dtmfSendImpl()`: correctly handle the duration parameter
- * @todo In `modemGetConnectedImpl()`: correctly read the mux number
+ * @todo In `modemGetConnected()`: correctly read the mux number
  */
 /* clang-format on */
 
@@ -665,8 +665,8 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* dynamicMux,
-                        int timeout_s) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t* dynamicMux,
+                    int timeout_s) {
     // NOTE: Don't validate mux!  It's not the real one yet and we don't need to
     // access it for any SSL configuration
     uint32_t startMillis = millis();
@@ -697,13 +697,13 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
     return success;
   }
 
-  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+  bool modemStop(uint8_t mux, uint32_t maxWaitMs) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPCLOSE="), mux);
     return waitResponse(maxWaitMs) == 1;
   }
 
-  bool modemBeginSendImpl(size_t len, uint8_t mux) {
+  bool modemBeginSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     return waitResponse(2000L, GF("\r\n>")) == 1;
@@ -711,14 +711,14 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   // Between the begin and end, modem send calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  size_t modemEndSendImpl(size_t len, uint8_t) {
+  size_t modemEndSend(size_t len, uint8_t) {
     if (waitResponse(10000L, GFP(ModemConfig::GSM_OK), GF("FAIL")) != 1) {
       return 0;
     }
     return len;
   }
 
-  bool modemGetConnectedImpl(uint8_t) {
+  bool modemGetConnected(uint8_t) {
     sendAT(GF("+CIPSTATUS"));  // TODO(?) mux?
     int8_t res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),
                               GF(",\"CLOSING\""), GF(",\"INITIAL\""));

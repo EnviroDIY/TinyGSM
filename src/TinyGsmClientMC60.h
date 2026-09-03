@@ -60,7 +60,7 @@
  *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
  *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
  *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
- * - TCP functions (TinyGsmTCP.tpp)
+ * - Socket listening functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  * - Phone call functions (TinyGsmCalling.tpp)
  *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
@@ -116,8 +116,8 @@
  *   - init() honors the requested channel when available; if unavailable, it
  * will select the next available channel or use modulo assignment.
  *
- * @todo In `modemEndSendImpl()`: verify len/ack
- * @todo In `modemReadImpl()`: Does this even work????
+ * @todo In `modemEndSend()`: verify len/ack
+ * @todo In `modemRead()`: Does this even work????
  * @todo In `handleURCs()`: QIRD? or QIRDI?
  */
 /* clang-format on */
@@ -587,8 +587,8 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
-                        int timeout_s) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t /*static*/ mux,
+                    int timeout_s) {
     if (!isValidMux(mux)) { return false; }
     // By default, MC60 expects IP address as 'host' parameter.
     // If it is a domain name, "AT+QIDNSIP=1" should be executed.
@@ -607,7 +607,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
     return (1 == rsp || 3 == rsp);  // OK or ALREADY CONNECT
   }
 
-  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+  bool modemStop(uint8_t mux, uint32_t maxWaitMs) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+QICLOSE="), mux);
     int8_t rsp = waitResponse((maxWaitMs), GF("CLOSED"), GF("CLOSE OK"),
@@ -615,7 +615,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
     return rsp == 1 || rsp == 2;
   }
 
-  bool modemBeginSendImpl(size_t len, uint8_t mux) {
+  bool modemBeginSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+QISEND="), mux, ',', (uint16_t)len);
     return waitResponse(GF(">")) == 1;
@@ -623,7 +623,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  size_t modemEndSendImpl(size_t len, uint8_t mux) {
+  size_t modemEndSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     if (waitResponse(GF("SEND OK")) != 1) { return 0; }
 
@@ -648,7 +648,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
     return len;  // TODO(?): verify len/ack
   }
 
-  size_t modemReadImpl(size_t size, uint8_t mux) {
+  size_t modemRead(size_t size, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     // TODO(?):  Does this even work????
     // AT+QIRD=<id>,<sc>,<sid>,<len>
@@ -694,11 +694,11 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
 
   // Not possible to check the number of characters remaining in buffer
   // This doesn't even need to be implemented
-  // size_t modemGetAvailableImpl(uint8_t) {
+  // size_t modemGetAvailable(uint8_t) {
   //   return 0;
   // }
 
-  bool modemGetConnectedImpl(uint8_t mux) {
+  bool modemGetConnected(uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+QISTATE=1,"), mux);
     // +QISTATE: 0,"TCP","151.139.237.11",80,5087,4,1,0,0,"uart1"

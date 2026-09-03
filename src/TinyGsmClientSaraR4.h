@@ -56,7 +56,7 @@
  *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
  *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
  *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
- * - TCP functions (TinyGsmTCP.tpp)
+ * - Socket listening functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
  *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
@@ -903,8 +903,8 @@ class TinyGsmSaraR4
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* dynamicMux,
-                        int timeout_s) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t* dynamicMux,
+                    int timeout_s) {
     // Validate dynamicMux before accessing sockets array
     if (*dynamicMux >= TcpConfig::kMuxCount || !sockets[*dynamicMux]) {
       return false;
@@ -979,7 +979,7 @@ class TinyGsmSaraR4
     }
   }
 
-  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+  bool modemStop(uint8_t mux, uint32_t maxWaitMs) {
     if (!isValidMux(mux)) { return false; }
     // We want to use an async socket close because the synchronous close of
     // an open socket is INCREDIBLY SLOW and the modem can freeze up.  But we
@@ -1010,7 +1010,7 @@ class TinyGsmSaraR4
     return waitResponse(maxWaitMs) == 1;
   }
 
-  bool modemBeginSendImpl(size_t len, uint8_t mux) {
+  bool modemBeginSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+USOWR="), mux, ',', (uint16_t)len);
     if (waitResponse(GF("@")) != 1) { return 0; }
@@ -1021,7 +1021,7 @@ class TinyGsmSaraR4
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  size_t modemEndSendImpl(size_t len, uint8_t mux) {
+  size_t modemEndSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     if (waitResponse(GF("+USOWR:")) != 1) { return 0; }
     int16_t  ret_mux = streamGetIntBefore(',');   // check mux
@@ -1033,7 +1033,7 @@ class TinyGsmSaraR4
     return 0;
   }
 
-  size_t modemReadImpl(size_t size, uint8_t mux) {
+  size_t modemRead(size_t size, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     size_t len_read = 0;
 
@@ -1066,7 +1066,7 @@ class TinyGsmSaraR4
     return len_read;
   }
 
-  size_t modemGetAvailableImpl(uint8_t mux) {
+  size_t modemGetAvailable(uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USORD="), mux, ",0");
@@ -1086,7 +1086,7 @@ class TinyGsmSaraR4
     return result;
   }
 
-  bool modemGetConnectedImpl(uint8_t mux) {
+  bool modemGetConnected(uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USOCTL="), mux, ",10");

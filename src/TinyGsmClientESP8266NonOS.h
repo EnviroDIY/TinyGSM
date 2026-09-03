@@ -52,7 +52,7 @@
  * - WiFi functions (TinyGsmWifi.tpp)
  *     - @ref TinyGsmWifi<modemType>::networkConnect "networkConnect()"
  *     - @ref TinyGsmWifi<modemType>::networkDisconnect "networkDisconnect()"
- * - TCP functions (TinyGsmTCP.tpp)
+ * - Socket listening functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  * - @ref GsmClientESP8266NonOS "GsmClientESP8266NonOS"
  *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
@@ -471,8 +471,8 @@ class TinyGsmESP8266NonOS
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
-                        int timeout_s) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t /*static*/ mux,
+                    int timeout_s) {
     if (!isValidMux(mux)) { return false; }
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
@@ -499,11 +499,11 @@ class TinyGsmESP8266NonOS
     return (1 == rsp || 3 == rsp);  // OK or ALREADY CONNECT
   }
 
-  // Disambiguate modemStopImpl by using the Espressif implementation
+  // Disambiguate modemStop by using the Espressif implementation
   using TinyGsmEspressif<TinyGsmESP8266NonOS,
-                         TinyGsmESP8266NonOSModemConfig>::modemStopImpl;
+                         TinyGsmESP8266NonOSModemConfig>::modemStop;
 
-  bool modemBeginSendImpl(size_t len, uint8_t mux) {
+  bool modemBeginSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSEND="), mux, ',', len);
     return waitResponse(GF(">")) == 1;
@@ -511,7 +511,7 @@ class TinyGsmESP8266NonOS
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  size_t modemEndSendImpl(size_t len, uint8_t) {
+  size_t modemEndSend(size_t len, uint8_t) {
     if (waitResponse(30000L, GF("SEND OK\r\n"), GF("SEND FAIL\r\n"),
                      GFP(ModemConfig::GSM_ERROR)) != 1) {
       return 0;
@@ -519,7 +519,7 @@ class TinyGsmESP8266NonOS
     return len;
   }
 
-  bool modemGetConnectedImpl(uint8_t mux) {
+  bool modemGetConnected(uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) { return false; }

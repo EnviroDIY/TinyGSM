@@ -57,7 +57,7 @@
  *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
  *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
  *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
- * - TCP functions (TinyGsmTCP.tpp)
+ * - Socket listening functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
  *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
@@ -105,7 +105,7 @@
  *
  * @todo In `gprsConnectImpl()`: configure DNS settings if needed
  * @todo In `gprsDisconnectImpl()`: There is no command in AT command set
- * @todo In `modemConnectImpl()`: no need for loop?
+ * @todo In `modemConnect()`: no need for loop?
  */
 /* clang-format on */
 
@@ -570,8 +570,8 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
-                        int timeout_s) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t /*static*/ mux,
+                    int timeout_s) {
     if (!isValidMux(mux)) { return false; }
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     for (int i = 0; i < 3; i++) {  // TODO(?): no need for loop?
@@ -592,7 +592,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
   }
 
   // re-implement so we don't have an extra flush
-  size_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
+  size_t modemSend(const uint8_t* buff, size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     // Pointer to where in the buffer we're up to
     // A const cast is need to cast-away the constant-ness of the buffer (ie,
@@ -638,18 +638,18 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
     return bytesSent;
   }
 
-  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+  bool modemStop(uint8_t mux, uint32_t maxWaitMs) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+TCPCLOSE="), mux);
     return waitResponse(maxWaitMs) == 1;
   }
 
-  bool modemBeginSendImpl(size_t len, uint8_t mux) {
+  bool modemBeginSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+TCPSEND="), mux, ',', (uint16_t)len);
     return waitResponse(GF(">")) == 1;
   }
-  size_t modemEndSendImpl(size_t len, uint8_t) {
+  size_t modemEndSend(size_t len, uint8_t) {
     stream.write(static_cast<char>(0x0D));
     stream.flush();
     if (waitResponse(30000L, GF("+TCPSEND:")) != 1) { return 0; }
@@ -657,7 +657,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
     return len;
   }
 
-  bool modemGetConnectedImpl(uint8_t mux) {
+  bool modemGetConnected(uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSTATUS="), mux);
     int8_t res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),

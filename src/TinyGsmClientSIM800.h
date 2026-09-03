@@ -58,7 +58,7 @@
  *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
  *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
  *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
- * - TCP functions (TinyGsmTCP.tpp)
+ * - Socket listening functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  * - Phone call functions (TinyGsmCalling.tpp)
  *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
@@ -781,8 +781,8 @@ class TinyGsmSim800
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
-                        int timeout_s) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t /*static*/ mux,
+                    int timeout_s) {
     if (!isValidMux(mux)) { return false; }
     int8_t   rsp;
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
@@ -813,14 +813,14 @@ class TinyGsmSim800
     return (1 == rsp || 3 == rsp);         // OK or ALREADY CONNECT
   }
 
-  bool modemStopImpl(uint8_t mux, uint32_t /*maxWaitMs*/) {
+  bool modemStop(uint8_t mux, uint32_t /*maxWaitMs*/) {
     if (!isValidMux(mux)) { return false; }
     // Same command for both secure and non-secure sockets
     sendAT(GF("+CIPCLOSE="), mux, GF(",1"));  // Quick close
     return waitResponse() == 1;               // should return within 1s
   }
 
-  bool modemBeginSendImpl(size_t len, uint8_t mux) {
+  bool modemBeginSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     return waitResponse(GF(">")) == 1;
@@ -828,7 +828,7 @@ class TinyGsmSim800
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  size_t modemEndSendImpl(size_t len, uint8_t mux) {
+  size_t modemEndSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     if (waitResponse(GF("DATA ACCEPT:")) != 1) { return 0; }
     int16_t  ret_mux = streamGetIntBefore(',');   // check mux
@@ -838,7 +838,7 @@ class TinyGsmSim800
     return 0;
   }
 
-  size_t modemReadImpl(size_t size, uint8_t mux) {
+  size_t modemRead(size_t size, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     size_t len_read = 0;
 
@@ -882,7 +882,7 @@ class TinyGsmSim800
     return len_read;
   }
 
-  size_t modemGetAvailableImpl(uint8_t mux) {
+  size_t modemGetAvailable(uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     sendAT(GF("+CIPRXGET=4,"), mux);
     size_t result = 0;
@@ -898,7 +898,7 @@ class TinyGsmSim800
     return result;
   }
 
-  bool modemGetConnectedImpl(uint8_t mux) {
+  bool modemGetConnected(uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSTATUS="), mux);
     waitResponse(GF("+CIPSTATUS"));
