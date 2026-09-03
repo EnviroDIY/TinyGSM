@@ -162,8 +162,7 @@ constexpr char TinyGsmM95ModemConfig::MODEM_MODEL[] __attribute__((weak));
 /**
  * @brief TCP behavior and limits for the M95 modem family.
  *
- * The send data commands, QISEND and QSSLSEND, both accept up to 1460 bytes of
- * input.
+ * The send data command, QISEND, accepts up to 1460 bytes of input.
  * @ingroup quectel_m95
  */
 struct TinyGsmM95TcpConfig
