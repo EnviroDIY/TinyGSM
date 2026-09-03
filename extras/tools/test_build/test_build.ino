@@ -169,14 +169,12 @@ void loop() {
 
 #if defined(TINY_GSM_MODEM_SARAR5)
   modem.setRadioAccessTechnology(7, 7);
-  uint8_t rat;
-  modem.getCurrentRadioAccessTechnology(&rat);
+  modem.getCurrentRadioAccessTechnology();
 #endif
 
 #if defined(TINY_GSM_MODEM_UBLOX)
   modem.setRadioAccessTechnology(7, 7);
-  uint8_t rat;
-  modem.getCurrentRadioAccessTechnology(rat);
+  modem.getCurrentRadioAccessTechnology();
 #endif
 
 #if defined(TINY_GSM_MODEM_SIM7000) || defined(TINY_GSM_MODEM_SIM7000SSL) || \
