@@ -456,10 +456,6 @@ void loop() {
 #if defined(TINY_GSM_MODEM_HAS_NTP)
   modem.NTPServerSync("pool.ntp.org", 3);
   modem.waitForTimeSync(1);
-#if !defined(TINY_GSM_MODEM_BG96) && !defined(TINY_GSM_MODEM_BG95) && \
-    !defined(TINY_GSM_MODEM_BG95SSL)
-  modem.ShowNTPError(1);
-#endif
 #endif
 
   // ========================================================================
