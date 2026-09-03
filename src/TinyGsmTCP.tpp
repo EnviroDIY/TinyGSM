@@ -434,7 +434,7 @@ class TinyGsmTCP {
 
 #ifdef TINY_GSM_USE_HEX
         // Detect short reads with odd byte count that would break hex alignment
-        if (bytesRead & 1) {
+        if ((bytesRead + (hanging_nibble != '\0' ? 1 : 0)) & 1) {
           // truncate to even
           bytesRead &= ~static_cast<size_t>(1);
           // save the hanging nibble into the buffer for the next read
@@ -448,14 +448,16 @@ class TinyGsmTCP {
 
 #ifdef TINY_GSM_USE_HEX
         for (size_t i = 0; i < bytesRead; i += 2) {
+          uint8_t c = '\0';
+          uint8_t d = '\0';
           if (hanging_nibble != '\0' && i == 0) {
             // If we have a hanging nibble from the previous read, use it as the
             // first nibble of this pair.
-            uint8_t c = hanging_nibble;
-            uint8_t d = buf[i];
+            c = hanging_nibble;
+            d = buf[i];
           } else {
-            uint8_t c = buf[i];
-            uint8_t d = buf[i + 1];
+            c = buf[i];
+            d = buf[i + 1];
           }
 
           c = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
