@@ -74,37 +74,45 @@ void loop() {
     Serial.println(F("Can load certs capability: available"));
   }
 
-  // Test the basic functions
+  // ========================================================================
+  // TinyGsm - Basic functions
+  // ========================================================================
+
   modem.begin();
   modem.begin("1234");
   modem.init();
   modem.init("1234");
   modem.sendAT("+CGMI");
+  modem.setBaud(115200);
+#if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_ESP8266) || \
+    defined(TINY_GSM_MODEM_ESP8266_NONOS)
+  modem.setDefaultBaud(115200);
+#endif
+  modem.forceModemBaud(Serial, 115200);
+  TinyGsmAutoBaud(Serial, 9600, 115200);
+  modem.testAT();
+
   String waitData;
   modem.waitResponse(1000L, waitData);
   modem.waitResponse(1000L);
   modem.waitResponse();
-  TinyGsmAutoBaud(Serial, 9600, 115200);
-  modem.forceModemBaud(Serial, 115200);
-  modem.setBaud(115200);
-  modem.testAT();
-  modem.streamWrite("AT", "\r\n");
-  modem.streamClear();
 
+  modem.getConfiguredModem();
   modem.getModemInfo();
   modem.getModemName();
   modem.getModemManufacturer();
   modem.getModemModel();
   modem.getModemRevision();
-  modem.factoryDefault();
-
-#if not defined(TINY_GSM_MODEM_ESP32) &&   \
-    not defined(TINY_GSM_MODEM_ESP8266) && \
-    not defined(TINY_GSM_MODEM_ESP8266_NONOS)
+#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_ESP8266) && \
+    !defined(TINY_GSM_MODEM_ESP8266_NONOS)
   modem.getModemSerialNumber();
 #endif
+  modem.factoryDefault();
 
-  // Test Power functions
+  // ========================================================================
+  // TinyGsm - Power functions
+  // ========================================================================
+
   modem.restart();
 #if !defined(TINY_GSM_MODEM_ESP32)
   modem.powerOff();
@@ -127,7 +135,18 @@ void loop() {
   modem.setPhoneFunctionality(1, true);
 #endif
 
-  // Test Generic network functions
+  // ========================================================================
+  // TinyGsm - Utilities
+  // ========================================================================
+
+  modem.streamWrite("AT", "\r\n");
+  modem.streamClear();
+  modem.streamDump(2);
+
+  // ========================================================================
+  // TinyGsm - Generic network functions
+  // ========================================================================
+
   modem.getRegistrationStatus();
   modem.isNetworkConnected();
   modem.waitForNetwork();
@@ -136,27 +155,81 @@ void loop() {
   modem.getSignalQuality();
   modem.getLocalIP();
   modem.localIP();
-
-// Test WiFi Functions
-#if defined(TINY_GSM_MODEM_HAS_WIFI)
-  modem.networkConnect("mySSID", "mySSIDPassword");
-  modem.networkDisconnect();
+#if defined(TINY_GSM_MODEM_A7672X)
+  modem.getLocalIPSecure();
 #endif
 
-// Test the GPRS and SIM card functions
+  // ========================================================================
+  // TinyGsm - Network mode / type / technology functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_SARAR4)
+  modem.setRadioAccessTechnology(7, 7);
+#endif
+
+#if defined(TINY_GSM_MODEM_SARAR5)
+  modem.setRadioAccessTechnology(7, 7);
+  uint8_t rat;
+  modem.getCurrentRadioAccessTechnology(&rat);
+#endif
+
+#if defined(TINY_GSM_MODEM_UBLOX)
+  modem.setRadioAccessTechnology(7, 7);
+  uint8_t rat;
+  modem.getCurrentRadioAccessTechnology(rat);
+#endif
+
+#if defined(TINY_GSM_MODEM_SIM7000) || defined(TINY_GSM_MODEM_SIM7000SSL) || \
+    defined(TINY_GSM_MODEM_SIM7080)
+  modem.getNetworkModes();
+  modem.getNetworkMode();
+  modem.setNetworkMode(2);
+  modem.getPreferredModes();
+  modem.getPreferredMode();
+  modem.setPreferredMode(2);
+  bool    auto_reporting;
+  int16_t stat;
+  modem.getNetworkSystemMode(auto_reporting, stat);
+  modem.setNetworkSystemMode(2);
+#endif
+
+#if defined(TINY_GSM_MODEM_SIM5360)
+  modem.getNetworkModes();
+  modem.getNetworkMode();
+  modem.setNetworkMode(2);
+#endif
+
+#if defined(TINY_GSM_MODEM_SIM7600)
+  modem.getNetworkModes();
+  modem.getNetworkMode();
+  modem.setNetworkMode(2);
+  bool    auto_reporting;
+  int16_t stat;
+  modem.getNetworkSystemMode(auto_reporting, stat);
+#endif
+
+  // ========================================================================
+  // TinyGsm - SIM card functions
+  // ========================================================================
+
 #if defined(TINY_GSM_MODEM_HAS_GPRS)
   modem.simUnlock("1234");
+  modem.getSimCCID();
+  modem.getIMEI();
+  modem.getIMSI();
   modem.getSimStatus();
+#endif
 
+  // ========================================================================
+  // TinyGsm - GPRS functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_HAS_GPRS)
   modem.gprsConnect("myAPN");
   modem.gprsConnect("myAPN", "myUser");
   modem.gprsConnect("myAPN", "myAPNUser", "myAPNPass");
   modem.gprsDisconnect();
   modem.isGprsConnected();
-
-  modem.getSimCCID();
-  modem.getIMEI();
-  modem.getIMSI();
   modem.getOperator();
 #if defined(TINY_GSM_MODEM_A7672X) || defined(TINY_GSM_MODEM_BG96) ||     \
     defined(TINY_GSM_MODEM_M95) || defined(TINY_GSM_MODEM_MC60) ||        \
@@ -166,11 +239,337 @@ void loop() {
 #endif
 #endif
 
+  // ========================================================================
+  // TinyGsm - WiFi functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_HAS_WIFI)
+  modem.networkConnect("mySSID", "mySSIDPassword");
+  modem.networkDisconnect();
+#endif
+
+  // ========================================================================
+  // TinyGsm - TCP functions
+  // ========================================================================
+
+  modem.maintain();
+
   char server[]   = "somewhere";
   char resource[] = "something";
 
-  // Test TCP functions
-  modem.maintain();
+  // ========================================================================
+  // TinyGsm - Secure socket layer (SSL) certificate management functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_HAS_SSL) && defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
+  modem.loadCertificate("certificateName", "certificate_content", 20);
+#if !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600)
+  modem.printCertificate("certificateName", Serial);
+#endif
+  modem.deleteCertificate("certificateName");
+
+  modem.convertCertificate(CertificateType::CA_CERTIFICATE, "filename");
+  modem.convertCertificate(CertificateType::CA_CERTIFICATE, String("filename"));
+  modem.convertCACertificate("ca_cert_name");
+  modem.convertCACertificate(String("ca_cert_name"));
+  modem.convertClientCertificates("client_cert_name", "client_cert_key");
+  modem.convertClientCertificates(String("client_cert_name"),
+                                  String("client_cert_key"));
+#if defined(TINY_GSM_MODEM_A7672X) || defined(TINY_GSM_MODEM_BG96) || \
+    defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_SIM7600)
+  modem.convertPSKandID("psk", "pskIdent");
+  modem.convertPSKandID(String("psk"), String("pskIdent"));
+#endif
+  modem.convertPSKTable("psk_table_name");
+  modem.convertPSKTable(String("psk_table_name"));
+#endif
+
+#if defined(TINY_GSM_MODEM_ESP32)
+  modem.loadCACert(0, "ca_certificate_data", 19);
+  modem.loadClientCert(0, "client_certificate_data", 23);
+  modem.loadPrivateKey(0, "private_key_data", 17);
+  modem.loadCertificateByNumber(CertificateType::CA_CERTIFICATE, 0,
+                                "ca_certificate_data", 19);
+  modem.deleteCertificateByNumber(CertificateType::CA_CERTIFICATE, 0);
+  modem.printCertificateByNumber(CertificateType::CA_CERTIFICATE, 0, Serial);
+#endif
+
+  // ========================================================================
+  // TinyGsm - SSL context functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_BG96)
+  modem.configureSSLContext(1, SSLAuthMode::CA_VALIDATION, SSLVersion::TLS1_2,
+                            "ca_cert_name", "client_cert_name",
+                            "client_key_name");
+#endif
+
+#if defined(TINY_GSM_MODEM_SIM7000SSL)
+  modem.configureSSLContext(1, "my_host_sni", SSLAuthMode::CA_VALIDATION,
+                            SSLVersion::TLS1_2);
+  modem.applySSLCertificates(0, SSLAuthMode::CA_VALIDATION, "ca_cert_name",
+                             "client_cert_name", "client_key_name");
+  modem.applySSLPSK(0, "psk_table_name");
+  modem.linkSSLContext(0, 1);
+#endif
+
+#if defined(TINY_GSM_MODEM_SIM7080)
+  modem.configureSSLContext(1, "my_host_sni", SSLAuthMode::CA_VALIDATION,
+                            SSLVersion::TLS1_2);
+  modem.applySSLCertificates(0, SSLAuthMode::CA_VALIDATION, "ca_cert_name",
+                             "client_cert_name", "client_key_name");
+  modem.applySSLPSK(0, "psk_table_name");
+  modem.linkSSLContext(0, 1);
+#endif
+
+#if defined(TINY_GSM_MODEM_A7672X)
+  modem.configureSSLContext(1, SSLAuthMode::CA_VALIDATION, SSLVersion::TLS1_2,
+                            "ca_cert_name", "client_cert_name",
+                            "client_key_name");
+  modem.linkSSLContext(0, 1);
+#endif
+
+#if defined(TINY_GSM_MODEM_SIM7600)
+  modem.configureSSLContext(1, SSLAuthMode::CA_VALIDATION, SSLVersion::TLS1_2,
+                            "ca_cert_name", "client_cert_name",
+                            "client_key_name");
+  modem.linkSSLContext(0, 1);
+#endif
+
+  // ========================================================================
+  // TinyGsm - Phone call functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_HAS_CALLING)
+  modem.callNumber(String("+380000000000"));
+  modem.callHangup();
+#if !defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
+  modem.callAnswer();
+  modem.dtmfSend('A', 1000);
+#endif
+#if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM808)
+  modem.setGsmBusy(true);
+#endif
+#if defined(TINY_GSM_MODEM_A7672X)
+  modem.setGsmBusy(true);
+#endif
+#endif
+
+  // ========================================================================
+  // TinyGsm - Audio functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_A6)
+  modem.audioSetHeadphones();
+  modem.audioSetSpeaker();
+  modem.audioMuteMic(true);
+#endif
+
+#if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM808)
+  modem.setVolume(13);
+  modem.getVolume();
+  modem.setMicVolume(1, 13);
+  modem.setAudioChannel(1);
+  modem.playToolkitTone(1, 1000);
+#endif
+
+  // ========================================================================
+  // TinyGsm - Text messaging (SMS) functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_HAS_SMS)
+  modem.sendSMS(String("+380000000000"), String("Hello from TinyGSM!"));
+#if !defined(TINY_GSM_MODEM_XBEE) && !defined(TINY_GSM_MODEM_SARAR4)
+  modem.sendUSSD("*111#");
+#endif
+#if !defined(TINY_GSM_MODEM_XBEE) && !defined(TINY_GSM_MODEM_M590) && \
+    !defined(TINY_GSM_MODEM_SARAR4)
+  modem.sendSMS_UTF16("+380000000000", "Hello", 5);
+#endif
+#if defined(TINY_GSM_MODEM_M95) || defined(TINY_GSM_MODEM_MC60)
+  modem.deleteAllSMS();
+#endif
+#endif
+
+  // ========================================================================
+  // TinyGsm - GSM location functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_HAS_GSM_LOCATION)
+  modem.getGsmLocationRaw();
+  modem.getGsmLocation();
+  float gsm_latitude  = 0;
+  float gsm_longitude = 0;
+  float gsm_accuracy  = 0;
+  int   gsm_year      = 0;
+  int   gsm_month     = 0;
+  int   gsm_day       = 0;
+  int   gsm_hour      = 0;
+  int   gsm_minute    = 0;
+  int   gsm_second    = 0;
+  modem.getGsmLocation(&gsm_latitude, &gsm_longitude);
+  modem.getGsmLocation(&gsm_latitude, &gsm_longitude, &gsm_accuracy, &gsm_year,
+                       &gsm_month, &gsm_day, &gsm_hour, &gsm_minute,
+                       &gsm_second);
+  modem.getGsmLocationTime(&gsm_year, &gsm_month, &gsm_day, &gsm_hour,
+                           &gsm_minute, &gsm_second);
+#endif
+
+  // ========================================================================
+  // TinyGsm - GPS (GNSS, GLONASS) functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_HAS_GPS)
+#if defined(TINY_GSM_MODEM_SIM7600)
+  modem.setGNSSMode(1, true);
+  modem.getGNSSMode();
+#endif
+
+  modem.enableGPS();
+
+  float gps_latitude  = 0;
+  float gps_longitude = 0;
+  float gps_speed     = 0;
+  float gps_altitude  = 0;
+  int   gps_vsat      = 0;
+  int   gps_usat      = 0;
+  float gps_accuracy  = 0;
+  int   gps_year      = 0;
+  int   gps_month     = 0;
+  int   gps_day       = 0;
+  int   gps_hour      = 0;
+  int   gps_minute    = 0;
+  int   gps_second    = 0;
+  modem.getGPS(&gps_latitude, &gps_longitude);
+  modem.getGPS(&gps_latitude, &gps_longitude, &gps_speed, &gps_altitude,
+               &gps_vsat, &gps_usat, &gps_accuracy, &gps_year, &gps_month,
+               &gps_day, &gps_hour, &gps_minute, &gps_second);
+  modem.getGPSTime(&gps_year, &gps_month, &gps_day, &gps_hour, &gps_minute,
+                   &gps_second);
+  modem.getGPSraw();
+
+  modem.disableGPS();
+#endif
+
+  // ========================================================================
+  // TinyGsm - NTP server functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_HAS_NTP)
+  modem.NTPServerSync("pool.ntp.org", 3);
+  modem.waitForTimeSync(1);
+#if !defined(TINY_GSM_MODEM_BG96) && !defined(TINY_GSM_MODEM_BG95) && \
+    !defined(TINY_GSM_MODEM_BG95SSL)
+  modem.ShowNTPError(1);
+#endif
+#endif
+
+  // ========================================================================
+  // TinyGsm - Time functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_HAS_TIME)
+  modem.getGSMDateTime(TinyGSMDateTimeFormat::DATE_FULL);
+  int   ntp_year     = 0;
+  int   ntp_month    = 0;
+  int   ntp_day      = 0;
+  int   ntp_hour     = 0;
+  int   ntp_min      = 0;
+  int   ntp_sec      = 0;
+  float ntp_timezone = 0;
+  modem.getNetworkTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour, &ntp_min,
+                       &ntp_sec, &ntp_timezone);
+#if defined(TINY_GSM_MODEM_BG96) || defined(TINY_GSM_MODEM_BG95) || \
+    defined(TINY_GSM_MODEM_BG95SSL)
+  modem.getNetworkUTCTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour, &ntp_min,
+                          &ntp_sec, &ntp_timezone);
+#endif
+#if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_ESP8266)
+  modem.getNetworkEpoch();
+  modem.getNetworkEpoch(TinyGSM_EpochStart::Y2K);
+#endif
+#if defined(TINY_GSM_MODEM_ESP8266)
+  modem.setTimeZone(3.0);
+#endif
+#if defined(TINY_GSM_MODEM_ESP32)
+  modem.setTimeZone(3.0);
+  modem.setTimeSyncInterval(3600);
+#endif
+#endif
+
+  // ========================================================================
+  // TinyGsm - Battery functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_HAS_BATTERY)
+#if !defined(TINY_GSM_MODEM_A6) && !defined(TINY_GSM_MODEM_SARAR4) && \
+    !defined(TINY_GSM_MODEM_SARAR5) && !defined(TINY_GSM_MODEM_UBLOX)
+  modem.getBattVoltage();
+#endif
+#if !defined(TINY_GSM_MODEM_SIM7600) && !defined(TINY_GSM_MODEM_XBEE)
+  modem.getBattPercent();
+#endif
+#if !defined(TINY_GSM_MODEM_SARAR4) && !defined(TINY_GSM_MODEM_SARAR5) && \
+    !defined(TINY_GSM_MODEM_UBLOX) && !defined(TINY_GSM_MODEM_SIM7600) && \
+    !defined(TINY_GSM_MODEM_XBEE)
+  modem.getBattChargeState();
+#endif
+  int8_t  chargeState   = -99;
+  int8_t  chargePercent = -99;
+  int16_t milliVolts    = -9999;
+  modem.getBattStats(chargeState, chargePercent, milliVolts);
+#endif
+
+  // ========================================================================
+  // TinyGsm - Temperature functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_HAS_TEMPERATURE)
+  modem.getTemperature();
+#endif
+
+  // ========================================================================
+  // TinyGsm - Bluetooth functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_HAS_BLUETOOTH)
+  modem.enableBluetooth();
+  modem.disableBluetooth();
+  modem.setBluetoothVisibility(true);
+  modem.setBluetoothHostName("bluetooth");
+#endif
+
+  // ========================================================================
+  // TinyGsm - XBee identifier functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_XBEE)
+  modem.getBeeType();
+  modem.getBeeName();
+  modem.getSeries();
+#endif
+
+  // ========================================================================
+  // TinyGsm - XBee specific utilities
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_XBEE)
+  modem.commandMode();
+  modem.writeChanges();
+  modem.exitCommand();
+  modem.exitAndFail();
+  modem.readResponseString();
+  modem.readResponseInt();
+  modem.sendATGetString(GF("AT"));
+  modem.changeSettingIfNeeded(GF("NI"), String("NewNodeID"));
+  modem.changeSettingIfNeeded(GF("NI"), 0xFF);
+  modem.gotIPforSavedHost();
+#endif
+
+  // ========================================================================
+  // TinyGsmClient - Functions implementing the Arduino Client interface
+  // ========================================================================
+
   TinyGsmClient client;
   TinyGsmClient client2(modem);
   TinyGsmClient client3(modem, 1);
@@ -183,6 +582,27 @@ void loop() {
   client.print(String("GET ") + resource + " HTTP/1.0\r\n");
   client.print(String("Host: ") + server + "\r\n");
   client.print(F("Connection: close\r\n\r\n"));
+
+  client.write("data");
+  client.available();
+  client.read();
+  client.peek();
+  client.flush();
+  client.connected();
+
+  uint32_t timeout = millis();
+  while (client.connected() && millis() - timeout < 10000L) {
+    while (client.available()) {
+      client.read();
+      timeout = millis();
+    }
+  }
+
+  client.stop();
+
+  // ========================================================================
+  // TinyGsmClient - Extended Client API
+  // ========================================================================
 
 #if !defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
   // Make the same HTTP GET request using beginWrite/write/endWrite
@@ -197,15 +617,17 @@ void loop() {
   client.endWrite(62);
 #endif
 
-  uint32_t timeout = millis();
-  while (client.connected() && millis() - timeout < 10000L) {
-    while (client.available()) {
-      client.read();
-      timeout = millis();
-    }
-  }
+#if defined(TINY_GSM_MODEM_XBEE)
+  client.remoteIP();
+#endif
 
-  client.stop();
+  client.getMux();
+  client.getConnectionID();
+  client.TinyGsmStringFromIp(IPAddress(192, 168, 1, 1));
+
+  // ========================================================================
+  // TinyGsmClientSecure - Functions implementing the Arduino Client interface
+  // ========================================================================
 
   // Note: You can now query modem capabilities at compile-time using
   // TinyGsmCapabilities traits instead of (or in addition to) preprocessor
@@ -243,48 +665,19 @@ void loop() {
   client_secure.init(&modem);
   client_secure.init(&modem, 1);
 
-#if defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
-  modem.loadCertificate("certificateName", "certificate_content", 20);
-#if !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600)
-  modem.printCertificate("certificateName", Serial);
-#endif
-  modem.deleteCertificate("certificateName");
-
-  modem.convertCertificate(CertificateType::CA_CERTIFICATE, "filename");
-  modem.convertCertificate(CertificateType::CA_CERTIFICATE, String("filename"));
-  modem.convertCACertificate("ca_cert_name");
-  modem.convertCACertificate(String("ca_cert_name"));
-  modem.convertClientCertificates("client_cert_name", "client_cert_key");
-  modem.convertClientCertificates(String("client_cert_name"),
-                                  String("client_cert_key"));
-#if defined(TINY_GSM_MODEM_A7672X) || defined(TINY_GSM_MODEM_BG96) || \
-    defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_SIM7600)
-  modem.convertPSKandID("psk", "pskIdent");
-  modem.convertPSKandID(String("psk"), String("pskIdent"));
-#endif
-  modem.convertPSKTable("psk_table_name");
-  modem.convertPSKTable(String("psk_table_name"));
-#endif
-
-#if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
-  client_secure.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
-  client_secure.setSSLAuthMode(SSLAuthMode::MUTUAL_AUTHENTICATION);
-  client_secure.setCACertName("certificateName");
-  client_secure.setCACertName(String("certificateName"));
-  client_secure.setClientCertName("certificateName");
-  client_secure.setClientCertName(String("certificateName"));
-  client_secure.setPrivateKeyName("certificateName");
-  client_secure.setPrivateKeyName(String("certificateName"));
-  client_secure.setPreSharedKey("pskIdent", "psKey");
-  client_secure.setPreSharedKey(String("pskIdent"), String("psKey"));
-#endif
-
   client_secure.connect(server, 443);
 
   // Make a HTTP GET request:
   client_secure.print(String("GET ") + resource + " HTTP/1.0\r\n");
   client_secure.print(String("Host: ") + server + "\r\n");
   client_secure.print(F("Connection: close\r\n\r\n"));
+
+  client_secure.write("data");
+  client_secure.available();
+  client_secure.read();
+  client_secure.peek();
+  client_secure.flush();
+  client_secure.connected();
 
   timeout = millis();
   while (client_secure.connected() && millis() - timeout < 10000L) {
@@ -295,154 +688,84 @@ void loop() {
   }
 
   client_secure.stop();
+
+  // ========================================================================
+  // TinyGsmClientSecure - Extended Client API
+  // ========================================================================
+
+#if !defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
+  // Make the same HTTP GET request using beginWrite/write/endWrite
+  client_secure.beginWrite(62);
+  client_secure.write("GET ");
+  client_secure.write(resource);
+  client_secure.write(" HTTP/1.0\r\n");
+  client_secure.write("Host: ");
+  client_secure.write(server);
+  client_secure.write("\r\n");
+  client_secure.write("Connection: close\r\n\r\n");
+  client_secure.endWrite(62);
 #endif
 
-// Test the calling functions
-#if defined(TINY_GSM_MODEM_HAS_CALLING)
-  modem.callNumber(String("+380000000000"));
-  modem.callHangup();
-
-#if not defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
-  modem.callAnswer();
-  modem.dtmfSend('A', 1000);
+#if defined(TINY_GSM_MODEM_XBEE)
+  client_secure.remoteIP();
 #endif
 
+  client_secure.getMux();
+  client_secure.getConnectionID();
+  client_secure.TinyGsmStringFromIp(IPAddress(192, 168, 1, 1));
+
+  // ========================================================================
+  // TinyGsmClientSecure - Client SSL configuration functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
+  client_secure.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
+  client_secure.setSSLAuthMode(SSLAuthMode::MUTUAL_AUTHENTICATION);
+#if defined(TINY_GSM_MODEM_XBEE) || defined(TINY_GSM_MODEM_ESP32) ||      \
+    defined(TINY_GSM_MODEM_ESP8266) || defined(TINY_GSM_MODEM_A7672X) ||  \
+    defined(TINY_GSM_MODEM_BG96) || defined(TINY_GSM_MODEM_SIM7000SSL) || \
+    defined(TINY_GSM_MODEM_SIM7080) || defined(TINY_GSM_MODEM_SIM7600)
+  client_secure.setSSLVersion(SSLVersion::TLS1_2);
 #endif
-
-// Test the SMS functions
-#if defined(TINY_GSM_MODEM_HAS_SMS)
-  modem.sendSMS(String("+380000000000"), String("Hello from TinyGSM!"));
-
-#if not defined(TINY_GSM_MODEM_XBEE) && not defined(TINY_GSM_MODEM_SARAR4)
-  modem.sendUSSD("*111#");
-#endif
-
-#if not defined(TINY_GSM_MODEM_XBEE) && not defined(TINY_GSM_MODEM_M590) && \
-    not defined(TINY_GSM_MODEM_SARAR4)
-  modem.sendSMS_UTF16("+380000000000", "Hello", 5);
-#endif
-
-#endif
-
-// Test the GSM location functions
-#if defined(TINY_GSM_MODEM_HAS_GSM_LOCATION)
-  modem.getGsmLocationRaw();
-  modem.getGsmLocation();
-  float gsm_latitude  = 0;
-  float gsm_longitude = 0;
-  float gsm_accuracy  = 0;
-  int   gsm_year      = 0;
-  int   gsm_month     = 0;
-  int   gsm_day       = 0;
-  int   gsm_hour      = 0;
-  int   gsm_minute    = 0;
-  int   gsm_second    = 0;
-  modem.getGsmLocation(&gsm_latitude, &gsm_longitude);
-  modem.getGsmLocation(&gsm_latitude, &gsm_longitude, &gsm_accuracy, &gsm_year,
-                       &gsm_month, &gsm_day, &gsm_hour, &gsm_minute,
-                       &gsm_second);
-  modem.getGsmLocationTime(&gsm_year, &gsm_month, &gsm_day, &gsm_hour,
-                           &gsm_minute, &gsm_second);
-  modem.getGsmLocation();
-#endif
-
-// Test the GPS functions
-#if defined(TINY_GSM_MODEM_HAS_GPS)
-#if defined(TINY_GSM_MODEM_SIM7600)
-  modem.setGNSSMode(1, true);
-  modem.getGNSSMode();
-#endif
-
-  modem.enableGPS();
-
-  float gps_latitude  = 0;
-  float gps_longitude = 0;
-  float gps_speed     = 0;
-  float gps_altitude  = 0;
-  int   gps_vsat      = 0;
-  int   gps_usat      = 0;
-  float gps_accuracy  = 0;
-  int   gps_year      = 0;
-  int   gps_month     = 0;
-  int   gps_day       = 0;
-  int   gps_hour      = 0;
-  int   gps_minute    = 0;
-  int   gps_second    = 0;
-  modem.getGPS(&gps_latitude, &gps_longitude);
-  modem.getGPS(&gps_latitude, &gps_longitude, &gps_speed, &gps_altitude,
-               &gps_vsat, &gps_usat, &gps_accuracy, &gps_year, &gps_month,
-               &gps_day, &gps_hour, &gps_minute, &gps_second);
-  modem.getGPSTime(&gps_year, &gps_month, &gps_day, &gps_hour, &gps_minute,
-                   &gps_second);
-  modem.getGPSraw();
-
-  modem.disableGPS();
-#endif
-
-// Test the Network time functions
-#if defined(TINY_GSM_MODEM_HAS_NTP)
-  modem.NTPServerSync("pool.ntp.org", 3);
-  modem.waitForTimeSync(1);
-#if !defined(TINY_GSM_MODEM_BG96) && !defined(TINY_GSM_MODEM_BG95) && \
-    !defined(TINY_GSM_MODEM_BG95SSL)
-  modem.ShowNTPError(1);
-#endif
-  modem.TinyGsmIsValidNumber("1.0");
-#endif
-
-// Test the Network time function
-#if defined(TINY_GSM_MODEM_HAS_TIME)
-  modem.getGSMDateTime(TinyGSMDateTimeFormat::DATE_FULL);
-  int   ntp_year     = 0;
-  int   ntp_month    = 0;
-  int   ntp_day      = 0;
-  int   ntp_hour     = 0;
-  int   ntp_min      = 0;
-  int   ntp_sec      = 0;
-  float ntp_timezone = 0;
-  modem.getNetworkTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour, &ntp_min,
-                       &ntp_sec, &ntp_timezone);
-#if defined(TINY_GSM_MODEM_BG96) || defined(TINY_GSM_MODEM_BG95) || \
-    defined(TINY_GSM_MODEM_BG95SSL)
-  modem.getNetworkUTCTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour, &ntp_min,
-                          &ntp_sec, &ntp_timezone);
-#endif
-#if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_ESP8266)
-  modem.getNetworkEpoch();
-  modem.getNetworkEpoch(TinyGSM_EpochStart::Y2K);
+#if defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
+  client_secure.setStrictSSL(true);
 #endif
 #endif
 
-// Test bluetooth functions
-#if defined(TINY_GSM_MODEM_HAS_BLUETOOTH)
-  modem.enableBluetooth();
-  modem.disableBluetooth();
-  modem.setBluetoothVisibility(true);
-  modem.setBluetoothHostName("bluetooth");
+  // ========================================================================
+  // TinyGsmClientSecure - Client certificate assignment functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
+  client_secure.setCACertName("certificateName");
+  client_secure.setCACertName(String("certificateName"));
+  client_secure.setClientCertName("certificateName");
+  client_secure.setClientCertName(String("certificateName"));
+  client_secure.setPrivateKeyName("certificateName");
+  client_secure.setPrivateKeyName(String("certificateName"));
 #endif
 
-// Test Battery functions
-#if defined(TINY_GSM_MODEM_HAS_BATTERY)
-#if !defined(TINY_GSM_MODEM_A6) && !defined(TINY_GSM_MODEM_SARAR4) && \
-    !defined(TINY_GSM_MODEM_SARAR5) && !defined(TINY_GSM_MODEM_UBLOX)
-  modem.getBattVoltage();
-#endif
-#if !defined(TINY_GSM_MODEM_SIM7600) && !defined(TINY_GSM_MODEM_XBEE)
-  modem.getBattPercent();
-#endif
-#if !defined(TINY_GSM_MODEM_SARAR4) && !defined(TINY_GSM_MODEM_SARAR5) && \
-    !defined(TINY_GSM_MODEM_UBLOX) && !defined(TINY_GSM_MODEM_SIM7600) && \
-    !defined(TINY_GSM_MODEM_XBEE)
-  modem.getBattChargeState();
-#endif
-  int8_t  chargeState   = -99;
-  int8_t  chargePercent = -99;
-  int16_t milliVolts    = -9999;
-  modem.getBattStats(chargeState, chargePercent, milliVolts);
+#if defined(TINY_GSM_MODEM_ESP8266)
+  client_secure.setCACertificateNumber(1);
+  client_secure.setClientCertificateNumber(1);
+  client_secure.setPrivateKeyNumber(1);
 #endif
 
-// Test temperature functions
-#if defined(TINY_GSM_MODEM_HAS_TEMPERATURE)
-  modem.getTemperature();
+#if defined(TINY_GSM_MODEM_ESP32)
+  client_secure.setCACertificateNumber(1);
+  client_secure.setClientCertificateNumber(1);
+  client_secure.setPrivateKeyNumber(1);
 #endif
+
+  // ========================================================================
+  // TinyGsmClientSecure - Client PSK assignment functions
+  // ========================================================================
+
+#if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
+  client_secure.setPreSharedKey("pskIdent", "psKey");
+  client_secure.setPreSharedKey(String("pskIdent"), String("psKey"));
+  client_secure.setPSKTableName("pskTableName");
+#endif
+
+#endif  // TINY_GSM_MODEM_HAS_SSL
 }
