@@ -254,9 +254,10 @@ class TinyGsmModem {
         }
       }
     }
-    DBG("Failed to successfully find the baud at any common rate or to change "
-        "the baud rate to",
-        targetBaud, "...");
+    DBG(GF("Failed to successfully find the baud at any common rate or to "
+           "change "
+           "the baud rate to"),
+        targetBaud, GF("..."));
     at_serial.begin(targetBaud);
     return false;
   }
