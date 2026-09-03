@@ -334,45 +334,45 @@ class TinyGsmTCP {
 
         size_t bytesRead = thisModem().stream.readBytes(buf, count);
 
-#ifdef TINY_GSM_USE_HEX
-        // Detect short reads with odd byte count that would break hex alignment
-        if ((bytesRead + (hanging_nibble != '\0' ? 1 : 0)) & 1) {
-          // truncate to even
-          bytesRead &= ~static_cast<size_t>(1);
-          // save the hanging nibble into the buffer for the next read
-          hanging_nibble = buf[bytesRead];
-        } else {
-          hanging_nibble = '\0';
-        }
-#endif
-
+#ifndef TINY_GSM_USE_HEX
         bytesRead -= bytesRead % readCharLen;
-
-#ifdef TINY_GSM_USE_HEX
-        for (size_t i = 0; i < bytesRead; i += 2) {
-          uint8_t c = '\0';
-          uint8_t d = '\0';
-          if (hanging_nibble != '\0' && i == 0) {
-            // If we have a hanging nibble from the previous read, use it as the
-            // first nibble of this pair.
-            c = hanging_nibble;
-            d = buf[i];
-          } else {
-            c = buf[i];
-            d = buf[i + 1];
+#else
+        // If nothing new was read, leave any still-unpaired hanging nibble
+        // untouched for the next read instead of discarding it.
+        if (bytesRead != 0) {
+          // Hold the trailing character over as the new hanging nibble if
+          // the total nibble count (including any carry-in) is odd.
+          size_t     use_len            = bytesRead;
+          const bool have_carry         = (hanging_nibble != '\0');
+          char       new_hanging_nibble = '\0';
+          if ((use_len + (have_carry ? 1 : 0)) & 1) {
+            new_hanging_nibble = buf[use_len - 1];
+            --use_len;
           }
 
-          c = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
-          d = (d <= '9') ? d - '0' : (d & 0x0F) + 9;
+          // Track output separately from input so a carried nibble's byte is
+          // never overwritten by the pair decoded right after it.
+          size_t out = 0;
+          size_t i   = 0;
+          if (have_carry) {
+            uint8_t c  = hanging_nibble;
+            uint8_t d  = buf[0];
+            c          = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+            d          = (d <= '9') ? d - '0' : (d & 0x0F) + 9;
+            buf[out++] = (c << 4) | d;
+            i          = 1;  // only one new character was consumed as input
+          }
+          for (; i + 1 < use_len; i += 2) {
+            uint8_t c  = buf[i];
+            uint8_t d  = buf[i + 1];
+            c          = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+            d          = (d <= '9') ? d - '0' : (d & 0x0F) + 9;
+            buf[out++] = (c << 4) | d;
+          }
 
-          buf[i >> 1] = (c << 4) | d;
-
-          // if we used a hanging nibble, we need to step i back by 1 so that
-          // the next iteration uses the correct index
-          if (hanging_nibble != '\0' && i == 0) { i -= 1; }
+          bytesRead      = out;
+          hanging_nibble = new_hanging_nibble;
         }
-
-        bytesRead >>= 1;
 #endif
 
         // NOTE: We can't directly memcpy into the rx fifo!
@@ -518,6 +518,7 @@ class TinyGsmTCP {
    * currently has a hard-coded timeout of 15 seconds for each chunk.
    */
   size_t modemSend(const uint8_t* buff, size_t len, uint8_t mux) {
+    if (!isValidMux(mux)) { return 0; }
     // Pointer to where in the buffer we're up to
     // A const cast is need to cast-away the constant-ness of the buffer (ie,
     // modify it).
