@@ -1136,12 +1136,12 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       sendAT(GF("+QLTS"));
       bool got_time_rsp = waitResponse(500L, GF("+QLTS: \"")) == 1;
       if (got_time_rsp) {
-        // if the year is between 2025 and 2035, we assume the time is valid and
-        // synced (the response uses a 2-digit year, so we check for 25-35)
+        // if the year is at or after 2025, we assume the time is valid and
+        // synced (the response uses a 2-digit year, so we check for >= 25)
         int16_t iyear = streamGetIntBefore('/');
         streamSkipUntil('\n');  // skip the rest of the response
         bool got_ok = waitResponse(500L) == 1;
-        if (iyear >= 25 && iyear <= 35 && got_ok) { return true; }
+        if (iyear >= 25 && iyear <= 99 && got_ok) { return true; }
       }
       delay(500);  // Wait 0.5s before trying again
     }
