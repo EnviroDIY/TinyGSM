@@ -68,8 +68,7 @@ installWorkingDependencies.bat
 clang-format-all.py
 runDoxygen.bat
 compile_commands.json
-run_CI_pipeline.bat
-runCI.bat
+buildCI.bat
 
 # Local Documentation Artifacts
 generated_docs/*
