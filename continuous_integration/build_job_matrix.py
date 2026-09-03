@@ -344,6 +344,21 @@ def build_custom_matrix(config: dict) -> list[dict]:
             "inline_defines": modem_list,
             "compiler_flags": compiler_flags,
         },
+        {
+            "compiler": ["arduino-cli"],
+            "example": [os.path.join("extras", "tools", "test_build")],
+            "board": [
+                "EnviroDIY:avr:envirodiy_mayfly",
+                "EnviroDIY:samd:stonefly_m4",
+                "arduino:avr:mega",
+                "arduino:samd:mzero_bl",
+                "arduino:renesas_uno:unor4wifi",
+                "esp8266:esp8266:nodemcu",
+                "esp32:esp32:esp32",
+            ],
+            "inline_defines": modem_list,
+            "compiler_flags": [["-D TINY_GSM_USE_HEX"]],
+        },
     ]
 
     # expand the matrix inclusions to a list of tuples for easier filtering
