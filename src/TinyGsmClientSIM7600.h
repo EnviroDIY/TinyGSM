@@ -125,7 +125,6 @@
  *     - @ref GsmClient::getConnectionID "getConnectionID()"
  *     - @ref GsmClient::beginWrite "beginWrite()"
  *     - @ref GsmClient::endWrite "endWrite()"
- *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
  * - @ref GsmClientSecureSim7600 "GsmClientSecureSim7600"
  *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
  *     - @ref GsmClient::init "init()"
@@ -142,7 +141,6 @@
  *     - @ref GsmClient::getConnectionID "getConnectionID()"
  *     - @ref GsmClient::beginWrite "beginWrite()"
  *     - @ref GsmClient::endWrite "endWrite()"
- *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
  *   - Client SSL configuration functions (TinyGsmSSL.tpp)
  *     - @ref GsmSecureClient::setSSLContextIndex "setSSLContextIndex()"
  *     - @ref GsmSecureClient::setSSLAuthMode "setSSLAuthMode()"
@@ -391,10 +389,7 @@ class TinyGsmSim7600
     /*
      * Extended API
      */
-
-    String remoteIP() override TINY_GSM_ATTR_NOT_IMPLEMENTED {
-      return "0.0.0.0";
-    }
+    // No extra extended API functions
   };
 
   /*

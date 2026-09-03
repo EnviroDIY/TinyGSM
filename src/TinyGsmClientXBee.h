@@ -101,7 +101,6 @@
  *     - @ref GsmClient::getConnectionID "getConnectionID()"
  *     - @ref GsmClient::beginWrite "beginWrite()"
  *     - @ref GsmClient::endWrite "endWrite()"
- *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
  * - @ref GsmClientSecureXBee "GsmClientSecureXBee"
  *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
  *     - @ref GsmClient::init "init()"
@@ -119,7 +118,6 @@
  *     - @ref GsmClient::getConnectionID "getConnectionID()"
  *     - @ref GsmClient::beginWrite "beginWrite()"
  *     - @ref GsmClient::endWrite "endWrite()"
- *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
  *   - Client SSL configuration functions (TinyGsmSSL.tpp)
  *     - @ref GsmSecureClient::setSSLContextIndex "setSSLContextIndex()"
  *     - @ref GsmSecureClient::setSSLAuthMode "setSSLAuthMode()"

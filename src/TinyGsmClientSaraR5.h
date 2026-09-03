@@ -102,7 +102,6 @@
  *     - @ref GsmClient::getConnectionID "getConnectionID()"
  *     - @ref GsmClient::beginWrite "beginWrite()"
  *     - @ref GsmClient::endWrite "endWrite()"
- *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
  * - @ref GsmClientSecureSaraR5 "GsmClientSecureSaraR5"
  *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
  *     - @ref GsmClient::init "init()"
@@ -119,7 +118,6 @@
  *     - @ref GsmClient::getConnectionID "getConnectionID()"
  *     - @ref GsmClient::beginWrite "beginWrite()"
  *     - @ref GsmClient::endWrite "endWrite()"
- *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
  *
  * # Connection Information
  *
@@ -412,10 +410,7 @@ class TinyGsmSaraR5
     /*
      * Extended API
      */
-
-    String remoteIP() override TINY_GSM_ATTR_NOT_IMPLEMENTED {
-      return "0.0.0.0";
-    }
+    // No extra extended API functions
   };
 
   /*
