@@ -328,7 +328,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
      * @return true if initialization was successful, false otherwise.
      * @copydetails GsmClientXBee::GsmClientXBee(TinyGsmXBee&, uint8_t)
      */
-    bool init(TinyGsmXBee* modem, uint8_t /*mux*/ = 0) {
+    bool init(TinyGsmXBee* modem, uint8_t /*mux*/ = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       this->mux      = 0;

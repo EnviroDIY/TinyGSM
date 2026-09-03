@@ -242,7 +242,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
      * @return true if initialization was successful, false otherwise.
      * @copydetails GsmClientA6::GsmClientA6(TinyGsmA6&, uint8_t)
      */
-    bool init(TinyGsmA6* modem, uint8_t /*mux*/ = 0) {
+    bool init(TinyGsmA6* modem, uint8_t /*mux*/ = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       this->mux      = static_cast<uint8_t>(-1);

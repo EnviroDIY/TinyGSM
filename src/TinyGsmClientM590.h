@@ -227,7 +227,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
      * @return true if initialization was successful, false otherwise.
      * @copydetails GsmClientM590::GsmClientM590(TinyGsmM590&, uint8_t)
      */
-    bool init(TinyGsmM590* modem, uint8_t mux = 0) {
+    bool init(TinyGsmM590* modem, uint8_t mux = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_connected = false;

@@ -306,7 +306,7 @@ class TinyGsmSaraR5
      * @return true if initialization was successful, false otherwise.
      * @copydetails GsmClientSaraR5::GsmClientSaraR5(TinyGsmSaraR5&, uint8_t)
      */
-    bool init(TinyGsmSaraR5* modem, uint8_t /*mux*/ = 0) {
+    bool init(TinyGsmSaraR5* modem, uint8_t /*mux*/ = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;

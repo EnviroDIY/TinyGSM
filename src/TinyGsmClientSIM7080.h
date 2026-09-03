@@ -316,7 +316,7 @@ class TinyGsmSim7080
      * @return true if initialization was successful, false otherwise.
      * @copydetails GsmClientSim7080::GsmClientSim7080(TinyGsmSim7080&, uint8_t)
      */
-    bool init(TinyGsmSim7080* modem, uint8_t mux = 0) {
+    bool init(TinyGsmSim7080* modem, uint8_t mux = 0) override {
       if (modem == nullptr) { return false; }
       this->at        = modem;
       sock_available  = 0;

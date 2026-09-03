@@ -339,7 +339,7 @@ class TinyGsmA7672X
      * @return true if initialization was successful, false otherwise.
      * @copydetails GsmClientA7672X::GsmClientA7672X(TinyGsmA7672X&, uint8_t)
      */
-    bool init(TinyGsmA7672X* modem, uint8_t mux = 0) {
+    bool init(TinyGsmA7672X* modem, uint8_t mux = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;

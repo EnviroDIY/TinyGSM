@@ -261,7 +261,7 @@ class TinyGsmESP8266NonOS
      * @copydetails GsmClientESP8266NonOS::GsmClientESP8266NonOS(
      * TinyGsmESP8266NonOS&, uint8_t)
      */
-    bool init(TinyGsmESP8266NonOS* modem, uint8_t mux = 0) {
+    bool init(TinyGsmESP8266NonOS* modem, uint8_t mux = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_connected = false;

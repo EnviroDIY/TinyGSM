@@ -345,7 +345,7 @@ class TinyGsmSim7600
      * @return true if initialization was successful, false otherwise.
      * @copydetails GsmClientSim7600::GsmClientSim7600(TinyGsmSim7600&, uint8_t)
      */
-    bool init(TinyGsmSim7600* modem, uint8_t mux = 0) {
+    bool init(TinyGsmSim7600* modem, uint8_t mux = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;
