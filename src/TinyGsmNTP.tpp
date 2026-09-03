@@ -71,14 +71,6 @@ class TinyGsmNTP {
   bool waitForTimeSync(uint16_t timeout_s = 120) {
     return thisModem().waitForTimeSyncImpl(timeout_s);
   }
-  /**
-   * @brief Show the NTP error message
-   * @param error The error code
-   * @return The error message
-   */
-  String ShowNTPError(byte error) {
-    return thisModem().ShowNTPErrorImpl(error);
-  }
   /**@}*/
 
   /**
@@ -192,18 +184,6 @@ class TinyGsmNTP {
       delay(250);
     }
     return false;
-  }
-
-  String ShowNTPErrorImpl(byte error) {
-    switch (error) {
-      case 1: return "Network time synchronization is successful";
-      case 61: return "Network error";
-      case 62: return "DNS resolution error";
-      case 63: return "Connection error";
-      case 64: return "Service response error";
-      case 65: return "Service response timeout";
-      default: return "Unknown error: " + String(error);
-    }
   }
 };
 
