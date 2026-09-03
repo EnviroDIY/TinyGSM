@@ -95,7 +95,6 @@
  *     - @ref GsmClient::getConnectionID "getConnectionID()"
  *     - @ref GsmClient::beginWrite "beginWrite()"
  *     - @ref GsmClient::endWrite "endWrite()"
- *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
  * - @ref GsmClientSecureESP32 "GsmClientSecureESP32"
  *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
  *     - @ref GsmClient::init "init()"
@@ -112,7 +111,6 @@
  *     - @ref GsmClient::getConnectionID "getConnectionID()"
  *     - @ref GsmClient::beginWrite "beginWrite()"
  *     - @ref GsmClient::endWrite "endWrite()"
- *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
  *   - Client SSL configuration functions (TinyGsmSSL.tpp)
  *     - @ref GsmSecureClient::setSSLContextIndex "setSSLContextIndex()"
  *     - @ref GsmSecureClient::setSSLAuthMode "setSSLAuthMode()"
@@ -378,10 +376,7 @@ class TinyGsmESP32
     /*
      * Extended API
      */
-
-    String remoteIP() override TINY_GSM_ATTR_NOT_IMPLEMENTED {
-      return "0.0.0.0";
-    }
+    // No extra extended API functions
   };
 
   /*

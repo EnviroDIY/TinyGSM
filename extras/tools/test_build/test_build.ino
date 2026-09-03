@@ -621,7 +621,6 @@ void loop() {
 
   client.getMux();
   client.getConnectionID();
-  client.TinyGsmStringFromIp(IPAddress(192, 168, 1, 1));
 
   // ========================================================================
   // TinyGsmClientSecure - Functions implementing the Arduino Client interface
@@ -710,7 +709,6 @@ void loop() {
 
   client_secure.getMux();
   client_secure.getConnectionID();
-  client_secure.TinyGsmStringFromIp(IPAddress(192, 168, 1, 1));
 
   // ========================================================================
   // TinyGsmClientSecure - Client SSL configuration functions

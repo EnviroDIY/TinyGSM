@@ -1105,7 +1105,7 @@ class GsmClient : public Client {
    * @brief Get the remote IP address of the connected client
    * @return The remote IP address as a String
    */
-  virtual String remoteIP() = 0;
+  virtual String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /**
    * @brief Get the **zero-indexed** position of the client in the corresponding
