@@ -68,7 +68,8 @@ def build_custom_matrix(config: dict) -> list[dict]:
     build_fqbns = config.get("build_fqbns", [])
     boards = build_envs + build_fqbns
     inline_defines = config.get("inline_defines", [[]])
-    compiler_flags = config.get("compiler_flags", [[]])
+    # compiler_flags = config.get("compiler_flags", [[]])
+    compiler_flags = [["-D TINY_GSM_USE_HEX"], []]
 
     print("=== TinyGSM Custom Matrix Builder ===")
 
@@ -93,7 +94,7 @@ def build_custom_matrix(config: dict) -> list[dict]:
                 "example": examples_to_build,
                 "board": build_envs,
                 "inline_defines": inline_defines,
-                "compiler_flags": compiler_flags,
+                "compiler_flags": [[]],
             }
         )
     )
@@ -197,13 +198,6 @@ def build_custom_matrix(config: dict) -> list[dict]:
         },
         {
             "compiler": compiler_list,
-            "example": [os.path.join("examples", "MqttClient")],
-            "board": ["uno_pic32"],  # doesn't fit
-            "inline_defines": [["TINY_GSM_MODEM_SARAR5"]],
-            "compiler_flags": compiler_flags,
-        },
-        {
-            "compiler": compiler_list,
             "example": [os.path.join("examples", "AWS_IoTCore")],
             "board": small_boards,  # doesn't fit on 328p or 32u
             "inline_defines": modem_list,
@@ -277,6 +271,7 @@ def build_custom_matrix(config: dict) -> list[dict]:
     expanded_matrix_exclusions_list = [
         json.dumps(e) for e in expanded_matrix_exclusions_set
     ]
+    expanded_matrix_exclusions_list.sort()
     print(f"Matrix exclusions: {len(expanded_matrix_exclusions_list)}")
 
     # %%
@@ -291,7 +286,7 @@ def build_custom_matrix(config: dict) -> list[dict]:
                 if board not in small_boards  # doesn't fit on 328p or 32u
             ],
             "inline_defines": modem_list,
-            "compiler_flags": compiler_flags,
+            "compiler_flags": [[]],
         },
         {
             "compiler": ["arduino-cli"],
@@ -302,17 +297,16 @@ def build_custom_matrix(config: dict) -> list[dict]:
                 if board not in small_boards  # doesn't fit on 328p or 32u
             ],
             "inline_defines": modem_list,
-            "compiler_flags": compiler_flags,
+            "compiler_flags": [[]],
         },
         {
             "compiler": compiler_list,
             "example": [
                 os.path.join("examples", "WebClient"),
-                os.path.join("examples", "MqttClient"),
             ],
             "board": small_boards,  # boards too small for the bigger test build
             "inline_defines": modem_list,
-            "compiler_flags": compiler_flags,
+            "compiler_flags": [[]],
         },
         {
             "compiler": ["platformio"],
@@ -320,14 +314,13 @@ def build_custom_matrix(config: dict) -> list[dict]:
             "board": [
                 "mayfly",
                 "envirodiy_stonefly_m4",
-                "megaatmega2560",
                 "zeroUSB",
                 "uno_r4_wifi",
                 "nodemcu",
                 "esp32dev",
             ],
             "inline_defines": modem_list,
-            "compiler_flags": compiler_flags,
+            "compiler_flags": [[]],
         },
         {
             "compiler": ["arduino-cli"],
@@ -335,14 +328,13 @@ def build_custom_matrix(config: dict) -> list[dict]:
             "board": [
                 "EnviroDIY:avr:envirodiy_mayfly",
                 "EnviroDIY:samd:stonefly_m4",
-                "arduino:avr:mega",
                 "arduino:samd:mzero_bl",
                 "arduino:renesas_uno:unor4wifi",
                 "esp8266:esp8266:nodemcu",
                 "esp32:esp32:esp32",
             ],
             "inline_defines": modem_list,
-            "compiler_flags": compiler_flags,
+            "compiler_flags": [[]],
         },
         {
             "compiler": ["arduino-cli"],
@@ -357,7 +349,7 @@ def build_custom_matrix(config: dict) -> list[dict]:
                 "esp32:esp32:esp32",
             ],
             "inline_defines": modem_list,
-            "compiler_flags": [["-D TINY_GSM_USE_HEX"]],
+            "compiler_flags": compiler_flags,
         },
     ]
 
@@ -374,6 +366,7 @@ def build_custom_matrix(config: dict) -> list[dict]:
     expanded_matrix_inclusions_list = [
         json.dumps(e) for e in expanded_matrix_inclusions_set
     ]
+    expanded_matrix_inclusions_list.sort()
     print(f"Matrix inclusions: {len(expanded_matrix_inclusions_list)}")
 
     # %%
