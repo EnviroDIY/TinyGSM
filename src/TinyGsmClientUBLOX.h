@@ -281,7 +281,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
      * @return true if initialization was successful, false otherwise.
      * @copydetails GsmClientUBLOX::GsmClientUBLOX(TinyGsmUBLOX&, uint8_t)
      */
-    bool init(TinyGsmUBLOX* modem, uint8_t /*mux*/ = 0) {
+    bool init(TinyGsmUBLOX* modem, uint8_t /*mux*/ = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;

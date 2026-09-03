@@ -288,7 +288,7 @@ class TinyGsmSequansMonarch
      * @copydetails GsmClientSequansMonarch::GsmClientSequansMonarch(
      * TinyGsmSequansMonarch&, uint8_t)
      */
-    bool init(TinyGsmSequansMonarch* modem, uint8_t mux = 0) {
+    bool init(TinyGsmSequansMonarch* modem, uint8_t mux = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;

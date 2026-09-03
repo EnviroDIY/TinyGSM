@@ -250,7 +250,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
      * @return true if initialization was successful, false otherwise.
      * @copydetails GsmClientMC60::GsmClientMC60(TinyGsmMC60&, uint8_t)
      */
-    bool init(TinyGsmMC60* modem, uint8_t mux = 0) {
+    bool init(TinyGsmMC60* modem, uint8_t mux = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;

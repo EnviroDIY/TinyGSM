@@ -246,7 +246,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
      * @return true if initialization was successful, false otherwise.
      * @copydetails GsmClientM95::GsmClientM95(TinyGsmM95&, uint8_t)
      */
-    bool init(TinyGsmM95* modem, uint8_t mux = 0) {
+    bool init(TinyGsmM95* modem, uint8_t mux = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;

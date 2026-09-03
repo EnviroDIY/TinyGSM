@@ -293,7 +293,7 @@ class TinyGsmESP8266
      * @return true if initialization was successful, false otherwise.
      * @copydetails GsmClientESP8266::GsmClientESP8266(TinyGsmESP8266&, uint8_t)
      */
-    bool init(TinyGsmESP8266* modem, uint8_t mux = 0) {
+    bool init(TinyGsmESP8266* modem, uint8_t mux = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_connected = false;

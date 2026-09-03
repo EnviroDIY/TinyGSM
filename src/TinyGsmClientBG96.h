@@ -313,7 +313,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
      * @return true if initialization was successful, false otherwise.
      * @copydetails GsmClientBG96::GsmClientBG96(TinyGsmBG96&, uint8_t)
      */
-    bool init(TinyGsmBG96* modem, uint8_t mux = 0) {
+    bool init(TinyGsmBG96* modem, uint8_t mux = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;

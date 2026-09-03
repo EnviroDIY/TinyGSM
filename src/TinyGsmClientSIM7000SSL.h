@@ -302,7 +302,7 @@ class TinyGsmSim7000SSL
      * @copydetails GsmClientSim7000SSL::GsmClientSim7000SSL(TinyGsmSim7000SSL&,
      * uint8_t)
      */
-    bool init(TinyGsmSim7000SSL* modem, uint8_t mux = 0) {
+    bool init(TinyGsmSim7000SSL* modem, uint8_t mux = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;

@@ -305,7 +305,7 @@ class TinyGsmESP32
      * @return true if initialization was successful, false otherwise.
      * @copydetails GsmClientESP32::GsmClientESP32(TinyGsmESP32&, uint8_t)
      */
-    bool init(TinyGsmESP32* modem, uint8_t mux = 0) {
+    bool init(TinyGsmESP32* modem, uint8_t mux = 0) override {
       if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_connected = false;
