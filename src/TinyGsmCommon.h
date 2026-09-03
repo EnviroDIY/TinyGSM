@@ -178,6 +178,27 @@ const T& TinyGsmMax(const T& a, const T& b) {
   return (b < a) ? a : b;
 }
 
+/*
+ * String/IP Address Helpers
+ */
+/**
+ * @brief Convert an IPAddress to a String for use in connect()
+ * @param ip The IPAddress to convert
+ * @return A String representation of the IPAddress
+ */
+static inline String TinyGsmStringFromIp(IPAddress ip) {
+  String host;
+  host.reserve(16);
+  host += ip[0];
+  host += '.';
+  host += ip[1];
+  host += '.';
+  host += ip[2];
+  host += '.';
+  host += ip[3];
+  return host;
+}
+
 /**
  * @brief Standard baud rates to attempt during auto-baud detection and modem
  * initialization.
