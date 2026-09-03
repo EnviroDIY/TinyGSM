@@ -73,7 +73,7 @@
  *     - @ref TinyGsmSim70xx::setPreferredMode "setPreferredMode()"
  *     - @ref TinyGsmSim70xx::getNetworkSystemMode "getNetworkSystemMode()"
  *     - @ref TinyGsmSim70xx::setNetworkSystemMode "setNetworkSystemMode()"
- * - TCP functions (TinyGsmTCP.tpp)
+ * - Socket listening functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
  *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
@@ -1190,8 +1190,8 @@ class TinyGsmSim7080
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
-                        int timeout_s) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t /*static*/ mux,
+                    int timeout_s) {
     if (!isValidMux(mux)) { return false; }
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
@@ -1299,7 +1299,7 @@ class TinyGsmSim7080
     return true;
   }
 
-  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+  bool modemStop(uint8_t mux, uint32_t maxWaitMs) {
     if (!isValidMux(mux)) { return false; }
     // Same command for both secure and non-secure sockets
     sendAT(GF("+CACLOSE="), mux);
@@ -1307,7 +1307,7 @@ class TinyGsmSim7080
         1;  // should return within 3s
   }
 
-  bool modemBeginSendImpl(size_t len, uint8_t mux) {
+  bool modemBeginSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     // send data on prompt
     sendAT(GF("+CASEND="), mux, ',', (uint16_t)len);
@@ -1316,12 +1316,12 @@ class TinyGsmSim7080
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  size_t modemEndSendImpl(size_t len, uint8_t) {
+  size_t modemEndSend(size_t len, uint8_t) {
     // Nothing but an OK after posting data
     if (waitResponse() != 1) { return 0; }
     return len;
   }
-  size_t modemGetSendLengthImpl(uint8_t mux) {
+  size_t modemGetSendLength(uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     // Sending only the mux number will return the number of bytes left in the
     // send buffer (that we can soon fill up with our next send attempt)
@@ -1340,7 +1340,7 @@ class TinyGsmSim7080
     return leftsize;
   }
 
-  size_t modemWaitForSendImpl(uint8_t mux, uint32_t timeout_ms) {
+  size_t modemWaitForSend(uint8_t mux, uint32_t timeout_ms) {
     if (!isValidMux(mux)) { return 0; }
     size_t sendLength = modemGetSendLength(mux);
 #if defined(TINY_GSM_DEBUG)
@@ -1371,7 +1371,7 @@ class TinyGsmSim7080
     return sendLength;
   }
 
-  size_t modemReadImpl(size_t size, uint8_t mux) {
+  size_t modemRead(size_t size, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
 
     sendAT(GF("+CARECV="), mux, ',', (uint16_t)size);
@@ -1399,7 +1399,7 @@ class TinyGsmSim7080
     return len_read;
   }
 
-  size_t modemGetAvailableImpl(uint8_t mux) {
+  size_t modemGetAvailable(uint8_t mux) {
     // If the socket doesn't exist, just return
     if (!isValidMux(mux)) { return 0; }
     // NOTE: This gets how many characters are available on all connections that
@@ -1453,7 +1453,7 @@ class TinyGsmSim7080
     return sockets[mux]->sock_available;
   }
 
-  bool modemGetConnectedImpl(uint8_t mux) {
+  bool modemGetConnected(uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     // NOTE:  This gets the state of all connections that have been opened
     // since the last connection

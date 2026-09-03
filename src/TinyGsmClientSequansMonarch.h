@@ -56,7 +56,7 @@
  *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
  *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
  *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
- * - TCP functions (TinyGsmTCP.tpp)
+ * - Socket listening functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  * - Phone call functions (TinyGsmCalling.tpp)
  *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
@@ -84,8 +84,6 @@
  *   - Extended Client API (TinyGsmTCP.tpp)
  *     - @ref GsmClient::getMux "getMux()"
  *     - @ref GsmClient::getConnectionID "getConnectionID()"
- *     - @ref GsmClient::beginWrite "beginWrite()"
- *     - @ref GsmClient::endWrite "endWrite()"
  * - @ref GsmClientSecureSequansMonarch "GsmClientSecureSequansMonarch"
  *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
  *     - @ref GsmClient::init "init()"
@@ -100,8 +98,6 @@
  *   - Extended Client API (TinyGsmTCP.tpp)
  *     - @ref GsmClient::getMux "getMux()"
  *     - @ref GsmClient::getConnectionID "getConnectionID()"
- *     - @ref GsmClient::beginWrite "beginWrite()"
- *     - @ref GsmClient::endWrite "endWrite()"
  *   - Client SSL configuration functions
  *     - @ref GsmClientSecureSequansMonarch::setStrictSSL "setStrictSSL()"
  *
@@ -719,8 +715,8 @@ class TinyGsmSequansMonarch
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
-                        int timeout_s) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t /*static*/ mux,
+                    int timeout_s) {
     if (!isValidMux(mux)) { return false; }
     int8_t   rsp;
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
@@ -795,7 +791,7 @@ class TinyGsmSequansMonarch
     return connected;
   }
 
-  bool modemStopImpl(uint8_t mux, uint32_t /*maxWaitMs*/) {
+  bool modemStop(uint8_t mux, uint32_t /*maxWaitMs*/) {
     if (!isValidMux(mux)) { return false; }
     uint8_t connId = muxToConnectionId(mux);
     // Same command for both secure and non-secure sockets
@@ -803,7 +799,7 @@ class TinyGsmSequansMonarch
     return waitResponse() == 1;  // should return within 1s
   }
 
-  size_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
+  size_t modemSend(const uint8_t* buff, size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     if (sockets[mux]->sock_connected == false) {
       DBG("### Sock closed, cannot send data!");
@@ -889,13 +885,13 @@ class TinyGsmSequansMonarch
   }
 
 #if 0
-  bool modemBeginSendImpl(size_t len, uint8_t mux) {
+  bool modemBeginSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     uint8_t connId = muxToConnectionId(mux);
     sendAT(GF("+SQNSSENDEXT="), connId, ',', (uint16_t)len);
     return waitResponse(10000L, GF("\r\n> ")) == 1;
   }
-  size_t modemEndSendImpl(size_t len, uint8_t) {
+  size_t modemEndSend(size_t len, uint8_t) {
     if (waitResponse() != 1) {
       DBG("### no OK after send");
       return 0;
@@ -904,7 +900,7 @@ class TinyGsmSequansMonarch
   }
 #endif
 
-  size_t modemReadImpl(size_t size, uint8_t mux) {
+  size_t modemRead(size_t size, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     uint8_t connId   = muxToConnectionId(mux);
     size_t  len_read = 0;
@@ -936,7 +932,7 @@ class TinyGsmSequansMonarch
     return len_read;
   }
 
-  size_t modemGetAvailableImpl(uint8_t mux) {
+  size_t modemGetAvailable(uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     uint8_t connId = muxToConnectionId(mux);
 
@@ -957,9 +953,13 @@ class TinyGsmSequansMonarch
     return 0;
   }
 
-  bool modemGetConnectedImpl(uint8_t mux) {
+  bool modemGetConnected(uint8_t mux) {
     // This single command always returns the connection status of all
     // six possible sockets.
+    // Because this will give us all the sockets and we want to be able to call
+    // it and have it populate all mux connection statuses without knowing which
+    // muxes are valid within maintain(), we intentionally don't validate the
+    // provided mux until the end.
     sendAT(GF("+SQNSS"));
     for (uint8_t connId = 1; connId <= TcpConfig::kMuxCount; connId++) {
       if (waitResponse(GFP(ModemConfig::GSM_OK), GF("+SQNSS: ")) != 2) {

@@ -106,19 +106,48 @@ class TinyGsmTCP {
   /* =========================================== */
   /* =========================================== */
   /*
-   * Define the interface
+   * Define the public interface
    */
  public:
   /**
    * @anchor tcp_functions
-   * @name TCP functions
+   * @name Socket listening functions
    */
   /**@{*/
   /// Maintain the modem connection and check for incoming data.
   void maintain() {
     return thisModem().maintainImpl();
   }
+  /**@}*/
 
+  /*
+   * Set up for CRTP
+   */
+ protected:
+  // destructor (protected!)
+  ~TinyGsmTCP() {}
+
+  /*
+   * CRTP Helper
+   */
+  inline const modemType& thisModem() const {
+    return static_cast<const modemType&>(*this);
+  }
+  inline modemType& thisModem() {
+    return static_cast<modemType&>(*this);
+  }
+
+
+  /* =========================================== */
+  /* =========================================== */
+  /**
+   * @anchor tcp_helper_functions
+   * @name TCP helper functions
+   *
+   * These are protected functions that generally *should not be overridden or
+   * re-implemented* in derived classes.
+   */
+  /**@{*/
  protected:
   template <typename T>
   bool isValidMux(T mux) {
@@ -205,133 +234,6 @@ class TinyGsmTCP {
     thisModem().sockets[oldMux]               = nullptr;
     if (assignedMux) { *assignedMux = destination_mux; }
     return true;
-  }
-
-  /**
-   * @brief Convert a multiplexing channel number to the modem's internal
-   * connection identifier.
-   * @param mux The multiplexing channel number
-   * @return The modem's internal connection identifier
-   */
-  inline uint8_t muxToConnectionId(uint8_t mux) {
-    return mux;
-  };
-  /**
-   * @brief Convert the modem's internal connection identifier to a multiplexing
-   * channel number.
-   * @param connId The modem's internal connection identifier
-   * @return The multiplexing channel number
-   */
-  inline uint8_t connectionIdToMux(uint8_t connId) {
-    return connId;
-  };
-
-  bool modemConnect(const char* host, uint16_t port, uint8_t staticMux,
-                    int timeout_s = TcpConfig::kConnectTimeoutS) {
-    return thisModem().modemConnectImpl(host, port, staticMux, timeout_s);
-  }
-
-  bool modemConnect(const char* host, uint16_t port, uint8_t* dynamicMux,
-                    int timeout_s = TcpConfig::kConnectTimeoutS) {
-    return thisModem().modemConnectImpl(host, port, dynamicMux, timeout_s);
-  }
-
-  bool modemStop(uint8_t mux, uint32_t maxWaitMs) {
-    return thisModem().modemStopImpl(mux, maxWaitMs);
-  }
-
-  /**
-   * @brief Sends a buffer of data to the modem
-   *
-   * By default this breaks the data into chunks of size
-   * TcpConfig::kSendMaxSize. Then for each chunk it calls modemWaitForSend
-   * (which calls modemGetSendLength), then modemBeginSend, then writes the
-   * buffer content, then calls modemEndSend.
-   *
-   * @param buff The buffer of data to send
-   * @param len The length of the buffer
-   * @param mux The **zero-indexed** position of the client in the modem's
-   * socket array.
-   * @return The number of bytes sent
-   */
-  size_t modemSend(const uint8_t* buff, size_t len, uint8_t mux) {
-    return thisModem().modemSendImpl(buff, len, mux);
-  }
-  // Initiates the AT commands for a send, up to the point of getting an input
-  // prompt
-  bool modemBeginSend(size_t len, uint8_t mux) {
-    return thisModem().modemBeginSendImpl(len, mux);
-  }
-  // Finishes off the modem send, checking for a response from the modem
-  // This is for everything after the input prompt
-  size_t modemEndSend(size_t len, uint8_t mux) {
-    return thisModem().modemEndSendImpl(len, mux);
-  }
-  // check for the amount of space left in the send buffer
-  size_t modemGetSendLength(uint8_t mux) {
-    return thisModem().modemGetSendLengthImpl(mux);
-  }
-  // wait until the modem has more than the minimum required send buffer space
-  // available
-  // returns the number of bytes available in the send buffer at the end of the
-  // wait
-  size_t modemWaitForSend(uint8_t mux, uint32_t timeout_ms = 15000L) {
-    return thisModem().modemWaitForSendImpl(mux, timeout_ms);
-  }
-  size_t modemRead(size_t size, uint8_t mux) {
-    return thisModem().modemReadImpl(size, mux);
-  }
-
-  size_t modemGetAvailable(uint8_t mux) {
-    return thisModem().modemGetAvailableImpl(mux);
-  }
-  bool modemGetConnected(uint8_t mux) {
-    return thisModem().modemGetConnectedImpl(mux);
-  }
-  /**@}*/
-
-  // destructor (protected!)
-  ~TinyGsmTCP() {}
-
-  /*
-   * CRTP Helper
-   */
-  inline const modemType& thisModem() const {
-    return static_cast<const modemType&>(*this);
-  }
-  inline modemType& thisModem() {
-    return static_cast<modemType&>(*this);
-  }
-
-  /* =========================================== */
-  /* =========================================== */
-  /*
-   * Define the default function implementations
-   */
- protected:
-  /*
-   * TCP functions
-   */
-
-  void maintainImpl() {
-    if (TcpConfig::kBufferMode ==
-        TinyGsmTcpBufferMode::BufferReadAndCheckSize) {
-      // Keep listening for modem URC's and proactively iterate through
-      // sockets asking if any data is available
-      for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; mux++) {
-        GsmClient<modemType, tcpConfig>* sock = thisModem().sockets[mux];
-        if (sock && sock->got_data && sock->sock_available == 0) {
-          sock->got_data       = false;
-          sock->sock_available = thisModem().modemGetAvailable(mux);
-        }
-      }
-      while (thisModem().stream.available()) {
-        thisModem().waitResponse(15, nullptr, nullptr);
-      }
-    } else {
-      // Just listen for any URC's
-      thisModem().waitResponse(100, nullptr, nullptr);
-    }
   }
 
   // Yields up to a time-out period and then reads a single character from the
@@ -522,17 +424,100 @@ class TinyGsmTCP {
 
     return len_read;
   }
+  /**@}*/
 
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
-                        int timeout_s) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  /* =========================================== */
+  /* =========================================== */
+  /**
+   * @anchor tcp_default_implementations
+   * @name TCP default implementations
+   *
+   * These are the protected default implementations of the public interface
+   * functions. They can be overridden in derived classes if the modem has a
+   * different implementation.
+   */
+ protected:
+  /*
+   * Socket listening functions
+   */
 
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* dynamicMux,
-                        int timeout_s) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  void maintainImpl() {
+    if (TcpConfig::kBufferMode ==
+        TinyGsmTcpBufferMode::BufferReadAndCheckSize) {
+      // Keep listening for modem URC's and proactively iterate through
+      // sockets asking if any data is available
+      for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; mux++) {
+        GsmClient<modemType, tcpConfig>* sock = thisModem().sockets[mux];
+        if (sock && sock->got_data && sock->sock_available == 0) {
+          sock->got_data       = false;
+          sock->sock_available = thisModem().modemGetAvailable(mux);
+        }
+      }
+      while (thisModem().stream.available()) {
+        thisModem().waitResponse(15, nullptr, nullptr);
+      }
+    } else {
+      // Just listen for any URC's
+      thisModem().waitResponse(100, nullptr, nullptr);
+    }
+  }
+  /**@}*/
 
-  bool modemStopImpl(uint8_t  mux,
-                     uint32_t maxWaitMs) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  size_t modemSendImpl(const uint8_t* buff, size_t len, uint8_t mux) {
+  /* =========================================== */
+  /* =========================================== */
+  /**
+   * @anchor tcp_modem_functions
+   * @name TCP modem functions
+   *
+   * These are protected modem functions that **should or must be
+   * reimplemented** in derived classes.
+   */
+  /**@{*/
+  /**
+   * @brief Convert a multiplexing channel number to the modem's internal
+   * connection identifier.
+   * @param mux The multiplexing channel number
+   * @return The modem's internal connection identifier
+   */
+  inline uint8_t muxToConnectionId(uint8_t mux) {
+    return mux;
+  };
+  /**
+   * @brief Convert the modem's internal connection identifier to a multiplexing
+   * channel number.
+   * @param connId The modem's internal connection identifier
+   * @return The multiplexing channel number
+   */
+  inline uint8_t connectionIdToMux(uint8_t connId) {
+    return connId;
+  };
+
+  bool modemConnect(const char* host, uint16_t port, uint8_t /*static*/ mux,
+                    int timeout_s) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool modemConnect(const char* host, uint16_t port, uint8_t* dynamicMux,
+                    int timeout_s) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool modemStop(uint8_t mux, uint32_t maxWaitMs) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  /**
+   * @brief Sends a buffer of data to the modem
+   *
+   * By default this breaks the data into chunks of size
+   * TcpConfig::kSendMaxSize. Then for each chunk it calls modemWaitForSend
+   * (which calls modemGetSendLength), then modemBeginSend, then writes the
+   * buffer content, then calls modemEndSend.
+   *
+   * @param buff The buffer of data to send
+   * @param len The length of the buffer
+   * @param mux The **zero-indexed** position of the client in the modem's
+   * socket array.
+   * @return The number of bytes sent
+   * @todo Add parameter for timeout for the entire send operation.  This
+   * currently has a hard-coded timeout of 15 seconds for each chunk.
+   */
+  size_t modemSend(const uint8_t* buff, size_t len, uint8_t mux) {
     // Pointer to where in the buffer we're up to
     // A const cast is need to cast-away the constant-ness of the buffer (ie,
     // modify it).
@@ -544,7 +529,7 @@ class TinyGsmTCP {
       int8_t send_attempts = 0;
       bool   send_success  = false;
       while (send_attempts < 3 && !send_success) {
-        size_t sendLength = thisModem().modemWaitForSend(mux);
+        size_t sendLength = thisModem().modemWaitForSend(mux, 15000L);
         if (sendLength < TcpConfig::kMinFreeTxBuffer) {
           send_attempts++;
           DBG(GF("### Insufficient send buffer ("), sendLength,
@@ -594,17 +579,22 @@ class TinyGsmTCP {
     return bytesSent;
   }
 
-  bool   modemBeginSendImpl(size_t  len,
-                            uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  size_t modemEndSendImpl(size_t  len,
-                          uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
-  size_t modemGetSendLengthImpl(uint8_t) {
+  // Initiates the AT commands for a send, up to the point of getting an input
+  // prompt
+  bool modemBeginSend(size_t len, uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  //  Finishes off the modem send, checking for a response from the modem
+  //  This is for everything after the input prompt
+  size_t modemEndSend(size_t len, uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  // check for the amount of space left in the send buffer
+  size_t modemGetSendLength(uint8_t) {
     // by default, assume the whole space is available
     return TcpConfig::kSendMaxSize;
   }
 
-  size_t modemWaitForSendImpl(uint8_t mux, uint32_t timeout_ms) {
+  // wait until the modem has more than the minimum required send buffer space
+  // available returns the number of bytes available in the send buffer at the
+  // end of the wait
+  size_t modemWaitForSend(uint8_t mux, uint32_t timeout_ms) {
     size_t sendLength = thisModem().modemGetSendLength(mux);
 #if defined(TINY_GSM_DEBUG)
     if (sendLength != TcpConfig::kSendMaxSize) {
@@ -635,11 +625,12 @@ class TinyGsmTCP {
     return sendLength;
   }
 
-  size_t modemReadImpl(size_t size, uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  size_t modemRead(size_t size, uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  size_t modemGetAvailableImpl(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  size_t modemGetAvailable(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool modemGetConnectedImpl(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool modemGetConnected(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  /**@}*/
 };
 
 /**

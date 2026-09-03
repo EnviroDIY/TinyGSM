@@ -50,7 +50,7 @@
  * - WiFi functions (TinyGsmWifi.tpp)
  *     - @ref TinyGsmWifi<modemType>::networkConnect "networkConnect()"
  *     - @ref TinyGsmWifi<modemType>::networkDisconnect "networkDisconnect()"
- * - TCP functions (TinyGsmTCP.tpp)
+ * - Socket listening functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
  *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
@@ -664,7 +664,8 @@ class TinyGsmESP32
       }
     }
     // modemGetAvailable checks all socks, so we only want to do it once
-    // modemGetAvailable calls modemGetConnected(), which also checks all socks
+    // modemGetAvailable calls modemGetConnected(), which also checks all
+    // socks
     if (check_socks) { modemGetAvailable(0); }
     while (stream.available()) { waitResponse(15, nullptr, nullptr); }
   }
@@ -1358,8 +1359,8 @@ class TinyGsmESP32
    * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
-                        int timeout_s) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t /*static*/ mux,
+                    int timeout_s) {
     if (!isValidMux(mux)) { return false; }
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
@@ -1491,10 +1492,10 @@ class TinyGsmESP32
     return success;
   }
 
-  // Disambiguate modemStopImpl by using the Espressif implementation
-  using TinyGsmEspressif<TinyGsmESP32, TinyGsmESP32ModemConfig>::modemStopImpl;
+  // Disambiguate modemStop by using the Espressif implementation
+  using TinyGsmEspressif<TinyGsmESP32, TinyGsmESP32ModemConfig>::modemStop;
 
-  bool modemBeginSendImpl(size_t len, uint8_t mux) {
+  bool modemBeginSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSEND="), mux, ',', len);
     return waitResponse(GF(">")) == 1;
@@ -1502,7 +1503,7 @@ class TinyGsmESP32
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  size_t modemEndSendImpl(size_t len, uint8_t) {
+  size_t modemEndSend(size_t len, uint8_t) {
     uint16_t received = 0;
     if (waitResponse(10000L, GF("Recv ")) == 1) {
       received = streamGetIntBefore(' ');  // check received length
@@ -1515,7 +1516,7 @@ class TinyGsmESP32
     return len;
   }
 
-  size_t modemReadImpl(size_t size, uint8_t mux) {
+  size_t modemRead(size_t size, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
 
     // AT+CIPRECVDATA=<link_id>,<len>
@@ -1531,7 +1532,7 @@ class TinyGsmESP32
     return len_read;
   }
 
-  size_t modemGetAvailableImpl(uint8_t mux) {
+  size_t modemGetAvailable(uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     size_t result = 0;
     sendAT(GF("+CIPRECVLEN?"));
@@ -1547,7 +1548,7 @@ class TinyGsmESP32
     return result;
   }
 
-  bool modemGetConnectedImpl(uint8_t mux) {
+  bool modemGetConnected(uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSTATE?"));
     // initialize the connection array assuming no connections are active

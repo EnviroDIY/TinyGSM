@@ -58,7 +58,7 @@
  *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
  *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
  *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
- * - TCP functions (TinyGsmTCP.tpp)
+ * - Socket listening functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
  *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
@@ -177,8 +177,8 @@
  * @todo In `connect()` (secure path): verify the socket returned by CCHOPEN
  * @todo In `connect()` (non-secure path): Should NETOPEN be called once during
  * the GPRS connection process instead of repeatly here?
- * @todo In `modemSendImpl()`: make sure requested and confirmed bytes match
- * @todo In `modemGetConnectedImpl()`: Does this work?  It's not the right
+ * @todo In `modemSend()`: make sure requested and confirmed bytes match
+ * @todo In `modemGetConnected()`: Does this work?  It's not the right
  * command by the manual
  * @todo In `handleURCs()`: This is a problem, we can't issue a
  * sendAT/waitResponse here.
@@ -877,8 +877,8 @@ class TinyGsmA7672X
    */
 
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
-                        int timeout_s) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t /*static*/ mux,
+                    int timeout_s) {
     if (!isValidMux(mux)) { return false; }
     bool     success    = false;
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
@@ -964,7 +964,7 @@ class TinyGsmA7672X
     return success;
   }
 
-  bool modemStopImpl(uint8_t mux, uint32_t /*maxWaitMs*/) {
+  bool modemStop(uint8_t mux, uint32_t /*maxWaitMs*/) {
     if (!isValidMux(mux)) { return false; }
     bool ssl = sockets[mux]->is_secure;
     if (ssl) {
@@ -975,7 +975,7 @@ class TinyGsmA7672X
     return waitResponse() == 1;  // should return within 1s
   }
 
-  bool modemBeginSendImpl(size_t len, uint8_t mux) {
+  bool modemBeginSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     bool ssl = sockets[mux]->is_secure;
     if (ssl) {
@@ -988,7 +988,7 @@ class TinyGsmA7672X
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  size_t modemEndSendImpl(size_t len, uint8_t mux) {
+  size_t modemEndSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     bool ssl = sockets[mux]->is_secure;
 
@@ -1017,7 +1017,7 @@ class TinyGsmA7672X
     }
   }
 
-  size_t modemReadImpl(size_t size, uint8_t mux) {
+  size_t modemRead(size_t size, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     bool    ssl           = sockets[mux]->is_secure;
     int16_t len_reported  = 0;
@@ -1086,7 +1086,7 @@ class TinyGsmA7672X
     return len_read;
   }
 
-  size_t modemGetAvailableImpl(uint8_t mux) {
+  size_t modemGetAvailable(uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
     bool   ssl    = sockets[mux]->is_secure;
     size_t result = 0;
@@ -1135,7 +1135,7 @@ class TinyGsmA7672X
     return result;
   }
 
-  bool modemGetConnectedImpl(uint8_t mux) {
+  bool modemGetConnected(uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
     // TODO(SRGD): Does this work?  It's not the right command by the manual
     int8_t res = 0;

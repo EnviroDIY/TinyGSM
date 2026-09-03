@@ -60,7 +60,7 @@
  * - WiFi functions (TinyGsmWifi.tpp)
  *     - @ref TinyGsmWifi<modemType>::networkConnect "networkConnect()"
  *     - @ref TinyGsmWifi<modemType>::networkDisconnect "networkDisconnect()"
- * - TCP functions (TinyGsmTCP.tpp)
+ * - Socket listening functions (TinyGsmTCP.tpp)
  *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
  * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
  *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
@@ -1541,8 +1541,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     return success;
   }
 
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux = 0,
-                        int timeout_s = TcpConfig::kConnectTimeoutS) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0,
+                    int timeout_s = TcpConfig::kConnectTimeoutS) {
     if (mux != 0) {
       DBG("XBee only supports 1 IP channel in transparent mode!");
       return false;
@@ -1659,7 +1659,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     return success;
   }
 
-  bool modemStopImpl(uint8_t /*mux*/, uint32_t maxWaitMs) {
+  bool modemStop(uint8_t /*mux*/, uint32_t maxWaitMs) {
     streamClear();  // Empty anything in the buffer
     // empty the saved currently-in-use destination address
     savedOperatingIP = IPAddress(0, 0, 0, 0);
@@ -1685,7 +1685,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     return true;
   }
 
-  bool modemBeginSendImpl(size_t, uint8_t mux) {
+  bool modemBeginSend(size_t, uint8_t mux) {
     if (mux != 0) {
       DBG("XBee only supports 1 IP channel in transparent mode!");
       return false;
@@ -1695,7 +1695,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  size_t modemEndSendImpl(size_t len, uint8_t) {
+  size_t modemEndSend(size_t len, uint8_t) {
     if (beeType != XBeeType::XBEE_S6B_WIFI) {
       // After a send, verify the outgoing ip if it isn't set
       if (savedOperatingIP == IPAddress(0, 0, 0, 0)) {
@@ -1836,8 +1836,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         // 0x25 = Unknown server - DNS lookup failed (0x22 for UDP socket!)
         if (ci == 0x02 || ci == 0x12 || ci == 0x25) {
           savedIP = IPAddress(0, 0, 0, 0);  // force a lookup next time!
-          // also invalidate the cached host lookup, or modemConnectImpl will
-          // keep reusing the stale address for up to 12 hours
+          // also invalidate the cached host lookup, or modemConnect will keep
+          // reusing the stale address for up to 12 hours
           savedHostIP          = IPAddress(0, 0, 0, 0);
           lastHostLookupMillis = 0;
         }

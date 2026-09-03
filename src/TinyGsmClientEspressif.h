@@ -364,7 +364,7 @@ class TinyGsmEspressif
    * Client-related functions
    */
  protected:
-  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+  bool modemStop(uint8_t mux, uint32_t maxWaitMs) {
     if (mux >= EspressifType::TcpConfig::kMuxCount ||
         !thisModem().sockets[mux]) {
       return false;
