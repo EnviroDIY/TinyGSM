@@ -147,6 +147,16 @@ class TinyGsmTime {
    * Time functions
    */
 
+  // Basic validator
+  static bool isValidDateTimeValues(int16_t iyear, int16_t imonth, int16_t iday,
+                                    int16_t ihour, int16_t imin, int16_t isec,
+                                    int16_t itimezone) {
+    return (iyear >= 2000 && imonth >= 1 && imonth <= 12 && iday >= 1 &&
+            iday <= 31 && ihour >= 0 && ihour <= 23 && imin >= 0 &&
+            imin <= 59 && isec >= 0 && isec <= 59 && itimezone >= -48 &&
+            itimezone <= 56);
+  }
+
   String getGSMDateTimeImpl(TinyGSMDateTimeFormat format) {
     thisModem().sendAT(GF("+CCLK?"));
     if (thisModem().waitResponse(2000L, GF("+CCLK: \"")) != 1) { return ""; }
@@ -211,13 +221,10 @@ class TinyGsmTime {
 #endif
 
     // Validate parsed values
-    // NOTE: This is a basic validation and does not account for leap years or
-    // the number of days in each month.
     // NOTE: We fill in the pointers before validating so that the user can see
     // what was returned even if it was invalid.
-    if (iyear < 2000 || imonth < 1 || imonth > 12 || iday < 1 || iday > 31 ||
-        ihour < 0 || ihour > 23 || imin < 0 || imin > 59 || isec < 0 ||
-        isec > 59 || itimezone < -48 || itimezone > 56) {
+    if (!isValidDateTimeValues(iyear, imonth, iday, ihour, imin, isec,
+                               itimezone)) {
       return false;
     }
     return true;

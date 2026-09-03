@@ -590,7 +590,7 @@ class TinyGsmESP32
  protected:
   bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
-    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientEspressif"));
+    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientESP32"));
     bool success = true;
 
     if (!testAT()) { return false; }
@@ -1275,11 +1275,8 @@ class TinyGsmESP32
 #endif
 
     // Validate parsed values
-    // NOTE: This is a basic validation and does not account for leap years or
-    // the number of days in each month.
-    if (iyear < 2000 || imonth < 1 || imonth > 12 || iday < 1 || iday > 31 ||
-        ihour < 0 || ihour > 23 || imin < 0 || imin > 59 || isec < 0 ||
-        isec > 59 || itimezone < -48 || itimezone > 56) {
+    if (!TinyGsmTime<TinyGsmESP32>::isValidDateTimeValues(
+            iyear, imonth, iday, ihour, imin, isec, itimezone)) {
       return false;
     }
 
