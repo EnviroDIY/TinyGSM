@@ -1,15 +1,9 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} MqttClient.ino
  *
- * For this example, you need to install PubSubClient library:
- *   https://github.com/knolleary/pubsubclient
- *   or from http://librarymanager/all#PubSubClient
+ * @brief This sketch connects to an MQTT broker and publishes and subscribes to
+ * topics to control and report the status of the onboard LED.
  *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- * For more MQTT examples, see PubSubClient library
- *
- **************************************************************
  * This example connects to HiveMQ's showcase broker.
  *
  * You can quickly test sending and receiving messages from the HiveMQ webclient
@@ -20,7 +14,12 @@
  * should toggle and you should see a new message published to
  * GsmClientTest/ledStatus with the newest LED status.
  *
- **************************************************************/
+ * For this example, you need to install PubSubClient library:
+ *   https://github.com/knolleary/pubsubclient
+ *   or from http://librarymanager/all#PubSubClient
+ *
+ * For more MQTT examples, see PubSubClient library
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
@@ -49,7 +48,7 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// Set serial for debug console (to the Serial Monitor, default speed 115200)
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
@@ -107,6 +106,10 @@ const char* topicLedStatus = "GsmClientTest/ledStatus";
 
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
+
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
 
 // Just in case someone defined the wrong thing..
 #if TINY_GSM_USE_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
@@ -209,7 +212,10 @@ void setup() {
 
 #if TINY_GSM_USE_GPRS
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
+  if (GSM_PIN && modem.getSimStatus() != SIM_READY) {
+    // simUnlock will do nothing if the pin is empty
+    modem.simUnlock(GSM_PIN);
+  }
 #endif
 
 #if TINY_GSM_USE_WIFI

@@ -1,31 +1,63 @@
 /**
  * @file       TinyGsmTime.tpp
+ * @brief      Clock and date-time helper mixin for modem implementations.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMTIME_H_
-#define SRC_TINYGSMTIME_H_
+#ifndef SRC_TINYGSMTIME_TPP_
+#define SRC_TINYGSMTIME_TPP_
 
 #include "TinyGsmCommon.h"
 
 #ifndef TINY_GSM_MODEM_HAS_TIME
+/// flag to indicate that the modem has time printing and retrieval functions
 #define TINY_GSM_MODEM_HAS_TIME
 #endif
 
+/// Enum for different date/time formats.
+enum class TinyGSMDateTimeFormat : int8_t {
+  DATE_FULL = 0,  ///< The full date and time
+  DATE_TIME = 1,  ///< Only the time portion of the date/time
+  DATE_DATE = 2   ///< Only the date portion of the date/time
+};
+
+/// Enum for the epoch start value.
+enum class TinyGSM_EpochStart : int8_t {
+  /// Use a Unix epoch, starting 1/1/1970 (946684800 seconds before the Y2K
+  /// epoch, 315964800 seconds before the GPS epoch)
+  UNIX = 0,
+  /// Use an epoch starting 1/1/2000, as some RTCs and Arduinos do (946684800
+  /// seconds after the UNIX epoch, 630720000 seconds after the GPS epoch)
+  Y2K = 1,
+  /// Use the GPS epoch starting Jan 6, 1980 (315964800 seconds after the UNIX
+  /// epoch, 630720000 seconds before the Y2K epoch)
+  GPS = 2
+};
+
+/**
+ * @brief The CRTP parent class for time printing and retrieval functions
+ * @tparam modemType The derived modem class
+ */
 template <class modemType>
 class TinyGsmTime {
+ public:
+  /// Compile-time capability flag indicating time/clock support
+  static constexpr bool hasTime = true;
+
   /* =========================================== */
   /* =========================================== */
   /*
    * Define the interface
    */
  public:
-  /*
-   * Time functions
+  /**
+   * @anchor time_functions
+   * @name Time functions
    */
+  /**@{*/
 
   /**
    * @brief Get the Date Time as a String
@@ -49,9 +81,8 @@ class TinyGsmTime {
    * @param minute Reference to an int for the minute
    * @param second Reference to an int for the second
    * @param timezone Reference to a float for the timezone
-   * @return *true*  The references have been filled with valid values from the
-   * GSM module.
-   * @return *false*  There was a problem getting the time from the module.
+   * @return True if the references have been filled with valid values from
+   * the GSM module, false otherwise.
    */
   bool getNetworkTime(int* year, int* month, int* day, int* hour, int* minute,
                       int* second, float* timezone) {
@@ -69,9 +100,8 @@ class TinyGsmTime {
    * @param minute Reference to an int for the minute
    * @param second Reference to an int for the second
    * @param timezone Reference to a float for the timezone
-   * @return *true*  The references have been filled with valid values from the
-   * GSM module.
-   * @return *false*  There was a problem getting the time from the module.
+   * @return True if the references have been filled with valid values from
+   * the GSM module, false otherwise.
    */
   bool getNetworkUTCTime(int* year, int* month, int* day, int* hour,
                          int* minute, int* second, float* timezone) {
@@ -83,12 +113,15 @@ class TinyGsmTime {
    * @brief Get the Date/Time as an epoch value
    *
    * @param epoch The epoch start to use.
-   * @return *uint32_t* The offset from the start of the epoch
+   * @return *uint32_t* The offset from the start of the epoch or 0 if the epoch
+   * could not be retrieved.
    */
   uint32_t
   getNetworkEpoch(TinyGSM_EpochStart epoch = TinyGSM_EpochStart::UNIX) {
     return thisModem().getNetworkEpochImpl(epoch);
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)
@@ -109,11 +142,11 @@ class TinyGsmTime {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * Time functions
    */
- protected:
+
   String getGSMDateTimeImpl(TinyGSMDateTimeFormat format) {
     thisModem().sendAT(GF("+CCLK?"));
     if (thisModem().waitResponse(2000L, GF("+CCLK: \"")) != 1) { return ""; }
@@ -141,24 +174,22 @@ class TinyGsmTime {
     thisModem().sendAT(GF("+CCLK?"));
     if (thisModem().waitResponse(2000L, GF("+CCLK: \"")) != 1) { return false; }
 
-    int iyear     = 0;
-    int imonth    = 0;
-    int iday      = 0;
-    int ihour     = 0;
-    int imin      = 0;
-    int isec      = 0;
-    int itimezone = 0;
+    int16_t iyear     = 0;
+    int16_t imonth    = 0;
+    int16_t iday      = 0;
+    int16_t ihour     = 0;
+    int16_t imin      = 0;
+    int16_t isec      = 0;
+    int16_t itimezone = 0;
 
     // Date & Time
-    iyear       = thisModem().streamGetIntBefore('/');
-    imonth      = thisModem().streamGetIntBefore('/');
-    iday        = thisModem().streamGetIntBefore(',');
-    ihour       = thisModem().streamGetIntBefore(':');
-    imin        = thisModem().streamGetIntBefore(':');
-    isec        = thisModem().streamGetIntLength(2);
-    char tzSign = thisModem().stream.read();
-    itimezone   = thisModem().streamGetIntBefore('\n');
-    if (tzSign == '-') { itimezone = itimezone * -1; }
+    iyear     = thisModem().streamGetIntBefore('/');
+    imonth    = thisModem().streamGetIntBefore('/');
+    iday      = thisModem().streamGetIntBefore(',');
+    ihour     = thisModem().streamGetIntBefore(':');
+    imin      = thisModem().streamGetIntBefore(':');
+    isec      = thisModem().streamGetIntLength(2);
+    itimezone = thisModem().streamGetIntBefore('\n');
 
     // Set pointers
     if (iyear < 2000) iyear += 2000;
@@ -172,6 +203,23 @@ class TinyGsmTime {
 
     // Final OK
     thisModem().waitResponse();
+
+#if 0
+    DBG(GF("Year:"), iyear, GF("	Month:"), imonth, GF("	Day:"), iday);
+    DBG(GF("Hour:"), ihour, GF("	Minute:"), imin, GF("	Second:"), isec);
+    DBG(GF("Timezone:"), static_cast<float>(itimezone) / 4.0);
+#endif
+
+    // Validate parsed values
+    // NOTE: This is a basic validation and does not account for leap years or
+    // the number of days in each month.
+    // NOTE: We fill in the pointers before validating so that the user can see
+    // what was returned even if it was invalid.
+    if (iyear < 2000 || imonth < 1 || imonth > 12 || iday < 1 || iday > 31 ||
+        ihour < 0 || ihour > 23 || imin < 0 || imin > 59 || isec < 0 ||
+        isec > 59 || itimezone < -48 || itimezone > 56) {
+      return false;
+    }
     return true;
   }
 
@@ -183,4 +231,6 @@ class TinyGsmTime {
   getNetworkEpochImpl(TinyGSM_EpochStart epoch) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
-#endif  // SRC_TINYGSMTIME_H_
+#endif  // SRC_TINYGSMTIME_TPP_
+
+// cSpell:words ihour

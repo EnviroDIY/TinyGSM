@@ -1,65 +1,130 @@
 /**
  * @file       TinyGsmClientA6.h
+ * @brief      A6 modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
+/* clang-format off */
+/**
+ * @defgroup aithinker_a6 Ai-Thinker A6/A7 Modem Family
+ * @brief Manufacturer: Ai-Thinker. Models: A6, A7.
+ *
+ * # Supported Public Functions
+ *
+ * - Basic functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::init "init()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sendAT "sendAT()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::setBaud "setBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getConfiguredModem "getConfiguredModem()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
+ * - Power functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::powerOff "powerOff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
+ * - Generic network functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality "getSignalQuality()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getLocalIP "getLocalIP()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::localIP "localIP()"
+ * - Utilities (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamDump "streamDump()"
+ * - SIM card functions (TinyGsmGPRS.tpp)
+ *     - @ref TinyGsmGPRS<modemType>::simUnlock "simUnlock()"
+ *     - @ref TinyGsmGPRS<modemType>::getSimCCID "getSimCCID()"
+ *     - @ref TinyGsmGPRS<modemType>::getIMEI "getIMEI()"
+ *     - @ref TinyGsmGPRS<modemType>::getIMSI "getIMSI()"
+ *     - @ref TinyGsmGPRS<modemType>::getSimStatus "getSimStatus()"
+ * - GPRS functions (TinyGsmGPRS.tpp)
+ *     - @ref TinyGsmGPRS<modemType>::gprsConnect "gprsConnect()"
+ *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
+ *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
+ *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
+ * - TCP functions (TinyGsmTCP.tpp)
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
+ * - Phone call functions (TinyGsmCalling.tpp)
+ *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
+ *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
+ *     - @ref TinyGsmCalling<modemType>::callHangup "callHangup()"
+ *     - @ref TinyGsmCalling<modemType>::dtmfSend "dtmfSend()"
+ * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
+ *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
+ *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
+ *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
+ * - Time functions (TinyGsmTime.tpp)
+ *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
+ * - Battery functions (TinyGsmBattery.tpp)
+ *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
+ *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
+ *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
+ * - Audio functions
+ *     - @ref TinyGsmA6::audioSetHeadphones "audioSetHeadphones()"
+ *     - @ref TinyGsmA6::audioSetSpeaker "audioSetSpeaker()"
+ *     - @ref TinyGsmA6::audioMuteMic "audioMuteMic()"
+ * - @ref GsmClientA6 "GsmClientA6"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
+ *
+ * # Connection Information
+ *
+ * - TCP sockets:
+ *   - 8
+ *   - SSL client not supported
+ * - Socket Buffering:
+ *   - The modem does **not** have an internal buffer for incoming data.
+ *   - You must read all data from the modem as soon as it arrives, or you will
+ * lose it.
+ *   - You can reduce the risk of losing data by setting this library's buffer
+ * to be as large as possible; this will increase the memory footprint of your
+ * program.
+ *   - Change the buffer size by defining TINY_GSM_RX_BUFFER in your sketch
+ * before including any TinyGSM header file.
+ * - Socket Numbering:
+ *   - The modem does not allow you to specify the multiplexing channel.
+ *   - The modem will automatically assign a channel when the client connects to
+ * a server.
+ *   - Use the getMux() function to get the assigned multiplexing channel number
+ * after a successful connection.
+ *
+ * @todo In `gprsConnectImpl()`: wait AT+CGATT?
+ * @todo In `dtmfSendImpl()`: correctly handle the duration parameter
+ * @todo In `modemGetConnectedImpl()`: correctly read the mux number
+ */
+/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTA6_H_
 #define SRC_TINYGSMCLIENTA6_H_
 #pragma message("TinyGSM:  TinyGsmClientA6")
-
-#if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
-#define TINY_GSM_MAX_RESPONSE_CHECKS 5
-#endif
-
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 8
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 1024
-// CIPSEND accepts up to 1024 bytes of input
-#ifdef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#undef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_NO_MODEM_BUFFER
-#define TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_MUX_STATIC
-#undef TINY_GSM_MUX_STATIC
-#endif
-#ifndef TINY_GSM_MUX_DYNAMIC
-#define TINY_GSM_MUX_DYNAMIC
-#endif
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "Ai-Thinker"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#if defined(TINY_GSM_MODEM_A7)
-#define MODEM_MODEL "A7"
-#else
-#define MODEM_MODEL "A6"
-#endif
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
@@ -69,91 +134,177 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmBattery.tpp"
 
-enum A6RegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+/// Registration status
+/// @ingroup aithinker_a6
+enum class A6RegStatus {
+  REG_NO_RESULT    = -1,  ///< No registration result
+  REG_UNREGISTERED = 0,   ///< Not registered on the network
+  REG_SEARCHING    = 2,   ///< Searching for network
+  REG_DENIED       = 3,   ///< Registration denied
+  REG_OK_HOME      = 1,   ///< Registered on the home network
+  REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
+  REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
-class TinyGsmA6
-    : public TinyGsmModem<TinyGsmA6>,
-      public TinyGsmGPRS<TinyGsmA6>,
-      public TinyGsmTCP<TinyGsmA6, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
-      public TinyGsmCalling<TinyGsmA6>,
-      public TinyGsmSMS<TinyGsmA6>,
-      public TinyGsmTime<TinyGsmA6>,
-      public TinyGsmBattery<TinyGsmA6> {
-  friend class TinyGsmModem<TinyGsmA6>;
+/// Basic modem configurations for the A6 modem family
+/// @ingroup aithinker_a6
+struct TinyGsmA6ModemConfig : public TinyGsmModemConfigPreset<A6RegStatus> {
+  /// The modem manufacturer
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "Ai-Thinker";
+#if defined(TINY_GSM_MODEM_A7)
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "A7";
+#else
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "A6";
+#endif
+};
+
+constexpr char TinyGsmA6ModemConfig::MODEM_MANUFACTURER[] __attribute__((weak));
+constexpr char TinyGsmA6ModemConfig::MODEM_MODEL[] __attribute__((weak));
+
+/**
+ * @brief TCP behavior and limits for the A6 modem family.
+ * @ingroup aithinker_a6
+ */
+struct TinyGsmA6TcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::NoModemBuffer,
+          /*muxMode*/ TinyGsmTcpMuxMode::Dynamic,
+          /*muxCount*/ 8,
+          /*sendMaxSize*/ 1024,
+          /*connectTimeoutS*/ 75,  // default
+          /*stopTimeoutS*/ 1> {};
+
+/**
+ * @brief TinyGsmA6 is a class for controlling the Ai-Thinker A6 and A7 GSM/GPRS
+ * module.
+ * @ingroup aithinker_a6
+ */
+class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
+                  public TinyGsmGPRS<TinyGsmA6>,
+                  public TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>,
+                  public TinyGsmCalling<TinyGsmA6>,
+                  public TinyGsmSMS<TinyGsmA6>,
+                  public TinyGsmTime<TinyGsmA6>,
+                  public TinyGsmBattery<TinyGsmA6> {
+  friend class TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmA6>;
-  friend class TinyGsmTCP<TinyGsmA6, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>;
+  friend class GsmClient<TinyGsmA6, TinyGsmA6TcpConfig>;
   friend class TinyGsmCalling<TinyGsmA6>;
   friend class TinyGsmSMS<TinyGsmA6>;
   friend class TinyGsmTime<TinyGsmA6>;
   friend class TinyGsmBattery<TinyGsmA6>;
 
+ public:
+  using ModemConfig = TinyGsmA6ModemConfig;
+  using TcpConfig   = TinyGsmA6TcpConfig;
+
   /*
    * Inner Client
    */
  public:
-  class GsmClientA6 : public TinyGsmTCP<TinyGsmA6, TINY_GSM_MUX_COUNT,
-                                        TINY_GSM_RX_BUFFER>::GsmClient {
+  /// Inner client
+  /// @ingroup aithinker_a6
+  class GsmClientA6 : public GsmClient<TinyGsmA6, TinyGsmA6TcpConfig> {
     friend class TinyGsmA6;
 
    public:
+    using GsmClient<TinyGsmA6, TinyGsmA6TcpConfig>::connect;
+    using GsmClient<TinyGsmA6, TinyGsmA6TcpConfig>::stop;
+    using TcpConfig = TinyGsmA6TcpConfig;
+
+    /**
+     * @brief Create a new TCP client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
+     */
     GsmClientA6() {
       is_secure = false;
     }
-
-    explicit GsmClientA6(TinyGsmA6& modem, uint8_t = 0) {
-      init(&modem, -1);
+    /**
+     * @brief Create a new TCP client and bind it to a modem.
+     * @param modem Modem instance used by this client.
+     *
+     * @note The A6 and A7 do not allow you to specify the multiplexing channel.
+     * The modem will automatically assign a channel when the client connects to
+     * a server.  Use the getMux() function to get the assigned multiplexing
+     * channel number after a successful connection.
+     */
+    explicit GsmClientA6(TinyGsmA6& modem, uint8_t /*mux*/ = 0)
+        : GsmClient<TinyGsmA6, TinyGsmA6TcpConfig>(modem /*, mux*/) {
       is_secure = false;
+      init(&modem);
     }
 
-    bool init(TinyGsmA6* modem, uint8_t = 0) {
+    /**
+     * @brief Initialize the TCP client with a modem.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientA6::GsmClientA6(TinyGsmA6&, uint8_t)
+     */
+    bool init(TinyGsmA6* modem, uint8_t /*mux*/ = 0) {
+      if (modem == nullptr) { return false; }
       this->at       = modem;
-      this->mux      = -1;
+      this->mux      = static_cast<uint8_t>(-1);
       sock_connected = false;
       is_mid_send    = false;
 
       return true;
     }
 
+    /*
+     * Client API
+     */
    public:
-    virtual int connect(const char* host, uint16_t port, int timeout_s) {
-      stop();
+    int connect(const char* host, uint16_t port, int timeout_s) override {
+      if (at == nullptr) { return 0; }
+      is_mid_send = false;
+#if 1
+      // stop if and only if the mux number is valid, the socket pointer is not
+      // null, and the socket is connected
+      if (mux < TcpConfig::kMuxCount && at->sockets[mux] != nullptr &&
+          sock_connected) {
+        stop(TcpConfig::kStopTimeoutS * 1000L);
+      }
+#endif
       TINY_GSM_YIELD();
       rx.clear();
-      uint8_t newMux = -1;
-      sock_connected = at->modemConnect(host, port, &newMux, timeout_s);
-      if (sock_connected) {
-        mux              = newMux;
-        at->sockets[mux] = this;
+      // attempt to use the requested mux number first
+      uint8_t assignedMux = mux;
+      // modemConnect will validate the mux number returned by the modem and
+      // return false and set the assignedMux to -1 if the mux number is invalid
+      // or the connection fails
+      sock_connected = at->modemConnect(host, port, &assignedMux, timeout_s);
+      if (sock_connected && assignedMux != mux) {
+        // If we successfully connected, and the assigned mux number is
+        // different from the requested mux number, we need to move any existing
+        // client at the assigned mux number before we can insert this client
+        // into the sockets array at the assigned mux.
+        // Set the requested mux to -1 to get the next available mux number.
+        // If there was no existing client at the assigned mux number, this will
+        // do nothing.
+        at->moveSocket(assignedMux, static_cast<uint8_t>(-1));
+        // If the original mux number was valid, and the pointer to this client
+        // is still in the original mux position in the sockets array, set the
+        // pointer in that position to null.
+        if (mux < TcpConfig::kMuxCount && at->sockets[mux] == this) {
+          at->sockets[mux] = nullptr;
+        }
+        // set the client's internal mux number and insert it into the array
+        at->sockets[assignedMux] = this;
+        mux                      = assignedMux;
       }
       return sock_connected;
-    }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
-
-    virtual void stop(uint32_t maxWaitMs) {
-      is_mid_send = false;
-      TINY_GSM_YIELD();
-      at->sendAT(GF("+CIPCLOSE="), mux);
-      sock_connected = false;
-      at->waitResponse(maxWaitMs);
-      rx.clear();
-    }
-    void stop() override {
-      stop(1000L);
     }
 
     /*
      * Extended API
      */
 
-    String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+    String remoteIP() override TINY_GSM_ATTR_NOT_IMPLEMENTED {
+      return "0.0.0.0";
+    }
   };
 
   /*
@@ -166,6 +317,10 @@ class TinyGsmA6
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmA6(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -200,7 +355,7 @@ class TinyGsmA6
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != nullptr && strnlen(pin, 16) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -251,15 +406,14 @@ class TinyGsmA6
   /*
    * Generic network functions
    */
- public:
-  A6RegStatus getRegistrationStatus() {
-    return (A6RegStatus)getRegistrationStatusXREG("CREG");
+ protected:
+  A6RegStatus getRegistrationStatusImpl() {
+    return static_cast<A6RegStatus>(getRegistrationStatusXREG("CREG"));
   }
 
- protected:
   bool isNetworkConnectedImpl() {
-    A6RegStatus s = getRegistrationStatus();
-    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+    A6RegStatus s = this->getRegistrationStatus();
+    return (s == A6RegStatus::REG_OK_HOME || s == A6RegStatus::REG_OK_ROAMING);
   }
 
   String getLocalIPImpl() {
@@ -277,7 +431,7 @@ class TinyGsmA6
   // No functions of this type supported
 
   /*
-   * WiFi functions
+   * Wifi functions
    */
   // No functions of this type supported
 
@@ -328,7 +482,7 @@ class TinyGsmA6
     waitResponse();
 
     sendAT(GF("+COPS?"));
-    if (waitResponse(GF(AT_NL "+COPS:")) != 1) { return ""; }
+    if (waitResponse(GF("+COPS:")) != 1) { return ""; }
     streamSkipUntil('"');  // Skip mode and format
     String res = stream.readStringUntil('"');
     waitResponse();
@@ -341,7 +495,7 @@ class TinyGsmA6
  protected:
   String getSimCCIDImpl() {
     sendAT(GF("+CCID"));
-    if (waitResponse(GF(AT_NL "+SCID: SIM Card ID:")) != 1) { return ""; }
+    if (waitResponse(GF("+SCID: SIM Card ID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -349,7 +503,7 @@ class TinyGsmA6
   }
 
   /*
-   * Phone Call functions
+   * Phone call functions
    */
  protected:
   // Returns true on pick-up, false on error/busy
@@ -362,16 +516,15 @@ class TinyGsmA6
 
     if (waitResponse(5000L) != 1) { return false; }
 
-    if (waitResponse(60000L, GF(AT_NL "+CIEV: \"CALL\",1"),
-                     GF(AT_NL "+CIEV: \"CALL\",0"), GFP(GSM_ERROR)) != 1) {
+    if (waitResponse(60000L, GF("+CIEV: \"CALL\",1"), GF("+CIEV: \"CALL\",0"),
+                     GFP(ModemConfig::GSM_ERROR)) != 1) {
       return false;
     }
 
-    int8_t rsp = waitResponse(60000L, GF(AT_NL "+CIEV: \"SOUNDER\",0"),
-                              GF(AT_NL "+CIEV: \"CALL\",0"));
+    int8_t rsp = waitResponse(60000L, GF("+CIEV: \"SOUNDER\",0"),
+                              GF("+CIEV: \"CALL\",0"));
 
-    int8_t rsp2 = waitResponse(300L, GF(AT_NL "BUSY" AT_NL),
-                               GF(AT_NL "NO ANSWER" AT_NL));
+    int8_t rsp2 = waitResponse(300L, GF("BUSY\r\n"), GF("NO ANSWER\r\n"));
 
     return rsp == 1 && rsp2 == 0;
   }
@@ -398,16 +551,27 @@ class TinyGsmA6
    * Audio functions
    */
  public:
+  /**
+   * @brief Set the audio output to headphones.
+   * @return True if the command was successful, false otherwise.
+   */
   bool audioSetHeadphones() {
     sendAT(GF("+SNFS=0"));
     return waitResponse() == 1;
   }
-
+  /**
+   * @brief Set the audio output to speaker.
+   * @return True if the command was successful, false otherwise.
+   */
   bool audioSetSpeaker() {
     sendAT(GF("+SNFS=1"));
     return waitResponse() == 1;
   }
-
+  /**
+   * @brief Mute or unmute the microphone.
+   * @param mute True to mute, false to unmute.
+   * @return True if the command was successful, false otherwise.
+   */
   bool audioMuteMic(bool mute) {
     sendAT(GF("+CMUT="), mute);
     return waitResponse() == 1;
@@ -424,7 +588,7 @@ class TinyGsmA6
     waitResponse();
     sendAT(GF("+CUSD=1,\""), code, GF("\",15"));
     if (waitResponse(10000L) != 1) { return ""; }
-    if (waitResponse(GF(AT_NL "+CUSD:")) != 1) { return ""; }
+    if (waitResponse(GF("+CUSD:")) != 1) { return ""; }
     streamSkipUntil('"');
     String hex = stream.readStringUntil('"');
     streamSkipUntil(',');
@@ -440,7 +604,7 @@ class TinyGsmA6
   }
 
   /*
-   * GSM Location functions
+   * GSM location functions
    */
   // No functions of this type supported
 
@@ -474,7 +638,7 @@ class TinyGsmA6
   // Needs a '?' after CBC, unlike most
   int8_t getBattPercentImpl() {
     sendAT(GF("+CBC?"));
-    if (waitResponse(GF(AT_NL "+CBC:")) != 1) { return false; }
+    if (waitResponse(GF("+CBC:")) != 1) { return false; }
     streamSkipUntil(',');  // Skip battery charge status
     // Read battery charge level
     int8_t res = streamGetIntBefore('\n');
@@ -487,7 +651,7 @@ class TinyGsmA6
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
     sendAT(GF("+CBC?"));
-    if (waitResponse(GF(AT_NL "+CBC:")) != 1) { return false; }
+    if (waitResponse(GF("+CBC:")) != 1) { return false; }
     chargeState = streamGetIntBefore(',');
     percent     = streamGetIntBefore('\n');
     milliVolts  = 0;
@@ -502,36 +666,59 @@ class TinyGsmA6
   // No functions of this type supported
 
   /*
-   * Client related functions
+   * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* mux,
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t* dynamicMux,
                         int timeout_s) {
+    // NOTE: Don't validate mux!  It's not the real one yet and we don't need to
+    // access it for any SSL configuration
     uint32_t startMillis = millis();
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
 
     sendAT(GF("+CIPSTART="), GF("\"TCP"), GF("\",\""), host, GF("\","), port);
-    if (waitResponse(timeout_ms, GF(AT_NL "+CIPNUM:")) != 1) { return false; }
-    int8_t newMux = streamGetIntBefore('\n');
+    if (waitResponse(timeout_ms, GF("+CIPNUM:")) != 1) { return false; }
+    int16_t connected_mux = streamGetIntBefore('\n');
 
-    int8_t rsp = waitResponse((timeout_ms - (millis() - startMillis)),
-                              GF("CONNECT OK" AT_NL), GF("CONNECT FAIL" AT_NL),
-                              GF("ALREADY CONNECT" AT_NL));
-    if (waitResponse() != 1) { return false; }
-    *mux = newMux;
+    uint32_t elapsed = millis() - startMillis;
+    if (elapsed >= timeout_ms) { return false; }
+    int8_t connect_rsp =
+        waitResponse(timeout_ms - elapsed, GF("CONNECT OK\r\n"),
+                     GF("CONNECT FAIL\r\n"), GF("ALREADY CONNECT\r\n"));
+    bool success = connect_rsp == 1 || connect_rsp == 3;
+    success &= waitResponse() == 1;
 
-    return (1 == rsp);
+    // Validate the returned mux
+    if (connected_mux < 0 || connected_mux >= TcpConfig::kMuxCount ||
+        !success) {
+      DBG(GF("ERROR: Modem returned invalid mux or connection failed"));
+      *dynamicMux = static_cast<uint8_t>(-1);  // Set mux to invalid value
+      return false;  // Return failure when mux is out of range
+    }
+
+    // set the mux to the new mux number if we're successful
+    *dynamicMux = connected_mux;
+    return success;
+  }
+
+  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+    if (!isValidMux(mux)) { return false; }
+    sendAT(GF("+CIPCLOSE="), mux);
+    return waitResponse(maxWaitMs) == 1;
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
-    return waitResponse(2000L, GF(AT_NL ">")) == 1;
+    return waitResponse(2000L, GF("\r\n>")) == 1;
   }
   // Between the begin and end, modem send calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t) {
-    if (waitResponse(10000L, GFP(GSM_OK), GF(AT_NL "FAIL")) != 1) { return 0; }
+    if (waitResponse(10000L, GFP(ModemConfig::GSM_OK), GF("FAIL")) != 1) {
+      return 0;
+    }
     return len;
   }
 
@@ -546,29 +733,29 @@ class TinyGsmA6
   /*
    * Utilities
    */
- public:
+ protected:
   bool handleURCs(String& data) {
     if (data.endsWith(GF("+CIPRCV:"))) {
-      int8_t  mux          = streamGetIntBefore(',');
+      int16_t mux          = streamGetIntBefore(',');
       int16_t len_reported = streamGetIntBefore(',');
-      int16_t len          = len_reported;
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-        if (len > sockets[mux]->rx.free()) {
-          DBG("### Buffer overflow: ", len_reported, "->",
-              sockets[mux]->rx.free());
-          // reset the len to read to the amount free
-          len = sockets[mux]->rx.free();
-        }
-        moveCharsFromStreamToFifo(mux, len);
+      if (isValidMux(mux)) {
+        // This will handle an invalid len_reported value and will drain the
+        // stream if there's a buffer overflow, so we don't need to validate
+        // len_reported or check for overflow here.  We just need to make sure
+        // the mux is valid before we call it.
+        moveCharsFromStreamToFifo(mux, len_reported);
+      } else {
+        do {  // If the mux is invalid, throw away the stream data
+          stream.read();
+          TINY_GSM_YIELD();
+        } while (stream.available());
       }
       data = "";
       DBG("### Got Data: ", len_reported, "on", mux);
       return true;
     } else if (data.endsWith(GF("+TCPCLOSED:"))) {
-      int8_t mux = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
-      }
+      int16_t mux = streamGetIntBefore('\n');
+      if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       data = "";
       DBG("### Closed: ", mux);
       return true;
@@ -577,10 +764,13 @@ class TinyGsmA6
   }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 
  protected:
-  GsmClientA6* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientA6* sockets[TcpConfig::kMuxCount];
 };
+
+// cSpell:words aithinker
 
 #endif  // SRC_TINYGSMCLIENTA6_H_

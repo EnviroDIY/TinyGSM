@@ -1,74 +1,41 @@
 /**
  * @file       TinyGsmClientEspressif.h
+ * @brief      Shared Espressif modem client base types and helpers.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
+ *
+ * @defgroup espressif_at Espressif Shared Modem Family
+ * @brief Manufacturer: Espressif. Models: ESP8266, ESP32.
  */
 
 #ifndef SRC_TINYGSMCLIENTESPRESSIF_H_
 #define SRC_TINYGSMCLIENTESPRESSIF_H_
 #pragma message("TinyGSM:  TinyGsmClientEspressif")
 
-#if !defined(TINY_GSM_MAX_RESPONSE_CHECKS)
-#define TINY_GSM_MAX_RESPONSE_CHECKS 4
-#endif
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 5
-#ifdef TINY_GSM_SECURE_MUX_COUNT
-#undef TINY_GSM_SECURE_MUX_COUNT
-#endif
-#define TINY_GSM_SECURE_MUX_COUNT 5
-// NOTE: There's a total limit of 5 sockets, any of them can be SSL. BUT the
-// manual warns that module may not be able to handle more than 1 SSL socket at
-// a time.
-// These modules don't have "SSL Contexts" per-say, but they only support 2
-// certificate sets.
-
-// The ESP8266 devices can receive 2048 bytes and send 1460 bytes at most each
-// time; the other ESP devices can receive 8192 bytes and send 2920 bytes at
-// most each time.
-
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "Espressif"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#if defined(TINY_GSM_MODEM_ESP8266) || defined(TINY_GSM_MODEM_ESP8266_NONOS)
-#define MODEM_MODEL "ESP8266"
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 2048
-#elif defined(TINY_GSM_MODEM_ESP32)
-#define MODEM_MODEL "ESP32"
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 8192
-#else
-#define MODEM_MODEL "Espressif AT"
-#endif
-
 #include "TinyGsmModem.tpp"
 #include "TinyGsmWifi.tpp"
 
-template <class EspressifType>
-class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
-                         public TinyGsmWifi<EspressifType> {
-  friend class TinyGsmModem<EspressifType>;
+/// The length of a SSL/TLS certificate filename, not including the namespace.
+/// This is a dot and a single digit number (0 or 1).
+#define TINY_GSM_ESP_SSL_FILENAME_SIZE 2
+
+/**
+ * @brief Parent class for the Espressif ESP8266 and ESP32 modules
+ *
+ * @tparam EspressifType The derived class type (ESP8266 or ESP32)
+ * @tparam EspressifModemConfig The modem config type (ESP8266 or ESP32)
+ */
+template <class EspressifType, class EspressifModemConfig>
+class TinyGsmEspressif
+    : public TinyGsmModem<EspressifType, EspressifModemConfig>,
+      public TinyGsmWifi<EspressifType> {
+  friend class TinyGsmModem<EspressifType, EspressifModemConfig>;
   friend class TinyGsmWifi<EspressifType>;
+
+ public:
+  using ModemConfig = EspressifModemConfig;
 
   /*
    * CRTP Helper
@@ -86,6 +53,10 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmEspressif(Stream& stream) : stream(stream) {}
 
   /*
@@ -99,7 +70,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     bool success = true;
 
     if (!thisModem().testAT()) { return false; }
-    if (pin && strnlen(pin, 16) > 0) {
+    if (pin && strlen(pin) > 0) {
       DBG("Espressif modules do not use an unlock pin!");
     }
     thisModem().sendAT(GF("E0"));  // Echo Off
@@ -129,12 +100,6 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     return success;
   }
 
- public:
-  bool setDefaultBaud(uint32_t baud) {
-    thisModem().sendAT(GF("+UART_DEF="), baud, ",8,1,0,0");
-    return thisModem().waitResponse() == 1;
-  }
-
  protected:
   bool setBaudImpl(uint32_t baud) {
     thisModem().sendAT(GF("+UART_CUR="), baud, ",8,1,0,0");
@@ -151,6 +116,11 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     return res;
   }
 
+  bool setDefaultBaudImpl(uint32_t baud) {
+    thisModem().sendAT(GF("+UART_DEF="), baud, ",8,1,0,0");
+    return thisModem().waitResponse() == 1;
+  }
+
   String getModemInfoImpl() {
     thisModem().sendAT(GF("+GMR"));
     String res;
@@ -161,12 +131,12 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
 
   // Gets the modem hardware version
   String getModemManufacturerImpl() {
-    return MODEM_MANUFACTURER;
+    return String(GFP(ModemConfig::MODEM_MANUFACTURER));
   }
 
   // Gets the modem hardware version
   String getModemModelImpl() {
-    String model = MODEM_MODEL;
+    String model = String(GFP(ModemConfig::MODEM_MODEL));
     thisModem().sendAT(GF("+GMR"));
     thisModem().streamSkipUntil('\n');  // skip the AT version
     thisModem().streamSkipUntil('\n');  // skip the SDK version
@@ -174,7 +144,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     // read the hardware from the Bin version
     thisModem().streamSkipUntil('(');  // skip the text "Bin version"
     String wroom = stream.readStringUntil(
-        ')');  // read the WRoom version in the parethesis
+        ')');  // read the WRoom version in the parenthesis
     thisModem().streamSkipUntil('(');            // skip the bin version itself
     if (thisModem().waitResponse(1000L) == 1) {  // wait for the ending OK
       return wroom;
@@ -192,7 +162,14 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   }
 
   // Gets the modem serial number
-  String getModemSerialNumberImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+  // For Espressif modules, this is the MAC address of the WiFi interface
+  String getModemSerialNumberImpl() {
+    thisModem().sendAT(GF("+CIPSTAMAC?"));
+    String res;
+    if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
+    thisModem().cleanResponseString(res);
+    return res;
+  }
 
   bool factoryDefaultImpl() {
     thisModem().sendAT(GF("+RESTORE"));
@@ -207,7 +184,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     if (!thisModem().testAT()) { return false; }
     thisModem().sendAT(GF("+RST"));
     if (thisModem().waitResponse(10000L) != 1) { return false; }
-    if (thisModem().waitResponse(10000L, GF(AT_NL "ready" AT_NL)) != 1) {
+    if (thisModem().waitResponse(10000L, GF("ready\r\n")) != 1) {
       return false;
     }
     delay(850);
@@ -215,6 +192,19 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   }
 
   bool powerOffImpl() {
+    // AT+GSLP=<time>
+    // <time>: the duration when the device stays in Deep-sleep. Unit:
+    // millisecond. When the time is up, the device automatically wakes up,
+    // calls Deep-sleep wake stub, and then proceeds to load the application.
+    //   For ESP32 devices:
+    //     0 means restarting right now [ie, **not sleeping**]
+    //     the maximum Deep-sleep time is about 28.8 days (2 31-1 milliseconds)
+    //   For ESP8266 devices:
+    //     0 means staying in Deep-sleep mode forever
+    //     the maximum Deep-sleep time is about 3 hours (due to hardware
+    //     limitation, more time will lead to setting failure or internal time
+    //     overflow)
+
     thisModem().sendAT(
         GF("+GSLP=0"));  // Power down indefinitely - until manually reset!
     return thisModem().waitResponse() == 1;
@@ -222,7 +212,19 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
 
   bool radioOffImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool sleepEnableImpl(bool enable) TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool sleepEnableImpl(bool enable) {
+    // AT+SLEEP=<sleep mode>
+    // <sleep mode>:
+    //   0: Disable the sleep mode.
+    //   1: Modem-sleep DTIM mode. RF will be periodically closed according to
+    //   AP DTIM.
+    //   2: Light-sleep mode. CPU will automatically sleep and RF will be
+    //   periodically closed according to listen interval set by AT+CWJAP.
+    //   3: Modem-sleep listen interval mode. RF will be periodically closed
+    //   according to listen interval set by AT+CWJAP.
+    thisModem().sendAT(GF("+SLEEP="), enable ? 2 : 0);
+    return thisModem().waitResponse() == 1;
+  }
 
   bool setPhoneFunctionalityImpl(uint8_t fun,
                                  bool    reset) TINY_GSM_ATTR_NOT_IMPLEMENTED;
@@ -234,13 +236,15 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   int8_t getSignalQualityImpl() {
     thisModem().sendAT(GF("+CWJAP?"));
     int8_t res1 = thisModem().waitResponse(GF("No AP"), GF("+CWJAP:"),
-                                           GFP(GSM_OK), GFP(GSM_ERROR));
+                                           GFP(ModemConfig::GSM_OK),
+                                           GFP(ModemConfig::GSM_ERROR));
     if (res1 != 2) {
       thisModem().waitResponse();
       thisModem().sendAT(GF("+CWJAP_CUR?"));  // attempt "current" as used by
                                               // some Non-OS firmware versions
-      int8_t res1 = thisModem().waitResponse(GF("No AP"), GF("+CWJAP_CUR:"),
-                                             GFP(GSM_OK), GFP(GSM_ERROR));
+      res1 = thisModem().waitResponse(GF("No AP"), GF("+CWJAP_CUR:"),
+                                      GFP(ModemConfig::GSM_OK),
+                                      GFP(ModemConfig::GSM_ERROR));
       if (res1 != 2) {
         thisModem().waitResponse();
         return 0;
@@ -249,8 +253,9 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
     thisModem().streamSkipUntil(',');  // Skip SSID
     thisModem().streamSkipUntil(',');  // Skip BSSID/MAC address
     thisModem().streamSkipUntil(',');  // Skip Chanel number
-    int8_t res2 = stream.parseInt();   // Read RSSI
-    thisModem().waitResponse();        // Returns an OK after the value
+    int8_t res2 = thisModem().streamGetIntBefore(',');  // Read RSSI
+    thisModem().streamSkipUntil('\n');                  // Skip the rest
+    thisModem().waitResponse();  // Returns an OK after the value
     return res2;
   }
 
@@ -273,18 +278,18 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
 
 
   /*
-   * WiFi functions
+   * Wifi functions
    */
  protected:
   bool networkConnectImpl(const char* ssid, const char* pwd) {
     // attempt first without than with the 'current' flag used in some firmware
     // versions
     thisModem().sendAT(GF("+CWJAP=\""), ssid, GF("\",\""), pwd, '"');
-    if (thisModem().waitResponse(30000L, GFP(GSM_OK), GF(AT_NL "FAIL" AT_NL)) !=
-        1) {
+    if (thisModem().waitResponse(30000L, GFP(ModemConfig::GSM_OK),
+                                 GF("FAIL\r\n")) != 1) {
       thisModem().sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, '"');
-      if (thisModem().waitResponse(30000L, GFP(GSM_OK),
-                                   GF(AT_NL "FAIL" AT_NL)) != 1) {
+      if (thisModem().waitResponse(30000L, GFP(ModemConfig::GSM_OK),
+                                   GF("FAIL\r\n")) != 1) {
         return false;
       }
     }
@@ -321,7 +326,7 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   // No functions of this type supported
 
   /*
-   * GSM Location functions
+   * GSM location functions
    */
   // No functions of this type supported
 
@@ -356,18 +361,25 @@ class TinyGsmEspressif : public TinyGsmModem<EspressifType>,
   // No functions of this type supported
 
   /*
-   * Client related functions
+   * Client-related functions
    */
+ protected:
+  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+    if (mux >= EspressifType::TcpConfig::kMuxCount ||
+        !thisModem().sockets[mux]) {
+      return false;
+    }
+    // same command for SSL and not SSL
+    thisModem().sendAT(GF("+CIPCLOSE="), mux);
+    return thisModem().waitResponse(maxWaitMs) == 1;
+  }
 
   /*
    * Utilities
    */
- public:
-  bool handleURCs(String& data) {
-    return thisModem().handleURCs(data);
-  }
 
  public:
+  /// Stream used to communicate with the modem.
   Stream& stream;
 };
 

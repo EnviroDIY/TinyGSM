@@ -11,8 +11,6 @@
 *.bak
 
 # IDE project files
-.cproject
-.project
 .settings
 .pioenvs
 .piolibdeps
@@ -23,17 +21,10 @@ platformio.ini
 extra_envs.ini
 lib/readme.txt
 include/readme.txt
-.atomrc.cson
 .history
 
 # VSCode
-.vscode/*
-.vscode/.browse.c_cpp.db*
-.vscode/c_cpp_properties.json
-.vscode/launch.json
-
-# Markers
-.development
+.vscode
 
 # Extras
 extras/docs/*
@@ -45,25 +36,67 @@ extras/At Command Manuals - Unsupported/*
 # Filters
 .gitconfig
 filters/*
-platformio_extra_envs.ini
-*.tar.gz
-pioScripts/generate_compile_commands.py
-compile_commands.json
-src/TinyGsmATDefines.h
-variants/*
-boards/*
-tests/*
-lib/*
-archive/*
-clang_format_all.bat
+
+# Certificates
 *.cert
 *.crt
 *.pem
 *.key
 src/CipherSuiteCodes.csv
+
+# PlatformIO
+pioScripts/*
+variants/*
+boards/*
+tests/*
+lib/*
+platformio_extra_envs.ini
+pio_common_libdeps.ini
+continuous_integration/platformio_local.ini
+continuous_integration/generate_local_tests.py
+continuous_integration/parse_test_results.py
+
+# Arduino CLI
+continuous_integration/arduino_cli_local.yaml
+
+# Local CI and Build Artifacts
+home/arduino/*
 continuous_integration_artifacts/*
+clang_format_all.bat
 generateKeywords.bat
 installWorkingDependencies.bat
-pio_common_libdeps.ini
-continuous_integration/arduino_cli_local.yaml
 clang-format-all.py
+runDoxygen.bat
+compile_commands.json
+run_CI_pipeline.bat
+runCI.bat
+
+# Local Documentation Artifacts
+generated_docs/*
+docs/__pycache__/*
+docs/css/*
+docs/*output*
+docs/*.png
+docs/*.js
+docs/*.ttf
+docs/directories.dox
+docs/examples.dox
+docs/clients*.dox
+docs/supported_module_functions.dox
+docs/DOC_TEMPLATE_*
+docs/.doxybook/*
+docs/create_client_dox.py
+docs/generate_callable_docs.py
+docs/generateLogos.py
+DoxygenLayout.xml
+docs/mcss-Doxyfile
+docs/mcss-conf.py
+
+# Other stuff
+*.tar.gz
+archive/*
+src/wakeUp.h
+**/__pycache__/**
+AGENTS.md
+.github/copilot-instructions.md
+.bumpversion.toml

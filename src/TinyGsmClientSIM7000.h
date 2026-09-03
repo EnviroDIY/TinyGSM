@@ -1,46 +1,140 @@
 /**
  * @file       TinyGsmClientSIM7000.h
+ * @brief      SIM7000 modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
+/* clang-format off */
+/**
+ * @defgroup simcom_sim7000 SIMCom SIM7000 Modem Family
+ * @brief Manufacturer: SIMCom. Models: SIM7000.
+ * @ingroup simcom_sim70xx
+ *
+ * # Supported Public Functions
+ *
+ * - Basic functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::init "init()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sendAT "sendAT()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::setBaud "setBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getConfiguredModem "getConfiguredModem()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
+ * - Power functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::powerOff "powerOff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
+ * - Generic network functions (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality "getSignalQuality()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::getLocalIP "getLocalIP()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::localIP "localIP()"
+ * - Utilities (TinyGsmModem.tpp)
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
+ *     - @ref TinyGsmModem<modemType, modemConfig>::streamDump "streamDump()"
+ * - SIM card functions (TinyGsmGPRS.tpp)
+ *     - @ref TinyGsmGPRS<modemType>::simUnlock "simUnlock()"
+ *     - @ref TinyGsmGPRS<modemType>::getSimCCID "getSimCCID()"
+ *     - @ref TinyGsmGPRS<modemType>::getIMEI "getIMEI()"
+ *     - @ref TinyGsmGPRS<modemType>::getIMSI "getIMSI()"
+ *     - @ref TinyGsmGPRS<modemType>::getSimStatus "getSimStatus()"
+ * - GPRS functions (TinyGsmGPRS.tpp)
+ *     - @ref TinyGsmGPRS<modemType>::gprsConnect "gprsConnect()"
+ *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
+ *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
+ *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
+ * - GPS (GNSS, GLONASS) functions (TinyGsmGPS.tpp)
+ *     - @ref TinyGsmGPS<modemType>::enableGPS "enableGPS()"
+ *     - @ref TinyGsmGPS<modemType>::disableGPS "disableGPS()"
+ *     - @ref TinyGsmGPS<modemType>::getGPSraw "getGPSraw()"
+ *     - @ref TinyGsmGPS<modemType>::getGPS "getGPS()"
+ *     - @ref TinyGsmGPS<modemType>::getGPSTime "getGPSTime()"
+ * - Network mode / type / technology functions
+ *     - @ref TinyGsmSim70xx::getNetworkModes "getNetworkModes()"
+ *     - @ref TinyGsmSim70xx::getNetworkMode "getNetworkMode()"
+ *     - @ref TinyGsmSim70xx::setNetworkMode "setNetworkMode()"
+ *     - @ref TinyGsmSim70xx::getPreferredModes "getPreferredModes()"
+ *     - @ref TinyGsmSim70xx::getPreferredMode "getPreferredMode()"
+ *     - @ref TinyGsmSim70xx::setPreferredMode "setPreferredMode()"
+ *     - @ref TinyGsmSim70xx::getNetworkSystemMode "getNetworkSystemMode()"
+ *     - @ref TinyGsmSim70xx::setNetworkSystemMode "setNetworkSystemMode()"
+ * - TCP functions (TinyGsmTCP.tpp)
+ *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
+ * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
+ *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
+ *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
+ *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
+ * - Time functions (TinyGsmTime.tpp)
+ *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
+ *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
+ * - NTP server functions (TinyGsmNTP.tpp)
+ *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
+ *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
+ *     - @ref TinyGsmNTP<modemType>::ShowNTPError "ShowNTPError()"
+ * - GSM location functions (TinyGsmGSMLocation.tpp)
+ *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationRaw "getGsmLocationRaw()"
+ *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocation "getGsmLocation()"
+ *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationTime "getGsmLocationTime()"
+ * - Battery functions (TinyGsmBattery.tpp)
+ *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
+ *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
+ *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
+ *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
+ * - @ref GsmClientSim7000 "GsmClientSim7000"
+ *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::init "init()"
+ *     - @ref GsmClient::connect "connect()"
+ *     - @ref GsmClient::stop "stop()"
+ *     - @ref GsmClient::write "write()"
+ *     - @ref GsmClient::available "available()"
+ *     - @ref GsmClient::read "read()"
+ *     - @ref GsmClient::peek "peek()"
+ *     - @ref GsmClient::flush "flush()"
+ *     - @ref GsmClient::connected "connected()"
+ *   - Extended Client API (TinyGsmTCP.tpp)
+ *     - @ref GsmClient::getMux "getMux()"
+ *     - @ref GsmClient::getConnectionID "getConnectionID()"
+ *     - @ref GsmClient::beginWrite "beginWrite()"
+ *     - @ref GsmClient::endWrite "endWrite()"
+ *     - @ref GsmClient::TinyGsmStringFromIp "TinyGsmStringFromIp()"
+ *
+ * # Connection Information
+ *
+ * - TCP sockets:
+ *   - 8
+ *   - SSL is not supported
+ * - Socket Buffering:
+ *   - The modem has an internal buffer for incoming data.
+ *   - This gives you leeway to pull data from the buffer as needed with less
+ * risk of losing data.
+ * - Socket Numbering:
+ *   - The modem uses user-specified MUX channel numbers for socket connections.
+ *   - If you attempt to create a new client with a channel number that is
+ * already in use and other unused channels are available, this library will
+ * select the next available one.
+ *   - Use the getMux() function to get the assigned multiplexing channel number
+ * after a successful connection.
+ */
+/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTSIM7000_H_
 #define SRC_TINYGSMCLIENTSIM7000_H_
 #pragma message("TinyGSM:  TinyGsmClientSIM7000")
-
-#if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 64
-#endif
-
-#ifdef TINY_GSM_MUX_COUNT
-#undef TINY_GSM_MUX_COUNT
-#endif
-#define TINY_GSM_MUX_COUNT 8
-#ifdef TINY_GSM_NO_MODEM_BUFFER
-#undef TINY_GSM_NO_MODEM_BUFFER
-#endif
-#ifdef TINY_GSM_BUFFER_READ_NO_CHECK
-#undef TINY_GSM_BUFFER_READ_NO_CHECK
-#endif
-#ifndef TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#endif
-#ifdef TINY_GSM_MUX_DYNAMIC
-#undef TINY_GSM_MUX_DYNAMIC
-#endif
-#ifndef TINY_GSM_MUX_STATIC
-#define TINY_GSM_MUX_STATIC
-#endif
-
-
-#ifdef TINY_GSM_SEND_MAX_SIZE
-#undef TINY_GSM_SEND_MAX_SIZE
-#endif
-#define TINY_GSM_SEND_MAX_SIZE 1500
-// To get the true max size, send the command AT+CIPSEND?
-// I'm choosing to fake it here with 1500
 
 #include "TinyGsmClientSIM70xx.h"
 #include "TinyGsmTCP.tpp"
@@ -50,19 +144,45 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
 
+/// Basic modem configurations for the SIM7000 modem family
+/// @ingroup simcom_sim7000
+struct TinyGsmSim7000ModemConfig
+    : public TinyGsmModemConfigPreset<Sim70xxRegStatus> {
+  /// The modem manufacturer
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7000";
+};
+
+constexpr char TinyGsmSim7000ModemConfig::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+constexpr char TinyGsmSim7000ModemConfig::MODEM_MODEL[] __attribute__((weak));
+
+/**
+ * @brief TCP behavior and limits for the SIM7000 modem family.
+ * @ingroup simcom_sim7000
+ */
+struct TinyGsmSim7000TcpConfig
+    : public TinyGsmTcpConfigPreset<
+          /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
+          /*muxMode*/ TinyGsmTcpMuxMode::Static,
+          /*muxCount*/ 8> {};
+
+/// Class for the SIMCOM SIM7000 using the TCP-IP toolkit
+/// @ingroup simcom_sim7000
 class TinyGsmSim7000
-    : public TinyGsmSim70xx<TinyGsmSim7000>,
-      public TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT, TINY_GSM_RX_BUFFER>,
+    : public TinyGsmSim70xx<TinyGsmSim7000, TinyGsmSim7000ModemConfig>,
+      public TinyGsmTCP<TinyGsmSim7000, TinyGsmSim7000TcpConfig>,
       public TinyGsmSMS<TinyGsmSim7000>,
       public TinyGsmTime<TinyGsmSim7000>,
       public TinyGsmNTP<TinyGsmSim7000>,
       public TinyGsmGSMLocation<TinyGsmSim7000>,
       public TinyGsmBattery<TinyGsmSim7000> {
-  friend class TinyGsmSim70xx<TinyGsmSim7000>;
-  friend class TinyGsmModem<TinyGsmSim7000>;
+  friend class TinyGsmSim70xx<TinyGsmSim7000, TinyGsmSim7000ModemConfig>;
+  friend class TinyGsmModem<TinyGsmSim7000, TinyGsmSim7000ModemConfig>;
   friend class TinyGsmGPRS<TinyGsmSim7000>;
-  friend class TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT,
-                          TINY_GSM_RX_BUFFER>;
+  friend class TinyGsmTCP<TinyGsmSim7000, TinyGsmSim7000TcpConfig>;
+  friend class GsmClient<TinyGsmSim7000, TinyGsmSim7000TcpConfig>;
   friend class TinyGsmSMS<TinyGsmSim7000>;
   friend class TinyGsmGSMLocation<TinyGsmSim7000>;
   friend class TinyGsmGPS<TinyGsmSim7000>;
@@ -70,25 +190,61 @@ class TinyGsmSim7000
   friend class TinyGsmNTP<TinyGsmSim7000>;
   friend class TinyGsmBattery<TinyGsmSim7000>;
 
+ public:
+  using ModemConfig = TinyGsmSim7000ModemConfig;
+  using TcpConfig   = TinyGsmSim7000TcpConfig;
+
   /*
    * Inner Client
    */
  public:
-  class GsmClientSim7000 : public TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT,
-                                             TINY_GSM_RX_BUFFER>::GsmClient {
+  /// Inner client
+  /// @ingroup simcom_sim7000
+  class GsmClientSim7000
+      : public GsmClient<TinyGsmSim7000, TinyGsmSim7000TcpConfig> {
     friend class TinyGsmSim7000;
 
    public:
+    using GsmClient<TinyGsmSim7000, TinyGsmSim7000TcpConfig>::connect;
+    using GsmClient<TinyGsmSim7000, TinyGsmSim7000TcpConfig>::stop;
+    using TcpConfig = TinyGsmSim7000TcpConfig;
+
+    /**
+     * @brief Create a new TCP client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
+     */
     GsmClientSim7000() {
       is_secure = false;
     }
-
-    explicit GsmClientSim7000(TinyGsmSim7000& modem, uint8_t mux = 0) {
-      init(&modem, mux);
+    /**
+     * @brief Create a new TCP client and bind it to a modem and optionally a
+     * multiplexing channel.
+     * @param modem Modem instance used by this client.
+     * @param mux The **zero-indexed** position of this client in the
+     * corresponding modem's socket array.  This is identical to the identifier
+     * the modem uses internally to identify the socket for the SIM7000.
+     *
+     * @note The SIM7000 allows you choose the multiplexing channel number, but
+     * if the input mux channel number is already in use and other mux channels
+     * are available, this library will select the next available one.  Use the
+     * getMux() function to get the assigned multiplexing channel number after a
+     * successful connection.
+     */
+    explicit GsmClientSim7000(TinyGsmSim7000& modem, uint8_t mux = 0)
+        : GsmClient<TinyGsmSim7000, TinyGsmSim7000TcpConfig>(modem, mux) {
       is_secure = false;
+      init(&modem, mux);
     }
 
+    /**
+     * @brief Initialize the TCP client with a modem and optionally a
+     * multiplexing channel.
+     * @return true if initialization was successful, false otherwise.
+     * @copydetails GsmClientSim7000::GsmClientSim7000(TinyGsmSim7000&, uint8_t)
+     */
     bool init(TinyGsmSim7000* modem, uint8_t mux = 0) {
+      if (modem == nullptr) { return false; }
       this->at       = modem;
       sock_available = 0;
       prev_check     = 0;
@@ -98,49 +254,39 @@ class TinyGsmSim7000
 
       // if it's a valid mux number, and that mux number isn't in use (or it's
       // already this), accept the mux number
-      if (mux < TINY_GSM_MUX_COUNT &&
+      if (mux < TcpConfig::kMuxCount &&
           (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
         this->mux = mux;
         // If the mux number is in use or out of range, find the next available
         // one
-      } else if (at->findFirstUnassignedMux() != static_cast<uint8_t>(-1)) {
-        this->mux = at->findFirstUnassignedMux();
       } else {
-        // If we can't find anything available, overwrite something, using mod
-        // to make sure we're in range
-        this->mux = (mux % TINY_GSM_MUX_COUNT);
+        uint8_t nextMux = at->findFirstUnassignedMux();
+        if (nextMux != static_cast<uint8_t>(-1)) {
+          this->mux = nextMux;
+        } else {
+          // If we can't find anything available, overwrite something, using mod
+          // to make sure we're in range
+          this->mux = (mux % TcpConfig::kMuxCount);
+        }
       }
       at->sockets[this->mux] = this;
 
       return true;
     }
 
+    /*
+     * Client API
+     */
    public:
-    virtual int connect(const char* host, uint16_t port, int timeout_s) {
-      stop();
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, timeout_s);
-      return sock_connected;
-    }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
-
-    virtual void stop(uint32_t maxWaitMs) {
-      is_mid_send = false;
-      dumpModemBuffer(maxWaitMs);
-      at->sendAT(GF("+CIPCLOSE="), mux);
-      sock_connected = false;
-      at->waitResponse(3000);
-    }
-    void stop() override {
-      stop(15000L);
-    }
+    TINY_GSM_STATIC_TCP_CONNECT
 
     /*
      * Extended API
      */
 
-    String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+    String remoteIP() override TINY_GSM_ATTR_NOT_IMPLEMENTED {
+      return "0.0.0.0";
+    }
   };
 
   /*
@@ -152,8 +298,12 @@ class TinyGsmSim7000
    * GSM Modem Constructor
    */
  public:
+  /**
+   * @brief Construct a modem wrapper around a stream transport.
+   * @param stream Stream used to communicate with the modem.
+   */
   explicit TinyGsmSim7000(Stream& stream)
-      : TinyGsmSim70xx<TinyGsmSim7000>(stream) {
+      : TinyGsmSim70xx<TinyGsmSim7000, TinyGsmSim7000ModemConfig>(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -189,7 +339,7 @@ class TinyGsmSim7000
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != nullptr && strnlen(pin, 16) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -222,7 +372,7 @@ class TinyGsmSim7000
   // NOTE:  Use modem TinyGsmSim7000SSL for a secure client!
 
   /*
-   * WiFi functions
+   * Wifi functions
    */
   // No functions of this type supported
 
@@ -243,12 +393,12 @@ class TinyGsmSim7000
     waitResponse();
 
     // Set the user name
-    if (user && strnlen(user, 64) > 0) {
+    if (user && strlen(user) > 0) {
       sendAT(GF("+SAPBR=3,1,\"USER\",\""), user, '"');
       waitResponse();
     }
     // Set the password
-    if (pwd && strnlen(pwd, 128) > 0) {
+    if (pwd && strlen(pwd) > 0) {
       sendAT(GF("+SAPBR=3,1,\"PWD\",\""), pwd, '"');
       waitResponse();
     }
@@ -319,7 +469,7 @@ class TinyGsmSim7000
   // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
-   * Phone Call functions
+   * Phone call functions
    */
   // No functions of this type supported
 
@@ -334,7 +484,7 @@ class TinyGsmSim7000
   // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
 
   /*
-   * GSM Location functions
+   * GSM location functions
    */
   // Follows all GSM-based location functions as inherited from
   // TinyGsmGSMLocation.tpp
@@ -370,23 +520,32 @@ class TinyGsmSim7000
   // No functions of this type supported
 
   /*
-   * Client related functions
+   * Client-related functions
    */
  protected:
-  bool modemConnectImpl(const char* host, uint16_t port, uint8_t mux,
+  bool modemConnectImpl(const char* host, uint16_t port, uint8_t /*static*/ mux,
                         int timeout_s) {
+    if (!isValidMux(mux)) { return false; }
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
 
     // when not using SSL, the TCP application toolkit is more stable
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host,
            GF("\","), port);
     return (1 ==
-            waitResponse(timeout_ms, GF("CONNECT OK" AT_NL),
-                         GF("CONNECT FAIL" AT_NL), GF("ALREADY CONNECT" AT_NL),
-                         GF("ERROR" AT_NL), GF("CLOSE OK" AT_NL)));
+            waitResponse(timeout_ms, GF("CONNECT OK\r\n"),
+                         GF("CONNECT FAIL\r\n"), GF("ALREADY CONNECT\r\n"),
+                         GFP(ModemConfig::GSM_ERROR), GF("CLOSE OK\r\n")));
+  }
+
+  bool modemStopImpl(uint8_t mux, uint32_t maxWaitMs) {
+    if (!isValidMux(mux)) { return false; }
+    sendAT(GF("+CIPCLOSE="), mux);
+    return waitResponse(TinyGsmMin(maxWaitMs, static_cast<uint32_t>(3000))) ==
+        1;  // should return within 3s
   }
 
   bool modemBeginSendImpl(size_t len, uint8_t mux) {
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     return waitResponse(GF(">")) == 1;
   }
@@ -394,18 +553,18 @@ class TinyGsmSim7000
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
   size_t modemEndSendImpl(size_t len, uint8_t mux) {
-    if (waitResponse(GF(AT_NL "DATA ACCEPT:"), GF("SEND FAIL")) != 1) {
-      return 0;
-    }
-    uint8_t  ret_mux = streamGetIntBefore(',');   // check mux
+    if (!isValidMux(mux)) { return 0; }
+    if (waitResponse(GF("DATA ACCEPT:"), GF("SEND FAIL")) != 1) { return 0; }
+    int16_t  ret_mux = streamGetIntBefore(',');   // check mux
     uint16_t sent    = streamGetIntBefore('\n');  // check send length
     if (sent != len) { DBG("### Sent:", sent, "of", len, "on", mux); }
-    if (mux == ret_mux) return sent;
+    if (isExpectedMux(ret_mux, mux)) { return sent; }
     return 0;
   }
 
   size_t modemReadImpl(size_t size, uint8_t mux) {
-    if (!sockets[mux]) return 0;
+    if (!isValidMux(mux)) { return 0; }
+    size_t len_read = 0;
 
 #ifdef TINY_GSM_USE_HEX
     sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
@@ -413,9 +572,9 @@ class TinyGsmSim7000
     sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
 #endif
     if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
+
     streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
-    streamSkipUntil(',');  // Skip mux
-    // TODO: validate mux
+    int16_t ret_mux      = streamGetIntBefore(',');  // mux
     int16_t len_reported = streamGetIntBefore(',');
     //  ^^ Requested number of data bytes (1-1460 bytes) to be read
     int16_t len_remaining = streamGetIntBefore('\n');
@@ -424,24 +583,37 @@ class TinyGsmSim7000
     // SRGD NOTE:  Contrary to above (which is copied from AT command manual)
     // this is actually be the number of bytes that will be remaining in the
     // buffer after the read.
-    size_t len_read = moveCharsFromStreamToFifo(mux, len_reported);
-    // sockets[mux]->sock_available = modemGetAvailable(mux);
-    sockets[mux]->sock_available = len_remaining;
-    waitResponse();
+    if (isValidMux(ret_mux)) {
+      // Move the data to the socket buffer of the returned mux as long as the
+      // returned mux is valid, even if it doesn't match the expected mux.
+      len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
+      // update the amount remaining for the returned mux, even if it doesn't
+      // match the expected mux.
+      sockets[ret_mux]->sock_available = len_remaining >= 0 ? len_remaining : 0;
+    }
+    waitResponse();  // ending OK; the waitResponse function will toss all the
+                     // characters before the OK if the mux was invalid
+
+    if (!isExpectedMux(ret_mux, mux)) {
+      // if we didn't get a read from the expected mux, set the read length to 0
+      // and update the available data for the mux that was requested
+      len_read                     = 0;
+      sockets[mux]->sock_available = modemGetAvailable(mux);
+    }
     return len_read;
   }
 
   size_t modemGetAvailableImpl(uint8_t mux) {
-    if (!sockets[mux]) return 0;
+    if (!isValidMux(mux)) { return 0; }
 
     sendAT(GF("+CIPRXGET=4,"), mux);
     size_t result = 0;
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
-      streamSkipUntil(',');  // Skip mode 4
-      streamSkipUntil(',');  // Skip mux
-      // TODO: validate mux
-      result = streamGetIntBefore('\n');
+      streamSkipUntil(',');                       // Skip mode 4
+      int16_t ret_mux = streamGetIntBefore(',');  // mux
+      result          = streamGetIntBefore('\n');
       waitResponse();
+      if (!isExpectedMux(ret_mux, mux)) { result = 0; }
     }
     // DBG("### Available:", result, "on", mux);
     if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
@@ -449,11 +621,12 @@ class TinyGsmSim7000
   }
 
   bool modemGetConnectedImpl(uint8_t mux) {
+    if (!isValidMux(mux)) { return false; }
     sendAT(GF("+CIPSTATUS="), mux);
     waitResponse(GF("+CIPSTATUS"));
     int8_t res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),
                               GF(",\"CLOSING\""), GF(",\"REMOTE CLOSING\""),
-                              GF(",\"INITIAL\""));
+                              GF(",\"INITIAL\""), GFP(ModemConfig::GSM_ERROR));
     waitResponse();
     return 1 == res;
   }
@@ -461,15 +634,13 @@ class TinyGsmSim7000
   /*
    * Utilities
    */
- public:
+ protected:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
+    if (data.endsWith(GF("+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
-        int8_t mux = streamGetIntBefore('\n');
-        if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-          sockets[mux]->got_data = true;
-        }
+        int16_t mux = streamGetIntBefore('\n');
+        if (isValidMux(mux)) { sockets[mux]->got_data = true; }
         data = "";
         // DBG("### Got Data:", mux);
         return true;
@@ -477,25 +648,27 @@ class TinyGsmSim7000
         data += mode;
         return false;
       }
-    } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
-      int8_t  mux = streamGetIntBefore(',');
+    } else if (data.endsWith(GF("+RECEIVE:"))) {
+      int16_t mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+      if (isValidMux(mux)) {
         sockets[mux]->got_data = true;
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
       data = "";
       // DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (data.endsWith(GF("CLOSED" AT_NL))) {
-      int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
-      int8_t coma = data.indexOf(',', nl + 2);
-      int8_t mux  = data.substring(nl + 2, coma).toInt();
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-        sockets[mux]->sock_connected = false;
+    } else if (data.endsWith(GF("CLOSED\r\n"))) {
+      int16_t nl = TinyGsmMax(0,
+                              data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
+                                               data.length() - 8));
+      int16_t coma = data.indexOf(',', nl + 2);
+      if (coma > nl + 2) {
+        int16_t mux = data.substring(nl + 2, coma).toInt();
+        if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
+        DBG("### Closed: ", mux);
       }
       data = "";
-      DBG("### Closed: ", mux);
       return true;
     } else if (data.endsWith(GF("*PSNWID:"))) {
       streamSkipUntil('\n');  // Refresh network name by network
@@ -517,7 +690,7 @@ class TinyGsmSim7000
       data = "";
       DBG("### Daylight savings time state updated.");
       return true;
-    } else if (data.endsWith(GF(AT_NL "SMS Ready" AT_NL))) {
+    } else if (data.endsWith(GF("SMS Ready\r\n"))) {
       data = "";
       DBG("### Unexpected module reset!");
       init();
@@ -527,7 +700,7 @@ class TinyGsmSim7000
   }
 
  protected:
-  GsmClientSim7000* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientSim7000* sockets[TcpConfig::kMuxCount];
 };
 
 #endif  // SRC_TINYGSMCLIENTSIM7000_H_

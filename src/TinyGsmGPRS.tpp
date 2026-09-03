@@ -1,81 +1,153 @@
 /**
  * @file       TinyGsmGPRS.tpp
+ * @brief      GPRS and packet-data connection helper mixin.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMGPRS_H_
-#define SRC_TINYGSMGPRS_H_
+#ifndef SRC_TINYGSMGPRS_TPP_
+#define SRC_TINYGSMGPRS_TPP_
 
 #include "TinyGsmCommon.h"
 
 #ifndef TINY_GSM_MODEM_HAS_GPRS
+/// flag to indicate that the modem has GPRS functions
 #define TINY_GSM_MODEM_HAS_GPRS
 #endif
 
+/// SIM card status
 enum SimStatus {
-  SIM_ERROR            = 0,
-  SIM_READY            = 1,
-  SIM_LOCKED           = 2,
+  /// SIM card error
+  SIM_ERROR = 0,
+  /// SIM card is ready
+  SIM_READY = 1,
+  /// SIM card is locked (PIN required)
+  SIM_LOCKED = 2,
+  /// SIM card is locked due to anti-theft protection
   SIM_ANTITHEFT_LOCKED = 3,
 };
 
+/**
+ * @class TinyGsmGPRS
+ * @brief The CRTP parent class for GPRS functions.
+ * @tparam modemType The derived modem class
+ */
 template <class modemType>
 class TinyGsmGPRS {
+ public:
+  /// Compile-time capability flag indicating GPRS/cellular data support
+  static constexpr bool hasGPRS = true;
+
   /* =========================================== */
   /* =========================================== */
   /*
    * Define the interface
    */
  public:
-  /*
-   * SIM card functions
+  /**
+   * @anchor sim_card_functions
+   * @name SIM card functions
    */
-  // Unlocks the SIM
+  /**@{*/
+  /**
+   * @brief Unlock the SIM card with a PIN code.
+   * @param pin The PIN code to unlock the SIM card.
+   * @return True if the SIM card was successfully unlocked, false otherwise
+   */
   bool simUnlock(const char* pin) {
     return thisModem().simUnlockImpl(pin);
   }
-  // Gets the CCID of a sim card via AT+CCID
+  /**
+   * @brief Get the SIM card's CCID via AT+CCID.
+   * @return The SIM card's CCID as a String.
+   */
   String getSimCCID() {
     return thisModem().getSimCCIDImpl();
   }
-  // Asks for TA Serial Number Identification (IMEI)
+  /**
+   * @brief Get the modem's TA Serial Number Identification (IMEI) via AT+GSN.
+   * @return The modem's IMEI as a String.
+   */
   String getIMEI() {
     return thisModem().getIMEIImpl();
   }
-  // Asks for International Mobile Subscriber Identity IMSI
+  /**
+   * @brief Get the modem's International Mobile Subscriber Identity (IMSI) via
+   * AT+CIMI.
+   *
+   * @return The modem's IMSI as a String.
+   */
   String getIMSI() {
     return thisModem().getIMSIImpl();
   }
+  /**
+   * @brief Get the SIM card status.
+   * @param timeout_ms The timeout in milliseconds to wait for a response.
+   * @return The SIM card status as a SimStatus enum value.
+   */
   SimStatus getSimStatus(uint32_t timeout_ms = 10000L) {
     return thisModem().getSimStatusImpl(timeout_ms);
   }
+  /**@}*/
 
-  /*
-   * GPRS functions
+  /**
+   * @anchor gprs_functions
+   * @name GPRS functions
+   */
+  /**@{*/
+
+  /**
+   * @brief Connect to a GPRS network.
+   *
+   * @param apn The Access Point Name (APN) of the network.
+   * @param user The username for the APN (optional).
+   * @param pwd The password for the APN (optional).
+   *
+   * @return True if the connection was successful, false otherwise.
    */
   bool gprsConnect(const char* apn, const char* user = nullptr,
                    const char* pwd = nullptr) {
     return thisModem().gprsConnectImpl(apn, user, pwd);
   }
+  /**
+   * @brief Disconnect from the GPRS network.
+   * @return True if the disconnection was successful, false otherwise.
+   */
   bool gprsDisconnect() {
     return thisModem().gprsDisconnectImpl();
   }
-  // Checks if current attached to GPRS/EPS service
+  /**
+   * @brief Check if currently attached to GPRS/EPS service.
+   * @return True if connected, false otherwise.
+   */
   bool isGprsConnected() {
     return thisModem().isGprsConnectedImpl();
   }
-  // Gets the current network operator
+  /**
+   * @brief Get the current network operator.
+   * @return The current network operator as a String.
+   */
   String getOperator() {
     return thisModem().getOperatorImpl();
   }
 
-  // Gets the current network provider
+  /**
+   * @brief Get the current network provider.
+   * @return The current network provider as a String.
+   */
   String getProvider() {
     return thisModem().getProviderImpl();
   }
+  /**@}*/
+
+  /*
+   * Network mode / type / technology functions
+   */
+  // At this time, we have no templates for these functions, so they are
+  // implemented in the modem-specific classes.
+
 
  protected:
   // destructor (protected!)
@@ -96,14 +168,14 @@ class TinyGsmGPRS {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * SIM card functions
    */
- protected:
+
   // Unlocks a sim via the 3GPP TS command AT+CPIN
   bool simUnlockImpl(const char* pin) {
-    if (pin && strnlen(pin, 16) > 0) {
+    if (pin && strlen(pin) > 0) {
       thisModem().sendAT(GF("+CPIN=\""), pin, '"');
       return thisModem().waitResponse() == 1;
     }
@@ -191,4 +263,4 @@ class TinyGsmGPRS {
   String getProviderImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
-#endif  // SRC_TINYGSMGPRS_H_
+#endif  // SRC_TINYGSMGPRS_TPP_

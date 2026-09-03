@@ -1,15 +1,7 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} AWS_IoTCore.ino
  *
- * For this example, you need to install PubSubClient library:
- *   https://github.com/knolleary/pubsubclient
- *   or from http://librarymanager/all#PubSubClient
- *
- * NOTE: This example only works for modules that have support for writing
- * certificates. Modules that support SSL in this library, but not writing
- * certificates, cannot use this example!
- *
- **************************************************************
- * This example connects to AWS IoT Core using MQTT over SSL.
+ * @brief This example connects to AWS IoT Core using MQTT over SSL.
  *
  * This program writes new certificates to the modem, connects to AWS IoT Core,
  * publishes an initial message, and then subscribes to a topic to toggle an
@@ -18,15 +10,23 @@
  * any messages on the subscribed topic, it will toggle the LED state.  The
  * content of any received messages is ignored.
  *
- * You should run this program once to load your certificates and confirm that
- * you can connect to AWS IoT Core over MQTT. Once you have confirmed your
- * certificates are loaded and working, there is no reason to rerun this program
- * unless you have a new modem, reset your modem, or your certificates change.
- * Most modules store the certificates in flash, which has a limited number of
- * read/write cycles. To avoid wearing out the flash unnecessarily, you should
- * only run this program when necessarily, don't re-write the certificates every
- * time you want to connect to AWS IoT Core.
- **************************************************************/
+ * @important You should run this program once to load your certificates and
+ * confirm that you can connect to AWS IoT Core over MQTT. Once you have
+ * confirmed your certificates are loaded and working, there is no reason to
+ * rerun this program unless you have a new modem, reset your modem, or your
+ * certificates change. Most modules store the certificates in flash, which has
+ * a limited number of read/write cycles. To avoid wearing out the flash
+ * unnecessarily, only run this program when necessary; do not re-write the
+ * certificates every time you want to connect to AWS IoT Core.
+ *
+ * For this example, you need to install PubSubClient library:
+ *   https://github.com/knolleary/pubsubclient
+ *   or from http://librarymanager/all#PubSubClient
+ *
+ * @note This example only works for modules that have support for writing
+ * certificates. Modules that support SSL in this library, but not writing
+ * certificates, cannot use this example!
+ * ========================================================================== */
 
 // Select your modem:
 // #define TINY_GSM_MODEM_SIM7000SSL
@@ -39,7 +39,7 @@
 
 #define TINY_GSM_TCP_KEEP_ALIVE 180
 
-// Set serial for debug console (to the Serial Monitor, default speed 115200)
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
@@ -75,6 +75,10 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #include <PubSubClient.h>
 #include "aws_iot_config.h"
 
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
+
 // Define how you're planning to connect to the internet.
 // This is only needed for this example, not in other code.
 #define TINY_GSM_USE_GPRS true
@@ -101,23 +105,27 @@ uint16_t port = 8883;
 // the client ID should be the name of your "thing" in AWS IoT Core
 const char* clientId = THING_NAME;
 
-static const char topicInit[] TINY_GSM_PROGMEM      = THING_NAME "/init";
-static const char topicLed[] TINY_GSM_PROGMEM       = THING_NAME "/led";
-static const char topicLedStatus[] TINY_GSM_PROGMEM = THING_NAME "/ledStatus";
+static const char topicInit[]      = THING_NAME "/init";
+static const char topicLed[]       = THING_NAME "/led";
+static const char topicLedStatus[] = THING_NAME "/ledStatus";
 
 // whether to print certs after uploading
 // not all modules support printing the content of certificates after uploading
 // them
-bool print_certs  = false;
-bool delete_certs = false;
+bool print_certs = false;
 
 // NOTE: some modems (SIM70xx modules) suggest that you delete the
 // certificate file from the file system after converting the certificate so
 // that they cannot be read back.  On other modules (SIM7600, A7672, ESP32,
 // BG96, XBee) the certificate must be in the file system to be used and cannot
 // be deleted.
-#if defined(TINY_GSM_MODEM_ESP32) && defined(TINY_GSM_MODEM_BG96)
-delete_certs = false;
+#if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_BG96)
+// DON'T delete the certificates after loading them into the modem!
+bool delete_certs = false;
+#else
+// Change this if you want to delete the certificates after loading them into
+// the modem This testing program won't delete by default
+bool delete_certs = false;
 #endif
 
 
@@ -503,7 +511,8 @@ bool setupModem() {
 
 #if TINY_GSM_USE_GPRS
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && modem.getSimStatus() != 3) {
+  if (GSM_PIN && modem.getSimStatus() != SIM_READY) {
+    // simUnlock will do nothing if the pin is empty
     success &= modem.simUnlock(GSM_PIN);
   }
 #endif

@@ -1,62 +1,109 @@
 /**
  * @file       TinyGsmModem.tpp
+ * @brief      Core modem trait presets and shared modem interface helpers.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMMODEM_H_
-#define SRC_TINYGSMMODEM_H_
+#ifndef SRC_TINYGSMMODEM_TPP_
+#define SRC_TINYGSMMODEM_TPP_
 
 #include "TinyGsmCommon.h"
 
-#ifndef AT_NL
-#define AT_NL "\r\n"
-#endif
+/**
+ * @brief Template class for modem config traits.
+ *
+ * Most modems share common defaults; this base lets modem-specific config
+ * structs specify only the values that differ.
+ *
+ * @tparam regStatusType The type used for registration status values.
+ */
+template <typename regStatusType = int8_t>
+struct TinyGsmModemConfigPreset {
+  /// The type used for registration status values.
+  using RegStatus = regStatusType;
 
-#ifndef AT_OK
-#define AT_OK "OK"
-#endif
+  /// The modem manufacturer
+  static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "unknown";
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "unknown";
 
-#ifndef AT_ERROR
-#define AT_ERROR "ERROR"
-#endif
-
-#if defined TINY_GSM_DEBUG
-#ifndef AT_VERBOSE
-#define AT_VERBOSE "+CME ERROR:"
-#endif
-
-#ifndef AT_VERBOSE_2
-#define AT_VERBOSE_2 "+CMS ERROR:"
-#endif
-#endif
-
-#ifndef TINY_GSM_MAX_RESPONSE_CHECKS
-#define TINY_GSM_MAX_RESPONSE_CHECKS 5
-#endif
-
-#ifndef MODEM_MANUFACTURER
-#define MODEM_MANUFACTURER "unknown"
-#endif
-
-#ifndef MODEM_MODEL
-#define MODEM_MODEL "unknown"
-#endif
-
-static const char GSM_AT[] TINY_GSM_PROGMEM = "AT";
-
-static const char GSM_OK[] TINY_GSM_PROGMEM    = AT_OK AT_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM = AT_ERROR AT_NL;
+  /// The newline character(s) used in AT commands.
+  static constexpr char GSM_NL[] TINY_GSM_PROGMEM = "\r\n";
+  /// The AT string
+  static constexpr char GSM_AT[] TINY_GSM_PROGMEM = "AT";
+  /// The OK string.
+  static constexpr char GSM_OK[] TINY_GSM_PROGMEM = "OK\r\n";
+  /// The ERROR string
+  static constexpr char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR\r\n";
 
 #if defined TINY_GSM_DEBUG
-static const char GSM_VERBOSE[] TINY_GSM_PROGMEM   = AT_VERBOSE;
-static const char GSM_VERBOSE_2[] TINY_GSM_PROGMEM = AT_VERBOSE_2;
+  /// The verbose error string
+  static constexpr char GSM_VERBOSE[] TINY_GSM_PROGMEM = "+CME ERROR:";
+  /// A second verbose error string
+  static constexpr char GSM_VERBOSE_2[] TINY_GSM_PROGMEM = "+CMS ERROR:";
+#endif
+};
+
+// Out-of-class definitions for C++11 compliance
+
+/// @brief Out-of-class definition of the default modem manufacturer string.
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::MODEM_MANUFACTURER[]
+    __attribute__((weak));
+
+/// @brief Out-of-class definition of the default modem model string.
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::MODEM_MODEL[]
+    __attribute__((weak));
+
+/// @brief Out-of-class definition of the default AT newline sequence.
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_NL[]
+    __attribute__((weak));
+
+/// @brief Out-of-class definition of the default AT command prefix.
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_AT[]
+    __attribute__((weak));
+
+/// @brief Out-of-class definition of the default modem OK response string.
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_OK[]
+    __attribute__((weak));
+
+/// @brief Out-of-class definition of the default modem ERROR response string.
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_ERROR[]
+    __attribute__((weak));
+
+#if defined TINY_GSM_DEBUG
+/// @brief Out-of-class definition of the first verbose error response prefix.
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_VERBOSE[]
+    __attribute__((weak));
+
+/// @brief Out-of-class definition of the second verbose error response prefix.
+template <typename regStatusType>
+constexpr char TinyGsmModemConfigPreset<regStatusType>::GSM_VERBOSE_2[]
+    __attribute__((weak));
 #endif
 
-template <class modemType>
+/**
+ * @class TinyGsmModem
+ * @brief The CRTP parent class for basic modem functions.
+ * @tparam modemType The derived modem class
+ * @tparam modemConfig The modem-specific configuration class, which must be
+ * derived from TinyGsmModemConfigPreset
+ */
+template <class modemType, class modemConfig = TinyGsmModemConfigPreset<int8_t>>
 class TinyGsmModem {
+ public:
+  using ModemConfig   = modemConfig;
+  using regStatusType = typename ModemConfig::RegStatus;
+
   /* =========================================== */
   /* =========================================== */
   /*
@@ -71,11 +118,8 @@ class TinyGsmModem {
 
   /**
    * @brief Sets up the GSM module
-   *
    * @param pin A pin code to unlock the SIM, if necessary
-   *
-   * @return *true* The module was set up as expected
-   * @return *false* Something failed in module set up
+   * @return True if the module was set up as expected, false otherwise.
    */
   bool begin(const char* pin = nullptr) {
     return thisModem().initImpl(pin);
@@ -95,21 +139,34 @@ class TinyGsmModem {
    */
   template <typename... Args>
   void sendAT(Args... cmd) {
-    thisModem().streamWrite(GFP(GSM_AT), cmd..., AT_NL);
+    thisModem().streamWrite(GFP(ModemConfig::GSM_AT), cmd...,
+                            GFP(ModemConfig::GSM_NL));
     thisModem().stream.flush();
     TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
   }
 
   /**
    * @brief Set the module baud rate
+   * @param baud The baud rate to use
+   * @return True if the baud rate was set successfully, false otherwise.
    *
-   * @param baud The baud rate the use
-   *
-   * @note After setting and applying the new baud rate, you will have to end()
-   * and begin() the serial object.
+   * @note After setting and applying the new baud rate, you will have to %end()
+   * and %begin() the serial object.
    */
   bool setBaud(uint32_t baud) {
     return thisModem().setBaudImpl(baud);
+  }
+
+  /**
+   * @brief Set the default baud rate for the modem, ie, the baud rate that the
+   * modem will use after a reset or power cycle.
+   *
+   * @param baud The baud rate to set the modem to use after a reset or power
+   * cycle.
+   * @return True if the command was successful, false otherwise.
+   */
+  bool setDefaultBaud(uint32_t baud) {
+    return thisModem().setDefaultBaudImpl(baud);
   }
 
   /**
@@ -125,27 +182,17 @@ class TinyGsmModem {
    * and not recognized as a response, because in this case you still want to
    * try to set the baud rate.
    *
+   * @param at_serial The serial object to use for communicating with the modem
    * @param targetBaud The final baud rate to try to set the modem to
+   * @return True if the modem responded after the baud rate was set, false
+   * otherwise.
    *
    * @note After setting and applying the new baud rate, you will have to end()
    * and begin() the serial object.
    */
   template <class StreamObject>
   bool forceModemBaud(StreamObject& at_serial, uint32_t targetBaud) {
-    static uint32_t rates[] = {115200, 57600,  9600,   921600, 38400,
-                               19200,  460800, 230400, 74400,  74880,
-                               2400,   4800,   14400,  28800};
-
-    // start the modem serial at the current baud rate
-    at_serial.end();
-    at_serial.begin(targetBaud);
-    // test for at response from the modem
-    bool at_success = thisModem().testAT(1500L);
-    // if we got a response and it's the baud rate we want, we're done
-    if (at_success) {
-      DBG("Modem responded at rate", targetBaud);
-      return true;
-    }
+    static const uint32_t* rates = TINY_GSM_AUTOBAUD_RATES;
 
     uint32_t maximum = 921600;
 #if defined(F_CPU)
@@ -161,6 +208,18 @@ class TinyGsmModem {
       targetBaud = maximum;
     }
 
+    // start the modem serial at the current baud rate
+    at_serial.end();
+    at_serial.begin(targetBaud);
+    delay(25);  // settle
+    // test for at response from the modem
+    bool at_success = testAT(1500L);
+    // if we got a response and it's the baud rate we want, we're done
+    if (at_success) {
+      DBG("Modem responded at rate", targetBaud);
+      return true;
+    }
+
     // If we didn't get the right response, or if we got a response but it's
     // not the baud we want, try to set the baud rate.
     // NOTE: We try to set the baud rate even if we *didn't* get a response
@@ -169,7 +228,8 @@ class TinyGsmModem {
     // not recognized as a response.  In this case, we still want to try to
     // set the baud rate.
 
-    for (uint8_t i = 0; i < sizeof(rates) / sizeof(rates[0]); i++) {
+    for (uint8_t i = 0; i < 14;
+         i++) {  // sizeof(TINY_GSM_AUTOBAUD_RATES)/sizeof(uint32_t)
       uint32_t rate = rates[i];
       for (uint8_t j = 0; j < 3; j++) {
         DBG("Trying to set the baud rate from a rate of", rate, "...");
@@ -177,11 +237,7 @@ class TinyGsmModem {
         at_serial.begin(rate);
         delay(25);  // settle
 
-#if defined(TINY_GSM_MODEM_ESP32) || defined(TINY_GSM_MODEM_ESP8266)
-        thisModem().setDefaultBaud(targetBaud);
-#else
-        thisModem().setBaud(targetBaud);
-#endif
+        setBaud(targetBaud);
 
         at_serial.end();
         at_serial.begin(targetBaud);
@@ -189,7 +245,7 @@ class TinyGsmModem {
 
         // test for at response from the modem
         DBG("Checking for a response at", targetBaud, "...");
-        at_success = thisModem().testAT(1500L);
+        at_success = testAT(1500L);
         // if we got a response and it's the baud rate we want, we're done
         if (at_success) {
           DBG(GF("Successfully changed the baud rate from"), rate, GF("to"),
@@ -198,9 +254,10 @@ class TinyGsmModem {
         }
       }
     }
-    DBG("Failed to successfully find the baud at any common rate or to change "
-        "the baud rate to",
-        targetBaud, "...");
+    DBG(GF("Failed to successfully find the baud at any common rate or to "
+           "change "
+           "the baud rate to"),
+        targetBaud, GF("..."));
     at_serial.begin(targetBaud);
     return false;
   }
@@ -208,10 +265,9 @@ class TinyGsmModem {
   /**
    * @brief Test response to AT commands
    *
-   * @param timeout_ms The the amount of time to test for; optional with a
+   * @param timeout_ms the amount of time to test for; optional with a
    * default value of 10s.
-   * @return *true*  The module responded to AT commands
-   * @return *false*  The module failed to respond
+   * @return True if the module responded to AT commands, false otherwise.
    */
   bool testAT(uint32_t timeout_ms = 10000L) {
     return thisModem().testATImpl(timeout_ms);
@@ -236,61 +292,18 @@ class TinyGsmModem {
    * of nullptr
    * @param r7 The seventh output to test against, optional with a default value
    * of nullptr
+   * @param r8 The eighth output to test against, optional with a default value
+   * of nullptr
    * @return *int8_t* the index of the response input
    */
   int8_t waitResponse(uint32_t timeout_ms, String& data,
-                      GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR)
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
-                          ,
-                      GsmConstStr r3 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
-                      ,
-                      GsmConstStr r4 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
-                      ,
-                      GsmConstStr r5 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
-                      ,
-                      GsmConstStr r6 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
-                      ,
-                      GsmConstStr r7 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
-                      GsmConstStr r8 = nullptr
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-  ) {
-    return thisModem().waitResponseImpl(timeout_ms, data, r1, r2
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
-                                        ,
-                                        r3
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
-                                        ,
-                                        r4
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
-                                        ,
-                                        r5
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
-                                        ,
-                                        r6
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
-                                        ,
-                                        r7
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
-                                        ,
-                                        r8
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-    );
+                      GsmConstStr r1 = GFP(ModemConfig::GSM_OK),
+                      GsmConstStr r2 = GFP(ModemConfig::GSM_ERROR),
+                      GsmConstStr r3 = nullptr, GsmConstStr r4 = nullptr,
+                      GsmConstStr r5 = nullptr, GsmConstStr r6 = nullptr,
+                      GsmConstStr r7 = nullptr, GsmConstStr r8 = nullptr) {
+    return thisModem().waitResponseImpl(timeout_ms, data, r1, r2, r3, r4, r5,
+                                        r6, r7, r8);
   }
 
   /**
@@ -311,61 +324,18 @@ class TinyGsmModem {
    * of nullptr
    * @param r7 The seventh output to test against, optional with a default value
    * of nullptr
+   * @param r8 The eighth output to test against, optional with a default value
+   * of nullptr
    * @return *int8_t* the index of the response input
    */
-  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR)
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
-                          ,
-                      GsmConstStr r3 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
-                      ,
-                      GsmConstStr r4 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
-                      ,
-                      GsmConstStr r5 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
-                      ,
-                      GsmConstStr r6 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
-                      ,
-                      GsmConstStr r7 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
-                      GsmConstStr r8 = nullptr
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-  ) {
+  int8_t waitResponse(uint32_t    timeout_ms,
+                      GsmConstStr r1 = GFP(ModemConfig::GSM_OK),
+                      GsmConstStr r2 = GFP(ModemConfig::GSM_ERROR),
+                      GsmConstStr r3 = nullptr, GsmConstStr r4 = nullptr,
+                      GsmConstStr r5 = nullptr, GsmConstStr r6 = nullptr,
+                      GsmConstStr r7 = nullptr, GsmConstStr r8 = nullptr) {
     String data;
-    return waitResponse(timeout_ms, data, r1, r2
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
-                        ,
-                        r3
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
-                        ,
-                        r4
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
-                        ,
-                        r5
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
-                        ,
-                        r6
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
-                        ,
-                        r7
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
-                        ,
-                        r8
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-    );
+    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5, r6, r7, r8);
   }
 
   /**
@@ -386,60 +356,29 @@ class TinyGsmModem {
    * of nullptr
    * @param r7 The seventh output to test against, optional with a default value
    * of nullptr
+   * @param r8 The eighth output to test against, optional with a default value
+   * of nullptr
    * @return *int8_t* the index of the response input
    */
-  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR)
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
-                          ,
-                      GsmConstStr r3 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
-                      ,
-                      GsmConstStr r4 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
-                      ,
-                      GsmConstStr r5 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
-                      ,
-                      GsmConstStr r6 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
-                      ,
-                      GsmConstStr r7 = nullptr
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
-                      GsmConstStr r8 = nullptr
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-  ) {
-    return waitResponse(1000L, r1, r2
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
-                        ,
-                        r3
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
-                        ,
-                        r4
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
-                        ,
-                        r5
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
-                        ,
-                        r6
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
-                        ,
-                        r7
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
-                        ,
-                        r8
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-    );
+  int8_t waitResponse(GsmConstStr r1 = GFP(ModemConfig::GSM_OK),
+                      GsmConstStr r2 = GFP(ModemConfig::GSM_ERROR),
+                      GsmConstStr r3 = nullptr, GsmConstStr r4 = nullptr,
+                      GsmConstStr r5 = nullptr, GsmConstStr r6 = nullptr,
+                      GsmConstStr r7 = nullptr, GsmConstStr r8 = nullptr) {
+    return waitResponse(1000L, r1, r2, r3, r4, r5, r6, r7, r8);
+  }
+
+  /**
+   * @brief Gets the configured modem manufacture and model based on the
+   * compile-time traits.
+   *
+   * @remark This does **not** query the modem for its actual manufacture and
+   * model, but rather returns the values that were set at compile time.
+   * @return *String* The configured modem manufacture and model based on the
+   * compile-time traits.
+   */
+  String getConfiguredModem() {
+    return thisModem().getConfiguredModemImpl();
   }
 
   /**
@@ -465,7 +404,6 @@ class TinyGsmModem {
 
   /**
    * @brief Get the modem manufacturer
-   *
    * @return *String* The modem manufacturer
    */
   String getModemManufacturer() {
@@ -474,7 +412,6 @@ class TinyGsmModem {
 
   /**
    * @brief Get the modem model
-   *
    * @return *String* The modem model, as it calls itself
    */
   String getModemModel() {
@@ -496,6 +433,9 @@ class TinyGsmModem {
   /**
    * @brief Get the modem serial number
    *
+   * This is usually equivalent to the IMEI for cellular modems and the MAC
+   * address for WiFi modems.
+   *
    * @return *String* The modem serial number
    */
   String getModemSerialNumber() {
@@ -507,8 +447,7 @@ class TinyGsmModem {
    *
    * This generally restarts the module as well.
    *
-   * @return *true* The module successfully reset to default.
-   * @return *false* The module failed to reset to default.
+   * @return True if the module successfully reset to default, false otherwise.
    */
   bool factoryDefault() {
     return thisModem().factoryDefaultImpl();
@@ -523,29 +462,32 @@ class TinyGsmModem {
 
   /**
    * @brief Restart the module
-   *
    * @param pin A pin code to unlock the SIM, if necessary
-   *
-   * @return *true* The module was successfully restarted.
-   * @return *false* There was an error in restarting the module.
+   * @return True if the module was successfully restarted, false otherwise.
    */
   bool restart(const char* pin = nullptr) {
     return thisModem().restartImpl(pin);
   }
   /**
    * @brief Power off the module
-   *
-   * @return *true* The module was successfully powered down.
-   * @return *false* There was an error in powering down module.
+   * @return True if the module was successfully powered down, false otherwise.
+   * @deprecated Use powerOff() instead. This function name will be removed in a
+   * future version.
    */
-  bool poweroff() {
+  bool poweroff() __attribute__((__deprecated__("Use powerOff() instead"))) {
+    return thisModem().powerOffImpl();
+  }
+  /**
+   * @brief Power off the module
+   * @return True if the module was successfully powered down, false otherwise.
+   */
+  bool powerOff() {
     return thisModem().powerOffImpl();
   }
   /**
    * @brief Turn off the module radio
-   *
-   * @return *true* The module radio was successfully turned off.
-   * @return *false* There was an error in turning off the radio.
+   * @return True if the module radio was successfully turned off, false
+   * otherwise.
    */
   bool radioOff() {
     return thisModem().radioOffImpl();
@@ -559,8 +501,8 @@ class TinyGsmModem {
    * pin levels.
    *
    * @param enable True to enable sleep, false to disable
-   * @return *true* Sleep was successfully enabled or disabled
-   * @return *false* There was a problem setting sleep
+   * @return True if sleep was successfully enabled or disabled, false
+   * otherwise.
    */
   bool sleepEnable(bool enable = true) {
     return thisModem().sleepEnableImpl(enable);
@@ -572,8 +514,8 @@ class TinyGsmModem {
    * @param fun The phone functionality setting. The value and meaning of this
    * varies by module; check your documentation.
    * @param reset True to reset the module before changing the functionality.
-   * @return *true* The phone functionality was successfully changed.
-   * @return *false* There was a problem changing the functionality.
+   * @return True if the phone functionality was successfully changed, false
+   * otherwise.
    */
   bool setPhoneFunctionality(uint8_t fun, bool reset = false) {
     return thisModem().setPhoneFunctionalityImpl(fun, reset);
@@ -582,18 +524,23 @@ class TinyGsmModem {
 
   /**
    * @anchor network_functions
-   * @name Generic Network Functions
+   * @name Generic network functions
    */
   /**@{*/
 
-  // RegStatus getRegistrationStatus() {}
+  /**
+   * @brief Get the modem registration status on the network.
+   * @return The modem-specific registration status value.
+   */
+  regStatusType getRegistrationStatus() {
+    return thisModem().getRegistrationStatusImpl();
+  }
 
   /**
    * @brief Confirm whether the module is currently connected to the
    * GSM/GPRS/LTE network.
    *
-   * @return *true* The module is connected to the network
-   * @return *false* The module is not connected to the network
+   * @return True if the module is connected to the network, false otherwise.
    */
   bool isNetworkConnected() {
     return thisModem().isNetworkConnectedImpl();
@@ -606,9 +553,8 @@ class TinyGsmModem {
    * with a default value of 1 minute.
    * @param check_signal True to alternate between checking for connection and
    * checking the signal strength.
-   * @return *true* The module is now connected to the network.
-   * @return *false* The module did not connect to the network even after
-   * waiting.
+   * @return True if the module is now connected to the network, false
+   * otherwise.
    */
   bool waitForNetwork(uint32_t timeout_ms = 60000L, bool check_signal = false) {
     return thisModem().waitForNetworkImpl(timeout_ms, check_signal);
@@ -647,12 +593,15 @@ class TinyGsmModem {
   }
   /**@}*/
 
+ protected:
+  // destructor (protected!)
+  ~TinyGsmModem() {}
+
   /**
    * @anchor crtp_helper
    * @name CRTP Helper
    */
   /**@{*/
- protected:
   inline const modemType& thisModem() const {
     return static_cast<const modemType&>(*this);
   }
@@ -660,7 +609,6 @@ class TinyGsmModem {
     return static_cast<modemType&>(*this);
   }
   /**@}*/
-  ~TinyGsmModem() {}
 
 
   /**
@@ -670,27 +618,93 @@ class TinyGsmModem {
   /**@{*/
  public:
   // Utility templates for writing/skipping characters on a stream
+  /**
+   * @brief Write a value to the modem stream.
+   *
+   * @tparam T The type of the value to write.
+   * @param last The value to write.
+   */
   template <typename T>
   void streamWrite(T last) {
     thisModem().stream.print(last);
   }
 
+  /**
+   * @brief Recursively write multiple values to the modem stream.
+   *
+   * @tparam T The type of the first value to write.
+   * @tparam Args The types of the remaining values to write.
+   * @param head The first value to write.
+   * @param tail The remaining values to write.
+   */
   template <typename T, typename... Args>
   void streamWrite(T head, Args... tail) {
     thisModem().stream.print(head);
     thisModem().streamWrite(tail...);
   }
 
+  /**
+   * @brief Clear the modem stream attempting to parse any URC's in it.
+   *
+   * @warning Never call this inside of a waitResponse() call or a URC parser!
+   * @todo Should this be protected?
+   */
   inline void streamClear() {
     while (thisModem().stream.available()) {
       thisModem().waitResponse(50, nullptr, nullptr);
     }
   }
 
+  /**
+   * @brief Dump the modem stream, completely discarding any data in it without
+   * attempting to parse any URC's in it.
+   *
+   * This is good for discarding an expected number of characters from the
+   * stream without waiting a full timeout for each character.
+   *
+   * @param expected_len The number of characters to discard from the stream.
+   * @todo Should this be protected?
+   */
+  inline void streamDump(int16_t expected_len) {
+    if (expected_len <= 0) { return; }
+    size_t  len           = static_cast<size_t>(expected_len);
+    size_t  len_read      = 0;
+    uint8_t char_failures = 0;
+
+    // allow up to 3 timeouts on individual characters before we quit the whole
+    // read operation
+    while (len && char_failures < 3) {
+      // if something is available, read it
+      if (thisModem().stream.available()) {
+        if (thisModem().stream.read() >= 0) {
+          len--;
+          len_read++;
+        }
+        continue;
+      }
+      // wait for a new character to be available on the stream
+      uint32_t startMillis = millis();
+      while (!thisModem().stream.available() &&
+             (millis() - startMillis < 1000L)) {
+        TINY_GSM_YIELD();
+      }
+      if (!thisModem().stream.available()) {
+        DBG("### ERROR: Timed out waiting for character from stream!");
+        char_failures++;
+      }
+    }
+
+    if (len_read) { DBG("### Discarded", len_read, "characters"); }
+  }
+
+
  protected:
   inline bool streamGetLength(char* buf, int8_t numChars,
                               const uint32_t timeout_ms = 1000L) {
     if (!buf) { return false; }
+
+    // Clear the buffer before reading into it
+    memset(buf, 0, numChars);
 
     int8_t   numCharsReady = -1;
     uint32_t startMillis   = millis();
@@ -707,54 +721,298 @@ class TinyGsmModem {
     return false;
   }
 
+  /**
+   * @brief Reads a fixed-length decimal integer from the modem stream.
+   *
+   * Reads exactly @p numChars characters from the modem stream and converts
+   * them to a signed 16-bit decimal integer. Leading and trailing non-digits
+   * are ignored. A leading '-' or '+' are supported.
+   *
+   * This is a lightweight replacement for strtol()/atoi() intended for
+   * parsing the small decimal integer fields returned by modems. It does
+   * not perform general-purpose numeric parsing or require a null-terminated
+   * string.
+   *
+   * @param numChars   Number of characters to read and convert. Valid values
+   *                   are 1 through 6.
+   * @param timeout_ms Maximum time, in milliseconds, to wait for the requested
+   *                   characters.
+   *
+   * @return The parsed signed 16-bit integer, or -9999 if the requested
+   *         character count is invalid or the characters could not be read
+   *         from the stream.
+   */
   inline int16_t streamGetIntLength(int8_t         numChars,
                                     const uint32_t timeout_ms = 1000L) {
-    char buf[numChars + 1];
-    if (streamGetLength(buf, numChars, timeout_ms)) {
-      buf[numChars] = '\0';
-      return atoi(buf);
+    // max 6 digits for int16_t (-32767)
+    if (numChars <= 0 || numChars > 6) { return -9999; }
+
+    char buf[numChars];
+
+    if (!streamGetLength(buf, numChars, timeout_ms)) { return -9999; }
+
+    int16_t res      = 0;
+    bool    negative = false;
+    uint8_t i        = 0;
+
+    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
+    while (i < numChars && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
+
+    if (i < numChars && (buf[i] == '-' || buf[i] == '+')) {
+      negative = buf[i] == '-';
+      ++i;
     }
 
-    return -9999;
+    // Parse until the first non-digit (accept only 0-9).
+    for (; i < numChars && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
+      res = res * 10 + buf[i] - '0';
+    }
+
+    return negative ? -res : res;
   }
 
+
+  /**
+   * @brief Reads a decimal integer from the modem stream up to a delimiter.
+   *
+   * Reads characters from the modem stream until @p lastChar is encountered
+   * and converts the characters preceding it to a signed 16-bit decimal
+   * integer. Leading and trailing non-digits are ignored. A leading '-' or '+'
+   * are supported.
+   *
+   * This is a lightweight replacement for strtol()/atoi() intended for
+   * parsing the small decimal integer fields returned by modems. It does
+   * not require a null-terminated string.
+   *
+   * The input buffer is limited to seven characters, allowing for a sign and
+   * up to six numeric characters.
+   *
+   * @param lastChar Character that terminates the numeric response.
+   *
+   * @return The parsed signed 16-bit integer, or -9999 if no characters were
+   *         received before the delimiter.
+   */
   inline int16_t streamGetIntBefore(char lastChar) {
-    char   buf[7];
-    size_t bytesRead = thisModem().stream.readBytesUntil(
-        lastChar, buf, static_cast<size_t>(7));
-    // if we read 7 or more bytes, it's an overflow
-    if (bytesRead && bytesRead < 7) {
-      buf[bytesRead] = '\0';
-      int16_t res    = atoi(buf);
-      return res;
+    char buf[7] = {};
+
+    size_t bytesRead = thisModem().stream.readBytesUntil(lastChar, buf,
+                                                         sizeof(buf));
+
+    if (!bytesRead) { return -9999; }
+
+    int16_t res      = 0;
+    bool    negative = false;
+    uint8_t i        = 0;
+
+    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
+    while (i < bytesRead && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
+
+    if (i < bytesRead && (buf[i] == '-' || buf[i] == '+')) {
+      negative = buf[i] == '-';
+      ++i;
     }
 
-    return -9999;
+    // Parse until the first non-digit (accept only 0-9).
+    for (; i < bytesRead && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
+      res = res * 10 + buf[i] - '0';
+    }
+
+    return negative ? -res : res;
   }
 
+  /**
+   * @brief Reads a fixed-length unsigned long integer from the modem stream.
+   *
+   * Reads exactly @p numChars characters from the modem stream and converts
+   * them to an unsigned long integer. Leading and trailing non-digits
+   * are ignored.
+   *
+   * @param numChars   Number of characters to read and convert. Valid values
+   *                   are 1 through 12.
+   * @param timeout_ms Maximum time, in milliseconds, to wait for the requested
+   *                   characters.
+   *
+   * @return The parsed unsigned long or -1 on failure
+   */
+  inline uint32_t streamGetULLength(int8_t         numChars,
+                                    const uint32_t timeout_ms = 1000L) {
+    // max 12 digits for unsigned long
+    if (numChars <= 0 || numChars > 12) { return static_cast<uint32_t>(-1); }
+
+    char buf[numChars];
+
+    if (!streamGetLength(buf, numChars, timeout_ms)) {
+      return static_cast<uint32_t>(-1);
+    }
+
+    uint32_t res = 0;
+    uint8_t  i   = 0;
+
+    // Skip leading non-digits (accept only 0-9).
+    while (i < numChars && (buf[i] < 0x30 || buf[i] > 0x39)) { ++i; }
+
+    // Parse until the first non-digit (accept only 0-9).
+    for (; i < numChars && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
+      res = res * 10 + buf[i] - '0';
+    }
+
+    return res;
+  }
+
+
+  /**
+   * @brief Reads a unsigned long integer from the modem stream up to a
+   * delimiter.
+   *
+   * Reads characters from the modem stream until @p lastChar is encountered
+   * and converts the characters preceding it to an unsigned long decimal
+   * integer. Leading and trailing non-digits are ignored.
+   *
+   * The input buffer is limited to 13 characters, allowing for a sign and
+   * up to 12 numeric characters.
+   *
+   * @param lastChar Character that terminates the numeric response.
+   *
+   * @return The parsed unsigned long integer, or -1 if no characters were
+   *         received before the delimiter.
+   */
+  inline uint32_t streamGetULBefore(char lastChar) {
+    char buf[13] = {};
+
+    size_t bytesRead = thisModem().stream.readBytesUntil(lastChar, buf,
+                                                         sizeof(buf));
+
+    if (!bytesRead) { return static_cast<uint32_t>(-1); }
+
+    uint32_t res = 0;
+    uint8_t  i   = 0;
+
+    // Skip leading non-digits (accept only 0-9).
+    while (i < bytesRead && (buf[i] < 0x30 || buf[i] > 0x39)) { ++i; }
+
+    // Parse until the first non-digit (accept only 0-9).
+    for (; i < bytesRead && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
+      res = res * 10 + buf[i] - '0';
+    }
+
+    return res;
+  }
+
+
+  /**
+   * @brief Reads a fixed-length decimal floating-point value.
+   *
+   * Reads exactly @p numChars characters from the modem stream and converts
+   * them to a floating-point value. Leading and trailing non-digits are
+   * ignored. A leading '-' or '+' and a decimal point are supported.
+   *
+   * This is a lightweight replacement for strtof()/atof() intended for
+   * parsing the ordinary decimal values returned by modems, including
+   * NMEA-like latitude, longitude, altitude, speed, accuracy, and time fields.
+   * Scientific notation is intentionally not supported.
+   *
+   * @param numChars   Number of characters to read and convert.
+   * @param timeout_ms Maximum time, in milliseconds, to wait for the requested
+   *                   characters.
+   *
+   * @return The parsed floating-point value, or -9999.0F if the requested
+   *         characters could not be read from the stream.
+   */
   inline float streamGetFloatLength(int8_t         numChars,
                                     const uint32_t timeout_ms = 1000L) {
-    char buf[numChars + 1];
-    if (streamGetLength(buf, numChars, timeout_ms)) {
-      buf[numChars] = '\0';
-      return atof(buf);
+    char buf[numChars];
+
+    if (!streamGetLength(buf, numChars, timeout_ms)) { return -9999.0F; }
+
+    float   result   = 0.0F;
+    uint8_t decimals = 0;
+    bool    negative = false;
+    bool    decimal  = false;
+    uint8_t i        = 0;
+
+    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
+    while (i < numChars && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
+
+    if (i < numChars && (buf[i] == '-' || buf[i] == '+')) {
+      negative = buf[i] == '-';
+      ++i;
     }
 
-    return -9999.0F;
+    // Parse until the first non-digit (also accept '.' and '/')
+    for (; i < numChars && (buf[i] >= 0x2E && buf[i] <= 0x39); ++i) {
+      char c = buf[i];
+
+      if (c == '.') {
+        decimal = true;
+      } else {
+        result = result * 10.0F + c - '0';
+        if (decimal) { ++decimals; }
+      }
+    }
+
+    while (decimals--) { result *= 0.1F; }
+
+    return negative ? -result : result;
   }
 
+
+  /**
+   * @brief Reads a decimal floating-point value up to a delimiter.
+   *
+   * Reads characters from the modem stream until @p lastChar is encountered
+   * and converts the characters preceding it to a floating-point value.
+   * Leading and trailing non-digits are ignored. A leading '-' or '+' and a
+   * decimal point are supported.
+   *
+   * This is a lightweight replacement for strtof()/atof() intended for
+   * parsing the ordinary decimal values returned by modems, including
+   * NMEA-like latitude, longitude, altitude, speed, accuracy, and time fields.
+   * Scientific notation is intentionally not supported.
+   *
+   * The input buffer is limited to 16 characters.
+   *
+   * @param lastChar Character that terminates the numeric response.
+   *
+   * @return The parsed floating-point value, or -9999.0F if no characters were
+   *         received before the delimiter.
+   */
   inline float streamGetFloatBefore(char lastChar) {
-    char   buf[16];
-    size_t bytesRead = thisModem().stream.readBytesUntil(
-        lastChar, buf, static_cast<size_t>(16));
-    // if we read 16 or more bytes, it's an overflow
-    if (bytesRead && bytesRead < 16) {
-      buf[bytesRead] = '\0';
-      float res      = atof(buf);
-      return res;
+    char buf[16] = {};
+
+    size_t bytesRead = thisModem().stream.readBytesUntil(lastChar, buf,
+                                                         sizeof(buf));
+
+    if (!bytesRead) { return -9999.0F; }
+
+    float   result   = 0.0F;
+    uint8_t decimals = 0;
+    bool    negative = false;
+    bool    decimal  = false;
+    uint8_t i        = 0;
+
+    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
+    while (i < bytesRead && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
+
+    if (i < bytesRead && (buf[i] == '-' || buf[i] == '+')) {
+      negative = buf[i] == '-';
+      ++i;
     }
 
-    return -9999.0F;
+    // Parse until the first non-digit (also accept '.' and '/')
+    for (; i < bytesRead && (buf[i] >= 0x2E && buf[i] <= 0x39); ++i) {
+      char c = buf[i];
+
+      if (c == '.') {
+        decimal = true;
+      } else {
+        result = result * 10.0F + c - '0';
+        if (decimal) { ++decimals; }
+      }
+    }
+
+    while (decimals--) { result *= 0.1F; }
+
+    return negative ? -result : result;
   }
 
   inline bool streamSkipUntil(const char c, const uint32_t timeout_ms = 1000L) {
@@ -771,29 +1029,48 @@ class TinyGsmModem {
 
   inline void cleanResponseString(String& res) {
     // Remove the OK from the string, as well as any newlines
-    res.replace(AT_NL "OK" AT_NL, "");
-    res.replace(AT_NL, " ");
+    const String nlResponse = String(GFP(ModemConfig::GSM_NL));
+    String       okResponse = nlResponse + String(GFP(ModemConfig::GSM_OK));
+    res.replace(okResponse, "");
+    res.replace(nlResponse, " ");
     res.trim();
   }
 
   static inline IPAddress TinyGsmIpFromString(const String& strIP) {
-    int Parts[4] = {
-        0,
-    };
-    int Part = 0;
+    int  Parts[4]          = {0};
+    int  Part              = 0;
+    bool hasDigitInPart[4] = {
+        false};  // Track if each octet has at least one digit
+
     for (uint8_t i = 0; i < strIP.length(); i++) {
       char c = strIP[i];
       if (c == '.') {
+        // Reject dot when octet is empty
+        if (!hasDigitInPart[Part]) { return IPAddress(0, 0, 0, 0); }
         Part++;
         if (Part > 3) { return IPAddress(0, 0, 0, 0); }
         continue;
       } else if (c >= '0' && c <= '9') {
-        Parts[Part] *= 10;
-        Parts[Part] += c - '0';
+        hasDigitInPart[Part] = true;
+        int nextValue        = Parts[Part] * 10 + (c - '0');
+        if (nextValue > 255) { return IPAddress(0, 0, 0, 0); }
+        Parts[Part] = nextValue;
       } else {
-        if (Part == 3) break;
+        return IPAddress(0, 0, 0, 0);  // Invalid character
       }
     }
+
+    // Reject final empty octet
+    if (!hasDigitInPart[Part]) { return IPAddress(0, 0, 0, 0); }
+
+    // Validate: must have exactly 3 dots (Part must equal 3)
+    if (Part != 3) { return IPAddress(0, 0, 0, 0); }
+
+    // Validate: each octet must be 0-255
+    for (int i = 0; i < 4; i++) {
+      if (Parts[i] < 0 || Parts[i] > 255) { return IPAddress(0, 0, 0, 0); }
+    }
+
     return IPAddress(Parts[0], Parts[1], Parts[2], Parts[3]);
   }
   /**@}*/
@@ -803,17 +1080,19 @@ class TinyGsmModem {
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * Basic functions
    */
- protected:
+
   bool initImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   bool setBaudImpl(uint32_t baud) {
     thisModem().sendAT(GF("+IPR="), baud);
     return thisModem().waitResponse() == 1;
   }
+
+  bool setDefaultBaudImpl(uint32_t baud) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   bool testATImpl(uint32_t timeout_ms) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
@@ -825,87 +1104,32 @@ class TinyGsmModem {
   }
 
   int8_t waitResponseImpl(uint32_t timeout_ms, String& data, GsmConstStr r1,
-                          GsmConstStr r2
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
-                          ,
-                          GsmConstStr r3
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
-                          ,
-                          GsmConstStr r4
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
-                          ,
-                          GsmConstStr r5
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
-                          ,
-                          GsmConstStr r6
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
-                          ,
-                          GsmConstStr r7
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
-                          ,
-                          GsmConstStr r8
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-  ) {
+                          GsmConstStr r2, GsmConstStr r3, GsmConstStr r4,
+                          GsmConstStr r5, GsmConstStr r6, GsmConstStr r7,
+                          GsmConstStr r8) {
     data.reserve(64);
 
     // put the possible responses into an array so we can loop through them
-    const GsmConstStr responses[TINY_GSM_MAX_RESPONSE_CHECKS] = {r1,
-                                                                 r2
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
-                                                                 ,
-                                                                 r3
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
-                                                                 ,
-                                                                 r4
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
-                                                                 ,
-                                                                 r5
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
-                                                                 ,
-                                                                 r6
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
-                                                                 ,
-                                                                 r7
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
-                                                                 ,
-                                                                 r8
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-    };
+    const GsmConstStr responses[8] = {r1, r2, r3, r4, r5, r6, r7, r8};
 
 #ifdef TINY_GSM_DEBUG_DEEP
     DBG(GF("r1 <"), r1 ? r1 : GF("NULL"), GF("> r2 <"), r2 ? r2 : GF("NULL"),
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 2
-        GF("> r3 <"), r3 ? r3 : GF("NULL"),
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 3
-        GF("> r4 <"), r4 ? r4 : GF("NULL"),
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 4
-        GF("> r5 <"), r5 ? r5 : GF("NULL"),
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 5
-        GF("> r6 <"), r6 ? r6 : GF("NULL"),
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 6
-        GF("> r7 <"), r7 ? r7 : GF("NULL"),
-#if TINY_GSM_MAX_RESPONSE_CHECKS > 7
-        GF("> r8 <"), r8 ? r8 : GF("NULL"),
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
+        GF("> r3 <"), r3 ? r3 : GF("NULL"), GF("> r4 <"), r4 ? r4 : GF("NULL"),
+        GF("> r5 <"), r5 ? r5 : GF("NULL"), GF("> r6 <"), r6 ? r6 : GF("NULL"),
+        GF("> r7 <"), r7 ? r7 : GF("NULL"), GF("> r8 <"), r8 ? r8 : GF("NULL"),
         '>');
 #endif
     uint8_t  index       = 0;
     uint32_t startMillis = millis();
+#if defined TINY_GSM_DEBUG
+    const String verbosePrefix1 = String(GFP(ModemConfig::GSM_VERBOSE));
+    const String verbosePrefix2 = String(GFP(ModemConfig::GSM_VERBOSE_2));
+    // check how long the new line is
+    // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
+    const String atnlString  = String(GFP(ModemConfig::GSM_NL));
+    const int    len_atnl    = atnlString.length();
+    const char   last_atnl_c = len_atnl > 0 ? atnlString[len_atnl - 1] : '\n';
+#endif
     do {
       TINY_GSM_YIELD();
       while (thisModem().stream.available() > 0) {
@@ -914,19 +1138,15 @@ class TinyGsmModem {
         if (a <= 0) continue;  // Skip 0x00 bytes, just in case
         data += static_cast<char>(a);
         // loop through the possible responses and see if we have a match
-        for (uint8_t i = 0; i < TINY_GSM_MAX_RESPONSE_CHECKS; i++) {
+        for (uint8_t i = 0; i < 8; i++) {
           if (responses[i] && data.endsWith(responses[i])) {
             index = i + 1;
             goto finish;
           }
         }
 #if defined TINY_GSM_DEBUG
-        if ((data.endsWith(GFP(GSM_VERBOSE))) ||
-            (data.endsWith(GFP(GSM_VERBOSE_2)))) {
-          // check how long the new line is
-          // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
-          const int  len_atnl    = strnlen(AT_NL, 3);
-          const char last_atnl_c = len_atnl > 0 ? AT_NL[len_atnl - 1] : '\n';
+        if ((data.endsWith(verbosePrefix1)) ||
+            (data.endsWith(verbosePrefix2))) {
           // Read out the verbose message, until the last character of the new
           // line
           data += thisModem().stream.readStringUntil(last_atnl_c);
@@ -958,6 +1178,10 @@ class TinyGsmModem {
     return index;
   }
 
+  String getConfiguredModemImpl() {
+    return String(GFP(ModemConfig::MODEM_MANUFACTURER)) + ' ' +
+        String(GFP(ModemConfig::MODEM_MODEL));
+  }
 
   String getModemInfoImpl() {
     thisModem().sendAT('I');  // 3GPP TS 27.007
@@ -970,7 +1194,7 @@ class TinyGsmModem {
   String getModemNameImpl() {
     String manufacturer = getModemManufacturer();
     String model        = getModemModel();
-    String name         = manufacturer + String(" ") + model;
+    String name         = manufacturer + ' ' + model;
     DBG("### Modem:", name);
     return name;
   }
@@ -980,7 +1204,7 @@ class TinyGsmModem {
     thisModem().sendAT(GF("+CGMI"));  // 3GPP TS 27.007 standard
     String res;
     if (thisModem().waitResponse(1000L, res) != 1) {
-      return String(MODEM_MANUFACTURER);
+      return String(GFP(ModemConfig::MODEM_MANUFACTURER));
     }
     thisModem().cleanResponseString(res);
     return res;
@@ -991,7 +1215,7 @@ class TinyGsmModem {
     thisModem().sendAT(GF("+CGMM"));  // 3GPP TS 27.007 standard
     String res;
     if (thisModem().waitResponse(1000L, res) != 1) {
-      return String(MODEM_MODEL);
+      return String(GFP(ModemConfig::MODEM_MODEL));
     }
     thisModem().cleanResponseString(res);
     return res;
@@ -1043,6 +1267,8 @@ class TinyGsmModem {
    * Generic network functions
    */
  protected:
+  regStatusType getRegistrationStatusImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
   // Gets the modem's registration status via CREG/CGREG/CEREG
   // CREG = Generic network registration
   // CGREG = GPRS service registration
@@ -1051,10 +1277,12 @@ class TinyGsmModem {
     thisModem().sendAT('+', regCommand, '?');
     // check for any of the three for simplicity
     int8_t resp = thisModem().waitResponse(GF("+CREG:"), GF("+CGREG:"),
-                                           GF("+CEREG:"));
+                                           GF("+CEREG:"),
+                                           GFP(ModemConfig::GSM_ERROR));
     if (resp != 1 && resp != 2 && resp != 3) { return -1; }
     thisModem().streamSkipUntil(','); /* Skip format (0) */
-    int status = thisModem().stream.parseInt();
+    // int status = thisModem().stream.parseInt();
+    int status = thisModem().streamGetIntBefore(ModemConfig::GSM_NL[0]);
     thisModem().waitResponse();
     return status;
   }
@@ -1089,4 +1317,4 @@ class TinyGsmModem {
   }
 };
 
-#endif  // SRC_TINYGSMMODEM_H_
+#endif  // SRC_TINYGSMMODEM_TPP_

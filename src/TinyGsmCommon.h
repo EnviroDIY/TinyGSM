@@ -1,5 +1,6 @@
 /**
  * @file       TinyGsmCommon.h
+ * @brief      Common TinyGSM macros, utilities, and shared constants.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -9,7 +10,7 @@
 #ifndef SRC_TINYGSMCOMMON_H_
 #define SRC_TINYGSMCOMMON_H_
 
-// The current library version number
+/// The current library version number
 #define TINYGSM_VERSION "0.12.0"
 
 #if defined(SPARK) || defined(PARTICLE)
@@ -28,21 +29,83 @@
 #include <Client.h>
 #endif
 
-#include "TinyGsmEnums.h"
-
 #ifndef TINY_GSM_YIELD_MS
+/// The number of milliseconds to yield to the system in the main loop
 #define TINY_GSM_YIELD_MS 0
 #endif
 
 #ifndef TINY_GSM_YIELD
+/// The macro to yield to the system in the main loop
 #define TINY_GSM_YIELD() \
   { delay(TINY_GSM_YIELD_MS); }
 #endif
 
+/**
+ * @def TINY_GSM_RX_BUFFER
+ * @brief The size of the receive buffer for the modem.
+ *
+ * This is used in the TinyGsm class to store incoming data from the modem. This
+ * buffer is used to store incoming data from the modem before it is read by the
+ * user.  If this buffer is too small, data may be lost if the user does not
+ * read it quickly enough - especially for modems that do not internally buffer
+ * data.  If this buffer is too large, it may use more memory than necessary.
+ *
+ * @note This is *not* the size of the modem's internal buffer!
+ *
+ * @important This is a library-wide setting.  It applies to all modems and all
+ * clients.  If you need different buffer sizes for different modems, you will
+ * need to modify the library.
+ */
+#if !defined(TINY_GSM_RX_BUFFER)
+// Fallback log buffer size based on processor type
+#if defined(__SAMD51__)
+#define TINY_GSM_RX_BUFFER 1024
+#elif defined(ARDUINO_ARCH_SAMD)
+#define TINY_GSM_RX_BUFFER 256
+#else
+#define TINY_GSM_RX_BUFFER 64
+#endif
+#endif
+
+/**
+ * @def TINY_GSM_UNREAD_CHECK_MS
+ * @brief The time in milliseconds to wait before checking for unread data from
+ * the modem.
+ *
+ * This is used to ask the modem if there is any unread data available because
+ * they don't always issue a URC to notify the host that data is available.
+ *
+ * @important This is a library-wide setting.  It applies to all modems and all
+ * clients.  If you need a different check interval for different modems, you
+ * will need to modify the library.
+ */
+#if !defined(TINY_GSM_UNREAD_CHECK_MS)
+#define TINY_GSM_UNREAD_CHECK_MS 500
+#endif
+
+/**
+ * @def TINY_GSM_ATTR_NOT_AVAILABLE
+ * @brief Helper macro to mark a function as not available on this modem type
+ * @def TINY_GSM_ATTR_NOT_IMPLEMENTED
+ * @brief Helper macro to mark a function as not implemented on this modem type
+ */
 #define TINY_GSM_ATTR_NOT_AVAILABLE \
   __attribute__((error("Not available on this modem type")))
 #define TINY_GSM_ATTR_NOT_IMPLEMENTED __attribute__((error("Not implemented")))
 
+/**
+ * @def TINY_GSM_PROGMEM
+ * @brief Helper macro for memory storage location
+ * @typedef GsmConstStr
+ * @brief Helper typedef for a constant string stored in program memory
+ * (PROGMEM) on AVR platforms and in standard memory on other systems.
+ * @def GFP
+ * @brief Helper macro to cast data as a constant string in program memory
+ * (PROGMEM) on AVR platforms and in standard memory on other systems.
+ * @def GF
+ * @brief Helper macro to store data in program memory (PROGMEM) on AVR
+ * platforms and in standard memory on other systems.
+ */
 #if defined(PROGMEM) && (defined(__AVR__) || defined(ARDUINO_ARCH_AVR)) && \
     !defined(__AVR_ATmega4809__) && !defined(GFP) && !defined(GF)
 #define TINY_GSM_PROGMEM PROGMEM
@@ -58,11 +121,25 @@ typedef const char* GsmConstStr;
 
 #ifdef TINY_GSM_DEBUG
 namespace {
+/**
+ * @brief Debug print function for a single argument
+ *
+ * @tparam T The type of the argument
+ * @param last The argument to print
+ */
 template <typename T>
 static void DBG_PLAIN(T last) {
   TINY_GSM_DEBUG.println(last);
 }
 
+/**
+ * @brief Debug print function for multiple arguments
+ *
+ * @tparam T The type of the first argument
+ * @tparam Args The types of the remaining arguments
+ * @param head The first argument to print
+ * @param tail The remaining arguments to print
+ */
 template <typename T, typename... Args>
 static void DBG_PLAIN(T head, Args... tail) {
   TINY_GSM_DEBUG.print(head);
@@ -70,6 +147,12 @@ static void DBG_PLAIN(T head, Args... tail) {
   DBG_PLAIN(tail...);
 }
 
+/**
+ * @brief Debug print function for multiple arguments with timestamp
+ *
+ * @tparam Args The types of the arguments
+ * @param args The arguments to print
+ */
 template <typename... Args>
 static void DBG(Args... args) {
   TINY_GSM_DEBUG.print('[');
@@ -84,51 +167,55 @@ static void DBG(Args... args) {
 #endif
 
 /*
- * CRTP Helper
- */
-template <typename modemType, template <typename> class crtpType>
-struct tinygsm_crtp {
-  modemType& thisModem() {
-    return static_cast<modemType&>(*this);
-  }
-  modemType const& thisModem() const {
-    return static_cast<modemType const&>(*this);
-  }
-
- private:
-  tinygsm_crtp() {}
-  friend crtpType<modemType>;
-};
-
-/*
  * Min/Max Helpers
  */
 template <class T>
 const T& TinyGsmMin(const T& a, const T& b) {
   return (b < a) ? b : a;
 }
-
 template <class T>
 const T& TinyGsmMax(const T& a, const T& b) {
   return (b < a) ? a : b;
 }
 
-/*
- * Automatically find baud rate
- * NOTE: This DOES NOT work with the XBee module
+/**
+ * @brief Standard baud rates to attempt during auto-baud detection and modem
+ * initialization.
+ *
+ * This array is shared between TinyGsmAutoBaud() and forceModemBaud() to
+ * ensure consistent baud rate selection across the library.
+ */
+static const uint32_t TINY_GSM_AUTOBAUD_RATES[] TINY_GSM_PROGMEM = {
+    115200, 57600, 9600,  921600, 38400, 19200, 460800,
+    230400, 74400, 74880, 2400,   4800,  14400, 28800};
+
+/**
+ * @brief Attempts to automatically find the baud rate for the modem.
+ * @note This DOES NOT work with the XBee module
+ *
+ * @param at_serial The serial port connected to the modem
+ * @param minimum The minimum baud rate to try (default: 9600)
+ * @param maximum The maximum baud rate to try (default: 921600)
+ * @return The baud rate that the modem responded to, or 0 if no response was
+ * received
  */
 template <class T>
 uint32_t TinyGsmAutoBaud(T& at_serial, uint32_t minimum = 9600,
                          uint32_t maximum = 921600) {
-  static uint32_t rates[] = {115200, 57600, 9600,  921600, 38400, 19200, 460800,
-                             230400, 74400, 74880, 2400,   4800,  14400, 28800};
+  static const uint32_t* rates = TINY_GSM_AUTOBAUD_RATES;
 
-  for (uint8_t i = 0; i < sizeof(rates) / sizeof(rates[0]); i++) {
+  for (uint8_t i = 0; i < 14;
+       i++) {  // sizeof(TINY_GSM_AUTOBAUD_RATES)/sizeof(uint32_t)
     uint32_t rate = rates[i];
     if (rate < minimum || rate > maximum) continue;
 
     DBG("Trying baud rate", rate, "...");
     at_serial.end();
+#if !defined(ARDUINO_ARCH_PIC32) && !defined(ARDUINO_ARCH_ARC32) && \
+    !defined(ARDUINO_NRF52840_FEATHER)
+    unsigned long origTimeout = at_serial.getTimeout();
+#endif
+    at_serial.setTimeout(100);  // avoid 1s default blocking wait
     at_serial.begin(rate);
     delay(10);
     for (int j = 0; j < 10; j++) {
@@ -136,9 +223,21 @@ uint32_t TinyGsmAutoBaud(T& at_serial, uint32_t minimum = 9600,
       String input = at_serial.readString();
       if (input.indexOf("OK") >= 0) {
         DBG("Modem responded at rate", rate);
+#if !defined(ARDUINO_ARCH_PIC32) && !defined(ARDUINO_ARCH_ARC32) && \
+    !defined(ARDUINO_NRF52840_FEATHER)
+        at_serial.setTimeout(origTimeout);  // reset timeout
+#else
+        at_serial.setTimeout(1000L);  // reset timeout, assuming 1s default
+#endif
         return rate;
       }
     }
+#if !defined(ARDUINO_ARCH_PIC32) && !defined(ARDUINO_ARCH_ARC32) && \
+    !defined(ARDUINO_NRF52840_FEATHER)
+    at_serial.setTimeout(origTimeout);  // reset timeout
+#else
+    at_serial.setTimeout(1000L);  // reset timeout, assuming 1s default
+#endif
   }
   at_serial.begin(minimum);
   return 0;

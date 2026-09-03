@@ -18,7 +18,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     - Client functions have been renamed to "setXX**Name**" to clarify that what you are selecting is the file name of a certificate that has been pre-loaded onto the module, not the certificate data itself.
     - A new parent class has been created for sockets
     - All enums have been moved into a separate file
-- Made date/time enums and SSL enums enum classes, requiring the class name to be included when calling them.
+- **BREAKING** Made date/time enums and SSL enums enum classes, requiring the class name to be included when calling them.
 - Separated Espressif into **3** modules:
   - the ESP32 (requiring AT firmware >= 3.2),
   - the ESP8266 using the final release of its AT firmware ([v2.2.1_esp8266](https://github.com/espressif/esp-at/releases/tag/v2.2.1.0_esp8266)),
@@ -28,6 +28,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Fixed various compiler warnings, where possible
 - Increased max baud rate for autobauding.
 - Minor changes in notes and comments
+- **BREAKING** Corrected the spelling of the function `setRadioAccessTecnology` to `setRadioAccessTechnology` and `getCurrentRadioAccessTecnology` to `getCurrentRadioAccessTechnology` for generic u-blox modules.
+- **BREAKING** Renamed the function `setURAT` to `setRadioAccessTechnology` for u-blox SARA R4 modules.
+- **BREAKING** Changed the inputs and outputs of `getCurrentRadioAccessTechnology` for the u-blox SARA R5 modules and made functional.
+- **Potentially breaking** Changed the response type of NTPServerSync from a byte with inconsistent meaning to a boolean indicating success.  Using a boolean test against this may now return inverted results. Previously, Espressif and BG96 modules returned a falsy '0' byte indicating success, but SIMCom modules returned a truthy '1' byte for success.
 
 ### Added
 
@@ -36,7 +40,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Added support for selecting specific certificates for specific connections on select modules
   - This includes both CA and client certs
 - Added SSL support for the SIM7600 by @floBik
-- Added functions `beginWrite` and `endWrite` to directly write into the modem's send buffer to help ensure than an entire request is sent in one chunk.
+- Added functions `beginWrite` and `endWrite` to directly write into the modem's send buffer to help ensure that an entire request is sent in one chunk.
   - WARNING: These functions will **NOT** warn you or prevent you from writing more to the modem's send buffer than it is possible for the modem to receive
     - Prior to this version of the library, there wasn't any support for limiting requests to the modem's built-in limits on any functions. There now is.
   - These functions are directly analogous to the `beginPublish` and `endPublish` functions within [PubSubClient](https://github.com/knolleary/pubsubclient) and should be usable in combination with them.
@@ -56,18 +60,22 @@ gsmClient.endWrite(strlen(request));
 - Added an example connecting to AWS IoT Core with mutual authentication.
 - Added an example using multiple connections at once
 - Added an "is_secure" property to all clients to help differentiate them
-- Added a function (`setDefaultBaud(uint32_t baud)`) to set defuault baud rate on Espressif modules
+- Added a function (`setDefaultBaud(uint32_t baud)`) to set default baud rate, currently only available on Espressif modules
 - Added defines for the frequency of checking for lost incoming message notifications (`TINY_GSM_UNREAD_CHECK_MS`)
   - This can be used as an external build flag.
 - Added defines for the maximum size each modem accepts in a single send command (`TINY_GSM_SEND_MAX_SIZE`)
   - *This is only to be used internally*
-  - Implemented support for break all send calls into chunks less than the specified `TINY_GSM_SEND_MAX_SIZE` for each module.
+  - Implemented support for breaking all send calls into chunks less than the specified `TINY_GSM_SEND_MAX_SIZE` for each module.
 - Added defines for the number of secure sockets (`TINY_GSM_SECURE_MUX_COUNT`)
   - *This is only for reference to be used internally*
 - Added defines `TINY_GSM_MUX_DYNAMIC` and `TINY_GSM_MUX_STATIC` to be used *internally* to help build module support
   - Implemented use of these for all modules.
 - Implemented a function (`moveCharsFromStreamToFifo`) for transferring a stream of characters from the modem stream into the fifo.
   - Implemented use of this function for all modules.
+- Added compile-time modem capability detection for networking, GPS, SSL, SMS, calling, battery, temperature, Bluetooth, and more and an example demonstrating its use.
+- Added a function getConfiguredModem() to return information about the compiled modem *without* communicating with the modem.
+- Added complete Doxygen-style documentation to all functions and created scripts to update the internal lists of available functions for each modem.
+- Added new `powerOff()` function as the preferred naming convention; deprecated `poweroff()` in favor of the new camelCase naming.
 
 ### Removed
 
@@ -76,11 +84,12 @@ gsmClient.endWrite(strlen(request));
 
 ### Fixed
 
-- Don't force maintain to call modemGetAvailable if the sock_available is already non-zero
+- Don't force the maintain function to call modemGetAvailable if the sock_available is already non-zero
 - Don't repeatedly call for sock_connected and sock_available for each socket on espressif modules when the response always includes all sockets.
 - Fixes to stop logic on Espressif and SIM7080
 - Modified HTTP examples to attempt to connect to a site that doesn't require SSL.
   - @vshymanskyy's host of his primary example which displays the TinyGSM logo now requires SSL.
+- The Arduino keywords file now contains all relevant Doxygen-derived keywords.
 
 ***
 
@@ -102,9 +111,9 @@ gsmClient.endWrite(strlen(request));
 
 ### Added
 
-- Added support for SSL for the Quentcel BG95 and BG96 from [Aurelien BOUIN](https://github.com/aurelihein) and [George O'Connor](https://github.com/georgeman93)
+- Added support for SSL for the Quectel BG95 and BG96 from [Aurelien BOUIN](https://github.com/aurelihein) and [George O'Connor](https://github.com/georgeman93)
 - Added support for UBLOX SARA-R5 from [Sebastian Bergner](https://github.com/sebastianbergner)
-- Added support for SIMCOM A7672X from [Giovanni de Rosso Unruh](https://github.com/giovannirosso)
+- Added support for SIMCOM A7672x from [Giovanni de Rosso Unruh](https://github.com/giovannirosso)
 - Added SIM5320 GPS location from [Bengarman](https://github.com/Bengarman)
 - Added functions `getModemSerialNumber`, `getModemModel`, and `getModemRevision`.
 - Added deep debugging option

@@ -1,12 +1,13 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} WebClient.ino
  *
- * This sketch connects to a website and downloads a page.
+ * @brief This sketch manually constructs an HTTP request and sends it to a web
+ * server using TinyGSM.
+ *
+ * This example requires the least amount of RAM and Flash on the Arduino
+ * because it does not use any external libraries.
  * It can be used to perform HTTP/RESTful API calls.
- *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- **************************************************************/
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
@@ -35,7 +36,7 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// Set serial for debug console (to the Serial Monitor, default speed 115200)
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
@@ -96,6 +97,10 @@ const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
 #include <TinyGsmClient.h>
+
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
 
 // Just in case someone defined the wrong thing..
 #if TINY_GSM_USE_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
@@ -165,7 +170,10 @@ void setup() {
 
 #if TINY_GSM_USE_GPRS
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
+  if (GSM_PIN && modem.getSimStatus() != SIM_READY) {
+    // simUnlock will do nothing if the pin is empty
+    modem.simUnlock(GSM_PIN);
+  }
 #endif
 }
 

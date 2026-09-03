@@ -1,40 +1,76 @@
 /**
  * @file       TinyGsmSMS.tpp
+ * @brief      SMS messaging helper mixin.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMSMS_H_
-#define SRC_TINYGSMSMS_H_
+#ifndef SRC_TINYGSMSMS_TPP_
+#define SRC_TINYGSMSMS_TPP_
 
 #include "TinyGsmCommon.h"
 
 #ifndef TINY_GSM_MODEM_HAS_SMS
+/// flag to indicate that the modem has Short Message Service (SMS) functions
 #define TINY_GSM_MODEM_HAS_SMS
 #endif
 
+/**
+ * @brief The CRTP parent class for Short Message Service (SMS) functions.
+ * @tparam modemType The derived modem class
+ */
 template <class modemType>
 class TinyGsmSMS {
+ public:
+  /// Compile-time capability flag indicating SMS messaging support
+  static constexpr bool hasSMS = true;
+
   /* =========================================== */
   /* =========================================== */
   /*
    * Define the interface
    */
  public:
-  /*
-   * Text messaging (SMS) functions
+  /**
+   * @anchor sms_functions
+   * @name Text messaging (SMS) functions
+   */
+  /**@{*/
+
+  /**
+   * @brief Send a USSD code to the network.
+   *
+   * @param code The USSD code to send.
+   * @return The response from the network as a String.
    */
   String sendUSSD(const String& code) {
     return thisModem().sendUSSDImpl(code);
   }
+  /**
+   * @brief Send an SMS message.
+   *
+   * @param number The recipient's phone number.
+   * @param text The message text.
+   * @return True if the message was successfully sent, false otherwise.
+   */
   bool sendSMS(const String& number, const String& text) {
     return thisModem().sendSMSImpl(number, text);
   }
+  /**
+   * @brief Send an SMS message in UTF-16 encoding.
+   *
+   * @param number The recipient's phone number.
+   * @param text The message text in UTF-16 encoding.
+   * @param len The length of the message text.
+   * @return True if the message was successfully sent, false otherwise.
+   */
   bool sendSMS_UTF16(const char* const number, const void* text, size_t len) {
     return thisModem().sendSMS_UTF16Impl(number, text, len);
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)
@@ -50,83 +86,91 @@ class TinyGsmSMS {
     return static_cast<modemType&>(*this);
   }
 
-  /*
-   * Utilities
+
+  /**
+   * @anchor sms_hex_utilities
+   * @name Hex Decoding Utilities
    */
+  /**@{*/
  protected:
   static inline String TinyGsmDecodeHex7bit(const String& instr) {
-    String result;
-    byte   reminder = 0;
-    int8_t bitstate = 7;
-    for (uint8_t i = 0; i < instr.length(); i += 2) {
-      char buf[4] = {
-          0,
-      };
-      buf[0] = instr[i];
-      buf[1] = instr[i + 1];
-      byte b = strtol(buf, nullptr, 16);
+    String  result;
+    uint8_t remainder = 0;
+    int8_t  bitstate  = 7;
 
-      byte bb = b << (7 - bitstate);
-      char c  = (bb + reminder) & 0x7F;
-      result += c;
-      reminder = b >> bitstate;
-      bitstate--;
-      if (bitstate == 0) {
-        char cc = reminder;
-        result += cc;
-        reminder = 0;
-        bitstate = 7;
+    for (uint16_t i = 0; i < instr.length(); i += 2) {
+      char    c = instr[i];
+      uint8_t b = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+      c         = instr[i + 1];
+      b         = (b << 4) | ((c <= '9') ? c - '0' : (c & 0x0F) + 9);
+
+      result += (char)(((b << (7 - bitstate)) + remainder) & 0x7F);
+      remainder = b >> bitstate;
+
+      if (--bitstate == 0) {
+        result += (char)remainder;
+        remainder = 0;
+        bitstate  = 7;
       }
     }
+
     return result;
   }
 
   static inline String TinyGsmDecodeHex8bit(const String& instr) {
     String result;
+
     for (uint16_t i = 0; i < instr.length(); i += 2) {
-      char buf[4] = {
-          0,
-      };
-      buf[0] = instr[i];
-      buf[1] = instr[i + 1];
-      char b = strtol(buf, nullptr, 16);
-      result += b;
+      char    c = instr[i];
+      uint8_t b = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+      c         = instr[i + 1];
+      b         = (b << 4) | ((c <= '9') ? c - '0' : (c & 0x0F) + 9);
+
+      result += (char)b;
     }
+
     return result;
   }
 
   static inline String TinyGsmDecodeHex16bit(const String& instr) {
     String result;
+
     for (uint16_t i = 0; i < instr.length(); i += 4) {
-      char buf[4] = {
-          0,
-      };
-      buf[0] = instr[i];
-      buf[1] = instr[i + 1];
-      char b = strtol(buf, nullptr, 16);
-      if (b) {  // If high byte is non-zero, we can't handle it ;(
+      char    c = instr[i];
+      uint8_t b = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+      c         = instr[i + 1];
+      b         = (b << 4) | ((c <= '9') ? c - '0' : (c & 0x0F) + 9);
+
+      if (b) {
 #if defined(TINY_GSM_UNICODE_TO_HEX)
         result += "\\x";
-        result += instr.substring(i, i + 4);
+        result += instr[i];
+        result += instr[i + 1];
+        result += instr[i + 2];
+        result += instr[i + 3];
 #else
-        result += "?";
+        result += '?';
 #endif
       } else {
-        buf[0] = instr[i + 2];
-        buf[1] = instr[i + 3];
-        b      = strtol(buf, nullptr, 16);
-        result += b;
+        c = instr[i + 2];
+        b = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+        c = instr[i + 3];
+        b = (b << 4) | ((c <= '9') ? c - '0' : (c & 0x0F) + 9);
+
+        result += (char)b;
       }
     }
+
     return result;
   }
+  /**@}*/
 
   /* =========================================== */
   /* =========================================== */
   /*
    * Define the default function implementations
    */
-
+ protected:
   /*
    * Text messaging (SMS) functions
    */
@@ -240,4 +284,4 @@ class TinyGsmSMS {
   }
 };
 
-#endif  // SRC_TINYGSMSMS_H_
+#endif  // SRC_TINYGSMSMS_TPP_
