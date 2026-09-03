@@ -499,6 +499,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
      */
 
     /// @copydoc GsmClient::remoteIP()
+    /// @note This function hides the non-virtual remoteIP() function in the
+    /// base class, which is not virtual.
     String remoteIP() {
       if (at == nullptr) { return ""; }
       IPAddress atLastIP = at->savedIP;

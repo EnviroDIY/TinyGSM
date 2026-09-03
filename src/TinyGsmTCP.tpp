@@ -1089,6 +1089,11 @@ class GsmClient : public Client {
   /**
    * @anchor extended_client_api
    * @name Extended Client API
+   *
+   * These functions are **NOT** virtual to avoid linker errors if one or more
+   * of them are not implemented in a derived class.  Derived classes that
+   * implement these functions can hide the base class versions to implement
+   * them.
    */
   /**@{*/
 
@@ -1096,7 +1101,7 @@ class GsmClient : public Client {
    * @brief Get the remote IP address of the connected client
    * @return The remote IP address as a String
    */
-  virtual String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /**
    * @brief Get the **zero-indexed** position of the client in the corresponding
