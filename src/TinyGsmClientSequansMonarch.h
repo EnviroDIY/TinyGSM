@@ -331,7 +331,17 @@ class TinyGsmSequansMonarch
     /*
      * Extended API
      */
-    // No extra extended API functions
+   public:
+    // NOTE: Not virtual overrides - GsmClient::beginWrite()/endWrite() are
+    // non-virtual, so these simply hide the base versions and the base
+    // versions (which reference modemBeginSend()/modemEndSend(), not
+    // implemented for this modem) are never instantiated.
+    bool beginWrite(uint16_t) TINY_GSM_ATTR_NOT_IMPLEMENTED {
+      return false;
+    };
+    bool endWrite(uint16_t) TINY_GSM_ATTR_NOT_IMPLEMENTED {
+      return false;
+    };
   };
 
   /*
