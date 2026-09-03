@@ -1019,11 +1019,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 #endif
 
     // Validate parsed values
-    // NOTE: This is a basic validation and does not account for leap years or
-    // the number of days in each month.
-    if (iyear < 2000 || imonth < 1 || imonth > 12 || iday < 1 || iday > 31 ||
-        ihour < 0 || ihour > 23 || imin < 0 || imin > 59 || isec < 0 ||
-        isec > 59 || itimezone < -48 || itimezone > 56) {
+    if (!TinyGsmTime<TinyGsmBG96>::isValidDateTimeValues(
+            iyear, imonth, iday, ihour, imin, isec, itimezone)) {
       return false;
     }
 
@@ -1076,11 +1073,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 #endif
 
     // Validate parsed values
-    // NOTE: This is a basic validation and does not account for leap years or
-    // the number of days in each month.
-    if (iyear < 2000 || imonth < 1 || imonth > 12 || iday < 1 || iday > 31 ||
-        ihour < 0 || ihour > 23 || imin < 0 || imin > 59 || isec < 0 ||
-        isec > 59 || itimezone < -48 || itimezone > 56) {
+    if (!TinyGsmTime<TinyGsmBG96>::isValidDateTimeValues(
+            iyear, imonth, iday, ihour, imin, isec, itimezone)) {
       return false;
     }
 
