@@ -969,13 +969,13 @@ class TinyGsmESP32
         c = stream.read();
         if (c >= 0) break;
       } while (millis() - _startMillis < 50);
-      // Print the file to the buffer
+      if (c < 0) { break; }  // if we run out of characters, stop
 #ifndef DUMP_AT_COMMANDS
+      // Print the file to the buffer
       // NOTE: Only do this if we're not dumping the all AT, or we'll double
       // print
       print_stream.write(c);
 #endif
-      if (c < 0) { break; }  // if we run out of characters, stop
     }
     print_stream.flush();
     // Final OK
