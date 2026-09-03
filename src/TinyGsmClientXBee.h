@@ -1381,14 +1381,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
  protected:
   float getTemperatureImpl() {
     XBEE_COMMAND_START_DECORATOR(5, static_cast<float>(-9999))
-    String res = sendATGetString(GF("TP"));
-    if (res == "") { return static_cast<float>(-9999); }
-
-    char    c      = res[0];
-    uint8_t intRes = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
-    c              = res[1];
-    intRes         = (intRes << 4) | ((c <= '9') ? c - '0' : (c & 0x0F) + 9);
-
+    sendAT(GF("TP"));
+    int16_t intRes = readResponseInt();
     XBEE_COMMAND_END_DECORATOR
     return static_cast<float>(static_cast<int8_t>(intRes));
   }

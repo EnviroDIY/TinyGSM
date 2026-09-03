@@ -920,6 +920,9 @@ class TinyGsmModem {
    */
   inline float streamGetFloatLength(int8_t         numChars,
                                     const uint32_t timeout_ms = 1000L) {
+    // max 15 digits, sign, and decimal point
+    if (numChars <= 0 || numChars > 16) { return -9999.0F; }
+
     char buf[numChars];
 
     if (!streamGetLength(buf, numChars, timeout_ms)) { return -9999.0F; }
@@ -1281,7 +1284,6 @@ class TinyGsmModem {
                                            GFP(ModemConfig::GSM_ERROR));
     if (resp != 1 && resp != 2 && resp != 3) { return -1; }
     thisModem().streamSkipUntil(','); /* Skip format (0) */
-    // int status = thisModem().stream.parseInt();
     int status = thisModem().streamGetIntBefore(ModemConfig::GSM_NL[0]);
     thisModem().waitResponse();
     return status;

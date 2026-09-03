@@ -142,7 +142,7 @@ bool updateFirmware(uint32_t update_timeout = 300000UL) {
 
     success &= modem.init();
   }
-  return update_complete;
+  return success;
 }
 
 

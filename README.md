@@ -157,7 +157,7 @@ And of course, contributions are welcome ;)
   - Sequans Monarch - 6
   - SIM 800/900 - 5
   - SIM 5360/5320/5300/7100 - 10
-  - SIM7000 - 8 possible without SSL, only 2 with
+  - SIM7000 - 8 possible without SSL - 2 with
   - SIM 7070/7080/7090 - 12
   - SIM 7500/7600/7800 - 10
   - SIM A7672x - 10
@@ -472,7 +472,8 @@ Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/91#
 
 #### HttpClient
 
-You will not be able to compile the HttpClient or HttpsClient examples with ESP32 core 1.0.2.  Upgrade to 1.0.3, downgrade to version 1.0.1 or use the WebClient example.
+You will not be able to compile the HttpClient or HttpsClient examples with ESP32 core 1.0.2.
+Upgrade to 1.0.3, downgrade to version 1.0.1 or use the WebClient example.
 
 ### SAMD21
 
