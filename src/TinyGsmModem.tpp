@@ -182,6 +182,8 @@ class TinyGsmModem {
    * and not recognized as a response, because in this case you still want to
    * try to set the baud rate.
    *
+   * @tparam StreamObject The type of the serial object used for communicating
+   * with the modem
    * @param at_serial The serial object to use for communicating with the modem
    * @param targetBaud The final baud rate to try to set the modem to
    * @return True if the modem responded after the baud rate was set, false
