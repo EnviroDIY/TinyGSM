@@ -115,9 +115,10 @@ const char server[]   = "time.sodaq.net";
 const char resource[] = "/";
 const int  port       = 80;
 // Server details to test TCP over SSL
-const char server_ssl[]   = "vsh.pp.ua";
-const char resource_ssl[] = "/TinyGSM/logo.txt";
-const int  port_ssl       = 443;
+const char server_ssl[] = "raw.githubusercontent.com";
+const char resource_ssl[] =
+    "/vshymanskyy/TinyGSM/refs/heads/master/extras/logo.txt";
+const int port_ssl = 443;
 
 #include <TinyGsmClient.h>
 #include <TinyGsmCapabilities.h>
