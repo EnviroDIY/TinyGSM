@@ -7,8 +7,7 @@
  * @date       Nov 2016
  */
 /**
- * @defgroup simcom_sim5360 SIMCom SIM53xx and SIM71xx (SIM5320, SIM5360,
- * SIM5300, SIM7100)
+ * @defgroup simcom_sim5360 SIMCom SIM53xx and SIM71xx
  * @ingroup group_simcom
  * @brief Manufacturer: SIMCom. Models: SIM5320, SIM5360, SIM5300, SIM7100.
  *

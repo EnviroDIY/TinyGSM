@@ -224,7 +224,7 @@ The general flow of your code should be:
 ### If you have any issues
 
   1. Read the whole README (you're looking at it!), particularly the troubleshooting section below.
-  2. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
+  2. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Contributed-Pages/Board-configuration).
   3. Try running the Diagnostics sketch
   4. Check for [**highlighted topics here**](https://github.com/vshymanskyy/TinyGSM/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22for+reference%22+)
   5. If you have a question, please post it in our [Gitter chat](https://gitter.im/tinygsm)
@@ -257,7 +257,7 @@ Most modules require _**as much as 2A**_ to properly connect to the network.
 This is 4x what a "standard" USB will supply!
 Improving the power supply actually solves stability problems in **many** cases!
 
-- Read about [**powering your module**](https://github.com/vshymanskyy/TinyGSM/wiki/Powering-GSM-module).
+- Read about [**powering your module**](https://github.com/vshymanskyy/TinyGSM/wiki/Contributed-Pages/Powering-GSM-module).
 - Keep your wires as short as possible
 - Consider soldering them for a stable connection
 - Do not put your wires next to noisy signal sources (buck converters, antennas, oscillators etc.)

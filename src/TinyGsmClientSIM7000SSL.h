@@ -7,8 +7,8 @@
  * @date       Nov 2016
  */
 /**
- * @defgroup simcom_sim7000ssl SIMCom SIM7000 (SSL toolkit).
- * @brief Manufacturer: SIMCom. Models: SIM7000 (SSL toolkit).
+ * @defgroup simcom_sim7000ssl SIMCom SIM7000 (SSL toolkit)
+ * @brief Manufacturer: SIMCom. Models: SIM7000 (SSL toolkit)
  * @ingroup simcom_sim70xx
  *
  * # Connection Information
@@ -452,8 +452,9 @@ class TinyGsmSim7000SSL
 
     // wait for some characters to be available
     uint32_t start = millis();
-    while (!stream.available() && millis() - start < 10000) {}
-
+    while (!stream.available() && millis() - start < 10000) {
+      TINY_GSM_YIELD();
+    }
     for (int i = 0; i < print_len; i++) {
       int      c;
       uint32_t _startMillis = millis();
