@@ -244,7 +244,7 @@ class TinyGsmGPRS {
 
   bool gprsDisconnectImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool isGprsConnected() {
+  bool isGprsConnectedImpl() {
     thisModem().sendAT(GF("+CGATT?"));
     if (thisModem().waitResponse(GF("+CGATT:")) != 1) { return false; }
     int8_t res = thisModem().streamGetIntBefore('\n');
