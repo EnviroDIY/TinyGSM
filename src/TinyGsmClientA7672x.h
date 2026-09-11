@@ -7,10 +7,10 @@
  * @date       Oct 2022
  */
 /**
- * @defgroup simcom_a7672x SIMCom A7672 Series ( A7672E, A7672SA, A7672S,
- * A7672G)
+ * @defgroup simcom_a7672x SIMCom A7672 Series
  * @ingroup group_simcom
- * @brief Manufacturer: SIMCom. Models: A7672x.
+ * @brief Manufacturer: SIMCom. Models: A7672x (A7672E, A7672SA, A7672S,
+ * A7672G)
  *
  * # Connection Information
  *

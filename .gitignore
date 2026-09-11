@@ -102,3 +102,5 @@ src/wakeUp.h
 AGENTS.md
 .github/copilot-instructions.md
 .bumpversion.toml
+docs/generate_usable_fxn_docs.py
+docs/update_wiki_docs.py

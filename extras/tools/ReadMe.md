@@ -45,8 +45,7 @@ This tool sketch sends commands to reset a supported modem back to factory defau
 
 This sketch connects to WiFi and attempts to update the firmware for an Espressif module.
 
-- [The test build tool on GitHub](https://github.com/EnviroDIY/TinyGSM/tree/master/extras/tools/EspressifUpdateFirmware)
-
+- [The Espressif firmware update tool on GitHub](https://github.com/EnviroDIY/TinyGSM/tree/master/extras/tools/EspressifUpdateFirmware)
 ## Test Build<!--! {#tools_test_build} -->
 <!--! @m_innerpage{tool_test_build} -->
 

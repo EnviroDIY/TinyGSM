@@ -527,7 +527,10 @@ bool setupNetwork() {
   // Wifi connection parameters must be set before waiting for the network
   SerialMon.print(F("Setting SSID/password..."));
   success &= modem.networkConnect(wifiSSID, wifiPass);
-  if (!success) { SerialMon.println(" ...failed to connect to WiFi!"); }
+  if (!success) {
+    SerialMon.println(" ...failed to connect to WiFi!");
+    return false;
+  }
   SerialMon.println(" ...success");
 #endif
 
