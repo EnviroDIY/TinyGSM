@@ -1031,7 +1031,7 @@ WARN_LINE_FORMAT       = "at line $line of file $file"
 # specified the warning and error messages are written to standard output
 # (stdout).
 
-WARN_LOGFILE           = output_doxygen.log
+WARN_LOGFILE           = logs\output_doxygen.log
 
 #---------------------------------------------------------------------------
 # Configuration options related to the input files
@@ -1134,7 +1134,8 @@ EXCLUDE                = ../src/ReadMe.md \
                          ../examples/more/SIM800_SslSetCert/COMODORSACertificationAuthority.h \
                          ../examples/more/SIM800_SslSetCert/DSTRootCAX3.der.h \
                          ../examples/more/SIM800_SslSetCert/DSTRootCAX3.h \
-                         ../src/wakeUp.h
+                         ../src/wakeUp.h \
+                         ../AGENTS.md
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -1174,7 +1175,8 @@ EXCLUDE_SYMBOLS        =  SRC_*_H_ \
                           TinyGsmIpFromString \
                           UTF8Print \
                           Print \
-                          Client
+                          Client \
+                          __attribute__
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories
 # that contain example code fragments that are included (see the \include

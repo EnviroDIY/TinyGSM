@@ -39,7 +39,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Added support for writing/loading certificates on select modules
 - Added support for selecting specific certificates for specific connections on select modules
   - This includes both CA and client certs
-- Added SSL support for the SIM7600 by @floBik
+- Added SSL support for the SIM7600 by \@floBik
 - Added functions `beginWrite` and `endWrite` to directly write into the modem's send buffer to help ensure that an entire request is sent in one chunk.
   - WARNING: These functions will **NOT** warn you or prevent you from writing more to the modem's send buffer than it is possible for the modem to receive
     - Prior to this version of the library, there wasn't any support for limiting requests to the modem's built-in limits on any functions. There now is.
@@ -89,7 +89,7 @@ gsmClient.endWrite(strlen(request));
 - Don't repeatedly call for sock_connected and sock_available for each socket on espressif modules when the response always includes all sockets.
 - Fixes to stop logic on Espressif and SIM7080
 - Modified HTTP examples to attempt to connect to a site that doesn't require SSL.
-  - @vshymanskyy's host of his primary example which displays the TinyGSM logo now requires SSL.
+  - \@vshymanskyy's site which displays the TinyGSM logo now requires SSL.
 - The Arduino keywords file now contains all relevant Doxygen-derived keywords.
 
 ***

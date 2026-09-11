@@ -141,83 +141,6 @@ And of course, contributions are welcome ;)
 > [!TIP]
 > [There is a full table with all functions available by module.](docs/SupportedModuleFunctions.md)
 
-### Data connections
-
-#### TCP (HTTP, MQTT, Blynk, ...)
-
-- ALL modules support TCP connections
-- Most modules support multiple simultaneous connections:
-  - A6/A7 - 8
-  - ESP8266/ESP32 - 5
-  - Neoway M590 - 2
-  - Quectel BG96 - 12
-  - Quectel BG95 - 12
-  - Quectel M95 - 6
-  - Quectel MC60/MC60E - 6
-  - Sequans Monarch - 6
-  - SIM 800/900 - 5
-  - SIM 5360/5320/5300/7100 - 10
-  - SIM7000 - 8 possible without SSL - 2 with
-  - SIM 7070/7080/7090 - 12
-  - SIM 7500/7600/7800 - 10
-  - SIM A7672x - 10
-  - u-blox 2G/3G - 7
-  - u-blox SARA R4/N4 - 7
-  - Digi XBee - _only 1 connection supported!_
-
-#### UDP
-
-- Not yet supported on any module, though it may be some day
-
-#### SSL/TLS (HTTPS, MQTTS)
-
-- Connecting:
-  - SIM800, SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672x, u-Blox, XBee _cellular_, ESP8266, ESP32, Sequans Monarch and Quectel BG95 and BG96
-  - Note:  **only some device models or firmware revisions have this feature** (SIM8xx R14.18, A7, etc.)
-- Selecting certificates for the connection based on files uploaded to the module:
-  - SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672x, ESP8266, ESP32, Sequans Monarch
-- Uploading new certificates to the module;
-  - SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672x, ESP32, Quectel BG96
-- No SSL functionality is yet in the library for:
-  - SIM 5360/5320/7100
-- SSL is not possible on:
-  - SIM900, A6/A7, Neoway M590, XBee _WiFi_ (S6B)
-- Like TCP, most modules support simultaneous connections
-- TCP and SSL connections can usually be mixed up to the total number of possible connections
-
-### USSD
-
-- Sending USSD requests and decoding 7,8,16-bit responses
-  - Supported on:
-    - All SIMCom modems, Quectel modems, most u-blox
-  - Not possible on:
-    - XBee, u-blox SARA R4/N4, ESP8266, ESP32
-
-### SMS
-
-- Only _sending_ SMS is supported, not receiving
-  - Supported on all cellular modules
-
-### Voice Calls
-
-- Supported on:
-  - SIM800/SIM900, SIM7600, A6/A7, Quectel modems, u-blox
-- Not yet supported on:
-  - SIM7000, SIM5360/5320/7100, SIM7500/7800, VZM20Q (Monarch)
-- Not possible on:
-  - XBee (any type), u-blox SARA R4/R5/N4, Neoway M590, ESP8266 (obviously)
-- Functions:
-  - Dial, hangup
-  - DTMF sending
-
-### Location
-
-- GPS/GNSS
-  - SIM808, SIM7000, SIM7500/7600/7800, BG96, BG95, u-blox
-  - NOTE:  u-blox chips do _NOT_ have embedded GPS - this functionality only works if a secondary GPS is connected to primary cellular chip over I2C
-- GSM location service
-  - SIM800, SIM7000, Quectel, u-blox
-
 ## Credits
 
 - Primary Authors/Contributors:
@@ -251,7 +174,7 @@ And of course, contributions are welcome ;)
   3. Ensure that GSM antenna is firmly attached
   4. Ensure that you have a stable power supply to the module of at least **2A**.
   5. Check if serial connection is working (Hardware Serial is recommended)
-     Send an `AT` command using [this sketch](extras/tools/AT_Debug/AT_Debug.ino)
+     Send an `AT` command using [this sketch](extras/tools/AT_Debug/ReadMe.md)
   6. Try out the [WebClient](https://github.com/vshymanskyy/TinyGSM/blob/master/examples/WebClient/WebClient.ino) example
 
 ### Writing your own code
@@ -324,7 +247,7 @@ If you're interested in pin controls for your module, there's documentation of t
 ## API Reference
 
 For GPRS data streams, this library provides the standard [Arduino Client](https://www.arduino.cc/en/Reference/ClientConstructor) interface.
-For additional functions, please refer to [this example sketch](examples/AllFunctions/AllFunctions.ino)
+For additional functions, please refer to [this example sketch](examples/AllFunctions/ReadMe.md)
 
 ## Troubleshooting
 
@@ -508,3 +431,9 @@ __________
 
 This project is released under
 The GNU Lesser General Public License (LGPL-3.0)
+
+<!--! @m_innerpage{page_supported_module_functions} -->
+<!--! @m_innerpage{page_supported_module_configuration} -->
+<!--! @m_innerpage{change_log} -->
+<!--! @m_innerpage{todo} -->
+<!--! @m_innerpage{deprecated} -->

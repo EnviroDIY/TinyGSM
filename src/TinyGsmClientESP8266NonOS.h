@@ -6,86 +6,14 @@
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
-/* clang-format off */
 /**
- * @defgroup espressif_esp8266_nonos Espressif ESP8266 Non-OS Modem Family
+ * @defgroup espressif_esp8266_nonos Espressif ESP8266 (Non-OS)
  * @ingroup espressif_at
  * @brief Manufacturer: Espressif. Models: ESP8266 (Non-OS AT firmware, version
  * ~1.7.4).
  *
  * @warning This is an outdated modem firmware.  Please update your module to
  * the latest version.
- *
- * # Supported Public Functions
- *
- * - Basic functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::init "init()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::sendAT "sendAT()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::setBaud "setBaud()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::setDefaultBaud "setDefaultBaud()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getConfiguredModem "getConfiguredModem()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
- * - Power functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::powerOff "powerOff()"
- * - Generic network functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality "getSignalQuality()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getLocalIP "getLocalIP()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::localIP "localIP()"
- * - Utilities (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamDump "streamDump()"
- * - WiFi functions (TinyGsmWifi.tpp)
- *     - @ref TinyGsmWifi<modemType>::networkConnect "networkConnect()"
- *     - @ref TinyGsmWifi<modemType>::networkDisconnect "networkDisconnect()"
- * - Socket listening functions (TinyGsmTCP.tpp)
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
- * - @ref GsmClientESP8266NonOS "GsmClientESP8266NonOS"
- *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
- *     - @ref GsmClient::init "init()"
- *     - @ref GsmClient::connect "connect()"
- *     - @ref GsmClient::stop "stop()"
- *     - @ref GsmClient::write "write()"
- *     - @ref GsmClient::available "available()"
- *     - @ref GsmClient::read "read()"
- *     - @ref GsmClient::peek "peek()"
- *     - @ref GsmClient::flush "flush()"
- *     - @ref GsmClient::connected "connected()"
- *   - Extended Client API (TinyGsmTCP.tpp)
- *     - @ref GsmClient::getMux "getMux()"
- *     - @ref GsmClient::getConnectionID "getConnectionID()"
- *     - @ref GsmClient::beginWrite "beginWrite()"
- *     - @ref GsmClient::endWrite "endWrite()"
- * - @ref GsmClientSecureESP8266NonOS "GsmClientSecureESP8266NonOS"
- *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
- *     - @ref GsmClient::init "init()"
- *     - @ref GsmClient::connect "connect()"
- *     - @ref GsmClient::stop "stop()"
- *     - @ref GsmClient::write "write()"
- *     - @ref GsmClient::available "available()"
- *     - @ref GsmClient::read "read()"
- *     - @ref GsmClient::peek "peek()"
- *     - @ref GsmClient::flush "flush()"
- *     - @ref GsmClient::connected "connected()"
- *   - Extended Client API (TinyGsmTCP.tpp)
- *     - @ref GsmClient::getMux "getMux()"
- *     - @ref GsmClient::getConnectionID "getConnectionID()"
- *     - @ref GsmClient::beginWrite "beginWrite()"
- *     - @ref GsmClient::endWrite "endWrite()"
  *
  * # Connection Information
  *
@@ -95,22 +23,12 @@
  * - SSL contexts: 2
  * - Socket Buffering:
  *   - The modem does **not** have an internal buffer for incoming data.
- *   - You must read all data from the modem as soon as it arrives, or you will
- * lose it.
- *   - You can reduce the risk of losing data by setting this library's buffer
- * to be as large as possible; this will increase the memory footprint of your
- * program.
- *   - Change the buffer size by defining TINY_GSM_RX_BUFFER in your sketch
- * before including any TinyGSM header file.
+ *   - You must set the buffer size in this library to be larger than your
+ * largest expected incoming packet, or you will lose incoming data.
  * - Socket Numbering:
- *   - The modem uses user-specified MUX channel numbers for socket connections.
- *   - If you attempt to create a new client with a channel number that is
- * already in use and other unused channels are available, this library will
- * select the next available one.
- *   - Use the getMux() function to get the assigned multiplexing channel number
- * after a successful connection.
+ *   - The modem respects user-specified multiplexing channel
+ * numbers/identifiers for socket connections.
  */
-/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTESP8266NONOS_H_
 #define SRC_TINYGSMCLIENTESP8266NONOS_H_
@@ -147,7 +65,7 @@ enum class ESP8266NonOSRegStatus {
   REG_UNKNOWN = 6,
 };
 
-/// Basic modem configurations for the ESP8266NonOS modem family
+/// Basic modem configurations for the ESP8266 (NonOS)
 /// @ingroup espressif_esp8266_nonos
 struct TinyGsmESP8266NonOSModemConfig
     : public TinyGsmModemConfigPreset<ESP8266NonOSRegStatus> {
@@ -163,7 +81,7 @@ constexpr char TinyGsmESP8266NonOSModemConfig::MODEM_MODEL[]
     __attribute__((weak));
 
 /**
- * @brief TCP behavior and limits for the ESP8266 (non OS AT version) family.
+ * @brief TCP behavior and limits for the ESP8266 (NonOS) AT version.
  *
  * NOTE: There's a total limit of 5 sockets, any of them can be SSL. BUT the
  * manual warns that module may not be able to handle more than 1 SSL socket at
@@ -225,6 +143,9 @@ class TinyGsmESP8266NonOS
     using GsmClient<TinyGsmESP8266NonOS, TinyGsmESP8266NonOSTcpConfig>::stop;
     using TcpConfig = TinyGsmESP8266NonOSTcpConfig;
 
+    /*
+     * Client constructors and initialization
+     */
     /**
      * @brief Create a new TCP client.
      * @warning You must call the init() method before attempting to use a
@@ -293,13 +214,13 @@ class TinyGsmESP8266NonOS
     }
 
     /*
-     * Client API
+     * Arduino Client interface
      */
    public:
     TINY_GSM_STATIC_TCP_CONNECT
 
     /*
-     * Extended API
+     * Extended Client API
      */
     // No extra extended API functions
   };
@@ -318,6 +239,9 @@ class TinyGsmESP8266NonOS
     using GsmClientESP8266NonOS::stop;
     using TcpConfig = TinyGsmESP8266NonOSTcpConfig;
 
+    /*
+     * Client constructors and initialization
+     */
     /**
      * @brief Create a new secured TCP (SSL) client.
      * @warning You must call the init() method before attempting to use a

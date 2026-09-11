@@ -561,7 +561,7 @@ void loop() {
 #endif
 
   // ========================================================================
-  // TinyGsmClient - Functions implementing the Arduino Client interface
+  // TinyGsmClient - Arduino Client interface
   // ========================================================================
 
   TinyGsmClient client;
@@ -619,7 +619,7 @@ void loop() {
   client.getConnectionID();
 
   // ========================================================================
-  // TinyGsmClientSecure - Functions implementing the Arduino Client interface
+  // TinyGsmClientSecure - Arduino Client interface
   // ========================================================================
 
   // Note: You can now query modem capabilities at compile-time using
