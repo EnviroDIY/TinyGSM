@@ -6,118 +6,10 @@
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Aug 2023
  */
-/* clang-format off */
 /**
- * @defgroup ublox_sara_r5 u-blox SARA-R5 Modem Family
+ * @defgroup ublox_sara_r5 u-blox SARA-R5
+ * @ingroup group_ublox
  * @brief Manufacturer: u-blox. Models: SARA-R5.
- *
- * # Supported Public Functions
- *
- * - Basic functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::init "init()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::sendAT "sendAT()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::setBaud "setBaud()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getConfiguredModem "getConfiguredModem()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
- * - Power functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::powerOff "powerOff()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
- * - Generic network functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality "getSignalQuality()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getLocalIP "getLocalIP()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::localIP "localIP()"
- * - Utilities (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamDump "streamDump()"
- * - SIM card functions (TinyGsmGPRS.tpp)
- *     - @ref TinyGsmGPRS<modemType>::simUnlock "simUnlock()"
- *     - @ref TinyGsmGPRS<modemType>::getSimCCID "getSimCCID()"
- *     - @ref TinyGsmGPRS<modemType>::getIMEI "getIMEI()"
- *     - @ref TinyGsmGPRS<modemType>::getIMSI "getIMSI()"
- *     - @ref TinyGsmGPRS<modemType>::getSimStatus "getSimStatus()"
- * - GPRS functions (TinyGsmGPRS.tpp)
- *     - @ref TinyGsmGPRS<modemType>::gprsConnect "gprsConnect()"
- *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
- *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
- *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
- * - Socket listening functions (TinyGsmTCP.tpp)
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
- * - Phone call functions (TinyGsmCalling.tpp)
- *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
- *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
- *     - @ref TinyGsmCalling<modemType>::callHangup "callHangup()"
- *     - @ref TinyGsmCalling<modemType>::dtmfSend "dtmfSend()"
- * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
- *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
- *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
- *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
- * - GSM location functions (TinyGsmGSMLocation.tpp)
- *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationRaw "getGsmLocationRaw()"
- *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocation "getGsmLocation()"
- *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationTime "getGsmLocationTime()"
- * - GPS (GNSS, GLONASS) functions (TinyGsmGPS.tpp)
- *     - @ref TinyGsmGPS<modemType>::enableGPS "enableGPS()"
- *     - @ref TinyGsmGPS<modemType>::disableGPS "disableGPS()"
- *     - @ref TinyGsmGPS<modemType>::getGPSraw "getGPSraw()"
- *     - @ref TinyGsmGPS<modemType>::getGPS "getGPS()"
- *     - @ref TinyGsmGPS<modemType>::getGPSTime "getGPSTime()"
- * - Time functions (TinyGsmTime.tpp)
- *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
- * - Battery functions (TinyGsmBattery.tpp)
- *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
- *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
- * - Network mode / type / technology functions
- *     - @ref TinyGsmSaraR5::setRadioAccessTechnology "setRadioAccessTechnology()"
- *     - @ref TinyGsmSaraR5::getCurrentRadioAccessTechnology "getCurrentRadioAccessTechnology()"
- * - @ref GsmClientSaraR5 "GsmClientSaraR5"
- *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
- *     - @ref GsmClient::init "init()"
- *     - @ref GsmClient::connect "connect()"
- *     - @ref GsmClient::stop "stop()"
- *     - @ref GsmClient::write "write()"
- *     - @ref GsmClient::available "available()"
- *     - @ref GsmClient::read "read()"
- *     - @ref GsmClient::peek "peek()"
- *     - @ref GsmClient::flush "flush()"
- *     - @ref GsmClient::connected "connected()"
- *   - Extended Client API (TinyGsmTCP.tpp)
- *     - @ref GsmClient::getMux "getMux()"
- *     - @ref GsmClient::getConnectionID "getConnectionID()"
- *     - @ref GsmClient::beginWrite "beginWrite()"
- *     - @ref GsmClient::endWrite "endWrite()"
- * - @ref GsmClientSecureSaraR5 "GsmClientSecureSaraR5"
- *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
- *     - @ref GsmClient::init "init()"
- *     - @ref GsmClient::connect "connect()"
- *     - @ref GsmClient::stop "stop()"
- *     - @ref GsmClient::write "write()"
- *     - @ref GsmClient::available "available()"
- *     - @ref GsmClient::read "read()"
- *     - @ref GsmClient::peek "peek()"
- *     - @ref GsmClient::flush "flush()"
- *     - @ref GsmClient::connected "connected()"
- *   - Extended Client API (TinyGsmTCP.tpp)
- *     - @ref GsmClient::getMux "getMux()"
- *     - @ref GsmClient::getConnectionID "getConnectionID()"
- *     - @ref GsmClient::beginWrite "beginWrite()"
- *     - @ref GsmClient::endWrite "endWrite()"
  *
  * # Connection Information
  *
@@ -127,19 +19,12 @@
  *   - 5
  * - Socket Buffering:
  *   - The modem has an internal buffer for incoming data.
- *   - This gives you leeway to pull data from the buffer as needed with less
- * risk of losing data.
- *
  * - Socket Numbering:
- *   - The modem does not allow you to specify the multiplexing channel.
- *   - The modem will automatically assign a channel when the client connects to
- * a server.
- *   - Use the getMux() function to get the assigned multiplexing channel number
- * after a successful connection.
+ *   - The modem will automatically assign a channel number when the client
+ * connects to a server.
  *
  * @todo In `restartImpl()`: Verify delay timing here
  */
-/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTSARAR5_H_
 #define SRC_TINYGSMCLIENTSARAR5_H_
@@ -199,7 +84,7 @@ enum class SaraR5RegStatus {
   REG_NO_FALLBACK_LTE_ROAMING = 10
 };
 
-/// Basic modem configurations for the SaraR5 modem family
+/// Basic modem configurations for the SARA-R5
 /// @ingroup ublox_sara_r5
 struct TinyGsmSaraR5ModemConfig
     : public TinyGsmModemConfigPreset<SaraR5RegStatus> {
@@ -214,7 +99,7 @@ constexpr char TinyGsmSaraR5ModemConfig::MODEM_MANUFACTURER[]
 constexpr char TinyGsmSaraR5ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
- * @brief TCP behavior and limits for the SARA R5 modem family.
+ * @brief TCP behavior and limits for the SARA-R5.
  *
  * Per the manual, 7 standard sockets can be managed.  I **think** all sockets
  * can be SSL, but the manual is not clear (to me). Also supports 5 SSL contexts
@@ -278,6 +163,9 @@ class TinyGsmSaraR5
     using GsmClient<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>::stop;
     using TcpConfig = TinyGsmSaraR5TcpConfig;
 
+    /*
+     * Client constructors and initialization
+     */
     /**
      * @brief Create a new TCP client.
      * @warning You must call the init() method before attempting to use a
@@ -354,7 +242,7 @@ class TinyGsmSaraR5
     }
 
     /*
-     * Client API
+     * Arduino Client interface
      */
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
@@ -408,7 +296,7 @@ class TinyGsmSaraR5
     }
 
     /*
-     * Extended API
+     * Extended Client API
      */
     // No extra extended API functions
   };
@@ -427,6 +315,9 @@ class TinyGsmSaraR5
     using GsmClientSaraR5::stop;
     using TcpConfig = TinyGsmSaraR5TcpConfig;
 
+    /*
+     * Client constructors and initialization
+     */
     /**
      * @brief Create a new secured TCP (SSL) client.
      * @warning You must call the init() method before attempting to use a

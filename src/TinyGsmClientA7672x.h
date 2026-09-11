@@ -6,145 +6,11 @@
  * @copyright  Copyright (c) 2022 Giovanni de Rosso Unruh
  * @date       Oct 2022
  */
-/* clang-format off */
 /**
- * @defgroup simcom_a7672x SIMCom A7672x Modem Family
+ * @defgroup simcom_a7672x SIMCom A7672 Series ( A7672E, A7672SA, A7672S,
+ * A7672G)
+ * @ingroup group_simcom
  * @brief Manufacturer: SIMCom. Models: A7672x.
- *
- * # Supported Public Functions
- *
- * - Basic functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::init "init()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::sendAT "sendAT()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::setBaud "setBaud()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getConfiguredModem "getConfiguredModem()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
- * - Power functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::powerOff "powerOff()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
- * - Generic network functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality "getSignalQuality()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getLocalIP "getLocalIP()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::localIP "localIP()"
- * - Utilities (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamDump "streamDump()"
- * - SIM card functions (TinyGsmGPRS.tpp)
- *     - @ref TinyGsmGPRS<modemType>::simUnlock "simUnlock()"
- *     - @ref TinyGsmGPRS<modemType>::getSimCCID "getSimCCID()"
- *     - @ref TinyGsmGPRS<modemType>::getIMEI "getIMEI()"
- *     - @ref TinyGsmGPRS<modemType>::getIMSI "getIMSI()"
- *     - @ref TinyGsmGPRS<modemType>::getSimStatus "getSimStatus()"
- * - GPRS functions (TinyGsmGPRS.tpp)
- *     - @ref TinyGsmGPRS<modemType>::gprsConnect "gprsConnect()"
- *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
- *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
- *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
- *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
- * - Socket listening functions (TinyGsmTCP.tpp)
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
- * - Secure socket layer (SSL) certificate management functions (TinyGsmSSL.tpp)
- *     - @ref TinyGsmSSL<modemType>::loadCertificate "loadCertificate()"
- *     - @ref TinyGsmSSL<modemType>::deleteCertificate "deleteCertificate()"
- *     - @ref TinyGsmSSL<modemType>::convertCertificate "convertCertificate()"
- *     - @ref TinyGsmSSL<modemType>::convertCACertificate "convertCACertificate()"
- *     - @ref TinyGsmSSL<modemType>::convertClientCertificates "convertClientCertificates()"
- *     - @ref TinyGsmSSL<modemType>::convertPSKandID "convertPSKandID()"
- *     - @ref TinyGsmSSL<modemType>::convertPSKTable "convertPSKTable()"
- * - Phone call functions (TinyGsmCalling.tpp)
- *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
- *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
- *     - @ref TinyGsmCalling<modemType>::callHangup "callHangup()"
- *     - @ref TinyGsmCalling<modemType>::dtmfSend "dtmfSend()"
- * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
- *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
- *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
- *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
- * - GSM location functions (TinyGsmGSMLocation.tpp)
- *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationRaw "getGsmLocationRaw()"
- *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocation "getGsmLocation()"
- *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationTime "getGsmLocationTime()"
- * - Time functions (TinyGsmTime.tpp)
- *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
- * - NTP server functions (TinyGsmNTP.tpp)
- *     - @ref TinyGsmNTP<modemType>::NTPServerSync "NTPServerSync()"
- *     - @ref TinyGsmNTP<modemType>::waitForTimeSync "waitForTimeSync()"
- *     - @ref TinyGsmNTP<modemType>::ShowNTPError "ShowNTPError()"
- * - Battery functions (TinyGsmBattery.tpp)
- *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
- *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
- *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
- *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
- * - Temperature functions (TinyGsmTemperature.tpp)
- *     - @ref TinyGsmTemperature<modemType>::getTemperature "getTemperature()"
- * - Generic network functions
- *     - @ref TinyGsmA7672X::getLocalIPSecure "getLocalIPSecure()"
- * - Phone call functions
- *     - @ref TinyGsmA7672X::setGsmBusy "setGsmBusy()"
- * - SSL context functions
- *     - @ref TinyGsmA7672X::configureSSLContext "configureSSLContext()"
- *     - @ref TinyGsmA7672X::linkSSLContext "linkSSLContext()"
- * - @ref GsmClientA7672X "GsmClientA7672X"
- *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
- *     - @ref GsmClient::init "init()"
- *     - @ref GsmClient::connect "connect()"
- *     - @ref GsmClient::stop "stop()"
- *     - @ref GsmClient::write "write()"
- *     - @ref GsmClient::available "available()"
- *     - @ref GsmClient::read "read()"
- *     - @ref GsmClient::peek "peek()"
- *     - @ref GsmClient::flush "flush()"
- *     - @ref GsmClient::connected "connected()"
- *   - Extended Client API (TinyGsmTCP.tpp)
- *     - @ref GsmClient::getMux "getMux()"
- *     - @ref GsmClient::getConnectionID "getConnectionID()"
- *     - @ref GsmClient::beginWrite "beginWrite()"
- *     - @ref GsmClient::endWrite "endWrite()"
- * - @ref GsmClientSecureA7672X "GsmClientSecureA7672X"
- *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
- *     - @ref GsmClient::init "init()"
- *     - @ref GsmClient::connect "connect()"
- *     - @ref GsmClient::stop "stop()"
- *     - @ref GsmClient::write "write()"
- *     - @ref GsmClient::available "available()"
- *     - @ref GsmClient::read "read()"
- *     - @ref GsmClient::peek "peek()"
- *     - @ref GsmClient::flush "flush()"
- *     - @ref GsmClient::connected "connected()"
- *   - Extended Client API (TinyGsmTCP.tpp)
- *     - @ref GsmClient::getMux "getMux()"
- *     - @ref GsmClient::getConnectionID "getConnectionID()"
- *     - @ref GsmClient::beginWrite "beginWrite()"
- *     - @ref GsmClient::endWrite "endWrite()"
- *   - Client SSL configuration functions (TinyGsmSSL.tpp)
- *     - @ref GsmSecureClient::setSSLContextIndex "setSSLContextIndex()"
- *     - @ref GsmSecureClient::setSSLAuthMode "setSSLAuthMode()"
- *     - @ref GsmSecureClient::setSSLVersion "setSSLVersion()"
- *   - Client certificate assignment functions (TinyGsmSSL.tpp)
- *     - @ref GsmSecureClient::setCACertName "setCACertName()"
- *     - @ref GsmSecureClient::setClientCertName "setClientCertName()"
- *     - @ref GsmSecureClient::setPrivateKeyName "setPrivateKeyName()"
- *   - Client PSK assignment functions (TinyGsmSSL.tpp)
- *     - @ref GsmSecureClient::setPSKTableName "setPSKTableName()"
- *     - @ref GsmSecureClient::setPreSharedKey "setPreSharedKey()"
  *
  * # Connection Information
  *
@@ -156,15 +22,9 @@
  *   - 10
  * - Socket Buffering:
  *   - The modem has an internal buffer for incoming data.
- *   - This gives you leeway to pull data from the buffer as needed with less
- * risk of losing data.
  * - Socket Numbering:
- *   - The modem uses user-specified MUX channel numbers for socket connections.
- *   - If you attempt to create a new client with a channel number that is
- * already in use and other unused channels are available, this library will
- * select the next available one.
- *   - Use the getMux() function to get the assigned multiplexing channel number
- * after a successful connection.
+ *   - The modem respects user-specified multiplexing channel
+ * numbers/identifiers for socket connections.
  *
  * @todo In GsmClientA7672X constructor: Ensure the secure socket mux isn't out
  * of range
@@ -173,15 +33,14 @@
  * @todo In `connect()` (secure path): Shouldn't CCHSET be called only once
  * during the init or during the GPRS connection process?
  * @todo In `connect()` (secure path): Should CCHSTART be called once during the
- * GPRS connection process instead of repeatly here?
+ * GPRS connection process instead of repeatedly here?
  * @todo In `connect()` (secure path): verify the socket returned by CCHOPEN
  * @todo In `connect()` (non-secure path): Should NETOPEN be called once during
- * the GPRS connection process instead of repeatly here?
+ * the GPRS connection process instead of repeatedly here?
  * @todo In `modemSend()`: make sure requested and confirmed bytes match
  * @todo In `modemGetConnected()`: Does this work?  It's not the right
  * command by the manual
  */
-/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTA7672X_H_
 #define SRC_TINYGSMCLIENTA7672X_H_
@@ -211,7 +70,7 @@ enum class A7672XRegStatus {
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
-/// Basic modem configurations for the A7672x modem family
+/// Basic modem configurations for SIMCom A7672 modules
 /// @ingroup simcom_a7672x
 struct TinyGsmA7672XModemConfig
     : public TinyGsmModemConfigPreset<A7672XRegStatus> {
@@ -226,7 +85,7 @@ constexpr char TinyGsmA7672XModemConfig::MODEM_MANUFACTURER[]
 constexpr char TinyGsmA7672XModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
- * @brief TCP behavior and limits for the A7672x modem family.
+ * @brief TCP behavior and limits for SIMCom A7672 modules.
  *
  * The module supports 10 TCP sockets or 2 SSL sockets.
  *
@@ -303,6 +162,9 @@ class TinyGsmA7672X
     using GsmClient<TinyGsmA7672X, TinyGsmA7672XTcpConfig>::stop;
     using TcpConfig = TinyGsmA7672XTcpConfig;
 
+    /*
+     * Client constructors and initialization
+     */
     /**
      * @brief Create a new TCP client.
      * @warning You must call the init() method before attempting to use a
@@ -372,13 +234,13 @@ class TinyGsmA7672X
     }
 
     /*
-     * Client API
+     * Arduino Client interface
      */
    public:
     TINY_GSM_STATIC_TCP_CONNECT
 
     /*
-     * Extended API
+     * Extended Client API
      */
     // No extra extended API functions
   };
@@ -396,6 +258,10 @@ class TinyGsmA7672X
     using GsmClientA7672X::connect;
     using GsmClientA7672X::stop;
     using TcpConfig = TinyGsmA7672XTcpConfig;
+
+    /*
+     * Client constructors and initialization
+     */
 
     TINY_GSM_SECURE_CLIENT_CTORS(A7672X)
 
@@ -442,6 +308,10 @@ class TinyGsmA7672X
 
       return true;
     }
+
+    /*
+     * Arduino Client interface
+     */
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
@@ -953,7 +823,7 @@ class TinyGsmA7672X
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
 
       // TODO: Should CCHSTART be called once during the GPRS connection process
-      // instead of repeatly here?
+      // instead of repeatedly here?
       // Start SSL service
       sendAT(GF("+CCHSTART"));
       if (waitResponse(2000L) != 1) { return false; }
@@ -975,7 +845,7 @@ class TinyGsmA7672X
       // TODO: verify this
     } else {
       // TODO: Should NETOPEN be called once during the GPRS connection process
-      // instead of repeatly here?
+      // instead of repeatedly here?
       sendAT(GF("+NETOPEN"));
       if (waitResponse(2000L) != 1) { return false; }
 
@@ -1313,6 +1183,6 @@ class TinyGsmA7672X
 /// Typedef for backward compatibility
 typedef TinyGsmA7672X TinyGsmA7672x;
 
-// cspell:words CCHSEND
+// cspell:words CCHSEND CCHSET CCHSTART CCHOPEN
 
 #endif  // SRC_TINYGSMCLIENTA7672X_H_

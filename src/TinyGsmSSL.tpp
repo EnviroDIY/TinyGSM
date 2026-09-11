@@ -202,10 +202,6 @@ class TinyGsmSSL {
 
   /**
    * @brief Create the SSL capability mixin.
-   * @param modem Unused. Accepted for signature compatibility with the derived
-   * client constructors.
-   * @param mux Unused. Accepted for signature compatibility with the derived
-   * client constructors.
    */
   explicit TinyGsmSSL(modemType& /*modem*/, uint8_t /*mux*/ = 0) {}
 

@@ -7,128 +7,10 @@
  * Damiano
  * @date       Nov 2016
  */
-/* clang-format off */
 /**
- * @defgroup digi_xbee Digi XBee Modem Family
- * @brief Manufacturer: Digi. Models: XBee cellular modules supported by
- * TinyGSM.
- *
- * # Supported Public Functions
- *
- * - Basic functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::init "init()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::sendAT "sendAT()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::setBaud "setBaud()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getConfiguredModem "getConfiguredModem()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
- * - Power functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::powerOff "powerOff()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
- * - Generic network functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality "getSignalQuality()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getLocalIP "getLocalIP()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::localIP "localIP()"
- * - Utilities (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamDump "streamDump()"
- * - SIM card functions (TinyGsmGPRS.tpp)
- *     - @ref TinyGsmGPRS<modemType>::simUnlock "simUnlock()"
- *     - @ref TinyGsmGPRS<modemType>::getSimCCID "getSimCCID()"
- *     - @ref TinyGsmGPRS<modemType>::getIMEI "getIMEI()"
- *     - @ref TinyGsmGPRS<modemType>::getIMSI "getIMSI()"
- *     - @ref TinyGsmGPRS<modemType>::getSimStatus "getSimStatus()"
- * - GPRS functions (TinyGsmGPRS.tpp)
- *     - @ref TinyGsmGPRS<modemType>::gprsConnect "gprsConnect()"
- *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
- *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
- *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
- * - WiFi functions (TinyGsmWifi.tpp)
- *     - @ref TinyGsmWifi<modemType>::networkConnect "networkConnect()"
- *     - @ref TinyGsmWifi<modemType>::networkDisconnect "networkDisconnect()"
- * - Socket listening functions (TinyGsmTCP.tpp)
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
- * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
- *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
- *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
- * - Battery functions (TinyGsmBattery.tpp)
- *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
- *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
- * - Temperature functions (TinyGsmTemperature.tpp)
- *     - @ref TinyGsmTemperature<modemType>::getTemperature "getTemperature()"
- * - XBee identifier functions
- *     - @ref TinyGsmXBee::getBeeType "getBeeType()"
- *     - @ref TinyGsmXBee::getBeeName "getBeeName()"
- *     - @ref TinyGsmXBee::getSeries "getSeries()"
- * - XBee specific utilities
- *     - @ref TinyGsmXBee::commandMode "commandMode()"
- *     - @ref TinyGsmXBee::writeChanges "writeChanges()"
- *     - @ref TinyGsmXBee::exitCommand "exitCommand()"
- *     - @ref TinyGsmXBee::exitAndFail "exitAndFail()"
- *     - @ref TinyGsmXBee::readResponseString "readResponseString()"
- *     - @ref TinyGsmXBee::readResponseInt "readResponseInt()"
- *     - @ref TinyGsmXBee::sendATGetString "sendATGetString()"
- *     - @ref TinyGsmXBee::changeSettingIfNeeded "changeSettingIfNeeded()"
- *     - @ref TinyGsmXBee::gotIPforSavedHost "gotIPforSavedHost()"
- * - @ref GsmClientXBee "GsmClientXBee"
- *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
- *     - @ref GsmClient::init "init()"
- *     - @ref GsmClient::connect "connect()"
- *     - @ref GsmClient::stop "stop()"
- *     - @ref GsmClient::write "write()"
- *     - @ref GsmClient::available "available()"
- *     - @ref GsmClient::read "read()"
- *     - @ref GsmClient::peek "peek()"
- *     - @ref GsmClient::flush "flush()"
- *     - @ref GsmClient::connected "connected()"
- *   - Extended Client API (TinyGsmTCP.tpp)
- *     - @ref GsmClient::remoteIP "remoteIP()"
- *     - @ref GsmClient::getMux "getMux()"
- *     - @ref GsmClient::getConnectionID "getConnectionID()"
- *     - @ref GsmClient::beginWrite "beginWrite()"
- *     - @ref GsmClient::endWrite "endWrite()"
- * - @ref GsmClientSecureXBee "GsmClientSecureXBee"
- *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
- *     - @ref GsmClient::init "init()"
- *     - @ref GsmClient::connect "connect()"
- *     - @ref GsmClient::stop "stop()"
- *     - @ref GsmClient::write "write()"
- *     - @ref GsmClient::available "available()"
- *     - @ref GsmClient::read "read()"
- *     - @ref GsmClient::peek "peek()"
- *     - @ref GsmClient::flush "flush()"
- *     - @ref GsmClient::connected "connected()"
- *   - Extended Client API (TinyGsmTCP.tpp)
- *     - @ref GsmClient::remoteIP "remoteIP()"
- *     - @ref GsmClient::getMux "getMux()"
- *     - @ref GsmClient::getConnectionID "getConnectionID()"
- *     - @ref GsmClient::beginWrite "beginWrite()"
- *     - @ref GsmClient::endWrite "endWrite()"
- *   - Client SSL configuration functions (TinyGsmSSL.tpp)
- *     - @ref GsmSecureClient::setSSLContextIndex "setSSLContextIndex()"
- *     - @ref GsmSecureClient::setSSLAuthMode "setSSLAuthMode()"
- *     - @ref GsmSecureClient::setSSLVersion "setSSLVersion()"
- *   - Client certificate assignment functions (TinyGsmSSL.tpp)
- *     - @ref GsmSecureClient::setCACertName "setCACertName()"
- *     - @ref GsmSecureClient::setClientCertName "setClientCertName()"
- *     - @ref GsmSecureClient::setPrivateKeyName "setPrivateKeyName()"
- *   - Client PSK assignment functions (TinyGsmSSL.tpp)
- *     - @ref GsmSecureClient::setPSKTableName "setPSKTableName()"
- *     - @ref GsmSecureClient::setPreSharedKey "setPreSharedKey()"
+ * @defgroup digi_xbee Digi XBee and XBee3 cellular and WiFi modules
+ * @ingroup group_digi
+ * @brief Manufacturer: Digi. Models: XBee and XBee3 cellular and WiFi modules.
  *
  * # Connection Information
  *
@@ -138,21 +20,16 @@
  * multiplexing.
  * - Socket Buffering:
  *   - The modem does **not** have an internal buffer for incoming data.
- *   - You must read all data from the modem as soon as it arrives, or you will
- * lose it.
- *   - You can reduce the risk of losing data by setting this library's buffer
- * to be as large as possible; this will increase the memory footprint of your
- * program.
- *   - Change the buffer size by defining TINY_GSM_RX_BUFFER in your sketch
- * before including any TinyGSM header file.
+ *   - You must set the buffer size in this library to be larger than your
+ * largest expected incoming packet, or you will lose incoming data.
  * - Socket Numbering:
  *   - Only one socket is available in transparent/command mode, and it is
  * always channel 0.
- *   - The mux argument on the client constructor and init() is ignored. *
+ *   - The mux argument on the client constructor and init() is ignored.
+ *
  * @todo In operator `GsmClientXBee::read()`: Read directly into user buffer?
  * @todo In `enterCommandMode()`: optimize this
  */
-/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTXBEE_H_
 #define SRC_TINYGSMCLIENTXBEE_H_
@@ -214,7 +91,7 @@ enum class XBeeRegStatus {
   REG_UNKNOWN      = 4,  ///< Unknown registration status
 };
 
-/// Basic modem configurations for the XBee modem family
+/// Basic modem configurations for the Digi XBee and XBee3
 /// @ingroup digi_xbee
 struct TinyGsmXBeeModemConfig : public TinyGsmModemConfigPreset<XBeeRegStatus> {
   /// The newline character(s) used in AT commands.
@@ -237,7 +114,7 @@ constexpr char TinyGsmXBeeModemConfig::MODEM_MANUFACTURER[]
 constexpr char TinyGsmXBeeModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
- * @brief TCP behavior and limits for the XBee modem family.
+ * @brief TCP behavior and limits for the Digi XBee and XBee3.
  *
  * Bee's do not support multiplexing in transparent/command mode.  The much more
  * complicated API mode is needed for multiplexing.
@@ -302,6 +179,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     using TcpConfig = TinyGsmXBeeTcpConfig;
     using Print::write;
 
+    /*
+     * Client constructors and initialization
+     */
     /**
      * @brief Create a new TCP client.
      * @warning You must call the init() method before attempting to use a
@@ -495,7 +375,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     }
 
     /*
-     * Extended API
+     * Extended Client API
      */
 
     /// @copydoc GsmClient::remoteIP()
@@ -521,6 +401,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     using GsmClientXBee::connect;
     using GsmClientXBee::stop;
     using TcpConfig = TinyGsmXBeeTcpConfig;
+
+    /*
+     * Client constructors and initialization
+     */
 
     TINY_GSM_SECURE_CLIENT_CTORS(XBee)
   };
@@ -1991,9 +1875,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
   /**
    * @brief Reads a response from the XBee module as an integer, waiting up to
-   * timeout_ms milliseconds for data to become available.
+   * timeout milliseconds for data to become available.
    *
-   * @param timeout_ms The maximum time to wait for a response, in milliseconds.
+   * @param timeout The maximum time to wait for a response, in milliseconds.
    * @return The response from the XBee module as an integer.
    */
   int16_t readResponseInt(uint32_t timeout = 1000L) {

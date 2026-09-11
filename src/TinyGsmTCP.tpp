@@ -436,6 +436,7 @@ class TinyGsmTCP {
    * functions. They can be overridden in derived classes if the modem has a
    * different implementation.
    */
+  /**@{*/
  protected:
   /*
    * Socket listening functions
@@ -493,12 +494,42 @@ class TinyGsmTCP {
     return connId;
   };
 
+  /**
+   * @brief Connect to a remote host, telling the modem which connection
+   * identifier to use.
+   *
+   * @param host The hostname or IP address of the remote host.
+   * @param port The port number of the remote host.
+   * @param mux The static connection identifier to use for the connection.
+   * @param timeout_s The timeout for the connection attempt, in seconds.
+   * @return True if the connection was successful, false otherwise.
+   */
   bool modemConnect(const char* host, uint16_t port, uint8_t /*static*/ mux,
                     int timeout_s) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
+  /**
+   * @brief Connect to a remote host, allowing the modem to assign the
+   * connection identifier.
+   *
+   * @param host The hostname or IP address of the remote host.
+   * @param port The port number of the remote host.
+   * @param dynamicMux Pointer to the variable that holds the requested
+   * connection identifier and will be changed to the assigned connection
+   * identifier.
+   * @param timeout_s The timeout for the connection attempt, in seconds.
+   * @return True if the connection was successful, false otherwise.
+   */
   bool modemConnect(const char* host, uint16_t port, uint8_t* dynamicMux,
                     int timeout_s) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
+  /**
+   * @brief Stop a connection on the modem.
+   *
+   * @param mux The connection identifier of the connection to stop.
+   * @param maxWaitMs The maximum time to wait for the connection to stop, in
+   * milliseconds.
+   * @return True if the connection was successfully stopped, false otherwise.
+   */
   bool modemStop(uint8_t mux, uint32_t maxWaitMs) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /**
@@ -511,8 +542,8 @@ class TinyGsmTCP {
    *
    * @param buff The buffer of data to send
    * @param len The length of the buffer
-   * @param mux The **zero-indexed** position of the client in the modem's
-   * socket array.
+   * @param mux The **zero-indexed** connection identifier of the client in the
+   * modem's socket array.
    * @return The number of bytes sent
    * @todo Add parameter for timeout for the entire send operation.  This
    * currently has a hard-coded timeout of 15 seconds for each chunk.
@@ -580,21 +611,45 @@ class TinyGsmTCP {
     return bytesSent;
   }
 
-  // Initiates the AT commands for a send, up to the point of getting an input
-  // prompt
+  /**
+   * @brief Initiates the AT commands for a send, up to the point of getting an
+   * input prompt
+   *
+   * @param len The length of the data to send.
+   * @param mux The connection identifier for the send operation.
+   * @return True if the modem is ready to accept the data, false otherwise.
+   */
   bool modemBeginSend(size_t len, uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  //  Finishes off the modem send, checking for a response from the modem
-  //  This is for everything after the input prompt
+  /**
+   * @brief Finishes off the modem send, checking for a response from the modem.
+   * This is for everything after the input prompt.
+   *
+   * @param len The length of the data that was sent.
+   * @param mux The connection identifier for the send operation.
+   * @return The number of bytes successfully sent.
+   *
+   * @note If possible, the modem should confirm the number of bytes actually
+   * sent.  If not, the returned value will be the same as the input len.
+   */
   size_t modemEndSend(size_t len, uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  // check for the amount of space left in the send buffer
+  /**
+   * @brief Gets the amount of space left in the send buffer.
+   */
   size_t modemGetSendLength(uint8_t) {
     // by default, assume the whole space is available
     return TcpConfig::kSendMaxSize;
   }
 
-  // wait until the modem has more than the minimum required send buffer space
-  // available returns the number of bytes available in the send buffer at the
-  // end of the wait
+  /**
+   * @brief Waits until the modem has more than the minimum required send buffer
+   * space available.
+   *
+   * @param mux The connection identifier for the send operation.
+   * @param timeout_ms The maximum time to wait for sufficient send buffer
+   * space, in milliseconds.
+   * @return The number of bytes available in the send buffer at the end of the
+   * wait.
+   */
   size_t modemWaitForSend(uint8_t mux, uint32_t timeout_ms) {
     size_t sendLength = thisModem().modemGetSendLength(mux);
 #if defined(TINY_GSM_DEBUG)
@@ -626,10 +681,30 @@ class TinyGsmTCP {
     return sendLength;
   }
 
+  /**
+   * @brief Reads data from the modem's receive buffer, if one exists.
+   *
+   * @param size The maximum number of bytes to read.
+   * @param mux The connection identifier for the read operation.
+   * @return The number of bytes actually read.
+   */
   size_t modemRead(size_t size, uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
+  /**
+   * @brief Gets the number of bytes available in the modem's receive buffer, if
+   * one exists.
+   *
+   * @param mux The connection identifier for the query operation.
+   * @return The number of bytes available in the receive buffer.
+   */
   size_t modemGetAvailable(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
+  /**
+   * @brief Checks if the modem's connection identified by the given mux is
+   currently connected.
+
+   * @param mux The connection identifier for the query operation.
+   * @return `true` if the connection is established, `false` otherwise.
+   */
   bool modemGetConnected(uint8_t mux) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   /**@}*/
 };
@@ -658,12 +733,12 @@ class GsmClient : public Client {
   // in particular Print::write(const char*, size_t).
   using Print::write;
 
+
   /**
-   * @anchor client_like_functions
-   * @name Functions implementing the Arduino Client interface
+   * @anchor client_ctors
+   * @name Client constructors and initialization
    */
   /**@{*/
-
   /**
    * @brief Create a new TCP client.
    * @warning You must call the init() method before attempting to use a
@@ -701,7 +776,14 @@ class GsmClient : public Client {
    * @return true if initialization completed.
    */
   virtual bool init(modemType* modem, uint8_t mux) = 0;
+  /**@}*/
 
+
+  /**
+   * @anchor client_like_functions
+   * @name Arduino Client interface
+   */
+  /**@{*/
   /**
    * @brief Connect to a server using a host name and port number, with a
    * specified timeout.

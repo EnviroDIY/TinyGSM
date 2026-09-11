@@ -239,8 +239,12 @@ class TinyGsmGPRS {
    * GPRS functions
    */
  protected:
-  // Checks if current attached to GPRS/EPS service
-  bool isGprsConnectedImpl() {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool gprsDisconnectImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool isGprsConnected() {
     thisModem().sendAT(GF("+CGATT?"));
     if (thisModem().waitResponse(GF("+CGATT:")) != 1) { return false; }
     int8_t res = thisModem().streamGetIntBefore('\n');

@@ -6,119 +6,11 @@
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
-/* clang-format off */
 /**
- * @defgroup ublox_cellular u-blox Cellular Modem Family
- * @brief Manufacturer: u-blox. Models: cellular modules supported by
- * TinyGsmUBLOX.
- *
- * # Supported Public Functions
- *
- * - Basic functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::init "init()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::sendAT "sendAT()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::setBaud "setBaud()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getConfiguredModem "getConfiguredModem()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
- * - Power functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::powerOff "powerOff()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
- * - Generic network functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality "getSignalQuality()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getLocalIP "getLocalIP()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::localIP "localIP()"
- * - Utilities (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamDump "streamDump()"
- * - SIM card functions (TinyGsmGPRS.tpp)
- *     - @ref TinyGsmGPRS<modemType>::simUnlock "simUnlock()"
- *     - @ref TinyGsmGPRS<modemType>::getSimCCID "getSimCCID()"
- *     - @ref TinyGsmGPRS<modemType>::getIMEI "getIMEI()"
- *     - @ref TinyGsmGPRS<modemType>::getIMSI "getIMSI()"
- *     - @ref TinyGsmGPRS<modemType>::getSimStatus "getSimStatus()"
- * - GPRS functions (TinyGsmGPRS.tpp)
- *     - @ref TinyGsmGPRS<modemType>::gprsConnect "gprsConnect()"
- *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
- *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
- *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
- * - Socket listening functions (TinyGsmTCP.tpp)
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
- * - Phone call functions (TinyGsmCalling.tpp)
- *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
- *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
- *     - @ref TinyGsmCalling<modemType>::callHangup "callHangup()"
- *     - @ref TinyGsmCalling<modemType>::dtmfSend "dtmfSend()"
- * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
- *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
- *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
- *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
- * - GSM location functions (TinyGsmGSMLocation.tpp)
- *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationRaw "getGsmLocationRaw()"
- *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocation "getGsmLocation()"
- *     - @ref TinyGsmGSMLocation<modemType>::getGsmLocationTime "getGsmLocationTime()"
- * - GPS (GNSS, GLONASS) functions (TinyGsmGPS.tpp)
- *     - @ref TinyGsmGPS<modemType>::enableGPS "enableGPS()"
- *     - @ref TinyGsmGPS<modemType>::disableGPS "disableGPS()"
- *     - @ref TinyGsmGPS<modemType>::getGPSraw "getGPSraw()"
- *     - @ref TinyGsmGPS<modemType>::getGPS "getGPS()"
- *     - @ref TinyGsmGPS<modemType>::getGPSTime "getGPSTime()"
- * - Time functions (TinyGsmTime.tpp)
- *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
- * - Battery functions (TinyGsmBattery.tpp)
- *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
- *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
- * - Network mode / type / technology functions
- *     - @ref TinyGsmUBLOX::setRadioAccessTechnology "setRadioAccessTechnology()"
- *     - @ref TinyGsmUBLOX::getCurrentRadioAccessTechnology "getCurrentRadioAccessTechnology()"
- * - @ref GsmClientUBLOX "GsmClientUBLOX"
- *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
- *     - @ref GsmClient::init "init()"
- *     - @ref GsmClient::connect "connect()"
- *     - @ref GsmClient::stop "stop()"
- *     - @ref GsmClient::write "write()"
- *     - @ref GsmClient::available "available()"
- *     - @ref GsmClient::read "read()"
- *     - @ref GsmClient::peek "peek()"
- *     - @ref GsmClient::flush "flush()"
- *     - @ref GsmClient::connected "connected()"
- *   - Extended Client API (TinyGsmTCP.tpp)
- *     - @ref GsmClient::getMux "getMux()"
- *     - @ref GsmClient::getConnectionID "getConnectionID()"
- *     - @ref GsmClient::beginWrite "beginWrite()"
- *     - @ref GsmClient::endWrite "endWrite()"
- * - @ref GsmClientSecureUBLOX "GsmClientSecureUBLOX"
- *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
- *     - @ref GsmClient::init "init()"
- *     - @ref GsmClient::connect "connect()"
- *     - @ref GsmClient::stop "stop()"
- *     - @ref GsmClient::write "write()"
- *     - @ref GsmClient::available "available()"
- *     - @ref GsmClient::read "read()"
- *     - @ref GsmClient::peek "peek()"
- *     - @ref GsmClient::flush "flush()"
- *     - @ref GsmClient::connected "connected()"
- *   - Extended Client API (TinyGsmTCP.tpp)
- *     - @ref GsmClient::getMux "getMux()"
- *     - @ref GsmClient::getConnectionID "getConnectionID()"
- *     - @ref GsmClient::beginWrite "beginWrite()"
- *     - @ref GsmClient::endWrite "endWrite()"
+ * @defgroup ublox_cellular u-blox 2G and 3G Cellular Modules
+ * @ingroup group_ublox
+ * @brief Manufacturer: u-blox. Models: 2G and 3G cellular modules, including
+ * LARA, LEON, LISA, MPCI, SARA-G, SARA-U, and TOBY modules.
  *
  * # Connection Information
  *
@@ -127,18 +19,12 @@
  *   - a few u-blox modules support more, but this library does not
  * - Socket Buffering:
  *   - The modem has an internal buffer for incoming data.
- *   - This gives you leeway to pull data from the buffer as needed with less
- * risk of losing data.
  * - Socket Numbering:
- *   - The modem does not allow you to specify the multiplexing channel.
- *   - The modem will automatically assign a channel when the client connects to
- * a server.
- *   - Use the getMux() function to get the assigned multiplexing channel number
- * after a successful connection.
+ *   - The modem will automatically assign a channel number when the client
+ * connects to a server.
  *
  * @todo In `restartImpl()`: Verify delay timing here
  */
-/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTUBLOX_H_
 #define SRC_TINYGSMCLIENTUBLOX_H_
@@ -253,6 +139,9 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     using GsmClient<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>::stop;
     using TcpConfig = TinyGsmUBLOXTcpConfig;
 
+    /*
+     * Client constructors and initialization
+     */
     /**
      * @brief Create a new TCP client.
      * @warning You must call the init() method before attempting to use a
@@ -329,7 +218,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     }
 
     /*
-     * Client API
+     * Arduino Client interface
      */
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
@@ -383,7 +272,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     }
 
     /*
-     * Extended API
+     * Extended Client API
      */
     // No extra extended API functions
   };
@@ -402,6 +291,9 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     using GsmClientUBLOX::stop;
     using TcpConfig = TinyGsmUBLOXTcpConfig;
 
+    /*
+     * Client constructors and initialization
+     */
     /**
      * @brief Create a new secured TCP (SSL) client.
      * @warning You must call the init() method before attempting to use a

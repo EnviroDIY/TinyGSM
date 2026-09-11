@@ -6,7 +6,8 @@
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  *
- * @defgroup simcom_sim70xx SIMCom SIM70xx Shared Modem Family
+ * @defgroup simcom_sim70xx SIMCom SIM70xx (SIM7000, SIM7070, SIM7080, SIM7090)
+ * @ingroup group_simcom
  * @brief Manufacturer: SIMCom. Models: SIM7000, SIM7070, SIM7080, SIM7090.
  */
 #ifndef SRC_TINYGSMCLIENTSIM70XX_H_

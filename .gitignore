@@ -80,10 +80,13 @@ docs/*.js
 docs/*.ttf
 docs/directories.dox
 docs/examples.dox
-docs/clients*.dox
+docs/manufacturers.dox
+docs/pages.dox
 docs/supported_module_functions.dox
+docs/clients*.dox
 docs/DOC_TEMPLATE_*
 docs/.doxybook/*
+docs/generated_doc_helpers/*
 docs/create_client_dox.py
 docs/generate_callable_docs.py
 docs/generateLogos.py

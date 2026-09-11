@@ -8,95 +8,10 @@
  *
  * MC60 support added by Tamas Dajka 2017.10.15 - with fixes by Sara Damiano
  */
-/* clang-format off */
 /**
- * @defgroup quectel_mc60 Quectel MC60 Modem Family
+ * @defgroup quectel_mc60 Quectel MC60 and MC60E
+ * @ingroup group_quectel
  * @brief Manufacturer: Quectel. Models: MC60, MC60E.
- *
- * # Supported Public Functions
- *
- * - Basic functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::begin "begin()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::init "init()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::sendAT "sendAT()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::setBaud "setBaud()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::forceModemBaud "forceModemBaud()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::testAT "testAT()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::waitResponse "waitResponse()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getConfiguredModem "getConfiguredModem()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemInfo "getModemInfo()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemName "getModemName()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemManufacturer "getModemManufacturer()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemModel "getModemModel()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemRevision "getModemRevision()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getModemSerialNumber "getModemSerialNumber()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::factoryDefault "factoryDefault()"
- * - Power functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::restart "restart()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::powerOff "powerOff()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::radioOff "radioOff()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::sleepEnable "sleepEnable()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::setPhoneFunctionality "setPhoneFunctionality()"
- * - Generic network functions (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::getRegistrationStatus "getRegistrationStatus()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::isNetworkConnected "isNetworkConnected()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::waitForNetwork "waitForNetwork()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getSignalQuality "getSignalQuality()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::getLocalIP "getLocalIP()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::localIP "localIP()"
- * - Utilities (TinyGsmModem.tpp)
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamWrite "streamWrite()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamClear "streamClear()"
- *     - @ref TinyGsmModem<modemType, modemConfig>::streamDump "streamDump()"
- * - SIM card functions (TinyGsmGPRS.tpp)
- *     - @ref TinyGsmGPRS<modemType>::simUnlock "simUnlock()"
- *     - @ref TinyGsmGPRS<modemType>::getSimCCID "getSimCCID()"
- *     - @ref TinyGsmGPRS<modemType>::getIMEI "getIMEI()"
- *     - @ref TinyGsmGPRS<modemType>::getIMSI "getIMSI()"
- *     - @ref TinyGsmGPRS<modemType>::getSimStatus "getSimStatus()"
- * - GPRS functions (TinyGsmGPRS.tpp)
- *     - @ref TinyGsmGPRS<modemType>::gprsConnect "gprsConnect()"
- *     - @ref TinyGsmGPRS<modemType>::gprsDisconnect "gprsDisconnect()"
- *     - @ref TinyGsmGPRS<modemType>::isGprsConnected "isGprsConnected()"
- *     - @ref TinyGsmGPRS<modemType>::getOperator "getOperator()"
- *     - @ref TinyGsmGPRS<modemType>::getProvider "getProvider()"
- * - Socket listening functions (TinyGsmTCP.tpp)
- *     - @ref TinyGsmTCP<modemType, tcpConfig>::maintain "maintain()"
- * - Phone call functions (TinyGsmCalling.tpp)
- *     - @ref TinyGsmCalling<modemType>::callAnswer "callAnswer()"
- *     - @ref TinyGsmCalling<modemType>::callNumber "callNumber()"
- *     - @ref TinyGsmCalling<modemType>::callHangup "callHangup()"
- *     - @ref TinyGsmCalling<modemType>::dtmfSend "dtmfSend()"
- * - Text messaging (SMS) functions (TinyGsmSMS.tpp)
- *     - @ref TinyGsmSMS<modemType>::sendUSSD "sendUSSD()"
- *     - @ref TinyGsmSMS<modemType>::sendSMS "sendSMS()"
- *     - @ref TinyGsmSMS<modemType>::sendSMS_UTF16 "sendSMS_UTF16()"
- * - Time functions (TinyGsmTime.tpp)
- *     - @ref TinyGsmTime<modemType>::getGSMDateTime "getGSMDateTime()"
- *     - @ref TinyGsmTime<modemType>::getNetworkTime "getNetworkTime()"
- * - Battery functions (TinyGsmBattery.tpp)
- *     - @ref TinyGsmBattery<modemType>::getBattVoltage "getBattVoltage()"
- *     - @ref TinyGsmBattery<modemType>::getBattPercent "getBattPercent()"
- *     - @ref TinyGsmBattery<modemType>::getBattChargeState "getBattChargeState()"
- *     - @ref TinyGsmBattery<modemType>::getBattStats "getBattStats()"
- * - Text messaging (SMS) functions
- *     - @ref TinyGsmMC60::deleteAllSMS "deleteAllSMS()"
- * - @ref GsmClientMC60 "GsmClientMC60"
- *   - Functions implementing the Arduino Client interface (TinyGsmTCP.tpp)
- *     - @ref GsmClient::init "init()"
- *     - @ref GsmClient::connect "connect()"
- *     - @ref GsmClient::stop "stop()"
- *     - @ref GsmClient::write "write()"
- *     - @ref GsmClient::available "available()"
- *     - @ref GsmClient::read "read()"
- *     - @ref GsmClient::peek "peek()"
- *     - @ref GsmClient::flush "flush()"
- *     - @ref GsmClient::connected "connected()"
- *   - Extended Client API (TinyGsmTCP.tpp)
- *     - @ref GsmClient::getMux "getMux()"
- *     - @ref GsmClient::getConnectionID "getConnectionID()"
- *     - @ref GsmClient::beginWrite "beginWrite()"
- *     - @ref GsmClient::endWrite "endWrite()"
  *
  * # Connection Information
  *
@@ -105,22 +20,14 @@
  *   - SSL is not supported
  * - Socket Buffering:
  *   - The modem has an internal buffer for incoming data.
- *   - This gives you some leeway to pull data from the buffer as needed with
- * less risk of losing data.
- *   - Because this module doesn't supply a way to check how much data is stored
- * in the buffer, you should try to avoid reading it out in small chunks.
  * - Socket Numbering:
- *   - The Quectel MC60 uses static mux selection.
- *   - The caller chooses the multiplexing channel number via the constructor or
- * init() function.
- *   - init() honors the requested channel when available; if unavailable, it
- * will select the next available channel or use modulo assignment.
+ *   - The modem respects user-specified multiplexing channel
+ * numbers/identifiers for socket connections.
  *
  * @todo In `modemEndSend()`: verify len/ack
  * @todo In `modemRead()`: Does this even work????
  * @todo In `handleURCs()`: QIRD? or QIRDI?
  */
-/* clang-format on */
 
 #ifndef SRC_TINYGSMCLIENTMC60_H_
 #define SRC_TINYGSMCLIENTMC60_H_
@@ -146,7 +53,7 @@ enum class MC60RegStatus {
   REG_UNKNOWN      = 4,   ///< Unknown registration status
 };
 
-/// Basic modem configurations for the MC60 modem family
+/// Basic modem configurations for the Quectel MC60 and MC60E
 /// @ingroup quectel_mc60
 struct TinyGsmMC60ModemConfig : public TinyGsmModemConfigPreset<MC60RegStatus> {
   /// The modem manufacturer
@@ -165,7 +72,7 @@ constexpr char TinyGsmMC60ModemConfig::MODEM_MANUFACTURER[]
 constexpr char TinyGsmMC60ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
- * @brief TCP behavior and limits for the MC60 modem family.
+ * @brief TCP behavior and limits for the Quectel MC60 and MC60E.
  *
  * The send data commands, QISEND and QSSLSEND, both accept up to 1460 bytes of
  * input.
@@ -216,6 +123,9 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
     using GsmClient<TinyGsmMC60, TinyGsmMC60TcpConfig>::stop;
     using TcpConfig = TinyGsmMC60TcpConfig;
 
+    /*
+     * Client constructors and initialization
+     */
     /**
      * @brief Create a new TCP client.
      * @warning You must call the init() method before attempting to use a
@@ -283,13 +193,13 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
     }
 
     /*
-     * Client API
+     * Arduino Client interface
      */
    public:
     TINY_GSM_STATIC_TCP_CONNECT
 
     /*
-     * Extended API
+     * Extended Client API
      */
     // No extra extended API functions
   };

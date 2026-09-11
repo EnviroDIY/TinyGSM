@@ -6,8 +6,9 @@
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  *
- * @defgroup espressif_at Espressif Shared Modem Family
+ * @defgroup espressif_at Espressif AT
  * @brief Manufacturer: Espressif. Models: ESP8266, ESP32.
+ * @ingroup group_supported_modules
  */
 
 #ifndef SRC_TINYGSMCLIENTESPRESSIF_H_
