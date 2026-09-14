@@ -1,37 +1,48 @@
 /**
  * @file       TinyGsmCalling.tpp
+ * @brief      Voice calling and DTMF helper mixin for modem implementations.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMCALLING_H_
-#define SRC_TINYGSMCALLING_H_
+#ifndef SRC_TINYGSMCALLING_TPP_
+#define SRC_TINYGSMCALLING_TPP_
 
 #include "TinyGsmCommon.h"
 
 #ifndef TINY_GSM_MODEM_HAS_CALLING
+/// flag to indicate that the modem has calling functions
 #define TINY_GSM_MODEM_HAS_CALLING
 #endif
 
+/**
+ * @class TinyGsmCalling
+ * @brief The CRTP parent class for voice and DTMF calling functions.
+ * @tparam modemType The derived modem class
+ */
 template <class modemType>
 class TinyGsmCalling {
+ public:
+  /// Compile-time capability flag indicating voice call support
+  static constexpr bool hasCalling = true;
+
   /* =========================================== */
   /* =========================================== */
   /*
    * Define the interface
    */
  public:
-  /*
-   * Phone Call functions
+  /**
+   * @anchor calling_functions
+   * @name Phone call functions
    */
+  /**@{*/
 
   /**
    * @brief Answer an incoming phone call
-   *
-   * @return *true* The call was answered.
-   * @return *false* The call was not answered.
+   * @return True if the call was answered successfully, false otherwise
    */
   bool callAnswer() {
     return thisModem().callAnswerImpl();
@@ -41,8 +52,7 @@ class TinyGsmCalling {
    * @brief Make a phone call
    *
    * @param number The number to call
-   * @return *true* The call was successfully made
-   * @return *false* The call wasn't made
+   * @return True if the call was made successfully, false otherwise
    */
   bool callNumber(const String& number) {
     return thisModem().callNumberImpl(number);
@@ -50,9 +60,7 @@ class TinyGsmCalling {
 
   /**
    * @brief Hang up an in-progress phone call
-   *
-   * @return *true* The call was hung up.
-   * @return *false* The call was not hung up.
+   * @return True if the call was hung up successfully, false otherwise
    */
   bool callHangup() {
     return thisModem().callHangupImpl();
@@ -63,12 +71,13 @@ class TinyGsmCalling {
    *
    * @param cmd The command to send
    * @param duration_ms The tone duration
-   * @return *true* The message was sent
-   * @return *false* The message failed to send
+   * @return True if the DTMF message was sent successfully, false otherwise
    */
   bool dtmfSend(char cmd, int duration_ms = 100) {
     return thisModem().dtmfSendImpl(cmd, duration_ms);
   }
+  /**@}*/
+
 
  protected:
   // destructor (protected!)
@@ -89,11 +98,11 @@ class TinyGsmCalling {
   /*
    * Define the default function implementations
    */
-
-  /*
-   * Phone Call functions
-   */
  protected:
+  /*
+   * Phone call functions
+   */
+
   bool callAnswerImpl() {
     thisModem().sendAT('A');
     return thisModem().waitResponse() == 1;
@@ -134,4 +143,4 @@ class TinyGsmCalling {
   }
 };
 
-#endif  // SRC_TINYGSMCALLING_H_
+#endif  // SRC_TINYGSMCALLING_TPP_

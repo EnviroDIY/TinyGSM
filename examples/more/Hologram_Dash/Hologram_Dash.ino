@@ -1,12 +1,9 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} Hologram_Dash.ino
  *
- * This sketch connects to a website and downloads a page.
- * It can be used to perform HTTP/RESTful API calls.
- *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- **************************************************************/
+ * @brief This sketch uses TinyGSM on a Hologram Dash board to connect through
+ * the modem built into the board.
+ * ========================================================================== */
 
 // Hologram Dash uses UBLOX U2 modems
 #define TINY_GSM_MODEM_UBLOX
@@ -48,9 +45,9 @@ TinyGsm mdm(SerialAT);
 #ifdef USE_SSL
 TinyGsmClientSecure client(mdm);
 // Server details to test TCP over SSL
-const char server_ssl[]   = "vsh.pp.ua";
-const char resource_ssl[] = "/TinyGSM/logo.txt";
-const int  port_ssl       = 443;
+const char server[]   = "vsh.pp.ua";
+const char resource[] = "/TinyGSM/logo.txt";
+const int  port       = 443;
 #else
 TinyGsmClient client(mdm);
 // Server details to test TCP without SSL

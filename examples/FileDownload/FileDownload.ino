@@ -1,24 +1,23 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} FileDownload.ino
+ *
+ * @brief This sketch downloads a file from a server and checks its CRC32
+ * checksum.
  *
  * For this example, you need to install CRC32 library:
  *   https://github.com/bakercp/CRC32
  *   or from http://librarymanager/all#CRC32+checksum
  *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- * ATTENTION! Downloading big files requires of knowledge of
- * the TinyGSM internals and some modem specifics,
- * so this is for more experienced developers.
- *
+ * @attention Downloading big files requires knowledge of the TinyGSM internals
+ * and some modem specifics, so this is for more experienced developers.
  *
  * This example downloads a file from a server and checks its CRC32 checksum.
  * It is a good example of how to download a file in chunks and check its
  * integrity.
  *
  * NOTE: The file being downloaded is from a site which requires SSL/TLS so this
- *example will only work on those boards that support it.
- **************************************************************/
+ * example will only work on those boards that support it.
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
@@ -48,7 +47,7 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// Set serial for debug console (to the Serial Monitor, default speed 115200)
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
@@ -115,6 +114,10 @@ uint32_t   knownFileSize = 1024;  // In case server does not send it
 #include <TinyGsmClient.h>
 #include <CRC32.h>
 
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
+
 // Just in case someone defined the wrong thing..
 #if TINY_GSM_USE_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
 #undef TINY_GSM_USE_GPRS
@@ -172,7 +175,10 @@ void setup() {
 
 #if TINY_GSM_USE_GPRS
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
+  if (GSM_PIN && modem.getSimStatus() != SIM_READY) {
+    // simUnlock will do nothing if the pin is empty
+    modem.simUnlock(GSM_PIN);
+  }
 #endif
 }
 
