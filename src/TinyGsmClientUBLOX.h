@@ -471,7 +471,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
 
   /**
    * @brief Get the current radio access technology (RAT) of the modem.
-   * @return The current RAT mode, or -1 if the command failed.
+   * @return The current RAT mode, or 0 if the command failed.
    */
   /**
    * @brief Get the current radio access technology (RAT) of the modem.
