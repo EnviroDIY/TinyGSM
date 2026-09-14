@@ -286,6 +286,20 @@ class TinyGsmEspressif
   bool networkConnectImpl(const char* ssid, const char* pwd) {
     // attempt first without than with the 'current' flag used in some firmware
     // versions
+    // AT+CWJAP=[<ssid>],[<pwd>][,<bssid>][,<pci_en>][,<reconn_interval>][,<listen_interval>][,<scan_mode>][,<jap_timeout>][,<pmf>]
+    // Response:
+    // WIFI CONNECTED
+    // WIFI GOT IP
+    // OK
+    // -- or --
+    // +CWJAP:<error code>
+    // ERROR
+    // <error code>: (for reference only)
+    // 1: connection timeout.
+    // 2: wrong password.
+    // 3: cannot find the target AP.
+    // 4: connection failed.
+    // others: unknown error occurred.
     thisModem().sendAT(GF("+CWJAP=\""), ssid, GF("\",\""), pwd, '"');
     if (thisModem().waitResponse(30000L, GFP(ModemConfig::GSM_OK),
                                  GF("FAIL\r\n")) != 1) {
