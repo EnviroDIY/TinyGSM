@@ -293,12 +293,22 @@ class TinyGsmESP32
     /// @warning The CA certificate name must be either "client_ca.0" or
     /// "client_ca.1".
     void setCACertName(const char* CAcertName) override {
-      if (at == nullptr || CAcertName == nullptr) { return; }
+      if (at == nullptr) { return; }
+      // handle null or empty certificate name
+      if (CAcertName == nullptr || strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
+        // clear the certificate name buffer and slot selection
+        memset(this->CAcertName, '\0', sizeof(this->CAcertName));
+        this->ca_number = 0;
+        return;
+      }
       // parse the certificate name
       CertificateType parsed_type = CertificateType::UNKNOWN;
       uint8_t         certNumber  = 0;
       at->parseCertificateName(CAcertName, parsed_type, certNumber);
       if (parsed_type != CertificateType::CA_CERTIFICATE || certNumber > 1) {
+        // invalid certificate name: clear buffers and reset slot
+        memset(this->CAcertName, '\0', sizeof(this->CAcertName));
+        this->ca_number = 0;
         return;
       }
       // copy the certificate name into owned buffer
@@ -322,13 +332,25 @@ class TinyGsmESP32
      * to the equivalent name with the same number.
      */
     void setClientCertName(const char* clientCertName) override {
-      if (at == nullptr || clientCertName == nullptr) { return; }
+      if (at == nullptr) { return; }
+      // handle null or empty certificate name
+      if (clientCertName == nullptr || strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
+        // clear the certificate name buffers and slot selection
+        memset(this->clientCertName, '\0', sizeof(this->clientCertName));
+        memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
+        this->pki_number = 0;
+        return;
+      }
       // parse the certificate name
       CertificateType parsed_type = CertificateType::UNKNOWN;
       uint8_t         certNumber  = 0;
       at->parseCertificateName(clientCertName, parsed_type, certNumber);
       if (parsed_type != CertificateType::CLIENT_CERTIFICATE ||
           certNumber > 1) {
+        // invalid certificate name: clear buffers and reset slot
+        memset(this->clientCertName, '\0', sizeof(this->clientCertName));
+        memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
+        this->pki_number = 0;
         return;
       }
       // copy the certificate name into owned buffer
@@ -362,12 +384,24 @@ class TinyGsmESP32
      * to the equivalent name with the same number.
      */
     void setPrivateKeyName(const char* clientKeyName) override {
-      if (at == nullptr || clientKeyName == nullptr) { return; }
+      if (at == nullptr) { return; }
+      // handle null or empty key name
+      if (clientKeyName == nullptr || strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
+        // clear the certificate name buffers and slot selection
+        memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
+        memset(this->clientCertName, '\0', sizeof(this->clientCertName));
+        this->pki_number = 0;
+        return;
+      }
       // parse the certificate name
       CertificateType parsed_type = CertificateType::UNKNOWN;
       uint8_t         certNumber  = 0;
       at->parseCertificateName(clientKeyName, parsed_type, certNumber);
       if (parsed_type != CertificateType::CLIENT_KEY || certNumber > 1) {
+        // invalid key name: clear buffers and reset slot
+        memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
+        memset(this->clientCertName, '\0', sizeof(this->clientCertName));
+        this->pki_number = 0;
         return;
       }
       // copy the key name into owned buffer
