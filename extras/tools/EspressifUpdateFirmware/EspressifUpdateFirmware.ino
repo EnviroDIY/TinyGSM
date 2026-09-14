@@ -98,15 +98,77 @@ void printModemInfo() {
   SerialMon.println(fv_ver);
 }
 
+bool connectNetwork() {
+  SerialMon.println(GF("Setting SSID/password..."));
+  if (!modem.networkConnect(wifiSSID, wifiPass)) {
+    SerialMon.println(GF(" ...failed"));
+    delay(10000UL);
+    return false;
+  }
+  SerialMon.println(GF(" ...success"));
+
+  SerialMon.println(GF("Waiting for network..."));
+  if (!modem.waitForNetwork(600000UL, true)) {
+    delay(10000UL);
+    return false;
+  }
+
+  if (modem.isNetworkConnected()) {
+    SerialMon.println(GF(" ...network connected"));
+    return true;
+  }
+  return false;
+}
+
+void checkNetworkTime() {
+  modem.NTPServerSync("pool.ntp.org", -5);
+  modem.waitForTimeSync();
+  int   ntp_year     = 0;
+  int   ntp_month    = 0;
+  int   ntp_day      = 0;
+  int   ntp_hour     = 0;
+  int   ntp_min      = 0;
+  int   ntp_sec      = 0;
+  float ntp_timezone = 0;
+  for (int8_t i = 5; i; i--) {
+    DBG("Requesting current network time");
+    if (modem.getNetworkTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour,
+                             &ntp_min, &ntp_sec, &ntp_timezone)) {
+      break;
+    } else if (i > 1) {
+      DBG("Couldn't get network time, retrying in 15s.");
+      delay(15000L);
+    }
+  }
+  // Print the date and time, even if the overall query failed, to show which
+  // portions were filled in
+  DBG("Year:", ntp_year, "\tMonth:", ntp_month, "\tDay:", ntp_day);
+  DBG("Hour:", ntp_hour, "\tMinute:", ntp_min, "\tSecond:", ntp_sec);
+  DBG("Timezone:", ntp_timezone);
+  DBG("Retrieving time again as a string");
+  String time = modem.getGSMDateTime(TinyGSMDateTimeFormat::DATE_FULL);
+  DBG("Current Network Time:", time);
+}
+
 
 bool updateFirmware(uint32_t update_timeout = 300000UL) {
   SerialMon.println(GF("Attempting to update firmware..."));
   bool     success         = true;
   bool     update_complete = false;
   uint32_t update_start    = millis();
-  modem.sendAT(GF("+CIPUPDATE"));
+  // Update using default firmware server and settings in blocking mode
+  modem.sendAT(GF("+CIUPDATE"));
+  // in blocking mode, we wait for the update to complete all the way to the
+  // final OK
+  if (success) { success &= modem.waitResponse(update_timeout) == 1; }
+#if 0
+  // If we used non-blocking mode, we could use this
+  // Non-blocking mode requires manually specifying the update server
+  // check for successful beginning of the update
   success &= modem.waitResponse(update_timeout, GF("+CIPUPDATE:")) == 1;
+  // wait for the OK after the command to start updating the firmware
   if (success) { success &= modem.waitResponse() == 1; }
+  // poll for the update status
   if (success) {
     SerialMon.println(GF("Firmware update started"));
     while (!update_complete && (millis() - update_start < update_timeout)) {
@@ -131,10 +193,13 @@ bool updateFirmware(uint32_t update_timeout = 300000UL) {
       }
     }
   }
+#endif
   if (success) {
+    delay(2500L);  // let things settle
     SerialMon.println("Restoring initial configuration...");
     modem.sendAT(GF("+RESTORE"));
     success &= modem.waitResponse(5000L);
+    delay(2500L);  // let things settle
 
     SerialAT.end();
     // After a restore, the baud rate will revert to the default 115200
@@ -215,55 +280,16 @@ void setup() {
 
   printModemInfo();
 
-  SerialMon.println(GF("Setting SSID/password..."));
-  if (!modem.networkConnect(wifiSSID, wifiPass)) {
-    SerialMon.println(GF(" ...failed"));
-    delay(10000UL);
-    return;
-  }
-  SerialMon.println(" ...success");
-
-  SerialMon.println(GF("Waiting for network..."));
-  if (!modem.waitForNetwork(600000UL, true)) {
-    delay(10000UL);
-    return;
-  }
-
-  if (modem.isNetworkConnected()) {
-    SerialMon.println(GF("Network connected"));
-  }
-
-  modem.NTPServerSync("pool.ntp.org", -5);
-  modem.waitForTimeSync();
-  int   ntp_year     = 0;
-  int   ntp_month    = 0;
-  int   ntp_day      = 0;
-  int   ntp_hour     = 0;
-  int   ntp_min      = 0;
-  int   ntp_sec      = 0;
-  float ntp_timezone = 0;
-  for (int8_t i = 5; i; i--) {
-    DBG("Requesting current network time");
-    if (modem.getNetworkTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour,
-                             &ntp_min, &ntp_sec, &ntp_timezone)) {
-      break;
-    } else if (i > 1) {
-      DBG("Couldn't get network time, retrying in 15s.");
-      delay(15000L);
-    }
-  }
-  // Print the date and time, even if the overall query failed, to show which
-  // portions were filled in
-  DBG("Year:", ntp_year, "\tMonth:", ntp_month, "\tDay:", ntp_day);
-  DBG("Hour:", ntp_hour, "\tMinute:", ntp_min, "\tSecond:", ntp_sec);
-  DBG("Timezone:", ntp_timezone);
-  DBG("Retrieving time again as a string");
-  String time = modem.getGSMDateTime(TinyGSMDateTimeFormat::DATE_FULL);
-  DBG("Current Network Time:", time);
+  connectNetwork();
+  checkNetworkTime();
 
   updateFirmware();
 
   printModemInfo();
+
+  // reconnect to the network after firmware update to verify we still can
+  connectNetwork();
+  checkNetworkTime();
 
   modem.networkDisconnect();
   SerialMon.println(GF("WiFi disconnected"));
