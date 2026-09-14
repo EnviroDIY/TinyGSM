@@ -267,7 +267,8 @@ class TinyGsmESP8266
     void setCACertName(const char* CAcertName) override {
       if (at == nullptr) { return; }
       // handle null or empty certificate name
-      if (CAcertName == nullptr || strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
+      if (CAcertName == nullptr ||
+          strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
         // clear the certificate name buffer and slot selection
         memset(this->CAcertName, '\0', sizeof(this->CAcertName));
         this->ca_number = 0;
@@ -306,7 +307,8 @@ class TinyGsmESP8266
     void setClientCertName(const char* clientCertName) override {
       if (at == nullptr) { return; }
       // handle null or empty certificate name
-      if (clientCertName == nullptr || strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
+      if (clientCertName == nullptr ||
+          strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
         // clear the certificate name buffers and slot selection
         memset(this->clientCertName, '\0', sizeof(this->clientCertName));
         memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
@@ -358,7 +360,8 @@ class TinyGsmESP8266
     void setPrivateKeyName(const char* clientKeyName) override {
       if (at == nullptr) { return; }
       // handle null or empty key name
-      if (clientKeyName == nullptr || strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
+      if (clientKeyName == nullptr ||
+          strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
         // clear the certificate name buffers and slot selection
         memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
         memset(this->clientCertName, '\0', sizeof(this->clientCertName));
