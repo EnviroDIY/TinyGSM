@@ -338,7 +338,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       if (available()) {
         return true;
         // if we never got an IP, it can't be connected
-      } else if (at->savedIP == IPAddress(0, 0, 0, 0)) {
+      } else if (at->savedIP == NULL_IP) {
         return false;
       }
       return sock_connected;
@@ -410,16 +410,18 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         guardTime(TINY_GSM_XBEE_GUARD_TIME),
         beeType(XBeeType::XBEE_UNKNOWN),
         resetPin(resetPin),
-        savedIP(IPAddress(0, 0, 0, 0)),
+        savedIP(NULL_IP),
         savedHost(""),
-        savedHostIP(IPAddress(0, 0, 0, 0)),
-        savedOperatingIP(IPAddress(0, 0, 0, 0)),
+        savedHostIP(NULL_IP),
+        lastConnectedIP(NULL_IP),
         inCommandMode(false),
         lastCommandModeMillis(0),
         lastHostLookupMillis(0) {
     // Start not knowing what kind of bee it is
     // Start with the default guard time of 1 second
     memset(sockets, 0, sizeof(sockets));
+    // reserve space for the saved host
+    savedHost.reserve(128);
   }
 
   /*
@@ -908,7 +910,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         // a local IP and DNS have been allocated
         IPAddress ip  = localIP();
         IPAddress dns = getDNSAddress();
-        if (ip != IPAddress(0, 0, 0, 0) && dns != IPAddress(0, 0, 0, 0)) {
+        if (ip != NULL_IP && dns != NULL_IP) {
           return true;
         } else {
           return false;
@@ -1274,7 +1276,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     if (strIP != "" && strIP != GF("ERROR")) {
       return TinyGsmIpFromString(strIP);
     } else {
-      return IPAddress(0, 0, 0, 0);
+      return NULL_IP;
     }
   }
 
@@ -1284,7 +1286,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     uint32_t startMillis = millis();
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
     bool     gotIP       = false;
-    XBEE_COMMAND_START_DECORATOR(5, IPAddress(0, 0, 0, 0))
+    XBEE_COMMAND_START_DECORATOR(5, NULL_IP)
     // XBee's require a numeric IP address for connection, but do provide the
     // functionality to look up the IP address from a fully qualified domain
     // name
@@ -1409,7 +1411,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     // check if the host is an IP address already - if so, we can skip the DNS
     // lookup and just connect
     IPAddress hostIP = TinyGsmIpFromString(String(host));
-    if (hostIP != IPAddress(0, 0, 0, 0)) {
+    if (hostIP != NULL_IP) {
       DBG("Host is already an IP address; connecting directly");
       return modemConnectXBee(hostIP, port);
     }
@@ -1459,7 +1461,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     }
 
     // If we now have a valid IP address, use it to connect
-    if (savedHostIP != IPAddress(0, 0, 0, 0)) {
+    if (savedHostIP != NULL_IP) {
       // Only re-set connection information if we have an IP address
       retVal = modemConnectXBee(savedHostIP, port);
     }
@@ -1519,8 +1521,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
   bool modemStop(uint8_t /*mux*/, uint32_t maxWaitMs) {
     streamClear();  // Empty anything in the buffer
-    // empty the saved currently-in-use destination address
-    savedOperatingIP = IPAddress(0, 0, 0, 0);
+    // clear the address we were last 100% certain was connected
+    lastConnectedIP = NULL_IP;
 
     XBEE_COMMAND_START_DECORATOR(5, false)
 
@@ -1556,7 +1558,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   size_t modemEndSend(size_t len, uint8_t) {
     if (beeType != XBeeType::XBEE_S6B_WIFI) {
       // After a send, verify the outgoing ip if it isn't set
-      if (savedOperatingIP == IPAddress(0, 0, 0, 0)) {
+      if (lastConnectedIP == NULL_IP) {
         modemGetConnected(0);
       } else if (len > 5) {
         // After sending several characters, also re-check
@@ -1570,32 +1572,31 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
   // Helper function to handle cellular connection status for 0x28/0xFF cases
   bool handleUnknownCellularStatus(IPAddress od) {
-    IPAddress nullIP = IPAddress(0, 0, 0, 0);
     // If we previously had an operating destination and we no longer
     // do, the socket must have closed
-    if (od == nullIP && savedOperatingIP != nullIP) {
-      savedOperatingIP           = od;
+    if (od == NULL_IP && lastConnectedIP != NULL_IP) {
+      lastConnectedIP            = od;
       sockets[0]->sock_connected = false;
       DBG("Got no operating IP, we're not connected");
       return false;
     }
     // else if the operating destination exists, but is wrong
     // we need to close and re-open
-    if (od != nullIP && od != savedIP) {
+    if (od != NULL_IP && od != savedIP) {
       DBG("We're connected to the wrong endpoint", od, "not", savedIP);
       sockets[0]->stop();
       return false;
     }
     // else if the operating destination exists and matches, we're good to go
-    if (od != nullIP && od == savedIP) {
+    if (od != NULL_IP && od == savedIP) {
       DBG("Got new IP of", od, "we should be good");
-      savedOperatingIP = od;
+      lastConnectedIP = od;
       return true;
     }
     // If we never had an operating destination, then sock may be
     // open but data never sent - this is the dreaded "we don't know"
     DBG("We have no idea if we're connected");
-    savedOperatingIP = od;
+    lastConnectedIP = od;
     return true;
   }
 
@@ -1604,9 +1605,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   // really be open, but no data has yet been sent.  We return this unknown
   // value as true so there's a possibility it's wrong.
   bool modemGetConnected(uint8_t) {
-    // If the IP address is 0, it's not valid so we can't be connected
-    if (savedIP == IPAddress(0, 0, 0, 0)) { return false; }
-
     XBEE_COMMAND_START_DECORATOR(5, false)
 
     if (beeType == XBeeType::XBEE_UNKNOWN)
@@ -1660,9 +1658,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         if (ci == 0x00) {
           // exit command mode before returning
           XBEE_COMMAND_END_DECORATOR
-          savedOperatingIP = od;
+          lastConnectedIP = od;
           // but it's possible the socket is set to the wrong place
-          if (od != IPAddress(0, 0, 0, 0) && od != savedIP) {
+          if (od != NULL_IP && od != savedIP) {
             sockets[0]->stop();
             return false;
           }
@@ -1693,10 +1691,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         // 0x12 = DNS query lookup failure
         // 0x25 = Unknown server - DNS lookup failed (0x22 for UDP socket!)
         if (ci == 0x02 || ci == 0x12 || ci == 0x25) {
-          savedIP = IPAddress(0, 0, 0, 0);  // force a lookup next time!
+          savedIP = NULL_IP;  // force a lookup next time!
           // also invalidate the cached host lookup, or modemConnect will keep
           // reusing the stale address for up to 12 hours
-          savedHostIP          = IPAddress(0, 0, 0, 0);
+          savedHostIP          = NULL_IP;
           lastHostLookupMillis = 0;
         }
 
@@ -1706,7 +1704,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         // If it's anything else (inc 0x02, 0x12, and 0x25)...
         // it's definitely NOT connected
         sockets[0]->sock_connected = false;
-        savedOperatingIP           = od;
+        lastConnectedIP            = od;
         return false;
       }
     }
@@ -1841,7 +1839,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    * @param timeout_ms The maximum time to wait for a response, in milliseconds.
    * @return The response from the XBee module as a string.
    */
-  String readResponseString(uint32_t timeout_ms = 1000) {
+  String readResponseString(uint32_t timeout_ms = 1000L) {
     TINY_GSM_YIELD();
     uint32_t startMillis = millis();
     while (!stream.available() && millis() - startMillis < timeout_ms) {}
@@ -1858,14 +1856,18 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    * @param timeout The maximum time to wait for a response, in milliseconds.
    * @return The response from the XBee module as an integer.
    */
-  int16_t readResponseInt(uint32_t timeout = 1000L) {
-    String res = readResponseString(timeout);
-    if (res == "") { return -1; }
+  int16_t readResponseInt(uint32_t timeout_ms = 1000L) {
+    TINY_GSM_YIELD();
+    uint32_t startMillis = millis();
+    while (!stream.available() && millis() - startMillis < timeout_ms) {}
+
+    char   buf[16];  // buffer to store the response as a C-string
+    size_t bytesRead = stream.readBytesUntil('\r', buf, sizeof(buf));
 
     int16_t result = 0;
 
-    for (uint16_t i = 0; i < res.length(); ++i) {
-      char c = res[i];
+    for (uint16_t i = 0; i < bytesRead; ++i) {
+      char c = buf[i];
 
       result <<= 4;
       result |= (c <= '9') ? c - '0' : (c & 0x0F) + 9;
@@ -1895,10 +1897,14 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    *
    * @param cmd The AT command to send.
    * @param newValue The new value to set.
-   * @param timeout_ms The maximum time to wait for a response, in milliseconds.
+   * @param timeout_ms The maximum time to wait for a response, in
+   * milliseconds.
    * @return True if the setting was changed successfully, false otherwise.
+   *
+   * @tparam commandType The type of the AT command.
    */
-  bool changeSettingIfNeeded(GsmConstStr cmd, int16_t newValue,
+  template <typename commandType>
+  bool changeSettingIfNeeded(commandType cmd, int16_t newValue,
                              uint32_t timeout_ms = 1000L) {
     sendAT(cmd);
     if (readResponseInt() != newValue) {
@@ -1918,8 +1924,20 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     return false;
   }
 
-  /// @copydoc changeSettingIfNeeded(GsmConstStr, int16_t, uint32_t)
-  bool changeSettingIfNeeded(GsmConstStr cmd, String newValue,
+  /**
+   * @brief Sends an AT command to the XBee module and changes the setting if
+   * needed.
+   *
+   * @param cmd The AT command to send.
+   * @param newValue The new value to set.
+   * @param timeout_ms The maximum time to wait for a response, in
+   * milliseconds.
+   * @return True if the setting was changed successfully, false otherwise.
+   *
+   * @tparam commandType The type of the AT command.
+   */
+  template <typename commandType>
+  bool changeSettingIfNeeded(commandType cmd, String newValue,
                              uint32_t timeout_ms = 1000L) {
     sendAT(cmd);
     if (readResponseString() != newValue) {
@@ -1943,7 +1961,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    * @return True if the saved host has a valid IP address, false otherwise.
    */
   bool gotIPforSavedHost() {
-    if (savedHost != "" && savedHostIP != IPAddress(0, 0, 0, 0))
+    if (savedHost != "" && savedHostIP != NULL_IP)
       return true;
     else
       return false;
@@ -1958,15 +1976,18 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   int16_t        guardTime;
   /// The type of XBee we're working with
   XBeeType beeType;
-  int8_t   resetPin;
+  // A physical pin used on the mcu to reset the XBee module
+  int8_t resetPin;
   /// The IP address we last requested
   IPAddress savedIP;
   /// The text name of the host we last requested a connection to
   String savedHost;
   /// The IP address of the saved host the last time we did an IP lookup
   IPAddress savedHostIP;
-  // The last IP address we actually were connected to
-  IPAddress savedOperatingIP;
+  /// The last IP address we actually were connected to
+  /// This is set in modemGetConnected() when we're 100% sure we're connected
+  /// and cleared in modemConnectXBee() and stop()
+  IPAddress lastConnectedIP;
   bool      inCommandMode;
   uint32_t  lastCommandModeMillis;
   uint32_t  lastHostLookupMillis;
