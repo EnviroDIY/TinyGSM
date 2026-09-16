@@ -288,19 +288,18 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     /// @copydoc GsmClient::write(const uint8_t*, size_t)
     size_t write(const uint8_t* buf, size_t size) override {
       if (at == nullptr) { return 0; }
-      TINY_GSM_YIELD();
-      return at->modemSend(buf, size, mux);
+      return at->stream.write(buf, size);
     }
 
     /// @copydoc GsmClient::write(uint8_t)
     size_t write(uint8_t c) override {
-      return write(&c, 1);
+      if (at == nullptr) { return 0; }
+      return at->stream.write(c);
     }
 
     /// @copydoc GsmClient::available()
     int available() override {
       if (at == nullptr) { return 0; }
-      TINY_GSM_YIELD();
       return at->stream.available();
       /*
       if (!rx.size() || at->stream.available()) {
@@ -313,40 +312,13 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     /// @copydoc GsmClient::read(uint8_t*, size_t)
     int read(uint8_t* buf, size_t size) override {
       if (at == nullptr) { return -1; }
-      TINY_GSM_YIELD();
       return at->stream.readBytes(reinterpret_cast<char*>(buf), size);
-      /*
-      size_t cnt = 0;
-      uint32_t _startMillis = millis();
-      while (cnt < size && millis() - _startMillis < _timeout) {
-        size_t chunk = TinyGsmMin(size-cnt, rx.size());
-        if (chunk > 0) {
-          rx.get(buf, chunk);
-          buf += chunk;
-          cnt += chunk;
-          continue;
-        }
-        // TODO(vshymanskyy): Read directly into user buffer?
-        if (!rx.size() || at->stream.available()) {
-          at->maintain();
-        }
-      }
-      return cnt;
-      */
     }
 
     /// @copydoc GsmClient::read()
     int read() override {
       if (at == nullptr) { return -1; }
-      TINY_GSM_YIELD();
       return at->stream.read();
-      /*
-      uint8_t c;
-      if (read(&c, 1) == 1) {
-        return c;
-      }
-      return -1;
-      */
     }
 
     /// @copydoc GsmClient::peek()
