@@ -1078,6 +1078,20 @@ class TinyGsmModem {
 
     return IPAddress(Parts[0], Parts[1], Parts[2], Parts[3]);
   }
+
+  String TinyGsmIptoString(IPAddress ip) {
+    String host;
+    host.reserve(16);
+    host += ip[0];
+    host += '.';
+    host += ip[1];
+    host += '.';
+    host += ip[2];
+    host += '.';
+    host += ip[3];
+    return host;
+  }
+
   /**@}*/
 
   /* =========================================== */
