@@ -76,10 +76,16 @@
   }
 /// Function decorator to exit command mode for XBee modules, if not already in
 /// command mode, after the function call if it was not already in command mode.
-#define XBEE_COMMAND_END_DECORATOR                                       \
-  if (!wasInCommandMode) { /* only exit if we weren't in command mode */ \
-    exitCommand();                                                       \
+#define XBEE_COMMAND_END_DECORATOR                            \
+  bool stillInCommandMode = inCommandMode &&                  \
+      millis() - lastCommandModeMillis <=                     \
+          static_cast<uint32_t>(guardTime * 2);               \
+  if (!wasInCommandMode && stillInCommandMode) {              \
+    /* only exit if we weren't in command mode and now are */ \
+    exitCommand();                                            \
   }
+/// A null IP address
+#define NULL_IP IPAddress(0, 0, 0, 0)
 
 /// Registration status
 /// @ingroup digi_xbee
