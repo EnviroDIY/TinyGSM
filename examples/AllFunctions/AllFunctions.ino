@@ -355,10 +355,14 @@ void loop() {
   if (!client.connect(server, port)) {
     DBG("... failed");
   } else {
+    DBG(GF("... connected"));
+
+    DBG(GF("Sending a raw HTTP GET request as three print commands."));
     // Make a HTTP GET request:
     client.print(String("GET ") + resource + " HTTP/1.1\r\n");
     client.print(String("Host: ") + server + "\r\n");
     client.print("Connection: close\r\n\r\n");
+    client.flush();
 
     // Wait for data to arrive
     uint32_t start = millis();
@@ -389,25 +393,28 @@ void loop() {
     client.stop();
   }
 
-  // make a buffer to contain the whole request
-  char request[512] = {
-      '\0',
-  };
-  // concatenate the request
-  strcat(request, "GET ");
-  strcat(request, resource);
-  strcat(request, " HTTP/1.1\r\n");
-  strcat(request, "Host: ");
-  strcat(request, server);
-  strcat(request, "\r\n");
-  strcat(request, "Connection: close\r\n\r\n");
-
-  DBG("Connecting to", server);
+  DBG("Connecting a second time to", server);
   if (!client.connect(server, port)) {
     DBG("... failed");
   } else {
+    DBG(GF("... connected"));
+    DBG(GF("Sending a raw HTTP GET request as a single write command."));
+
+    // make a buffer to contain the whole request
+    char request[strlen(resource) + strlen(server) + 45] = {
+        '\0',
+    };
+    // concatenate the request
+    strcat(request, "GET ");
+    strcat(request, resource);
+    strcat(request, " HTTP/1.1\r\n");
+    strcat(request, "Host: ");
+    strcat(request, server);
+    strcat(request, "\r\n");
+    strcat(request, "Connection: close\r\n\r\n");
     // Write the request out
     client.write((uint8_t*)request, strlen(request));
+    client.flush();
 
     // Wait for data to arrive
     uint32_t start = millis();
@@ -453,8 +460,6 @@ void loop() {
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
   secureClient.setSSLAuthMode(SSLAuthMode::CA_VALIDATION);
 
-#if TEST_BUILD_ADD_CERTS && defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
-
 // For Espressif modules, only two certificate sets are supported and the
 // certificates must be named "client_ca.{0|1}", "client_cert.{0|1}", or
 // "client_key.{0|1}"
@@ -472,6 +477,8 @@ void loop() {
   // const char* client_cert_name = THING_NAME "-certificate.pem.crt";
   // const char* client_key_name  = THING_NAME "-private-key.pem.key";
 #endif
+
+#if TEST_BUILD_ADD_CERTS && defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
 
   static const char isrgrootx1_certificate[] TINY_GSM_PROGMEM = R"EOF(
 -----BEGIN CERTIFICATE-----
@@ -520,6 +527,7 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 #if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_BG96)
   modem.deleteCertificate(root_ca_name);
 #endif
+#endif
 
   secureClient.setCACertName(root_ca_name);
   // secureClient.setClientCertName(client_cert_name);
@@ -527,16 +535,31 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
   // secureClient.setPreSharedKey(pre_shared_key_hint_text,
   // pre_shared_key_text);
 #endif
+
+#if !defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
+  // if we didn't actually load a certificate, don't use it
+  secureClient.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
 #endif
 
   DBG("Connecting securely to", server_ssl);
   if (!secureClient.connect(server_ssl, port_ssl)) {
     DBG("... failed");
   } else {
-    // Make a HTTP GET request:
-    secureClient.print(String("GET ") + resource_ssl + " HTTP/1.1\r\n");
-    secureClient.print(String("Host: ") + server_ssl + "\r\n");
-    secureClient.print("Connection: close\r\n\r\n");
+    // make a buffer to contain the whole request
+    char request[strlen(resource_ssl) + strlen(server_ssl) + 45] = {
+        '\0',
+    };
+    // concatenate the request
+    strcat(request, "GET ");
+    strcat(request, resource_ssl);
+    strcat(request, " HTTP/1.1\r\n");
+    strcat(request, "Host: ");
+    strcat(request, server_ssl);
+    strcat(request, "\r\n");
+    strcat(request, "Connection: close\r\n\r\n");
+    // Write the request out
+    secureClient.write((uint8_t*)request, strlen(request));
+    client.flush();
 
     // Wait for data to arrive
     uint32_t startS = millis();
