@@ -536,7 +536,8 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
   // pre_shared_key_text);
 #endif
 
-#if !defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
+#if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS) && \
+    !defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
   // if we didn't actually load a certificate, don't use it
   secureClient.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
 #endif

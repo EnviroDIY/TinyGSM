@@ -557,7 +557,6 @@ void loop() {
   modem.sendATGetString(GF("AT"));
   modem.changeSettingIfNeeded(GF("NI"), String("NewNodeID"));
   modem.changeSettingIfNeeded(GF("NI"), 0xFF);
-  modem.gotIPforSavedHost();
 #endif
 
   // ========================================================================
