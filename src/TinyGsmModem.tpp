@@ -1092,6 +1092,17 @@ class TinyGsmModem {
     return host;
   }
 
+  void TinyGsmIptoBuffer(IPAddress ip, char* buffer) {
+    if (!buffer) { return; }
+    memset(buffer, '\0', 16);  // Clear the buffer before writing the IP address
+    char buf[4] = {'\0'};
+    for (uint8_t i = 0; i < 4; i++) {
+      itoa(ip[i], buf, 10);
+      strncat(buffer, buf, sizeof(buf));
+      if (i < 3) { strncat(buffer, ".", 2); }
+    }
+  }
+
   /**@}*/
 
   /* =========================================== */
