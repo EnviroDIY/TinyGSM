@@ -1,22 +1,22 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} HttpClient.ino
  *
- * This sketch connects to a website and downloads a page.
+ * @brief This sketch connects to a website and downloads a page using the
+ * Arduino HTTP client library.
+ *
  * It can be used to perform HTTP/RESTful API calls.
  *
  * For this example, you need to install ArduinoHttpClient library:
  *   https://github.com/arduino-libraries/ArduinoHttpClient
  *   or from http://librarymanager/all#ArduinoHttpClient
  *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
  * For more HTTP API examples, see ArduinoHttpClient library
  *
- * NOTE: This example may NOT work with the XBee because the
- * HttpClient library does not empty to serial buffer fast enough
+ * @warning This example may NOT work with the XBee because the
+ * HttpClient library does not empty the serial buffer fast enough
  * and the buffer overflow causes the HttpClient library to stall.
- * Boards with faster processors may work, 8MHz boards will not.
- **************************************************************/
+ * Boards with faster processors may work, 8 MHz boards will not.
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
@@ -46,7 +46,7 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// Set serial for debug console (to the Serial Monitor, default speed 115200)
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
@@ -112,6 +112,10 @@ const int  port       = 80;
 #include <TinyGsmClient.h>
 #include <ArduinoHttpClient.h>
 
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
+
 // Just in case someone defined the wrong thing..
 #if TINY_GSM_USE_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
 #undef TINY_GSM_USE_GPRS
@@ -165,7 +169,10 @@ void setup() {
 
 #if TINY_GSM_USE_GPRS
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
+  if (GSM_PIN && modem.getSimStatus() != SIM_READY) {
+    // simUnlock will do nothing if the pin is empty
+    modem.simUnlock(GSM_PIN);
+  }
 #endif
 }
 

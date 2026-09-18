@@ -1,12 +1,27 @@
+# TinyGSM
+
 [![SWUbanner](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner-direct.svg)](https://vshymanskyy.github.io/StandWithUkraine)
 
-![TinyGSM logo](https://cdn.rawgit.com/vshymanskyy/TinyGSM/d18e93dc51fe988a0b175aac647185457ef640b5/extras/logo.svg)
+<!--! @if GITHUB -->
 
-A small Arduino library for AT Command based internet modules, that just works.
-<!---
-[![GitHub download](https://img.shields.io/github/downloads/vshymanskyy/TinyGSM/total.svg)](https://github.com/vshymanskyy/TinyGSM/releases/latest)--->
+![TinyGSM logo](./extras/logo.svg)
+
+<!--! @endif -->
+
+A small Arduino library for AT-command-based internet modules, that just works.
+
+<!--! @image{inline} html logo.png TinyGSM logo -->
+<!--! @image{inline} xml logo.png TinyGSM logo -->
+
+<!--! @tableofcontents -->
+
+<!--! @m_footernavigation -->
+
+<!--! @if GITHUB -->
+
+<!-- [![GitHub download](https://img.shields.io/github/downloads/vshymanskyy/TinyGSM/total.svg)](https://github.com/vshymanskyy/TinyGSM/releases/latest) -->
 [![GitHub version](https://img.shields.io/github/release/vshymanskyy/TinyGSM.svg)](https://github.com/vshymanskyy/TinyGSM/releases/latest)
-[![Build status](https://img.shields.io/travis/vshymanskyy/TinyGSM.svg)](https://travis-ci.org/vshymanskyy/TinyGSM)
+<!-- [![Build status](https://img.shields.io/travis/vshymanskyy/TinyGSM.svg)](https://travis-ci.org/vshymanskyy/TinyGSM) -->
 [![GitHub issues](https://img.shields.io/github/issues/vshymanskyy/TinyGSM.svg)](https://github.com/vshymanskyy/TinyGSM/issues)
 [![GitHub wiki](https://img.shields.io/badge/Wiki-available-brightgreen.svg)](https://github.com/vshymanskyy/TinyGSM/wiki)
 [![GitHub stars](https://img.shields.io/github/stars/vshymanskyy/TinyGSM.svg)](https://github.com/vshymanskyy/TinyGSM/stargazers)
@@ -19,93 +34,67 @@ If you like **TinyGSM** - give it a star, or fork it and contribute!
 You can also join our chat:
 [![Gitter](https://img.shields.io/gitter/room/vshymanskyy/TinyGSM.svg)](https://app.gitter.im/#/room/#tinygsm_Lobby:gitter.im)
 
-- [Supported modems](#supported-modems)
-  - [Supported boards/modules](#supported-boardsmodules)
-- [Features](#features)
-  - [Data connections](#data-connections)
-    - [TCP (HTTP, MQTT, Blynk, ...)](#tcp-http-mqtt-blynk-)
-    - [UDP](#udp)
-    - [SSL/TLS (HTTPS, MQTTS)](#ssltls-https-mqtts)
-  - [USSD](#ussd)
-  - [SMS](#sms)
-  - [Voice Calls](#voice-calls)
-  - [Location](#location)
-- [Credits](#credits)
-- [Getting Started](#getting-started)
-  - [First Steps](#first-steps)
-  - [Writing your own code](#writing-your-own-code)
-  - [If you have any issues](#if-you-have-any-issues)
-- [How does it work?](#how-does-it-work)
-- [API Reference](#api-reference)
-- [Troubleshooting](#troubleshooting)
-  - [Ensure stable data \& power connection](#ensure-stable-data--power-connection)
-  - [Baud rates](#baud-rates)
-  - [Broken initial configuration](#broken-initial-configuration)
-  - [Failed connection or no data received](#failed-connection-or-no-data-received)
-  - [Diagnostics sketch](#diagnostics-sketch)
-  - [Web request formatting problems - "but it works with PostMan"](#web-request-formatting-problems---but-it-works-with-postman)
-  - [SoftwareSerial problems](#softwareserial-problems)
-  - [ESP32 Notes](#esp32-notes)
-    - [HardwareSerial](#hardwareserial)
-    - [HttpClient](#httpclient)
-  - [SAMD21](#samd21)
-  - [Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion](#goouuu-tech-iot-ga6-vs-ai-thinker-a6-confusion)
-  - [SIM800 and SSL](#sim800-and-ssl)
-  - [Which version of the SIM7000 code to use](#which-version-of-the-sim7000-code-to-use)
-- [License](#license)
+- [TinyGSM](#tinygsm)
+  - [Overview](#overview)
+  - [Supported modems](#supported-modems)
+  - [Features](#features)
+  - [Credits](#credits)
+  - [Getting Started](#getting-started)
+  - [How does it work?](#how-does-it-work)
+  - [API Reference](#api-reference)
+  - [Troubleshooting](#troubleshooting)
+  - [License](#license)
+
+<!--! @endif -->
+
+## Overview
 
 ### Arduino Client interface support
 
 This library is easy to integrate with lots of sketches which use Ethernet or WiFi.
 **PubSubClient ([MQTT](http://mqtt.org/))**, **[Blynk](http://blynk.cc)**, **HTTP Client** and **File Download** examples are provided.
 
-![examples](/extras/examples.png)
+<!--! @if GITHUB -->
 
-### TinyGSM is tiny
+![examples](./extras/examples.png)
 
-NOTE: These numbers are out of date. I'll update them someday.
+<!--! @endif -->
 
-The complete WebClient example for Arduino Uno (via Software Serial) takes little resources:
+<!--! @image{inline} html examples.png -->
+<!--! @image{inline} xml examples.png -->
 
-```
-Sketch uses 15022 bytes (46%) of program storage space. Maximum is 32256 bytes.
-Global variables use 574 bytes (28%) of dynamic memory, leaving 1474 bytes for local variables. Maximum is 2048 bytes.
-```
-
-Arduino GSM library uses 15868 bytes (49%) of Flash and 1113 bytes (54%) of RAM in a similar scenario.
-TinyGSM also pulls data gently from the modem (whenever possible), so it can operate on very little RAM.
-**Now, you have more space for your experiments.**
+<!--! @todo Update size specs for TinyGSM -->
 
 ## Supported modems
 
 - SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
-  - Previously tested by original author and current maintainer; updates not all tested because 2G is no longer available in the USA.
+  - Previously tested by original author and current maintainer; updates not all tested
 - SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
-  - Previously tested by current maintainer; updates not all tested because 2G is no longer available in the USA.
+  - Previously tested by current maintainer; updates not all tested
 - SIMCom WCDMA/HSPA/HSPA+ Modules (SIM5360, SIM5320, SIM5300E, SIM5300E/A)
   - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
 - SIMCom LTE Modules (SIM7100E, SIM7500E, SIM7500A, SIM7600C, SIM7600E)
   - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
 - SIMCom SIM7000E/A/G CAT-M1/NB-IoT Module
-  - Previously tested by current maintainer; updates not all tested because I fried mine.
+  - Previously tested by current maintainer; updates not all tested
 - SIMCom SIM7070/SIM7080/SIM7090 CAT-M1/NB-IoT Module
   - Tested by the current maintainer; currently her primary cellular module
-- SIMCom A7672X CAT-M1 Module
-  - Accepted as pull request, though I have concerns about the implementation. Not personally tested by the maintainer.
+- SIMCom A7672x CAT-M1 Module
+  - Accepted as pull request. Not personally tested by the maintainer.
 - AI-Thinker A6, A6C, A7, A20
   - Previously tested by original author
 - ESP8266/ESP32 (AT commands interface, similar to GSM modems)
-  - Tested by the current maintainer; ESP32 is currently her primary wifi module
+  - Tested by the current maintainer; ESP32 is currently her primary WiFi module
 - Digi XBee WiFi and Cellular (using XBee command mode)
-  - Tested by the current maintainer
+  - Tested by the current maintainer, but *not recommended*
 - Neoway M590
   - Previously tested by original author
 - u-blox 2G, 3G, 4G, and LTE Cat1 Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
-  - Tested by the current maintainer (SARA-U201 only)
+  - Previously tested by the current maintainer (SARA-U201 only); updates not all tested
 - u-blox LTE-M/NB-IoT Modems (SARA-R4xx, SARA-N4xx, SARA-R5xx, _but NOT SARA-N2xx_)
   - Tested by the current maintainer (SARA-R410M only)
 - Sequans Monarch LTE Cat M1/NB1 (VZM20Q)
-  - Previously tested by current maintainer; updates not all tested because I fried mine.
+  - Previously tested by current maintainer; updates not all tested
 - Quectel BG96
   - Tested by the current maintainer
 - Quectel BG95
@@ -115,102 +104,13 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 - Quectel MC60 _**(alpha)**_
   - Accepted as pull request, though I have concerns about the implementation. Not personally tested by the maintainer.
 
-### Supported boards/modules
-
-- EnviroDIY LTE Bee (SIM7080G)
-- EnviroDIY WiFi Bee (ESP32)
-- Arduino MKR GSM 1400
-- Sodaq GPRSbee (SIM800, SIM900)
-- Sodaq uBee (SARA U201, SARA R410M)
-- Microduino GSM
-- Adafruit FONA Mini Cellular GSM Breakout, 800/808 Shield, FONA 3G (SIM800)
-- Industruino GSM (SIM800)
-- Dragino NB-IoT Bee (BG96)
-- Digi XBee S6B, XBee LTE Cat 1, XBee3 LTE Cat 1, XBee3 CatM
-- Nimbelink Skywire/Airgain NL-SW-LTE-QBG96, NL-SW-LTE-QBG95 (BG95, BG96)
-- RAK WisLTE _**(alpha)**_
-- ... other modules, based on supported modems. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
-
-Watch this repo for new updates! And of course, contributions are welcome ;)
+Watch this repo for new updates!
+And of course, contributions are welcome ;)
 
 ## Features
 
-### Data connections
-
-#### TCP (HTTP, MQTT, Blynk, ...)
-
-- ALL modules support TCP connections
-- Most modules support multiple simultaneous connections:
-  - A6/A7 - 8
-  - ESP8266/ESP32 - 5
-  - Neoway M590 - 2
-  - Quectel BG96 - 12
-  - Quectel BG95 - 12
-  - Quectel M95 - 6
-  - Quectel MC60/MC60E - 6
-  - Sequans Monarch - 6
-  - SIM 800/900 - 5
-  - SIM 5360/5320/5300/7100 - 10
-  - SIM7000 - 8 possible without SSL, only 2 with
-  - SIM 7070/7080/7090 - 12
-  - SIM 7500/7600/7800 - 10
-  - SIM A7672X - 10
-  - u-blox 2G/3G - 7
-  - u-blox SARA R4/N4 - 7
-  - Digi XBee - _only 1 connection supported!_
-
-#### UDP
-
-- Not yet supported on any module, though it may be some day
-
-#### SSL/TLS (HTTPS, MQTTS)
-
-- Connecting:
-  - SIM800, SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672X, u-Blox, XBee _cellular_, ESP8266, ESP32, Sequans Monarch and Quectel BG95 and BG96
-  - Note:  **only some device models or firmware revisions have this feature** (SIM8xx R14.18, A7, etc.)
-- Selecting certificates for the connection based on files uploaded to the module:
-  - SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672X, ESP8266, ESP32, Sequans Monarch
-- Uploading new certificates to the module;
-  - SIM 7070/7080/7090, SIM7000, SIM 7500/7600/7800, A7672X, ESP32, Quectel BG96
-- No SSL functionality is yet in the library for:
-  - SIM 5360/5320/7100
-- SSL is not possible on:
-  - SIM900, A6/A7, Neoway M590, XBee _WiFi_ (S6B)
-- Like TCP, most modules support simultaneous connections
-- TCP and SSL connections can usually be mixed up to the total number of possible connections
-
-### USSD
-
-- Sending USSD requests and decoding 7,8,16-bit responses
-  - Supported on:
-    - All SIMCom modems, Quectel modems, most u-blox
-  - Not possible on:
-    - XBee, u-blox SARA R4/N4, ESP8266, ESP32
-
-### SMS
-
-- Only _sending_ SMS is supported, not receiving
-  - Supported on all cellular modules
-
-### Voice Calls
-
-- Supported on:
-  - SIM800/SIM900, SIM7600, A6/A7, Quectel modems, u-blox
-- Not yet supported on:
-  - SIM7000, SIM5360/5320/7100, SIM7500/7800, VZM20Q (Monarch)
-- Not possible on:
-  - XBee (any type), u-blox SARA R4/R5/N4, Neoway M590, ESP8266 (obviously)
-- Functions:
-  - Dial, hangup
-  - DTMF sending
-
-### Location
-
-- GPS/GNSS
-  - SIM808, SIM7000, SIM7500/7600/7800, BG96, BG95, u-blox
-  - NOTE:  u-blox chips do _NOT_ have embedded GPS - this functionality only works if a secondary GPS is connected to primary cellular chip over I2C
-- GSM location service
-  - SIM800, SIM7000, Quectel, u-blox
+> [!TIP]
+> [There is a full table with all functions available by module.](docs/SupportedModuleFunctions.md)
 
 ## Credits
 
@@ -222,13 +122,13 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
   - [FStefanni](https://github.com/FStefanni/)
 - Sequans Monarch:
   - [nootropicdesign](https://github.com/nootropicdesign/)
-- Quectel M9C60
+- Quectel MC60
   - [V1pr](https://github.com/V1pr)
 - Quectel M95
   - [replicadeltd](https://github.com/replicadeltd)
 - UBLOX SARA-R5
   - [Sebastian Bergner](https://github.com/sebastianbergner)
-- SIMCOM A7672X
+- SIMCOM A7672x
   - [Giovanni de Rosso Unruh](https://github.com/giovannirosso)
 - Other Contributors:
   - <https://github.com/vshymanskyy/TinyGSM/graphs/contributors>
@@ -245,7 +145,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
   3. Ensure that GSM antenna is firmly attached
   4. Ensure that you have a stable power supply to the module of at least **2A**.
   5. Check if serial connection is working (Hardware Serial is recommended)
-     Send an ```AT``` command using [this sketch](tools/AT_Debug/AT_Debug.ino)
+     Send an `AT` command using [this sketch](extras/tools/AT_Debug/ReadMe.md)
   6. Try out the [WebClient](https://github.com/vshymanskyy/TinyGSM/blob/master/examples/WebClient/WebClient.ino) example
 
 ### Writing your own code
@@ -253,20 +153,20 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 The general flow of your code should be:
 
 - Define the module that you are using (choose one and only one)
-  - ie, ```#define TINY_GSM_MODEM_SIM800```
-- Included TinyGSM
-  - ```#include <TinyGsmClient.h>```
+  - ie, `#define TINY_GSM_MODEM_SIM800`
+- Include TinyGSM
+  - `#include <TinyGsmClient.h>`
 - Create a TinyGSM modem instance
-  - ```TinyGsm modem(SerialAT);```
+  - `TinyGsm modem(SerialAT);`
 - Create one or more TinyGSM client instances
   - For a single connection, use
-    - ```TinyGsmClient client(modem);```
+    - `TinyGsmClient client(modem);`
         or
-        ```TinyGsmClientSecure client(modem);``` (on supported modules)
+        `TinyGsmClientSecure client(modem);` (on supported modules)
   - For multiple connections (on supported modules) use:
-    - ```TinyGsmClient clientX(modem, 0);```, ```TinyGsmClient clientY(modem, 1);```, etc
+    - `TinyGsmClient clientX(modem, 0);`, `TinyGsmClient clientY(modem, 1);`, etc.
           or
-    - ```TinyGsmClientSecure clientX(modem, 0);```, ```TinyGsmClientSecure clientY(modem, 1);```, etc
+    - `TinyGsmClientSecure clientX(modem, 0);`, `TinyGsmClientSecure clientY(modem, 1);`, etc.
   - Secure and insecure clients can usually be mixed when using multiple connections.
   - The total number of connections possible varies by module
     - You can verify the number of connections possible against the defines `TINY_GSM_MUX_COUNT` and `TINY_GSM_SECURE_MUX_COUNT`
@@ -274,28 +174,28 @@ The general flow of your code should be:
   - The examples attempt to guess the module's baud rate.  In working code, you should use a set baud.
 - Wait for the module to be ready (could be as much as 6s, depending on the module)
 - Initialize the modem
-  - ```modem.init()``` or ```modem.restart()```
-  - restart generally takes longer than init but ensures the module doesn't have lingering connections
+  - `modem.init()` or `modem.restart()`
+  - Restart generally takes longer than init but ensures the module doesn't have lingering connections
 - Unlock your SIM, if necessary:
-  - ```modem.simUnlock(GSM_PIN)```
+  - `modem.simUnlock(GSM_PIN)`
 - If using a **WiFi** module, specify your SSID information:
-  - ```modem.networkConnect(wifiSSID, wifiPass)```
+  - `modem.networkConnect(wifiSSID, wifiPass)`
   - Network registration should be automatic on cellular modules
 - Wait for network registration to be successful
-  - ```modem.waitForNetwork(600000L)```
+  - `modem.waitForNetwork(600000L)`
   - New sim/tower combinations may take a _long_ time to connect.
-- If using cellular, establish the GPRS or EPS data connection _after_ your are successfully registered on the network
-  - ```modem.gprsConnect(apn, gprsUser, gprsPass)``` (or simply ```modem.gprsConnect(apn)```)
+- If using cellular, establish the GPRS or EPS data connection _after_ you are successfully registered on the network
+  - `modem.gprsConnect(apn, gprsUser, gprsPass)` (or simply `modem.gprsConnect(apn)`)
   - The same command is used for both GPRS or EPS connection
   - If using a **Digi** brand cellular XBee, you must specify your GPRS/EPS connection information _before_ waiting for the network.  This is true ONLY for _Digi cellular XBees_!  _For all other cellular modules, use the GPRS connect function after network registration._
 - Connect the TCP or SSL client
-    ```client.connect(server, port)```
+    `client.connect(server, port)`
 - Send out your data.
 
 ### If you have any issues
 
   1. Read the whole README (you're looking at it!), particularly the troubleshooting section below.
-  2. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
+  2. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Contributed-Pages/Board-configuration).
   3. Try running the Diagnostics sketch
   4. Check for [**highlighted topics here**](https://github.com/vshymanskyy/TinyGSM/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22for+reference%22+)
   5. If you have a question, please post it in our [Gitter chat](https://gitter.im/tinygsm)
@@ -307,18 +207,18 @@ TinyGSM knows which commands to send, and how to handle AT responses, and wraps 
 
 This library is "blocking" in all of its communication.
 Depending on the function, your code may be blocked for several _minutes_ while waiting for the module responses.
-Apart from the obvious (ie, `waitForNetwork()`) several other functions may block your code for up to several _minutes_.
+Apart from the obvious (i.e., `waitForNetwork()`) several other functions may block your code for up to several _minutes_.
 The `gprsConnect()` and `client.connect()` functions commonly block the longest, especially in poorer service regions.
-The module shutdown and restart may also be quite slow.
+Shutting down or restarting the module may also be quite slow.
 
-This library _does not_ support any sort of "hardware" or pin level controls for the modules.
+This library _does not_ support any sort of "hardware" or pin-level controls for the modules.
 If you need to turn your module on or reset it using some sort of High/Low/High pin sequence, you must write those functions yourself.
-If you're interested in pin controls for your module, there's documentation of the wake/sleep protocols for most of the modules supported by this library in the modems compnents of the [ModularSensors library](https://github.com/EnviroDIY/ModularSensors/).
+If you're interested in pin controls for your module, there's documentation of the wake/sleep protocols for most of the modules supported by this library in the [ModularSensors library](https://github.com/EnviroDIY/ModularSensors/).
 
 ## API Reference
 
 For GPRS data streams, this library provides the standard [Arduino Client](https://www.arduino.cc/en/Reference/ClientConstructor) interface.
-For additional functions, please refer to [this example sketch](examples/AllFunctions/AllFunctions.ino)
+For additional functions, please refer to [this example sketch](examples/AllFunctions/ReadMe.md)
 
 ## Troubleshooting
 
@@ -328,7 +228,7 @@ Most modules require _**as much as 2A**_ to properly connect to the network.
 This is 4x what a "standard" USB will supply!
 Improving the power supply actually solves stability problems in **many** cases!
 
-- Read about [**powering your module**](https://github.com/vshymanskyy/TinyGSM/wiki/Powering-GSM-module).
+- Read about [**powering your module**](https://github.com/vshymanskyy/TinyGSM/wiki/Contributed-Pages/Powering-GSM-module).
 - Keep your wires as short as possible
 - Consider soldering them for a stable connection
 - Do not put your wires next to noisy signal sources (buck converters, antennas, oscillators etc.)
@@ -358,7 +258,7 @@ This may result in problems such as:
 - etc.
 
 To return module to **Factory Defaults**, use this sketch:
-  File -> Examples -> TinyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/FactoryReset/FactoryReset.ino)
+  File -> Examples -> TinyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/extras/tools/FactoryReset/FactoryReset.ino)
 
 In some cases, you may need to set an initial APN to connect to the cellular network.
 Try using the `gprsConnect(APN)` function to set an initial APN if you are unable to register on the network.
@@ -377,7 +277,7 @@ When using MQTT, to keep a continuous connection you may need to reduce your kee
 ### Diagnostics sketch
 
 Use this sketch to help diagnose SIM card and GPRS connection issues:
-  File -> Examples -> TinyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/Diagnostics/Diagnostics.ino)
+  File -> Examples -> TinyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/extras/tools/Diagnostics/Diagnostics.ino)
 
 If the diagnostics fail, uncomment this line to output some debugging comments from the library:
 
@@ -385,7 +285,7 @@ If the diagnostics fail, uncomment this line to output some debugging comments f
 #define TINY_GSM_DEBUG SerialMon
 ```
 
-In any custom code, ```TINY_GSM_DEBUG``` must be defined before including the TinyGSM library.
+In any custom code, `TINY_GSM_DEBUG` must be defined before including the TinyGSM library.
 
 If you are unable to see any obvious errors in the library debugging, use [StreamDebugger](https://github.com/vshymanskyy/StreamDebugger) to copy the entire AT command sequence to the main serial port.
 In the diagnostics example, simply uncomment the line:
@@ -394,10 +294,10 @@ In the diagnostics example, simply uncomment the line:
 #define DUMP_AT_COMMANDS
 ```
 
-In custom code, you can add this snippit:
+In custom code, you can add this snippet:
 
 ```cpp
-#ifdef DUMP_AT_COMMANDS
+#if defined(DUMP_AT_COMMANDS)
   #include <StreamDebugger.h>
   StreamDebugger debugger(SerialAT, SerialMon);
   TinyGsm modem(debugger);
@@ -419,33 +319,43 @@ Here are some tips for writing layer 7 (particularly HTTP request) manually:
 - Look at the "WebClient" example
 - Make sure you are including all required headers.
   - If you are testing with PostMan, make sure you un-hide and look at the "auto-generated" headers; you'll probably be surprised by how many of them there are.
-- Use ```client.print("...")```, or ```client.write(buf, #)```, or even ```client.write(String("..."))```, not ```client.write("...")``` to help prevent text being sent out one character at a time (typewriter style)
+- Use `client.print("...")`, or `client.write(buf, #)`, or even `client.write(String("..."))`, not `client.write("...")` to help prevent text being sent out one character at a time (typewriter style)
 - Enclose the entirety of each header or line within a single string or print statement
-  - use
 
-    ```cpp
-    client.print(String("GET ") + resource + " HTTP/1.1\r\n");
-    ```
+Use this:
 
-    instead of
+```cpp
+char buffer[128] = "";
+int len = snprintf(buffer, sizeof(buffer), "GET %s HTTP/1.1\r\n", resource);
+client.write((uint8_t*)buffer, len);
+```
 
-    ```cpp
-    client.print("GET ");
-    client.print(resource);
-    client.println(" HTTP/1.1")
-    ```
+or this:
+
+```cpp
+client.print(String("GET ") + resource + " HTTP/1.1\r\n");
+```
+
+instead of this:
+
+```cpp
+client.print("GET ");
+client.print(resource);
+client.println(" HTTP/1.1");
+```
 
 - Make sure there is one entirely blank line between the last header and the content of any POST request.
-  - Add two lines to the last header ```client.print("....\r\n\r\n")``` or put in an extra ```client.println()```
+  - Add two lines to the last header `client.print("....\r\n\r\n")` or put in an extra `client.println()`
   - This is an HTTP requirement and is really easy to miss.
 
 ### SoftwareSerial problems
 
-When using ```SoftwareSerial``` (on Uno, Nano, etc), the speed **115200** may not work.
+When using `SoftwareSerial` (on Uno, Nano, etc), the speed **115200** may not work.
 Try selecting **57600**, **38400**, or even lower - the one that works best for you.
 In some cases **9600** is unstable, but using **38400** helps, etc.
-Be sure to set correct TX/RX pins in the sketch. Please note that not every Arduino pin can serve as TX or RX pin.
-**Read more about SoftSerial options and configuration [here](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [here](https://www.arduino.cc/en/Reference/SoftwareSerial).**
+Be sure to set correct TX/RX pins in the sketch.
+Please note that not every Arduino pin can serve as TX or RX pin.
+**Read more about AVR Serial options and configuration [on Paul Stroffregen's site](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [the Arduino reference site](https://www.arduino.cc/en/Reference/SoftwareSerial).**
 
 ### ESP32 Notes
 
@@ -456,11 +366,12 @@ Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/91#
 
 #### HttpClient
 
-You will not be able to compile the HttpClient or HttpsClient examples with ESP32 core 1.0.2.  Upgrade to 1.0.3, downgrade to version 1.0.1 or use the WebClient example.
+You will not be able to compile the HttpClient or HttpsClient examples with ESP32 core 1.0.2.
+Upgrade to 1.0.3, downgrade to version 1.0.1 or use the WebClient example.
 
 ### SAMD21
 
-When using SAMD21-based boards, you may need to use a sercom uart port instead of `Serial1`.
+When using SAMD21-based boards, you may need to use a SERCOM UART port instead of `Serial1`.
 Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/102#issuecomment-345548941).
 
 ### Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion
@@ -491,3 +402,9 @@ __________
 
 This project is released under
 The GNU Lesser General Public License (LGPL-3.0)
+
+<!--! @m_innerpage{page_supported_module_functions} -->
+<!--! @m_innerpage{page_supported_module_configuration} -->
+<!--! @m_innerpage{change_log} -->
+<!--! @m_innerpage{todo} -->
+<!--! @m_innerpage{deprecated} -->
