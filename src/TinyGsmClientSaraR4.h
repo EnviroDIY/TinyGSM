@@ -826,7 +826,10 @@ class TinyGsmSaraR4
     *dynamicMux = static_cast<uint8_t>(connected_mux);
 
     if (ssl) {
-      sendAT(GF("+USOSEC="), *dynamicMux, ",1");
+      // AT+USOSEC=<socket>,<ssl_tls_status>[,<usecmng_profile_id>]
+      // Must be issued before the +USOCO command
+      // support depends on firmware version
+      sendAT(GF("+USOSEC="), *dynamicMux, ",1" /*, ',', sslCtxIndex*/);
       waitResponse();
     }
 
@@ -851,8 +854,8 @@ class TinyGsmSaraR4
     // the cellular service is poor.
     // NOT supported on SARA-R404M / SARA-R410M-01B
     if (supportsAsyncSockets) {
-      DBG("### Opening socket asynchronously!  Socket cannot be used until "
-          "the URC '+UUSOCO' appears.");
+      DBG("### Opening socket asynchronously!  Socket cannot be used yet; "
+          "blocking until the URC '+UUSOCO' appears.");
       sendAT(GF("+USOCO="), *dynamicMux, GF(",\""), host, GF("\","), port,
              GF(",1"));
       uint32_t elapsed = millis() - startMillis;
