@@ -63,51 +63,38 @@ This library is easy to integrate with lots of sketches which use Ethernet or Wi
 <!--! @image{inline} html examples.png -->
 <!--! @image{inline} xml examples.png -->
 
-### TinyGSM is tiny
-
-NOTE: These numbers are out of date. I'll update them someday.
-
-The complete WebClient example for Arduino Uno (via Software Serial) takes little resources:
-
-```txt
-Sketch uses 15022 bytes (46%) of program storage space. Maximum is 32256 bytes.
-Global variables use 574 bytes (28%) of dynamic memory, leaving 1474 bytes for local variables. Maximum is 2048 bytes.
-```
-
-Arduino GSM library uses 15868 bytes (49%) of Flash and 1113 bytes (54%) of RAM in a similar scenario.
-TinyGSM also pulls data gently from the modem (whenever possible), so it can operate on very little RAM.
-**Now, you have more space for your experiments.**
+<!--! @todo Update size specs for TinyGSM -->
 
 ## Supported modems
 
 - SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
-  - Previously tested by original author and current maintainer; updates not all tested because 2G is no longer available in the USA.
+  - Previously tested by original author and current maintainer; updates not all tested
 - SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
-  - Previously tested by current maintainer; updates not all tested because 2G is no longer available in the USA.
+  - Previously tested by current maintainer; updates not all tested
 - SIMCom WCDMA/HSPA/HSPA+ Modules (SIM5360, SIM5320, SIM5300E, SIM5300E/A)
   - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
 - SIMCom LTE Modules (SIM7100E, SIM7500E, SIM7500A, SIM7600C, SIM7600E)
   - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
 - SIMCom SIM7000E/A/G CAT-M1/NB-IoT Module
-  - Previously tested by current maintainer; updates not all tested because I fried mine.
+  - Previously tested by current maintainer; updates not all tested
 - SIMCom SIM7070/SIM7080/SIM7090 CAT-M1/NB-IoT Module
   - Tested by the current maintainer; currently her primary cellular module
 - SIMCom A7672x CAT-M1 Module
-  - Accepted as pull request, though I have concerns about the implementation. Not personally tested by the maintainer.
+  - Accepted as pull request. Not personally tested by the maintainer.
 - AI-Thinker A6, A6C, A7, A20
   - Previously tested by original author
 - ESP8266/ESP32 (AT commands interface, similar to GSM modems)
-  - Tested by the current maintainer; ESP32 is currently her primary wifi module
+  - Tested by the current maintainer; ESP32 is currently her primary WiFi module
 - Digi XBee WiFi and Cellular (using XBee command mode)
-  - Tested by the current maintainer
+  - Tested by the current maintainer, but *not recommended*
 - Neoway M590
   - Previously tested by original author
 - u-blox 2G, 3G, 4G, and LTE Cat1 Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
-  - Tested by the current maintainer (SARA-U201 only)
+  - Previously tested by the current maintainer (SARA-U201 only); updates not all tested
 - u-blox LTE-M/NB-IoT Modems (SARA-R4xx, SARA-N4xx, SARA-R5xx, _but NOT SARA-N2xx_)
   - Tested by the current maintainer (SARA-R410M only)
 - Sequans Monarch LTE Cat M1/NB1 (VZM20Q)
-  - Previously tested by current maintainer; updates not all tested because I fried mine.
+  - Previously tested by current maintainer; updates not all tested
 - Quectel BG96
   - Tested by the current maintainer
 - Quectel BG95
@@ -116,22 +103,6 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
   - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
 - Quectel MC60 _**(alpha)**_
   - Accepted as pull request, though I have concerns about the implementation. Not personally tested by the maintainer.
-
-### Supported boards/modules
-
-- EnviroDIY LTE Bee (SIM7080G)
-- EnviroDIY WiFi Bee (ESP32)
-- Arduino MKR GSM 1400
-- Sodaq GPRSbee (SIM800, SIM900)
-- Sodaq uBee (SARA U201, SARA R410M)
-- Microduino GSM
-- Adafruit FONA Mini Cellular GSM Breakout, 800/808 Shield, FONA 3G (SIM800)
-- Industruino GSM (SIM800)
-- Dragino NB-IoT Bee (BG96)
-- Digi XBee S6B, XBee LTE Cat 1, XBee3 LTE Cat 1, XBee3 CatM
-- Nimbelink Skywire/Airgain NL-SW-LTE-QBG96, NL-SW-LTE-QBG95 (BG95, BG96)
-- RAK WisLTE _**(alpha)**_
-- ... other modules, based on supported modems. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
 
 Watch this repo for new updates!
 And of course, contributions are welcome ;)
