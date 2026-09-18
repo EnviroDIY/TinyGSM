@@ -115,6 +115,8 @@ const char server[]   = "time.sodaq.net";
 const char resource[] = "/";
 const int  port       = 80;
 // Server details to test TCP over SSL
+// const char server_ssl[]   = "vsh.pp.ua";
+// const char resource_ssl[] = "/TinyGSM/logo.txt";
 const char server_ssl[] = "raw.githubusercontent.com";
 const char resource_ssl[] =
     "/vshymanskyy/TinyGSM/refs/heads/master/extras/logo.txt";
@@ -190,7 +192,7 @@ void setup() {
     targetBaud = maximum;
   }
 
-#if !defined(TINY_GSM_MODEM_XBEE)
+#if !defined(TINY_GSM_MODEM_XBEE) && !defined(TINY_GSM_SKIP_BAUDING)
   // Set GSM module baud rate
   uint32_t found_baud = TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN,
                                         GSM_AUTOBAUD_MAX);
