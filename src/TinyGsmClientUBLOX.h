@@ -473,10 +473,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
    * @brief Get the current radio access technology (RAT) of the modem.
    * @return The current RAT mode, or 0 if the command failed.
    */
-  /**
-   * @brief Get the current radio access technology (RAT) of the modem.
-   * @return The current RAT mode, or 0 if the command failed.
-   */
   uint8_t getCurrentRadioAccessTechnology() {
     sendAT(GF("+URAT?"));
     if (waitResponse(10000L, GF("+URAT:")) != 1) { return 0; }
