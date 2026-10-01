@@ -1,4 +1,4 @@
-# Doxyfile 1.17.0
+# Doxyfile 1.18.0
 
 # This file describes the settings to be used by the documentation system
 # Doxygen (www.doxygen.org) for a project.
@@ -11,7 +11,7 @@
 # TAG = value [value, ...]
 # For lists, items can also be appended using:
 # TAG += value [value, ...]
-# Values that contain spaces should be placed between quotes (\" \").
+# Values that contain spaces should be placed between quotes (" ").
 #
 # Note:
 #
@@ -305,7 +305,6 @@ ALIASES                = "license=@par License^^" \
                          "m_enum_values_as_keywords=@xmlonly<mcss:search xmlns:mcss=\"http://mcss.mosra.cz/doxygen/\" mcss:enum-values-as-keywords=\"true\" />@endxmlonly" \
                          "m_since{2}=@since @m_class{m-label m-success m-flat} @ref changelog-\1-\2 \"since v\1.\2\"" \
                          "m_deprecated_since{3}=@since deprecated in v\1.\2.\3 @deprecated" \
-                         "menulink{1}=[menu a la carte](@ref menu_walk_\1)" \
                          "m_innerpage{1}=@xmlonly<innerpage refid=\"\1\"> </innerpage>@endxmlonly"
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
@@ -469,7 +468,7 @@ IDL_PROPERTY_SUPPORT   = YES
 # all members of a group must be documented explicitly.
 # The default value is: NO.
 
-DISTRIBUTE_GROUP_DOC   = YES
+DISTRIBUTE_GROUP_DOC   = NO
 
 # If one adds a struct or class to a group and this option is enabled, then also
 # any nested class or struct is added to the same group. By default this option
@@ -872,8 +871,8 @@ SHOW_NAMESPACES        = NO
 # The FILE_VERSION_FILTER tag can be used to specify a program or script that
 # Doxygen should invoke to get the current version for each file (typically from
 # the version control system). Doxygen will invoke the program by executing (via
-# popen()) the command command input-file, where command is the value of the
-# FILE_VERSION_FILTER tag, and input-file is the name of an input file provided
+# popen()) the command command input_file, where command is the value of the
+# FILE_VERSION_FILTER tag, and input_file is the name of an input file provided
 # by Doxygen. Whatever the program writes to standard output is used as the file
 # version. For an example see the documentation.
 
@@ -891,7 +890,7 @@ FILE_VERSION_FILTER    =
 # DoxygenLayout.xml, Doxygen will parse it automatically even if the LAYOUT_FILE
 # tag is left empty.
 
-LAYOUT_FILE            = DoxygenLayout.xml
+LAYOUT_FILE            =
 
 # The CITE_BIB_FILES tag can be used to specify one or more bib files containing
 # the reference definitions. This must be a list of .bib files. The .bib
@@ -1632,7 +1631,7 @@ HTML_PROJECT_COOKIE    =
 # Minimum value: 0, maximum value: 9999, default value: 100.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_INDEX_NUM_ENTRIES = 500
+HTML_INDEX_NUM_ENTRIES = 100
 
 # If the GENERATE_DOCSET tag is set to YES, additional index files will be
 # generated that can be used as input for Apple's Xcode 3 integrated development
@@ -1915,7 +1914,7 @@ SHOW_ENUM_VALUES       = YES
 # Minimum value: 0, maximum value: 1500, default value: 250.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-TREEVIEW_WIDTH         = 200
+TREEVIEW_WIDTH         = 250
 
 # If the EXT_LINKS_IN_WINDOW option is set to YES, Doxygen will open links to
 # external symbols imported via tag files in a separate window.
@@ -2222,9 +2221,8 @@ EXTRA_PACKAGES         =
 #
 # Note: Only use a user-defined header if you know what you are doing!
 # Note: The header is subject to change so you typically have to regenerate the
-# default header when upgrading to a newer version of Doxygen. The following
-# commands have a special meaning inside the header (and footer): For a
-# description of the possible markers and block names see the documentation.
+# default header when upgrading to a newer version of Doxygen. For a description
+# of the possible markers and block names see the documentation.
 # This tag requires that the tag GENERATE_LATEX is set to YES.
 
 LATEX_HEADER           =
@@ -2307,7 +2305,7 @@ LATEX_HIDE_INDICES     = NO
 # The default value is: plainnat.
 # This tag requires that the tag GENERATE_LATEX is set to YES.
 
-LATEX_BIB_STYLE        = plain
+LATEX_BIB_STYLE        = plainnat
 
 # The LATEX_EMOJI_DIRECTORY tag is used to specify the (relative or absolute)
 # path from which the emoji images will be read. If a relative path is entered,
@@ -3069,10 +3067,10 @@ MERMAID_RENDER_MODE    = AUTO
 # relative path, or use MERMAID_RENDER_MODE=CLI to pre-generate images instead.
 # Examples:
 # - Latest v11 (default):
-# 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs'
+# https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs
 # - Pinned version:
-# 'https://cdn.jsdelivr.net/npm/mermaid@11.3.0/dist/mermaid.esm.min.mjs'
-# - Local copy: './mermaid.esm.min.mjs' (user must place file in HTML output
+# https://cdn.jsdelivr.net/npm/mermaid@11.3.0/dist/mermaid.esm.min.mjs
+# - Local copy: ./mermaid.esm.min.mjs (user must place file in HTML output
 # directory)
 # The default value is:
 # https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs.
@@ -3095,7 +3093,7 @@ MERMAIDFILE_DIRS       =
 # Minimum value: 0, maximum value: 10000, default value: 50.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-DOT_GRAPH_MAX_NODES    = 500
+DOT_GRAPH_MAX_NODES    = 50
 
 # The MAX_DOT_GRAPH_DEPTH tag can be used to set the maximum depth of the graphs
 # generated by dot. A depth value of 3 means that only nodes reachable from the
