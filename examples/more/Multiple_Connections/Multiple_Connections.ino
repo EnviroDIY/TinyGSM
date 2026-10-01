@@ -1,12 +1,9 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} Multiple_Connections.ino
  *
- * This sketch connects to a website and downloads a page.
- * It can be used to perform HTTP/RESTful API calls.
- *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- **************************************************************/
+ * @brief This sketch opens connections to two different servers at the same
+ * time and downloads a page from each.
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
@@ -35,7 +32,7 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// Set serial for debug console (to the Serial Monitor, default speed 115200)
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
@@ -93,11 +90,19 @@ const char gprsPass[] = "";
 const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
-// Server details
-const char server[]   = "vsh.pp.ua";
-const char resource[] = "/TinyGSM/logo.txt";
+// Server 0 details (SSL not required)
+const char server0[]   = "time.sodaq.net";
+const char resource0[] = "/";
+
+// Server 1 details (this server requires SSL, expect it to fail otherwise)
+const char server1[]   = "vsh.pp.ua";
+const char resource1[] = "/TinyGSM/logo.txt";
 
 #include <TinyGsmClient.h>
+
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
 
 // Just in case someone defined the wrong thing..
 #if TINY_GSM_USE_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
@@ -139,12 +144,8 @@ const int     port1 = 80;
 void setup() {
   // Set console baud rate
   SerialMon.begin(115200);
-  while (!SerialMon) {}
+  while (!SerialMon && millis() < 10000L) {}
   delay(10);
-
-  // !!!!!!!!!!!
-  // Set your reset, enable, power pins here
-  // !!!!!!!!!!!
 
   SerialMon.println("Wait...");
 
@@ -154,37 +155,6 @@ void setup() {
 
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
-  // pins
-  int8_t _modemPowerPin   = 18;  // Mayfly 1.1
-  int8_t _modemSleepRqPin = 23;  // Mayfly 1.1
-  int8_t _modemStatusPin  = 19;  // Mayfly 1.1
-  // set pin modes
-  pinMode(_modemPowerPin, OUTPUT);
-  pinMode(_modemSleepRqPin, OUTPUT);
-  pinMode(_modemStatusPin, INPUT);
-  // wake settings
-  uint32_t _wakeDelay_ms = 1000L;  // SIM7080G
-  uint32_t _wakePulse_ms = 1100L;  // SIM7080G
-  bool _wakeLevel = HIGH;  // SIM7080G is low, but EnviroDIY LTE Bee inverts it
-
-  // start with the modem powered off
-  DBG(F("Starting with modem powered down. Wait..."));
-  digitalWrite(_modemSleepRqPin, !_wakeLevel);
-  digitalWrite(_modemPowerPin, LOW);
-  delay(5000L);
-
-  // power the modem
-  DBG(F("Powering modem with pin"), _modemPowerPin, F("and waiting"),
-      _wakeDelay_ms, F("ms for power up."));
-  digitalWrite(_modemPowerPin, HIGH);
-  delay(_wakeDelay_ms);  // SIM7080G wake delay
-
-  // wake the modem
-  DBG(F("Sending a"), _wakePulse_ms, F("ms"), _wakeLevel ? F("HIGH") : F("LOW"),
-      F("wake-up pulse on pin"), _modemSleepRqPin);
-  digitalWrite(_modemSleepRqPin, _wakeLevel);
-  delay(_wakePulse_ms);  // >1s
-  digitalWrite(_modemSleepRqPin, !_wakeLevel);
   // !!!!!!!!!!!
 
   // Restart takes quite some time
@@ -199,7 +169,9 @@ void setup() {
 
 #if TINY_GSM_USE_GPRS
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
+  if (GSM_PIN && modem.getSimStatus() != SIM_READY) {
+    modem.simUnlock(GSM_PIN);
+  }
 #endif
 }
 
@@ -245,8 +217,8 @@ void loop() {
 #endif
 
   SerialMon.print("Connecting to ");
-  SerialMon.println(server);
-  if (!client0.connect(server, port0)) {
+  SerialMon.println(server0);
+  if (!client0.connect(server0, port0)) {
     SerialMon.println(" fail");
     delay(10000);
     return;
@@ -254,8 +226,8 @@ void loop() {
   SerialMon.println(" success");
 
   SerialMon.print("Connecting to ");
-  SerialMon.println(server);
-  if (!client1.connect(server, port1)) {
+  SerialMon.println(server1);
+  if (!client1.connect(server1, port1)) {
     SerialMon.println(" fail");
     delay(10000);
     return;
@@ -264,8 +236,8 @@ void loop() {
 
   // Make a HTTP GET request:
   SerialMon.println("Performing HTTP GET request...");
-  client0.print(String("GET ") + resource + " HTTP/1.1\r\n");
-  client0.print(String("Host: ") + server + "\r\n");
+  client0.print(String("GET ") + resource0 + " HTTP/1.1\r\n");
+  client0.print(String("Host: ") + server0 + "\r\n");
   client0.print("Connection: close\r\n\r\n");
   client0.println();
 
@@ -282,8 +254,8 @@ void loop() {
 
   // Make a HTTP GET request:
   SerialMon.println("Performing HTTP GET request...");
-  client1.print(String("GET ") + resource + " HTTP/1.1\r\n");
-  client1.print(String("Host: ") + server + "\r\n");
+  client1.print(String("GET ") + resource1 + " HTTP/1.1\r\n");
+  client1.print(String("Host: ") + server1 + "\r\n");
   client1.print("Connection: close\r\n\r\n");
   client1.println();
 

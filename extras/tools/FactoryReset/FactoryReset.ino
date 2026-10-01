@@ -1,13 +1,12 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} FactoryReset.ino
  *
- * To run this tool you need StreamDebugger library:
+ * @brief This sketch resets the modem to factory defaults.
+ *
+ * To run this tool you need the StreamDebugger library:
  *   https://github.com/vshymanskyy/StreamDebugger
  *   or from http://librarymanager/all#StreamDebugger
- *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- **************************************************************/
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
@@ -38,7 +37,11 @@
 
 #include <TinyGsmClient.h>
 
-// Set serial for debug console (to the Serial Monitor, speed 115200)
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
+
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
@@ -82,7 +85,7 @@ void setup() {
   SerialMon.println(
       F("***********************************************************"));
   SerialMon.print(F(" Return settings to Factory Defaults: "));
-  SerialMon.println((ret) ? "OK" : "FAIL");
+  SerialMon.println((ret) ? F("OK") : F("FAIL"));
   SerialMon.println(
       F("***********************************************************"));
 }

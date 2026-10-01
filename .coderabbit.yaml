@@ -1,0 +1,122 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+early_access: false
+enable_free_tier: true
+language: en
+tone_instructions: ''
+knowledge_base:
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  jira:
+    project_keys: []
+  linear:
+    team_keys: []
+chat:
+  auto_reply: true
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_placeholder: '@coderabbitai summary'
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  path_filters:
+    - '!**/dependencies.json'
+    - '!**/example_dependencies.json'
+    - '!**/cspell.json'
+    - '!**/.bumpversion.toml'
+    - '!**/.gitattributes'
+    - '!**/.gitignore'
+    - '!**/*.png'
+    - '!**/*.bin'
+    - '!**/*.hex'
+    - '!**/DSTRoot*.h'
+    - '!**/*Certificate*.h'
+  path_instructions:
+    - path: '**/*.md'
+      instructions: >-
+        Review for grammar, spelling, and clarity.
+        Each sentence should be on a new line, except inside of lists and bullet points.
+        Markdown files should follow rules of markdownlint.
+        Check C++ and Arduino code snippets as C++ code.
+    - path: '**/*.dox'
+      instructions: >-
+        Review for grammar, spelling, and clarity.
+        Ensure that Doxygen comments follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
+        Check C++ and Arduino code snippets as C++ code.
+    - path: '**/*.ino'
+      instructions: >-
+        Treat Arduino code in ino files as C++ code.
+        Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
+        Since this is an Arduino project, never suggest using the standard library (std::).
+        Files should be formatted according to the .clang-format file in the repo.
+        Template files used as includes should have the .tpp extension, and should not be included in ino files.
+        Credential information should never be committed.
+        When analyzing on a local machine, confirm that credential information will be removed by local smudge filters in the filters folder.
+        When evaluating a pull request, confirm that no credential information is present.
+    - path: '**/*.h'
+      instructions: >-
+        Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
+        Since this is an Arduino project, never suggest using the standard library (std::).
+        C++ code should be C++11 compatible, and should not use later features.
+        For memory savings, prefer defines to const variables, and prefer using the F() macro for string literals longer than a single character.
+        Files should be formatted according to the .clang-format file in the repo.
+        This is a header-only library; all code should be in the header and template files.
+        Template files used as includes should have the .tpp extension, and should not be included directly by the user.
+        Ensure that Doxygen comments follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
+        Review Doxygen comments for grammar, spelling, completeness, and clarity.
+    - path: '**/*.tpp'
+      instructions: >-
+        Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
+        Since this is an Arduino project, never suggest using the standard library (std::).
+        C++ code should be C++11 compatible, and should not use later features.
+        For memory savings, prefer defines to const variables, and prefer using the F() macro for string literals longer than a single character.
+        Files should be formatted according to the .clang-format file in the repo.
+        This is a header-only library; all code should be in the header and template files.
+        Template files used as includes should have the .tpp extension, and should not be included directly by the user.
+        Ensure that Doxygen comments follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
+        Review Doxygen comments for grammar, spelling, completeness, and clarity.
+    - path: '**/*.cpp'
+      instructions: >-
+        This is a header-only library, there should not be any .cpp files. If you see a .cpp file, it should be removed.
+    - path: 'extras/tools/test_build/test_build.ino'
+      instructions: >-
+        This is compiler test, not a user example.
+        It is intended to be used to test the library with different compilers and platforms, and should not be used as a reference for users.
+        Check that the code contains all functions and features of the library.
+  tools:
+    shellcheck:
+      enabled: true
+    ruff:
+      enabled: true
+    markdownlint:
+      enabled: true
+    github-checks:
+      enabled: true
+      timeout_ms: 90000
+    languagetool:
+      enabled: true
+      disabled_rules:
+        - EN_UNPAIRED_BRACKETS
+      disabled_categories:
+        - TYPOS
+        - TYPOGRAPHY
+        - CASING
+      enabled_only: false
+      level: default
+    biome:
+      enabled: true
+    hadolint:
+      enabled: true
+  auto_review:
+    enabled: true
+    ignore_title_keywords:
+      - WIP
+    labels: []
+    drafts: true
+    base_branches:
+      - main
+      - master
+      - develop

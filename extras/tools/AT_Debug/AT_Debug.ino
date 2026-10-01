@@ -1,12 +1,14 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} AT_Debug.ino
  *
- * This script tries to auto-detect the baud rate
- * and allows direct AT commands access
+ * @brief This script tries to auto-detect the baud rate and provides direct
+ * access to AT commands.
  *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- **************************************************************/
+ * @warning The quality of the passthrough connection created by this sketch is
+ * limited by the baud rate and the speed of the Arduino.  If possible, you
+ * should connect your modem directly to your computer and use a terminal
+ * program to send AT commands.
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
@@ -35,7 +37,7 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// Set serial for debug console (to the Serial Monitor, speed 115200)
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
@@ -50,6 +52,10 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
 
 #include <TinyGsmClient.h>
+
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
 
 // Module baud rate
 uint32_t rate = 0;  // Set to 0 for Auto-Detect
