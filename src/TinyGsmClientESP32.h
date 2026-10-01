@@ -1341,7 +1341,9 @@ class TinyGsmESP32
       } else if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
         // NOTE: Support for this is firmware dependent!
         // AT+CIPSSLCPSK=<link ID>,<"psk">,<"hint">
-        if (psKey == nullptr || pskIdent == nullptr) {
+        if (psKey == nullptr || strnlen(psKey, TINY_GSM_PSK_LENGTH) == 0 ||
+            pskIdent == nullptr ||
+            strnlen(pskIdent, TINY_GSM_PSK_IDENTITY_LENGTH) == 0) {
           DBG("### PSK authentication requires both a PSK and a PSK identity!");
           return false;
         }
