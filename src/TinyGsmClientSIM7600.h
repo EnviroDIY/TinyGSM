@@ -280,10 +280,12 @@ class TinyGsmSim7600
         if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
           DBG("### The SIM7600 does not support SSL using pre-shared keys.");
           sslCtxConfigured = false;
+          return 0;
         } else {
           sslCtxConfigured = at->configureSSLContext(
               sslCtxIndex, sslAuthMode, sslVersion, CAcertName, clientCertName,
               clientKeyName);
+          if (!sslCtxConfigured) { return 0; }
         }
       }
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
