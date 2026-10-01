@@ -132,15 +132,18 @@ TinyGsm modem(SerialAT);
 #ifdef USE_SSL
 TinyGsmClientSecure client(modem);
 // Server details to test TCP over SSL
-const char server[]   = "vsh.pp.ua";
-const char resource[] = "/TinyGSM/logo.txt";
-const int  port       = 443;
+const char     server[]      = "vsh.pp.ua";
+const char     resource[]    = "/TinyGSM/logo.txt";
+const int      port          = 443;
+const uint32_t expectedBytes = 121;
 #else
 TinyGsmClient client(modem);
-// Server details to test TCP without SSL
-const char server[]   = "time.sodaq.net";
-const char resource[] = "/";
-const int  port       = 80;
+// Server details to test TCP without SSL; body is the current unix
+// timestamp (10 digits) plus a trailing newline
+const char     server[]      = "time.sodaq.net";
+const char     resource[]    = "/";
+const int      port          = 80;
+const uint32_t expectedBytes = 11;
 #endif
 
 void setup() {
@@ -304,7 +307,7 @@ void loop() {
   SerialMon.print(bytesReceived);
   SerialMon.println(F(" bytes"));
   SerialMon.print(F(" Test:     "));
-  SerialMon.println((bytesReceived == 121) ? "PASSED" : "FAILED");
+  SerialMon.println((bytesReceived == expectedBytes) ? "PASSED" : "FAILED");
   SerialMon.println(F("************************"));
 
   // Do nothing forevermore
