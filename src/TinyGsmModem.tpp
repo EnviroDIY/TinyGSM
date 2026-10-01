@@ -749,7 +749,7 @@ class TinyGsmModem {
     // max 6 digits for int16_t (-32767)
     if (numChars <= 0 || numChars > 6) { return -9999; }
 
-    char buf[numChars];
+    char buf[6] = {};
 
     if (!streamGetLength(buf, numChars, timeout_ms)) { return -9999; }
 
@@ -757,8 +757,11 @@ class TinyGsmModem {
     bool    negative = false;
     uint8_t i        = 0;
 
-    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
-    while (i < numChars && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
+    // Skip until a digit or sign; '.' and '/' cannot start a number.
+    while (i < numChars && buf[i] != '+' && buf[i] != '-' &&
+           (buf[i] < '0' || buf[i] > '9')) {
+      ++i;
+    }
 
     if (i < numChars && (buf[i] == '-' || buf[i] == '+')) {
       negative = buf[i] == '-';
@@ -767,8 +770,14 @@ class TinyGsmModem {
 
     // Parse until the first non-digit (accept only 0-9).
     for (; i < numChars && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
-      res = res * 10 + buf[i] - '0';
+      uint8_t digit = buf[i] - '0';
+      // Check for overflow before multiply-and-add
+      if (res > (32767 - digit) / 10) { return -9999; }
+      res = res * 10 + digit;
     }
+
+    // Check sign overflow: -32768 is valid, but 32768 is not
+    if (negative && res > 32768) { return -9999; }
 
     return negative ? -res : res;
   }
@@ -806,8 +815,11 @@ class TinyGsmModem {
     bool    negative = false;
     uint8_t i        = 0;
 
-    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
-    while (i < bytesRead && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
+    // Skip until a digit or sign; '.' and '/' cannot start a number.
+    while (i < bytesRead && buf[i] != '+' && buf[i] != '-' &&
+           (buf[i] < '0' || buf[i] > '9')) {
+      ++i;
+    }
 
     if (i < bytesRead && (buf[i] == '-' || buf[i] == '+')) {
       negative = buf[i] == '-';
@@ -816,8 +828,14 @@ class TinyGsmModem {
 
     // Parse until the first non-digit (accept only 0-9).
     for (; i < bytesRead && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
-      res = res * 10 + buf[i] - '0';
+      uint8_t digit = buf[i] - '0';
+      // Check for overflow before multiply-and-add
+      if (res > (32767 - digit) / 10) { return -9999; }
+      res = res * 10 + digit;
     }
+
+    // Check sign overflow: -32768 is valid, but 32768 is not
+    if (negative && res > 32768) { return -9999; }
 
     return negative ? -res : res;
   }
@@ -841,7 +859,7 @@ class TinyGsmModem {
     // max 12 digits for unsigned long
     if (numChars <= 0 || numChars > 12) { return static_cast<uint32_t>(-1); }
 
-    char buf[numChars];
+    char buf[12] = {};
 
     if (!streamGetLength(buf, numChars, timeout_ms)) {
       return static_cast<uint32_t>(-1);
@@ -855,7 +873,12 @@ class TinyGsmModem {
 
     // Parse until the first non-digit (accept only 0-9).
     for (; i < numChars && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
-      res = res * 10 + buf[i] - '0';
+      uint8_t digit = buf[i] - '0';
+      // Check for overflow before multiply-and-add
+      if (res > (4294967295U - digit) / 10) {
+        return static_cast<uint32_t>(-1);
+      }
+      res = res * 10 + digit;
     }
 
     return res;
@@ -894,7 +917,12 @@ class TinyGsmModem {
 
     // Parse until the first non-digit (accept only 0-9).
     for (; i < bytesRead && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
-      res = res * 10 + buf[i] - '0';
+      uint8_t digit = buf[i] - '0';
+      // Check for overflow before multiply-and-add
+      if (res > (4294967295U - digit) / 10) {
+        return static_cast<uint32_t>(-1);
+      }
+      res = res * 10 + digit;
     }
 
     return res;
@@ -925,7 +953,7 @@ class TinyGsmModem {
     // max 15 digits, sign, and decimal point
     if (numChars <= 0 || numChars > 16) { return -9999.0F; }
 
-    char buf[numChars];
+    char buf[16] = {};
 
     if (!streamGetLength(buf, numChars, timeout_ms)) { return -9999.0F; }
 
@@ -935,16 +963,21 @@ class TinyGsmModem {
     bool    decimal  = false;
     uint8_t i        = 0;
 
-    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
-    while (i < numChars && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
+    // Skip until a digit or sign; '.' and '/' cannot start a number.
+    while (i < numChars && buf[i] != '+' && buf[i] != '-' &&
+           (buf[i] < '0' || buf[i] > '9')) {
+      ++i;
+    }
 
     if (i < numChars && (buf[i] == '-' || buf[i] == '+')) {
       negative = buf[i] == '-';
       ++i;
     }
 
-    // Parse until the first non-digit (also accept '.' and '/')
-    for (; i < numChars && (buf[i] >= 0x2E && buf[i] <= 0x39); ++i) {
+    // Parse until the first non-digit (also accept a single '.'; '/' is not a
+    // digit).
+    for (; i < numChars && (buf[i] == '.' || (buf[i] >= '0' && buf[i] <= '9'));
+         ++i) {
       char c = buf[i];
 
       if (c == '.') {
@@ -995,16 +1028,21 @@ class TinyGsmModem {
     bool    decimal  = false;
     uint8_t i        = 0;
 
-    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
-    while (i < bytesRead && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
+    // Skip until a digit or sign; '.' and '/' cannot start a number.
+    while (i < bytesRead && buf[i] != '+' && buf[i] != '-' &&
+           (buf[i] < '0' || buf[i] > '9')) {
+      ++i;
+    }
 
     if (i < bytesRead && (buf[i] == '-' || buf[i] == '+')) {
       negative = buf[i] == '-';
       ++i;
     }
 
-    // Parse until the first non-digit (also accept '.' and '/')
-    for (; i < bytesRead && (buf[i] >= 0x2E && buf[i] <= 0x39); ++i) {
+    // Parse until the first non-digit (also accept a single '.'; '/' is not a
+    // digit).
+    for (; i < bytesRead && (buf[i] == '.' || (buf[i] >= '0' && buf[i] <= '9'));
+         ++i) {
       char c = buf[i];
 
       if (c == '.') {
@@ -1311,7 +1349,9 @@ class TinyGsmModem {
                                            GFP(ModemConfig::GSM_ERROR));
     if (resp != 1 && resp != 2 && resp != 3) { return -1; }
     thisModem().streamSkipUntil(','); /* Skip format (0) */
-    int status = thisModem().streamGetIntBefore(ModemConfig::GSM_NL[0]);
+    const String atnlString = String(GFP(ModemConfig::GSM_NL));
+    const char   nl_c       = atnlString.length() ? atnlString[0] : '\r';
+    int          status     = thisModem().streamGetIntBefore(nl_c);
     thisModem().waitResponse();
     return status;
   }
