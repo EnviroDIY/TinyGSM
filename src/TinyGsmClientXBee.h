@@ -2017,7 +2017,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    * @brief Reads a response from the XBee module as an integer, waiting up to
    * timeout milliseconds for data to become available.
    *
-   * @param timeout The maximum time to wait for a response, in milliseconds.
+   * @param timeout_ms The maximum time to wait for a response, in milliseconds.
    * @return The response from the XBee module as an integer.
    */
   int16_t readResponseInt(uint32_t timeout_ms = 1000L) {
