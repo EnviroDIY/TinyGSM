@@ -1385,6 +1385,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         strncpy(sslCtxStr, "$2", 3);
       } else {
         DBG("### Invalid SSL context index.");
+        XBEE_COMMAND_END_DECORATOR
         return false;
       }
 
@@ -1415,6 +1416,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
             changesMadeSSL |= changeSettingIfNeeded(sslCtxStr, newTLSProfile);
           } else {
             DBG("### The CA certificate name is not set or empty.");
+            XBEE_COMMAND_END_DECORATOR
             return false;
           }
           break;
@@ -1436,6 +1438,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
           } else {
             DBG("### One or more of the certificate names for mutual "
                 "authentication are not set or empty.");
+            XBEE_COMMAND_END_DECORATOR
             return false;
           }
           break;
@@ -1445,6 +1448,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         default: {
           DBG("### The XBee only supports SSL using no validation, server "
               "authentication, and mutual authentication.");
+          XBEE_COMMAND_END_DECORATOR
           return false;
         }
       }
