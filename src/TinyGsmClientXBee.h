@@ -2028,16 +2028,32 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     char   buf[16];  // buffer to store the response as a C-string
     size_t bytesRead = stream.readBytesUntil('\r', buf, sizeof(buf));
 
-    int16_t result = 0;
+    // Return -1 for empty response
+    if (bytesRead == 0) { return -1; }
+
+    uint16_t result = 0;
 
     for (uint16_t i = 0; i < bytesRead; ++i) {
-      char c = buf[i];
+      char    c        = buf[i];
+      uint8_t hexDigit = 0;
+
+      // Convert valid hexadecimal digit to its numeric value
+      if (c >= '0' && c <= '9') {
+        hexDigit = c - '0';
+      } else if (c >= 'A' && c <= 'F') {
+        hexDigit = c - 'A' + 10;
+      } else if (c >= 'a' && c <= 'f') {
+        hexDigit = c - 'a' + 10;
+      } else {
+        // Invalid character outside 0-9, A-F, a-f
+        return -1;
+      }
 
       result <<= 4;
-      result |= (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+      result |= hexDigit;
     }
 
-    return result;
+    return static_cast<int16_t>(result);
   }
 
   /**
