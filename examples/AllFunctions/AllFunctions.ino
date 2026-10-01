@@ -562,7 +562,7 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
     strcat(request, "Connection: close\r\n\r\n");
     // Write the request out
     secureClient.write((uint8_t*)request, strlen(request));
-    client.flush();
+    secureClient.flush();
 
     // Wait for data to arrive
     uint32_t startS = millis();
