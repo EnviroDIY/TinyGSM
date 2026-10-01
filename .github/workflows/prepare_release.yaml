@@ -5,11 +5,11 @@ on:
       - main
     # Sequence of patterns matched against refs/tags
     paths:
-      - 'VERSION' # Push events when the VERSION file changes
+      - "VERSION" # Push events when the VERSION file changes
   workflow_dispatch:
     inputs:
       include_dependencies:
-        description: 'True to include a zip file with dependencies in the release'
+        description: "True to include a zip file with dependencies in the release"
         required: false
         type: boolean
         default: true
@@ -19,14 +19,19 @@ name: Create a New Release
 jobs:
   wait_for_checks:
     if: ${{ github.event_name != 'workflow_dispatch' }}
-    permissions:
-      actions: read
     strategy:
       matrix:
         req_workflow:
-          [verify_library_structure.yaml, build_examples.yaml, build_documentation.yaml]
+          [
+            verify_library_structure.yaml,
+            build_examples.yaml,
+            build_documentation.yaml,
+          ]
     name: Wait for Checks to complete
     runs-on: ubuntu-latest
+    # actions:read is required so action-wait-for-workflow can query workflow run status
+    permissions:
+      actions: read
     steps:
       - name: Wait on Workflow
         uses: ArcticLampyrid/action-wait-for-workflow@v1.3.0
@@ -44,13 +49,13 @@ jobs:
   release:
     name: Prepare a new release
     needs: [wait_for_checks]
-    permissions:
-      contents: write
     if: |
       always() &&
       (needs.wait_for_checks.result == 'success' || needs.wait_for_checks.result == 'skipped')
+    permissions:
+      contents: write
     uses: EnviroDIY/workflows/.github/workflows/prepare_release.yaml@main
     secrets:
       PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
     with:
-      include_dependencies: ${{ github.event_name != 'workflow_dispatch' || inputs.include_dependencies }}
+      include_dependencies: ${{ ( true ) || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true') }}
