@@ -1265,8 +1265,9 @@ class TinyGsmSim7080
   }
 
   size_t modemGetAvailable(uint8_t mux) {
-    // If the socket doesn't exist, just return
-    if (!isValidMux(mux)) { return 0; }
+    // NOTE: This function gets the number of available characters for all
+    // sockets at once, so we don't check if the specific mux is valid until
+    // right before returning the value for that mux.
     // NOTE: This gets how many characters are available on all connections that
     // have data.  It does not return all the connections, just those with data.
     sendAT(GF("+CARECV?"));
@@ -1313,13 +1314,21 @@ class TinyGsmSim7080
       // If only a portion were returned, catch it above.
       if (muxNo == TcpConfig::kMuxCount - 1) { waitResponse(); }
     }
-    modemGetConnected(mux);  // check the state of all connections
+    // check the state of all connections
+    // like this function, modemGetConnected doesn't check if the specific mux
+    // is valid until right before returning the value for that mux, so calling
+    // this will check and update the connection status for all valid muxes even
+    // if the supplied mux wasn't a valid one.
+    modemGetConnected(mux);
+    if (!isValidMux(mux)) { return 0; }
     if (!sockets[mux]) { return 0; }
     return sockets[mux]->sock_available;
   }
 
   bool modemGetConnected(uint8_t mux) {
-    if (!isValidMux(mux)) { return false; }
+    // NOTE: This function gets the number of available characters for all
+    // sockets at once, so we don't check if the specific mux is valid until
+    // right before returning the value for that mux.
     // NOTE:  This gets the state of all connections that have been opened
     // since the last connection
     sendAT(GF("+CASTATE?"));
@@ -1369,6 +1378,7 @@ class TinyGsmSim7080
       // If only a portion were returned, catch it above.
       if (muxNo == TcpConfig::kMuxCount - 1) { waitResponse(); }
     }
+    if (!isValidMux(mux)) { return false; }
     return sockets[mux]->sock_connected;
   }
 
