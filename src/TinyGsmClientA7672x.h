@@ -730,8 +730,20 @@ class TinyGsmA7672X
     //            (SSLAuthMode::MUTUAL_AUTHENTICATION)
     //            3: client authentication and no server authentication
     //            (SSLAuthMode::CLIENT_VALIDATION)
+    // Because the auth mode used by the A7672x is different than the
+    // SSLAuthMode enum, we need to translate it to the correct value.
+    int8_t authModeValue = 0;
+    switch (sslAuthMode) {
+      case SSLAuthMode::NO_VALIDATION: authModeValue = 0; break;
+      case SSLAuthMode::CA_VALIDATION: authModeValue = 1; break;
+      case SSLAuthMode::MUTUAL_AUTHENTICATION: authModeValue = 2; break;
+      case SSLAuthMode::CLIENT_VALIDATION: authModeValue = 3; break;
+      default:
+        authModeValue = 0;  // Default to no validation if unknown
+        break;
+    }
     sendAT(GF("+CSSLCFG=\"authmode\","), context_id, ',',
-           static_cast<int8_t>(sslAuthMode));
+           static_cast<int8_t>(authModeValue));
     success &= waitResponse(5000L) == 1;
 
     // apply the correct certificates to the connection
