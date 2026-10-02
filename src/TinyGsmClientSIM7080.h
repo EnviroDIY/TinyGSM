@@ -932,8 +932,8 @@ class TinyGsmSim7080
     // Ignore the RTC time?
     // AT+CSSLCFG="IGNORERTCTIME",<ctxindex>,<ignorertctime>
     // <ctxindex> SSL context identifier
-    // <ignorertctime> 0 to ignore, 1 to use
-    sendAT(GF("+CSSLCFG=\"ignorertctime\","), context_id, GF(",1"));
+    // <ignorertctime> 0: Do not ignore the RTC time, 1: Ignore the RTC time
+    sendAT(GF("+CSSLCFG=\"ignorertctime\","), context_id, GF(",0"));
     success &= waitResponse() == 1;
 
     // Query all the parameters that have been set for this SSL context
