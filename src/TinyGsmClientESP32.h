@@ -753,20 +753,20 @@ class TinyGsmESP32
         return false;
       }
       case CertificateType::CA_CERTIFICATE: {
-        sendAT(GF("+SYSMFG=2,\""), ModemConfig::CA_CERT_NAMESPACE, GF("\",\""),
-               ModemConfig::CA_CERT_NAMESPACE, '.', cert_number_char,
-               GF("\",8,"), len);
+        sendAT(GF("+SYSMFG=2,\""), GFP(ModemConfig::CA_CERT_NAMESPACE),
+               GF("\",\""), GFP(ModemConfig::CA_CERT_NAMESPACE), '.',
+               cert_number_char, GF("\",8,"), len);
         break;
       }
       case CertificateType::CLIENT_CERTIFICATE: {
-        sendAT(GF("+SYSMFG=2,\""), ModemConfig::CLIENT_CERT_NAMESPACE,
-               GF("\",\""), ModemConfig::CLIENT_CERT_NAMESPACE, '.',
+        sendAT(GF("+SYSMFG=2,\""), GFP(ModemConfig::CLIENT_CERT_NAMESPACE),
+               GF("\",\""), GFP(ModemConfig::CLIENT_CERT_NAMESPACE), '.',
                cert_number_char, GF("\",8,"), len);
         break;
       }
       case CertificateType::CLIENT_KEY: {
-        sendAT(GF("+SYSMFG=2,\""), ModemConfig::CLIENT_KEY_NAMESPACE,
-               GF("\",\""), ModemConfig::CLIENT_KEY_NAMESPACE, '.',
+        sendAT(GF("+SYSMFG=2,\""), GFP(ModemConfig::CLIENT_KEY_NAMESPACE),
+               GF("\",\""), GFP(ModemConfig::CLIENT_KEY_NAMESPACE), '.',
                cert_number_char, GF("\",8,"), len);
         break;
       }
@@ -805,19 +805,20 @@ class TinyGsmESP32
         return false;
       }
       case CertificateType::CA_CERTIFICATE: {
-        sendAT(GF("+SYSMFG=0,\""), ModemConfig::CA_CERT_NAMESPACE, GF("\",\""),
-               ModemConfig::CA_CERT_NAMESPACE, '.', cert_number_char, '"');
+        sendAT(GF("+SYSMFG=0,\""), GFP(ModemConfig::CA_CERT_NAMESPACE),
+               GF("\",\""), GFP(ModemConfig::CA_CERT_NAMESPACE), '.',
+cert_number_char, '"');
         break;
       }
       case CertificateType::CLIENT_CERTIFICATE: {
-        sendAT(GF("+SYSMFG=0,\""), ModemConfig::CLIENT_CERT_NAMESPACE,
-               GF("\",\""), ModemConfig::CLIENT_CERT_NAMESPACE, '.',
+        sendAT(GF("+SYSMFG=0,\""), GFP(ModemConfig::CLIENT_CERT_NAMESPACE),
+               GF("\",\""), GFP(ModemConfig::CLIENT_CERT_NAMESPACE), '.',
                cert_number_char, '"');
         break;
       }
       case CertificateType::CLIENT_KEY: {
-        sendAT(GF("+SYSMFG=0,\""), ModemConfig::CLIENT_KEY_NAMESPACE,
-               GF("\",\""), ModemConfig::CLIENT_KEY_NAMESPACE, '.',
+        sendAT(GF("+SYSMFG=0,\""), GFP(ModemConfig::CLIENT_KEY_NAMESPACE),
+               GF("\",\""), GFP(ModemConfig::CLIENT_KEY_NAMESPACE), '.',
                cert_number_char, '"');
         break;
       }
@@ -857,19 +858,20 @@ class TinyGsmESP32
         return false;
       }
       case CertificateType::CA_CERTIFICATE: {
-        sendAT(GF("+SYSMFG=1,\""), ModemConfig::CA_CERT_NAMESPACE, GF("\",\""),
-               ModemConfig::CA_CERT_NAMESPACE, '.', cert_number_char, '"');
+        sendAT(GF("+SYSMFG=1,\""), GFP(ModemConfig::CA_CERT_NAMESPACE),
+               GF("\",\""), GFP(ModemConfig::CA_CERT_NAMESPACE), '.',
+               cert_number_char, '"');
         break;
       }
       case CertificateType::CLIENT_CERTIFICATE: {
-        sendAT(GF("+SYSMFG=1,\""), ModemConfig::CLIENT_CERT_NAMESPACE,
-               GF("\",\""), ModemConfig::CLIENT_CERT_NAMESPACE, '.',
+        sendAT(GF("+SYSMFG=1,\""), GFP(ModemConfig::CLIENT_CERT_NAMESPACE),
+               GF("\",\""), GFP(ModemConfig::CLIENT_CERT_NAMESPACE), '.',
                cert_number_char, '"');
         break;
       }
       case CertificateType::CLIENT_KEY: {
-        sendAT(GF("+SYSMFG=1,\""), ModemConfig::CLIENT_KEY_NAMESPACE,
-               GF("\",\""), ModemConfig::CLIENT_KEY_NAMESPACE, '.',
+        sendAT(GF("+SYSMFG=1,\""), GFP(ModemConfig::CLIENT_KEY_NAMESPACE),
+               GF("\",\""), GFP(ModemConfig::CLIENT_KEY_NAMESPACE), '.',
                cert_number_char, '"');
         break;
       }
