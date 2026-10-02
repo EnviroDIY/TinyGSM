@@ -1069,7 +1069,9 @@ class TinyGsmSim7080
     // <sslFlag> 0: Not support SSL
     //           1: Support SSL
     sendAT(GF("+CASSLCFG="), mux, ',', GF("\"ssl\","), ssl);
-    waitResponse();
+    bool set_ssl = waitResponse(timeout_ms) == 1;
+    if (!set_ssl && ssl) return false;  // allow to fail for non-ssl connections
+
     // If we have a secure socket, use a static cast to get the authentication
     // mode and certificate names. This isn't ideal; hopefully the compiler will
     // save us from ourselves. We cannot use a dynamic cast because Arduino

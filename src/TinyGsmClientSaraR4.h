@@ -830,7 +830,7 @@ class TinyGsmSaraR4
       // Must be issued before the +USOCO command
       // support depends on firmware version
       sendAT(GF("+USOSEC="), *dynamicMux, ",1" /*, ',', sslCtxIndex*/);
-      waitResponse();
+      if (waitResponse() != 1) { return false; }
     }
 
     // Enable NODELAY
