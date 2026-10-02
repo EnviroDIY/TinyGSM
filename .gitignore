@@ -74,6 +74,7 @@ buildCI.bat
 generated_docs/*
 docs/__pycache__/*
 docs/css/*
+docs/reviews/*
 docs/*output*
 docs/*.png
 docs/*.js
