@@ -703,24 +703,19 @@ class TinyGsmModem {
  protected:
   inline bool streamGetLength(char* buf, int8_t numChars,
                               const uint32_t timeout_ms = 1000L) {
-    if (!buf) { return false; }
+    if (!buf || numChars <= 0) { return false; }
 
     // Clear the buffer before reading into it
     memset(buf, 0, numChars);
 
-    int8_t   numCharsReady = -1;
-    uint32_t startMillis   = millis();
-    while (millis() - startMillis < timeout_ms &&
-           (numCharsReady = thisModem().stream.available()) < numChars) {
+    uint32_t startMillis = millis();
+    while (thisModem().stream.available() < numChars) {
+      if (millis() - startMillis >= timeout_ms) { return false; }
       TINY_GSM_YIELD();
     }
 
-    if (numCharsReady >= numChars) {
-      thisModem().stream.readBytes(buf, numChars);
-      return true;
-    }
-
-    return false;
+    return thisModem().stream.readBytes(buf, numChars) ==
+        static_cast<size_t>(numChars);
   }
 
   /**
