@@ -790,7 +790,11 @@ class TinyGsmSim5360
     if (isValidMux(ret_mux)) {
       // Move the data to the socket buffer of the returned mux as long as the
       // returned mux is valid, even if it doesn't match the expected mux.
+#ifdef TINY_GSM_USE_HEX
+      len_read = moveCharsFromStreamToFifo<true>(ret_mux, len_reported);
+#else
       len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
+#endif
       // update the amount remaining for the returned mux, even if it doesn't
       // match the expected mux.
       sockets[ret_mux]->sock_available = len_remaining >= 0 ? len_remaining : 0;

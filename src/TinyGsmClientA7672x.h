@@ -977,7 +977,15 @@ class TinyGsmA7672X
     if (isValidMux(ret_mux)) {
       // Move the data to the socket buffer of the returned mux as long as the
       // returned mux is valid, even if it doesn't match the expected mux.
-      len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
+#ifdef TINY_GSM_USE_HEX
+      // CCHRECV returns raw TLS data even when CIPRXGET uses hex mode.
+      if (!ssl) {
+        len_read = moveCharsFromStreamToFifo<true>(ret_mux, len_reported);
+      } else
+#endif
+      {
+        len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
+      }
     }
 
     if (ssl) {

@@ -263,8 +263,7 @@ class TinyGsmTCP {
    * excess characters are consumed from the stream and discarded so that the
    * modem stream remains synchronized.
    *
-   * If the modem is configured to use hex mode (i.e., compiled with
-   * `TINY_GSM_USE_HEX`), each pair of received hexadecimal characters is
+   * If HexEncoded is true, each pair of received hexadecimal characters is
    * converted into one byte before being placed into the FIFO.
    *
    * Data already available on the stream is transferred in blocks. If
@@ -281,12 +280,15 @@ class TinyGsmTCP {
    *       data is consumed and discarded. The return value reports only the
    *       number of characters actually placed into the FIFO.
    *
+   * @tparam HexEncoded Whether this receive command returns hexadecimal pairs
+   *                    instead of raw bytes. Defaults to raw reception.
    * @param mux The **zero-indexed** position in the modem's socket array of the
    * client whose FIFO the characters will be placed in.
    * @param expected_len The number of decoded characters reported by the modem.
    *                     A negative value indicates an invalid/error length.
    * @return The number of decoded characters actually placed into the FIFO.
    */
+  template <bool HexEncoded = false>
   size_t moveCharsFromStreamToFifo(uint8_t mux, int16_t expected_len) {
     if (!thisModem().sockets[mux] || expected_len <= 0) { return 0; }
 
@@ -296,84 +298,78 @@ class TinyGsmTCP {
     uint8_t  char_failures = 0;
     uint8_t  buf[32];
 
-#ifdef TINY_GSM_USE_HEX
-    // DBG("### Reading input in HEX mode");
-    constexpr size_t readCharLen    = 2;
+    constexpr size_t readCharLen    = HexEncoded ? 2 : 1;
     char             hanging_nibble = '\0';
     // ^^ Used to store a single nibble if we get an odd number of hex
     // characters from the stream
-#else
-    // DBG("### Reading input in ASCII mode");
-    constexpr size_t readCharLen = 1;
-#endif
+    if (HexEncoded) {
+      // DBG("### Reading input in HEX mode");
+    } else {
+      // DBG("### Reading input in ASCII mode");
+    }
 
     // allow up to 3 timeouts on individual characters before we quit the whole
     // read operation
     while (len && char_failures < 3) {
       size_t available = thisModem().stream.available();
 
-      if (available >= readCharLen) {
-        size_t count = len;
+      const size_t carry    = HexEncoded && hanging_nibble != '\0' ? 1 : 0;
+      const size_t required = readCharLen - carry;
+      if (available >= required) {
+        size_t count = len * readCharLen - carry;
         // don't read more than the size of the temporary buffer
-        if (count > sizeof(buf) / readCharLen) {
-          count = sizeof(buf) / readCharLen;
-        }
+        if (count > sizeof(buf)) { count = sizeof(buf); }
         // don't read more than the number of characters available in the stream
-        if (count > available / readCharLen) {
-          count = available / readCharLen;
+        if (count > available) { count = available; }
+        if (HexEncoded) {
+          // Never consume a partial hex pair.
+          count -= (count + carry) % 2;
         }
-
-        count *= readCharLen;
         // if there's nothing to read, move on
         if (!count) { continue; }
 
-#ifdef TINY_GSM_USE_HEX
-        // Never consume a partial hex pair.
-        count &= ~static_cast<size_t>(1);
-#endif
-
         size_t bytesRead = thisModem().stream.readBytes(buf, count);
 
-#ifndef TINY_GSM_USE_HEX
-        bytesRead -= bytesRead % readCharLen;
-#else
-        // If nothing new was read, leave any still-unpaired hanging nibble
-        // untouched for the next read instead of discarding it.
-        if (bytesRead != 0) {
-          // Hold the trailing character over as the new hanging nibble if
-          // the total nibble count (including any carry-in) is odd.
-          size_t     use_len            = bytesRead;
-          const bool have_carry         = (hanging_nibble != '\0');
-          char       new_hanging_nibble = '\0';
-          if ((use_len + (have_carry ? 1 : 0)) & 1) {
-            new_hanging_nibble = buf[use_len - 1];
-            --use_len;
-          }
+        if (!HexEncoded) {
+          bytesRead -= bytesRead % readCharLen;
+        } else {
+          // If nothing new was read, leave any still-unpaired hanging nibble
+          // untouched for the next read instead of discarding it.
+          if (bytesRead != 0) {
+            // Hold the trailing character over as the new hanging nibble if
+            // the total nibble count (including any carry-in) is odd.
+            size_t     use_len            = bytesRead;
+            const bool have_carry         = (hanging_nibble != '\0');
+            char       new_hanging_nibble = '\0';
+            if ((use_len + (have_carry ? 1 : 0)) & 1) {
+              new_hanging_nibble = buf[use_len - 1];
+              --use_len;
+            }
 
-          // Track output separately from input so a carried nibble's byte is
-          // never overwritten by the pair decoded right after it.
-          size_t out = 0;
-          size_t i   = 0;
-          if (have_carry) {
-            uint8_t c  = hanging_nibble;
-            uint8_t d  = buf[0];
-            c          = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
-            d          = (d <= '9') ? d - '0' : (d & 0x0F) + 9;
-            buf[out++] = (c << 4) | d;
-            i          = 1;  // only one new character was consumed as input
-          }
-          for (; i + 1 < use_len; i += 2) {
-            uint8_t c  = buf[i];
-            uint8_t d  = buf[i + 1];
-            c          = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
-            d          = (d <= '9') ? d - '0' : (d & 0x0F) + 9;
-            buf[out++] = (c << 4) | d;
-          }
+            // Track output separately from input so a carried nibble's byte is
+            // never overwritten by the pair decoded right after it.
+            size_t out = 0;
+            size_t i   = 0;
+            if (have_carry) {
+              uint8_t c  = hanging_nibble;
+              uint8_t d  = buf[0];
+              c          = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+              d          = (d <= '9') ? d - '0' : (d & 0x0F) + 9;
+              buf[out++] = (c << 4) | d;
+              i          = 1;  // only one new character was consumed as input
+            }
+            for (; i + 1 < use_len; i += 2) {
+              uint8_t c  = buf[i];
+              uint8_t d  = buf[i + 1];
+              c          = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+              d          = (d <= '9') ? d - '0' : (d & 0x0F) + 9;
+              buf[out++] = (c << 4) | d;
+            }
 
-          bytesRead      = out;
-          hanging_nibble = new_hanging_nibble;
+            bytesRead      = out;
+            hanging_nibble = new_hanging_nibble;
+          }
         }
-#endif
 
         // NOTE: We can't directly memcpy into the rx fifo!
         // The fifo is a template class that can hold any data type and the
@@ -403,13 +399,12 @@ class TinyGsmTCP {
       }
 
       // Wait for at least one complete character (or HEX pair).
-      while (static_cast<size_t>(thisModem().stream.available()) <
-                 readCharLen &&
+      while (static_cast<size_t>(thisModem().stream.available()) < required &&
              (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
         TINY_GSM_YIELD();
       }
 
-      if (static_cast<size_t>(thisModem().stream.available()) < readCharLen) {
+      if (static_cast<size_t>(thisModem().stream.available()) < required) {
         DBG("### ERROR: Timed out waiting for character from stream!");
         ++char_failures;
       }

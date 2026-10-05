@@ -747,7 +747,11 @@ class TinyGsmSim800
     if (isValidMux(ret_mux)) {
       // Move the data to the socket buffer of the returned mux as long as the
       // returned mux is valid, even if it doesn't match the expected mux.
+#ifdef TINY_GSM_USE_HEX
+      len_read = moveCharsFromStreamToFifo<true>(ret_mux, len_reported);
+#else
       len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
+#endif
     }
     waitResponse();  // ending OK; the waitResponse function will toss all the
                      // characters before the OK if the mux was invalid
