@@ -10,6 +10,14 @@
 #ifndef SRC_TINYGSMCOMMON_H_
 #define SRC_TINYGSMCOMMON_H_
 
+#include <stdint.h>
+#include <string.h>
+
+#if (defined(__AVR__) || defined(ARDUINO_ARCH_AVR)) && \
+    !defined(__AVR_ATmega4809__)
+#include <avr/pgmspace.h>
+#endif
+
 /// The current library version number
 #define TINYGSM_VERSION "0.12.0"
 
@@ -105,6 +113,22 @@
  * @def GF
  * @brief Helper macro to store data in program memory (PROGMEM) on AVR
  * platforms and in standard memory on other systems.
+ * @def TINY_GSM_F_READ(value)
+ * @brief Read a 32-bit constant stored with TINY_GSM_PROGMEM.
+ * @param value Pointer to the stored constant.
+ * @return The stored value.
+ * @def TINY_GSM_F_STRNCMP(str, constant, length)
+ * @brief Compare a RAM string with a constant string wrapped in GFP().
+ * @param str The string in RAM.
+ * @param constant The constant string wrapped in GFP().
+ * @param length The maximum number of characters to compare.
+ * @return A negative, zero, or positive value as for strncmp().
+ * @def TINY_GSM_F_STRCPY(dest, constant)
+ * @brief Copy a constant string wrapped in GFP() into a RAM buffer.
+ * @param dest The destination buffer, large enough for the string and
+ * terminator.
+ * @param constant The constant string wrapped in GFP().
+ * @return The destination buffer.
  */
 #if defined(PROGMEM) && (defined(__AVR__) || defined(ARDUINO_ARCH_AVR)) && \
     !defined(__AVR_ATmega4809__) && !defined(GFP) && !defined(GF)
@@ -112,11 +136,20 @@
 typedef const __FlashStringHelper* GsmConstStr;
 #define GFP(x) (reinterpret_cast<GsmConstStr>(x))
 #define GF(x) F(x)
+#define TINY_GSM_F_READ(value) pgm_read_dword((value))
+#define TINY_GSM_F_STRNCMP(str, constant, length) \
+  strncmp_P((str), reinterpret_cast<const char*>(constant), (length))
+#define TINY_GSM_F_STRCPY(dest, constant) \
+  strcpy_P((dest), reinterpret_cast<const char*>(constant))
 #elif !defined(TINY_GSM_PROGMEM) && !defined(GFP) && !defined(GF)
 #define TINY_GSM_PROGMEM
 typedef const char* GsmConstStr;
 #define GFP(x) x
 #define GF(x) x
+#define TINY_GSM_F_READ(value) (*(value))
+#define TINY_GSM_F_STRNCMP(str, constant, length) \
+  strncmp((str), (constant), (length))
+#define TINY_GSM_F_STRCPY(dest, constant) strcpy((dest), (constant))
 #endif
 
 #ifdef TINY_GSM_DEBUG
@@ -227,7 +260,7 @@ uint32_t TinyGsmAutoBaud(T& at_serial, uint32_t minimum = 9600,
 
   for (uint8_t i = 0; i < 14;
        i++) {  // sizeof(TINY_GSM_AUTOBAUD_RATES)/sizeof(uint32_t)
-    uint32_t rate = rates[i];
+    uint32_t rate = TINY_GSM_F_READ(&rates[i]);
     if (rate < minimum || rate > maximum) continue;
 
     DBG("Trying baud rate", rate, "...");
