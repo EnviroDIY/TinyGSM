@@ -807,7 +807,7 @@ class TinyGsmESP32
       case CertificateType::CA_CERTIFICATE: {
         sendAT(GF("+SYSMFG=0,\""), GFP(ModemConfig::CA_CERT_NAMESPACE),
                GF("\",\""), GFP(ModemConfig::CA_CERT_NAMESPACE), '.',
-cert_number_char, '"');
+               cert_number_char, '"');
         break;
       }
       case CertificateType::CLIENT_CERTIFICATE: {
@@ -912,18 +912,20 @@ cert_number_char, '"');
                             uint8_t& parsed_number) {
     uint8_t ns_length = 0;
     // look for the namespace in the name and determine the certificate type
-    if (strncmp(cert_name, ModemConfig::CA_CERT_NAMESPACE,
-                strlen(ModemConfig::CA_CERT_NAMESPACE)) == 0) {
+    if (TINY_GSM_F_STRNCMP(cert_name, GFP(ModemConfig::CA_CERT_NAMESPACE),
+                           sizeof(ModemConfig::CA_CERT_NAMESPACE) - 1) == 0) {
       parsed_type = CertificateType::CA_CERTIFICATE;
-      ns_length   = strlen(ModemConfig::CA_CERT_NAMESPACE);
-    } else if (strncmp(cert_name, ModemConfig::CLIENT_CERT_NAMESPACE,
-                       strlen(ModemConfig::CLIENT_CERT_NAMESPACE)) == 0) {
+      ns_length   = sizeof(ModemConfig::CA_CERT_NAMESPACE) - 1;
+    } else if (TINY_GSM_F_STRNCMP(
+                   cert_name, GFP(ModemConfig::CLIENT_CERT_NAMESPACE),
+                   sizeof(ModemConfig::CLIENT_CERT_NAMESPACE) - 1) == 0) {
       parsed_type = CertificateType::CLIENT_CERTIFICATE;
-      ns_length   = strlen(ModemConfig::CLIENT_CERT_NAMESPACE);
-    } else if (strncmp(cert_name, ModemConfig::CLIENT_KEY_NAMESPACE,
-                       strlen(ModemConfig::CLIENT_KEY_NAMESPACE)) == 0) {
+      ns_length   = sizeof(ModemConfig::CLIENT_CERT_NAMESPACE) - 1;
+    } else if (TINY_GSM_F_STRNCMP(
+                   cert_name, GFP(ModemConfig::CLIENT_KEY_NAMESPACE),
+                   sizeof(ModemConfig::CLIENT_KEY_NAMESPACE) - 1) == 0) {
       parsed_type = CertificateType::CLIENT_KEY;
-      ns_length   = strlen(ModemConfig::CLIENT_KEY_NAMESPACE);
+      ns_length   = sizeof(ModemConfig::CLIENT_KEY_NAMESPACE) - 1;
     } else {
       goto parsing_error;
     }
@@ -967,16 +969,16 @@ cert_number_char, '"');
         return;
       }
       case CertificateType::CLIENT_KEY: {
-        strcpy(cert_name, ModemConfig::CLIENT_KEY_NAMESPACE);
+        TINY_GSM_F_STRCPY(cert_name, GFP(ModemConfig::CLIENT_KEY_NAMESPACE));
         break;
       }
       case CertificateType::CLIENT_CERTIFICATE: {
-        strcpy(cert_name, ModemConfig::CLIENT_CERT_NAMESPACE);
+        TINY_GSM_F_STRCPY(cert_name, GFP(ModemConfig::CLIENT_CERT_NAMESPACE));
         break;
       }
       case CertificateType::CA_CERTIFICATE:
       default: {
-        strcpy(cert_name, ModemConfig::CA_CERT_NAMESPACE);
+        TINY_GSM_F_STRCPY(cert_name, GFP(ModemConfig::CA_CERT_NAMESPACE));
         break;
       }
     }

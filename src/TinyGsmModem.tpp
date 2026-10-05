@@ -232,7 +232,7 @@ class TinyGsmModem {
 
     for (uint8_t i = 0; i < 14;
          i++) {  // sizeof(TINY_GSM_AUTOBAUD_RATES)/sizeof(uint32_t)
-      uint32_t rate = rates[i];
+      uint32_t rate = TINY_GSM_F_READ(&rates[i]);
       for (uint8_t j = 0; j < 3; j++) {
         DBG("Trying to set the baud rate from a rate of", rate, "...");
         at_serial.end();
