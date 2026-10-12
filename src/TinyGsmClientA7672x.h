@@ -764,9 +764,8 @@ class TinyGsmA7672X
 
     // NOTE: The SSL context (<ssl_ctx_index>) is not the same as the
     // connection identifier.  The SSL context is the grouping of SSL
-    // settings, the connection identifier is the mux/socket number. For this,
-    // we will *always* configure SSL context 0, just as we always configured
-    // PDP context 1.
+    // settings, the connection identifier is the mux/socket number.
+
     // CSSLCFG commands reference the SSL context number; C**A**SSLCFG
     // commands reference the connection number (aka, the mux).
 

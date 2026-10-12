@@ -154,6 +154,9 @@ class TinyGsmSim7600
  public:
   using ModemConfig = TinyGsmSim7600ModemConfig;
   using TcpConfig   = TinyGsmSim7600TcpConfig;
+  using SslConfig   = TinyGsmSim7600SslConfig;
+  using GsmSecureContext =
+      TinyGsmSSL<TinyGsmSim7600, TinyGsmSim7600SslConfig>::gsmSecureContext;
 
   /*
    * Inner Client
@@ -261,14 +264,14 @@ class TinyGsmSim7600
   /// Inner secure client
   /// @ingroup simcom_sim7600
   class GsmClientSecureSim7600
-: public GsmSecureClient<GsmClientSecureSim7600, GsmClientSim7600,
-                                 TinyGsmSim7600> {
+      : public GsmSecureClient<GsmClientSecureSim7600, GsmClientSim7600,
+                               TinyGsmSim7600> {
     friend class TinyGsmSim7600;
 
    public:
     using GsmClientSim7600::connect;
     using GsmClientSim7600::stop;
-using GsmSecureClient::GsmSecureClient;
+    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmSim7600TcpConfig;
 
     /*
@@ -280,21 +283,41 @@ using GsmSecureClient::GsmSecureClient;
       stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
-      if (!sslCtxConfigured) {
-        if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+      if (!at->getSSLContext(sslCtxIndex)->sslCtxConfigured) {
+        if (at->getSSLContext(sslCtxIndex)->sslAuthMode ==
+            SSLAuthMode::PRE_SHARED_KEYS) {
           DBG("### The SIM7600 does not support SSL using pre-shared keys.");
-          sslCtxConfigured = false;
           return 0;
         } else {
-          sslCtxConfigured = at->configureSSLContext(
-              sslCtxIndex, sslAuthMode, sslVersion, CAcertName, clientCertName,
-              clientKeyName);
-          if (!sslCtxConfigured) { return 0; }
+          at->getSSLContext(sslCtxIndex)->sslCtxConfigured =
+              at->configureSSLContext(sslCtxIndex);
+          if (!at->getSSLContext(sslCtxIndex)->sslCtxConfigured) {
+            DBG("### Failed to configure the SSL context!");
+            return 0;
+          }
         }
       }
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
+  };
+
+  /*
+   * Inner Secure Context
+   */
+ public:
+  /// Inner secure context
+  /// @ingroup simcom_sim7600
+  class GsmSecureContextSim7600
+      : public ::GsmSecureContext<TinyGsmSim7600, TinyGsmSim7600SslConfig> {
+    friend class TinyGsmSim7600;
+
+   public:
+    using ::GsmSecureContext<TinyGsmSim7600,
+                             TinyGsmSim7600SslConfig>::GsmSecureContext;
+
+    /// Unregister this context from its modem.
+    ~GsmSecureContextSim7600() {}
   };
 
   /*
@@ -902,6 +925,29 @@ using GsmSecureClient::GsmSecureClient;
                            SSLVersion sslVersion, const char* CAcertName,
                            const char* clientCertName,
                            const char* clientKeyName) {
+    // store the configuration in the SSL context object
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    if (sslContext) {
+      sslContext->sslAuthMode = sslAuthMode;
+      sslContext->sslVersion  = sslVersion;
+      strncpy(sslContext->CAcertName, CAcertName,
+              sizeof(sslContext->CAcertName) - 1);
+      strncpy(sslContext->clientCertName, clientCertName,
+              sizeof(sslContext->clientCertName) - 1);
+      strncpy(sslContext->clientKeyName, clientKeyName,
+              sizeof(sslContext->clientKeyName) - 1);
+      sslContext->sslCtxConfigured = false;
+    }
+
+    return configureSSLContext(context_id);
+  }
+
+  /**
+   * @brief Configure the SSL context for the modem.
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool configureSSLContext(uint8_t context_id) {
     bool success = true;
 
     // List the certs available
@@ -910,11 +956,22 @@ using GsmSecureClient::GsmSecureClient;
 
     // NOTE: The SSL context (<ssl_ctx_index>) is not the same as the
     // connection identifier.  The SSL context is the grouping of SSL
-    // settings, the connection identifier is the mux/socket number. For this,
-    // we will *always* configure SSL context 0, just as we always configured
-    // PDP context 1.
+    // settings, the connection identifier is the mux/socket number.
+
     // CSSLCFG commands reference the SSL context number; C**A**SSLCFG
     // commands reference the connection number (aka, the mux).
+
+    // Retrieve the SSL context object for the given context ID.
+    GsmSecureContext* sslContext  = getSSLContext(context_id);
+    SSLAuthMode       sslAuthMode = sslContext ? sslContext->sslAuthMode
+                                               : SSLAuthMode::NO_VALIDATION;
+    SSLVersion        sslVersion  = sslContext ? sslContext->sslVersion
+                                               : SSLVersion::ALL_SSL;
+    const char* CAcertName     = sslContext ? sslContext->CAcertName : nullptr;
+    const char* clientCertName = sslContext ? sslContext->clientCertName
+                                            : nullptr;
+    const char* clientKeyName  = sslContext ? sslContext->clientKeyName
+                                            : nullptr;
 
     // set the ssl version
     // AT+CSSLCFG="sslversion",<ssl_ctx_index>,<sslversion>
@@ -931,6 +988,31 @@ using GsmSecureClient::GsmSecureClient;
     }
     sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, ',',
            static_cast<int8_t>(sslVersion));
+    success &= waitResponse(5000L) == 1;
+
+    // set authentication mode
+    // AT+CSSLCFG="authmode",<ssl_ctx_index>,<authmode>
+    // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
+    // <authmode> 0: No authentication (SSLAuthMode::NO_VALIDATION)
+    //            1: server authentication (SSLAuthMode::CA_VALIDATION)
+    //            2: server and client authentication
+    //            (SSLAuthMode::MUTUAL_AUTHENTICATION)
+    //            3: client authentication and no server authentication
+    //            (SSLAuthMode::CLIENT_VALIDATION)
+    // Because the auth mode used by the SIM7600 is different than the
+    // SSLAuthMode enum, we need to translate it to the correct value.
+    int8_t authModeValue = 0;
+    switch (sslAuthMode) {
+      case SSLAuthMode::NO_VALIDATION: authModeValue = 0; break;
+      case SSLAuthMode::CA_VALIDATION: authModeValue = 1; break;
+      case SSLAuthMode::MUTUAL_AUTHENTICATION: authModeValue = 2; break;
+      case SSLAuthMode::CLIENT_VALIDATION: authModeValue = 3; break;
+      default:
+        authModeValue = 0;  // Default to no validation if unknown
+        break;
+    }
+    sendAT(GF("+CSSLCFG=\"authmode\","), context_id, ',',
+           static_cast<int8_t>(authModeValue));
     success &= waitResponse(5000L) == 1;
 
     // apply the correct certificates to the connection
@@ -960,31 +1042,6 @@ using GsmSecureClient::GsmSecureClient;
              clientKeyName, '"');
       success &= waitResponse(5000L) == 1;
     }
-
-    // set authentication mode
-    // AT+CSSLCFG="authmode",<ssl_ctx_index>,<authmode>
-    // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
-    // <authmode> 0: No authentication (SSLAuthMode::NO_VALIDATION)
-    //            1: server authentication (SSLAuthMode::CA_VALIDATION)
-    //            2: server and client authentication
-    //            (SSLAuthMode::MUTUAL_AUTHENTICATION)
-    //            3: client authentication and no server authentication
-    //            (SSLAuthMode::CLIENT_VALIDATION)
-    // Because the auth mode used by the SIM7600 is different than the
-    // SSLAuthMode enum, we need to translate it to the correct value.
-    int8_t authModeValue = 0;
-    switch (sslAuthMode) {
-      case SSLAuthMode::NO_VALIDATION: authModeValue = 0; break;
-      case SSLAuthMode::CA_VALIDATION: authModeValue = 1; break;
-      case SSLAuthMode::MUTUAL_AUTHENTICATION: authModeValue = 2; break;
-      case SSLAuthMode::CLIENT_VALIDATION: authModeValue = 3; break;
-      default:
-        authModeValue = 0;  // Default to no validation if unknown
-        break;
-    }
-    sendAT(GF("+CSSLCFG=\"authmode\","), context_id, ',',
-           static_cast<int8_t>(authModeValue));
-    success &= waitResponse(5000L) == 1;
 
     return success;
   }
