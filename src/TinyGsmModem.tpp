@@ -784,7 +784,8 @@ class TinyGsmModem {
    * Reads characters from the modem stream until @p lastChar is encountered
    * and converts the characters preceding it to a signed 16-bit decimal
    * integer. Leading and trailing non-digits are ignored. A leading '-' or '+'
-   * are supported.
+   * is supported.  Decimals points are treated as non-digit characters - they
+   * terminate the integer parsing.
    *
    * This is a lightweight replacement for strtol()/atoi() intended for
    * parsing the small decimal integer fields returned by modems. It does

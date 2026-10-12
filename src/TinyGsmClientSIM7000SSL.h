@@ -452,9 +452,8 @@ class TinyGsmSim7000SSL
 
     // wait for some characters to be available
     uint32_t start = millis();
-    while (!stream.available() && millis() - start < 10000) {
-      TINY_GSM_YIELD();
-    }
+    while (!stream.available() && millis() - start < 10000) {}
+
     for (int i = 0; i < print_len; i++) {
       int      c;
       uint32_t _startMillis = millis();
@@ -462,7 +461,6 @@ class TinyGsmSim7000SSL
         c = stream.read();
         if (c >= 0) break;
       } while (millis() - _startMillis < 50);
-      // Check for timeout before writing
       if (c < 0) { break; }  // if we run out of characters, stop
 #ifndef DUMP_AT_COMMANDS
       // Print the file to the buffer
@@ -823,8 +821,8 @@ class TinyGsmSim7000SSL
     // Ignore the RTC time?
     // AT+CSSLCFG="IGNORERTCTIME",<ctxindex>,<ignorertctime>
     // <ctxindex> SSL context identifier
-    // <ignorertctime> 0 to ignore, 1 to use
-    sendAT(GF("+CSSLCFG=\"ignorertctime\","), context_id, GF(",1"));
+    // <ignorertctime> 0: Do not ignore the RTC time, 1: Ignore the RTC time
+    sendAT(GF("+CSSLCFG=\"ignorertctime\","), context_id, GF(",0"));
     success &= waitResponse() == 1;
 
     // Query all the parameters that have been set for this SSL context
@@ -833,6 +831,7 @@ class TinyGsmSim7000SSL
     // <ctxindex> SSL context identifier
     // NOTE:  despite docs using "CTXINDEX" in all caps, the module only
     // accepts the command "CTXINDEX" and it must be in lower case
+    // +CSSLCFG:<ctxindex>,<sslversion>,<ciphersuite>,<ignorertctime>,<protocol>,<sni>
     sendAT(GF("+CSSLCFG=\"ctxindex\","), context_id);
     if (waitResponse(5000L, GF("+CSSLCFG:")) != 1) return false;
     streamSkipUntil('\n');  // read out the certificate information
@@ -840,7 +839,6 @@ class TinyGsmSim7000SSL
 
     return success;
   }
-
   /**
    * @brief Apply SSL certificates to the specified connection.
    * @param mux The **zero-indexed** position of the client in the modem's
@@ -940,6 +938,9 @@ class TinyGsmSim7000SSL
     return waitResponse() == 1;
   }
 
+  /*
+   * Client-related functions
+   */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t /*static*/ mux,
                     int timeout_s) {
@@ -957,7 +958,9 @@ class TinyGsmSim7000SSL
     // <sslFlag> 0: Not support SSL
     //           1: Support SSL
     sendAT(GF("+CASSLCFG="), mux, ',', GF("\"ssl\","), ssl);
-    waitResponse();
+    bool set_ssl = waitResponse(timeout_ms) == 1;
+    if (!set_ssl && ssl) return false;  // allow to fail for non-ssl connections
+
     // If we have a secure socket, use a static cast to get the authentication
     // mode and certificate names. This isn't ideal; hopefully the compiler will
     // save us from ourselves. We cannot use a dynamic cast because Arduino
@@ -1093,12 +1096,9 @@ class TinyGsmSim7000SSL
   }
 
   size_t modemGetAvailable(uint8_t mux) {
-    // If the socket doesn't exist, just return
-    if (!isValidMux(mux)) { return 0; }
-    // We need to check if there are any connections open *before* checking for
-    // available characters.  The SIM7000 *will crash* if you ask about data
-    // when there are no open connections.
-    if (!modemGetConnected(mux)) { return 0; }
+    // NOTE: This function gets the number of available characters for all
+    // sockets at once, so we don't check if the specific mux is valid until
+    // right before returning the value for that mux.
     // NOTE: This gets how many characters are available on all connections that
     // have data.  It does not return all the connections, just those with data.
     sendAT(GF("+CARECV?"));
@@ -1145,13 +1145,21 @@ class TinyGsmSim7000SSL
       // If only a portion were returned, catch it above.
       if (muxNo == TcpConfig::kMuxCount - 1) { waitResponse(); }
     }
-    modemGetConnected(mux);  // check the state of all connections
+    // check the state of all connections
+    // like this function, modemGetConnected doesn't check if the specific mux
+    // is valid until right before returning the value for that mux, so calling
+    // this will check and update the connection status for all valid muxes even
+    // if the supplied mux wasn't a valid one.
+    modemGetConnected(mux);
+    if (!isValidMux(mux)) { return 0; }
     if (!sockets[mux]) { return 0; }
     return sockets[mux]->sock_available;
   }
 
   bool modemGetConnected(uint8_t mux) {
-    if (!isValidMux(mux)) { return false; }
+    // NOTE: This function gets the number of available characters for all
+    // sockets at once, so we don't check if the specific mux is valid until
+    // right before returning the value for that mux.
     // NOTE:  This gets the state of all connections that have been opened
     // since the last connection
     sendAT(GF("+CASTATE?"));
@@ -1201,6 +1209,7 @@ class TinyGsmSim7000SSL
       // If only a portion were returned, catch it above.
       if (muxNo == TcpConfig::kMuxCount - 1) { waitResponse(); }
     }
+    if (!isValidMux(mux)) { return false; }
     return sockets[mux]->sock_connected;
   }
 
