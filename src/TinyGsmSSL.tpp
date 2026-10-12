@@ -555,7 +555,8 @@ class GsmSecureContext {
    * @param modem The modem that owns the hardware SSL context.
    * @param contextIndex The zero-based hardware SSL context index.
    */
-  GsmSecureContext(modemType& modem, uint8_t contextIndex)
+  GsmSecureContext(modemType& modem,
+                   uint8_t    contextIndex = TINY_GSM_DEFAULT_SSL_CTX)
       : modem(nullptr),
         sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
         sslCtxConfigured(false),
@@ -585,7 +586,7 @@ class GsmSecureContext {
    * @return `true` if this object is registered in the requested slot;
    * otherwise `false`.
    */
-  bool init(modemType* modem, uint8_t contextIndex) {
+  bool init(modemType* modem, uint8_t contextIndex = TINY_GSM_DEFAULT_SSL_CTX) {
     if (modem == nullptr || contextIndex >= sslConfig::kContextCount) {
       return false;
     }
@@ -794,6 +795,74 @@ class GsmSecureContext {
 };
 
 
+/// short-cut macro for secure context constructors
+#define TINY_GSM_SECURE_CONTEXT_CTORS(modemAbbrev)                             \
+  GsmSecureContext##modemAbbrev()                                              \
+      : ::GsmSecureContext<TinyGsmA7672X, TinyGsmA7672XSslConfig>() {}         \
+  explicit GsmSecureContext##modemAbbrev(                                      \
+      TinyGsm##modemAbbrev& modem,                                             \
+      uint8_t               contextIndex = TINY_GSM_DEFAULT_SSL_CTX)           \
+      : ::GsmSecureContext<TinyGsmA7672X, TinyGsmA7672XSslConfig>(             \
+            modem, contextIndex) {}                                            \
+  explicit GsmSecureContext##modemAbbrev(                                      \
+      TinyGsm##modemAbbrev& modem, SSLAuthMode sslAuthMode,                    \
+      SSLVersion  sslVersion = SSLVersion::TLS1_2,                             \
+      const char* CAcertName = nullptr, const char* clientCertName = nullptr,  \
+      const char* clientKeyName = nullptr)                                     \
+      : ::GsmSecureContext<TinyGsmA7672X, TinyGsmA7672XSslConfig>(modem) {     \
+    setSSLAuthMode(sslAuthMode);                                               \
+    setSSLVersion(sslVersion);                                                 \
+    setCACertName(CAcertName);                                                 \
+    setClientCredentials(clientCertName, clientKeyName);                       \
+  }                                                                            \
+  explicit GsmSecureContext##modemAbbrev(                                      \
+      TinyGsm##modemAbbrev& modem, uint8_t contextIndex,                       \
+      SSLAuthMode sslAuthMode, SSLVersion sslVersion = SSLVersion::TLS1_2,     \
+      const char* CAcertName = nullptr, const char* clientCertName = nullptr,  \
+      const char* clientKeyName = nullptr)                                     \
+      : ::GsmSecureContext<TinyGsmA7672X, TinyGsmA7672XSslConfig>(             \
+            modem, contextIndex) {                                             \
+    setSSLAuthMode(sslAuthMode);                                               \
+    setSSLVersion(sslVersion);                                                 \
+    setCACertName(CAcertName);                                                 \
+    setClientCredentials(clientCertName, clientKeyName);                       \
+  }                                                                            \
+  explicit GsmSecureContext##modemAbbrev(                                      \
+      TinyGsm##modemAbbrev& modem, const char* pskIdent, const char* psKey,    \
+      SSLVersion sslVersion = SSLVersion::TLS1_2)                              \
+      : ::GsmSecureContext<TinyGsmA7672X, TinyGsmA7672XSslConfig>(modem) {     \
+    setSSLAuthMode(SSLAuthMode::PRE_SHARED_KEYS);                              \
+    setSSLVersion(sslVersion);                                                 \
+    setPreSharedKey(pskIdent, psKey);                                          \
+  }                                                                            \
+  explicit GsmSecureContext##modemAbbrev(                                      \
+      TinyGsm##modemAbbrev& modem, uint8_t contextIndex, const char* pskIdent, \
+      const char* psKey, SSLVersion sslVersion = SSLVersion::TLS1_2)           \
+      : ::GsmSecureContext<TinyGsmA7672X, TinyGsmA7672XSslConfig>(             \
+            modem, contextIndex) {                                             \
+    setSSLAuthMode(SSLAuthMode::PRE_SHARED_KEYS);                              \
+    setSSLVersion(sslVersion);                                                 \
+    setPreSharedKey(pskIdent, psKey);                                          \
+  }                                                                            \
+  explicit GsmSecureContext##modemAbbrev(                                      \
+      TinyGsm##modemAbbrev& modem, const char* pskTableName,                   \
+      SSLVersion sslVersion = SSLVersion::TLS1_2)                              \
+      : ::GsmSecureContext<TinyGsmA7672X, TinyGsmA7672XSslConfig>(modem) {     \
+    setSSLAuthMode(SSLAuthMode::PRE_SHARED_KEYS);                              \
+    setSSLVersion(sslVersion);                                                 \
+    setPSKTableName(pskTableName);                                             \
+  }                                                                            \
+  explicit GsmSecureContext##modemAbbrev(                                      \
+      TinyGsm##modemAbbrev& modem, uint8_t contextIndex,                       \
+      const char* pskTableName, SSLVersion sslVersion = SSLVersion::TLS1_2)    \
+      : ::GsmSecureContext<TinyGsmA7672X, TinyGsmA7672XSslConfig>(             \
+            modem, contextIndex) {                                             \
+    setSSLAuthMode(SSLAuthMode::PRE_SHARED_KEYS);                              \
+    setSSLVersion(sslVersion);                                                 \
+    setPSKTableName(pskTableName);                                             \
+  }
+
+
 /**
  * @brief Base class that associates a secure client with an SSL context.
  *
@@ -829,7 +898,7 @@ class GsmSecureClient {
 };
 
 
-/// short-cut macro for constructors
+/// short-cut macro for secure client constructors
 #define TINY_GSM_SECURE_CLIENT_CTORS(modemAbbrev)                             \
   /** @brief Create an unattached secure client using the default context. */ \
   GsmClientSecure##modemAbbrev() {                                            \
