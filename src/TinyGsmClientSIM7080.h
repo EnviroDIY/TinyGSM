@@ -126,6 +126,9 @@ class TinyGsmSim7080
  public:
   using ModemConfig = TinyGsmSim7080ModemConfig;
   using TcpConfig   = TinyGsmSim7080TcpConfig;
+  using SslConfig   = TinyGsmSim7080SslConfig;
+  using GsmSecureContext =
+      TinyGsmSSL<TinyGsmSim7080, TinyGsmSim7080SslConfig>::gsmSecureContext;
 
   /*
    * Inner Client
@@ -233,14 +236,14 @@ class TinyGsmSim7080
   /// Inner secure client
   /// @ingroup simcom_sim7080
   class GsmClientSecureSim7080
-: public GsmSecureClient<GsmClientSecureSim7080, GsmClientSim7080,
-                                 TinyGsmSim7080> {
+      : public GsmSecureClient<GsmClientSecureSim7080, GsmClientSim7080,
+                               TinyGsmSim7080> {
     friend class TinyGsmSim7080;
 
    public:
     using GsmClientSim7080::connect;
     using GsmClientSim7080::stop;
-using GsmSecureClient::GsmSecureClient;
+    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmSim7080TcpConfig;
 
     // Because we have the same potential range of mux numbers for secure and
@@ -256,9 +259,9 @@ using GsmSecureClient::GsmSecureClient;
       stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
-      if (!sslCtxConfigured) {
-        sslCtxConfigured = at->configureSSLContext(sslCtxIndex, host,
-                                                   sslAuthMode, sslVersion);
+      if (!at->getSSLContext(sslCtxIndex)->sslCtxConfigured) {
+        at->getSSLContext(sslCtxIndex)->sslCtxConfigured =
+            at->configureSSLContext(sslCtxIndex, host);
       }
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
@@ -267,6 +270,24 @@ using GsmSecureClient::GsmSecureClient;
 
   /// Typedef for backward compatibility
   using GsmClientSecureSIM7080 = GsmClientSecureSim7080;
+
+  /*
+   * Inner Secure Context
+   */
+ public:
+  /// Inner secure context
+  /// @ingroup simcom_sim7080
+  class GsmSecureContextSim7080
+      : public ::GsmSecureContext<TinyGsmSim7080, TinyGsmSim7080SslConfig> {
+    friend class TinyGsmSim7080;
+
+   public:
+    using ::GsmSecureContext<TinyGsmSim7080,
+                             TinyGsmSim7080SslConfig>::GsmSecureContext;
+
+    /// Unregister this context from its modem.
+    ~GsmSecureContextSim7080() {}
+  };
 
   /*
    * GSM Modem Constructor
@@ -807,6 +828,23 @@ using GsmSecureClient::GsmSecureClient;
    */
   bool configureSSLContext(uint8_t context_id, const char* sni,
                            SSLAuthMode sslAuthMode, SSLVersion sslVersion) {
+    // store the configuration in the SSL context object
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    if (sslContext) {
+      sslContext->sslAuthMode      = sslAuthMode;
+      sslContext->sslVersion       = sslVersion;
+      sslContext->sslCtxConfigured = false;
+    }
+
+    return configureSSLContext(context_id, sni);
+  }
+  /**
+   * @brief Configure the SSL context for the modem.
+   * @param context_id The SSL context ID.
+   * @param sni The Server Name Indication (SNI) for the SSL connection.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool configureSSLContext(uint8_t context_id, const char* sni) {
     bool success = true;
 
     // NOTE: The SSL context (<ctxindex>) is not the same as the connection
@@ -818,6 +856,17 @@ using GsmSecureClient::GsmSecureClient;
     // NOTE: If you want to tie the same SSL context to an MQTT application on
     // the module, you need to add one to the index in the SMSSL command (ie,
     // SMSSL=1,... will call settings configured for SSL context 0)
+
+    // Retrieve the SSL context object for the given context ID.
+    GsmSecureContext* sslContext  = getSSLContext(context_id);
+    SSLAuthMode       sslAuthMode = sslContext ? sslContext->sslAuthMode
+                                               : SSLAuthMode::NO_VALIDATION;
+    SSLVersion        sslVersion  = sslContext ? sslContext->sslVersion
+                                               : SSLVersion::ALL_SSL;
+
+    DBG("### SSL context index:", context_id);
+    DBG("### SSL auth mode:", (int)sslAuthMode);
+    DBG("### SSL version:", (int)sslVersion);
 
     // set the ssl version
     // AT+CSSLCFG="SSLVERSION",<ctxindex>,<sslversion>
@@ -958,16 +1007,57 @@ using GsmSecureClient::GsmSecureClient;
    * @brief Apply SSL certificates to the specified connection.
    * @param mux The **zero-indexed** position of the client in the modem's
    * socket array.
+   * @param context_id The SSL context ID.
    * @param sslAuthMode The SSL authentication mode.
    * @param CAcertName The CA certificate name.
    * @param clientCertName The client certificate name.
    * @param clientKeyName The client key name.
    * @return True if the operation was successful, false otherwise.
    */
-  bool applySSLCertificates(uint8_t mux, SSLAuthMode sslAuthMode,
-                            const char* CAcertName, const char* clientCertName,
+  bool applySSLCertificates(uint8_t mux, uint8_t context_id,
+                            SSLAuthMode sslAuthMode, const char* CAcertName,
+                            const char* clientCertName,
                             const char* clientKeyName) {
+    // store the configuration in the SSL context object
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    if (sslContext) {
+      sslContext->sslAuthMode = sslAuthMode;
+      strncpy(sslContext->CAcertName, CAcertName,
+              sizeof(sslContext->CAcertName) - 1);
+      strncpy(sslContext->clientCertName, clientCertName,
+              sizeof(sslContext->clientCertName) - 1);
+      strncpy(sslContext->clientKeyName, clientKeyName,
+              sizeof(sslContext->clientKeyName) - 1);
+      sslContext->sslCtxConfigured = false;
+    }
+
+    return applySSLCertificates(mux, context_id);
+  }
+  /**
+   * @brief Apply SSL certificates to the specified connection.
+   * @param mux The **zero-indexed** position of the client in the modem's
+   * socket array.
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool applySSLCertificates(uint8_t mux, uint8_t context_id) {
     bool success = true;
+
+    // Retrieve the SSL context object for the given context ID.
+    GsmSecureContext* sslContext  = getSSLContext(context_id);
+    SSLAuthMode       sslAuthMode = sslContext ? sslContext->sslAuthMode
+                                               : SSLAuthMode::NO_VALIDATION;
+    const char* CAcertName     = sslContext ? sslContext->CAcertName : nullptr;
+    const char* clientCertName = sslContext ? sslContext->clientCertName
+                                            : nullptr;
+    const char* clientKeyName  = sslContext ? sslContext->clientKeyName
+                                            : nullptr;
+
+    DBG("### SSL context index:", context_id);
+    DBG("### SSL auth mode:", (int)sslAuthMode);
+    DBG("### CA cert name:", CAcertName);
+    DBG("### Client cert name:", clientCertName);
+    DBG("### Client key name:", clientKeyName);
 
     // Re-convert the certificates, just in case
     if (CAcertName != nullptr &&
@@ -1012,11 +1102,38 @@ using GsmSecureClient::GsmSecureClient;
    * @brief Apply SSL pre-shared key (PSK) to the specified connection.
    * @param mux The **zero-indexed** position of the client in the modem's
    * socket array.
+   * @param context_id The SSL context ID.
    * @param pskTableName The PSK table name.
    * @return True if the operation was successful, false otherwise.
    */
-  bool applySSLPSK(uint8_t mux, const char* pskTableName) {
+  bool applySSLPSK(uint8_t mux, uint8_t context_id, const char* pskTableName) {
+    // store the configuration in the SSL context object
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    if (sslContext) {
+      strncpy(sslContext->pskTableName, pskTableName,
+              sizeof(sslContext->pskTableName) - 1);
+      sslContext->sslCtxConfigured = false;
+    }
+
+    return applySSLPSK(mux, context_id);
+  }
+
+  /**
+   * @brief Apply SSL pre-shared key (PSK) to the specified connection.
+   * @param mux The **zero-indexed** position of the client in the modem's
+   * socket array.
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool applySSLPSK(uint8_t mux, uint8_t context_id) {
     bool success = true;
+
+    // Retrieve the SSL context object for the given context ID.
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    const char* pskTableName = sslContext ? sslContext->pskTableName : nullptr;
+
+    DBG("### SSL context index:", context_id);
+    DBG("### PSK table name:", pskTableName);
 
     // SRGD WARNING: UNTESTED!!
     if (pskTableName != nullptr &&
@@ -1076,36 +1193,23 @@ using GsmSecureClient::GsmSecureClient;
     bool set_ssl = waitResponse(timeout_ms) == 1;
     if (!set_ssl && ssl) return false;  // allow to fail for non-ssl connections
 
-    // If we have a secure socket, use a static cast to get the authentication
-    // mode and certificate names. This isn't ideal; hopefully the compiler will
-    // save us from ourselves. We cannot use a dynamic cast because Arduino
-    // compiles with -fno-rtti.
+    // If we have a secure socket, use a static cast to get the context index.
+    // This isn't ideal; hopefully the compiler will save us from ourselves. We
+    // cannot use a dynamic cast because Arduino compiles with -fno-rtti.
     if (ssl) {
       const GsmClientSecureSim7080* thisClient =
           static_cast<const GsmClientSecureSim7080*>(sockets[mux]);
-      uint8_t     sslCtxIndex    = thisClient->sslCtxIndex;
-      SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
-      const char* CAcertName     = thisClient->CAcertName;
-      const char* clientCertName = thisClient->clientCertName;
-      const char* clientKeyName  = thisClient->clientKeyName;
-      const char* pskTableName   = thisClient->pskTableName;
-
-      DBG("### SSL context index:", sslCtxIndex);
-      DBG("### SSL auth mode:", (int)sslAuthMode);
-      DBG("### CA cert name:", CAcertName);
-      DBG("### Client cert name:", clientCertName);
-      DBG("### Client key name:", clientKeyName);
-      DBG("### PSK table name:", pskTableName);
+      uint8_t sslCtxIndex = thisClient->sslCtxIndex;
 
       // NOTE: We cannot link the SSL context or set the certificates until
       // AFTER setting the connection id (ie, AT+CACID=mux)
       linkSSLContext(mux,
                      sslCtxIndex);  // Must be before applying certs
-      if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
-        applySSLPSK(mux, pskTableName);
+      if (getSSLContext(sslCtxIndex)->sslAuthMode ==
+          SSLAuthMode::PRE_SHARED_KEYS) {
+        applySSLPSK(mux, sslCtxIndex);
       } else {
-        applySSLCertificates(mux, sslAuthMode, CAcertName, clientCertName,
-                             clientKeyName);
+        applySSLCertificates(mux, sslCtxIndex);
       }
     }
 
