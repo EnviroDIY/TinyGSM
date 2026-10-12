@@ -405,11 +405,19 @@ class TinyGsmA7672X
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
     if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
-      return (getSimStatus() == SIM_READY);
+      if (getSimStatus() == SIM_READY) {
+        invalidateSSLContexts();
+        return true;
+      }
+      return false;
     } else {
       // if the sim is ready, or it's locked but no pin has been provided,
-      // return true
-      return (ret == SIM_READY || ret == SIM_LOCKED);
+      // invalidate SSL contexts and return result
+      if (ret == SIM_READY || ret == SIM_LOCKED) {
+        invalidateSSLContexts();
+        return true;
+      }
+      return false;
     }
   }
 
@@ -423,7 +431,11 @@ class TinyGsmA7672X
     sendAT(GF("+CSCLK=0"));  // Control UART Sleep always work
     waitResponse();
     sendAT(GF("&W"));  // Write configuration
-    return waitResponse() == 1;
+    if (waitResponse() == 1) {
+      invalidateSSLContexts();
+      return true;
+    }
+    return false;
   }
 
   /*
@@ -437,6 +449,7 @@ class TinyGsmA7672X
     if (!setPhoneFunctionality(0)) { return false; }
     if (!setPhoneFunctionality(1, true)) { return false; }
     delay(3000);
+    invalidateSSLContexts();
     return init(pin);
   }
 
