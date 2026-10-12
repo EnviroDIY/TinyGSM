@@ -194,7 +194,7 @@ class TinyGsmSSL {
   /// The SSL trait type used by this modem.
   using SslConfig = sslConfig;
   /// The SSL context type used by this modem.
-  using GsmSecureContext = ::GsmSecureContext<modemType, sslConfig>;
+  using gsmSecureContext = ::GsmSecureContext<modemType, sslConfig>;
 
  private:
   friend class ::GsmSecureContext<modemType, sslConfig>;
@@ -399,7 +399,7 @@ class TinyGsmSSL {
    * @return The registered context, or `nullptr` if the index is invalid or no
    * context is registered there.
    */
-  GsmSecureContext* getSSLContext(uint8_t contextIndex) {
+  gsmSecureContext* getSSLContext(uint8_t contextIndex) {
     if (contextIndex >= SslConfig::kContextCount) { return nullptr; }
     return sslContexts[contextIndex];
   }
@@ -411,7 +411,7 @@ class TinyGsmSSL {
    * @return The registered context, or `nullptr` if the index is invalid or no
    * context is registered there.
    */
-  const GsmSecureContext* getSSLContext(uint8_t contextIndex) const {
+  const gsmSecureContext* getSSLContext(uint8_t contextIndex) const {
     if (contextIndex >= SslConfig::kContextCount) { return nullptr; }
     return sslContexts[contextIndex];
   }
@@ -479,7 +479,7 @@ class TinyGsmSSL {
    * @return `true` if the slot is valid and available for this context;
    * otherwise `false`.
    */
-  bool attachSSLContext(GsmSecureContext* context, uint8_t contextIndex) {
+  bool attachSSLContext(gsmSecureContext* context, uint8_t contextIndex) {
     if (context == nullptr || contextIndex >= SslConfig::kContextCount ||
         (sslContexts[contextIndex] != nullptr &&
          sslContexts[contextIndex] != context)) {
@@ -494,7 +494,7 @@ class TinyGsmSSL {
    * @param context The context object requesting removal.
    * @param contextIndex The zero-based hardware SSL context index.
    */
-  void detachSSLContext(GsmSecureContext* context, uint8_t contextIndex) {
+  void detachSSLContext(gsmSecureContext* context, uint8_t contextIndex) {
     if (contextIndex < SslConfig::kContextCount &&
         sslContexts[contextIndex] == context) {
       sslContexts[contextIndex] = nullptr;
@@ -509,7 +509,7 @@ class TinyGsmSSL {
   }
 
   /// Registered contexts indexed by hardware SSL context number.
-  GsmSecureContext* sslContexts[SslConfig::kContextCount];
+  gsmSecureContext* sslContexts[SslConfig::kContextCount];
 };
 
 
