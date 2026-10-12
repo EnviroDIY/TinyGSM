@@ -91,12 +91,20 @@ struct TinyGsmSim7080TcpConfig
           /*stopTimeoutS*/ 15,
           /*minFreeTxBuffer*/ 1360> {};
 
+/**
+ * @brief SSL behavior and limits for the SIMCom SIM7080 and SIM7070 modem
+ * family. The module supports 6 SSL contexts.
+ * @ingroup simcom_sim7080
+ */
+struct TinyGsmSim7080SslConfig : public TinyGsmSslConfigPreset<
+                                     /*contextCount*/ 6> {};
+
 /// Class for the SIMCOM SIM7070, SIM7080, and SIM7090
 /// @ingroup simcom_sim7080
 class TinyGsmSim7080
     : public TinyGsmSim70xx<TinyGsmSim7080, TinyGsmSim7080ModemConfig>,
       public TinyGsmTCP<TinyGsmSim7080, TinyGsmSim7080TcpConfig>,
-      public TinyGsmSSL<TinyGsmSim7080>,
+      public TinyGsmSSL<TinyGsmSim7080, TinyGsmSim7080SslConfig>,
       public TinyGsmSMS<TinyGsmSim7080>,
       public TinyGsmGSMLocation<TinyGsmSim7080>,
       public TinyGsmTime<TinyGsmSim7080>,
@@ -107,7 +115,7 @@ class TinyGsmSim7080
   friend class TinyGsmGPRS<TinyGsmSim7080>;
   friend class TinyGsmTCP<TinyGsmSim7080, TinyGsmSim7080TcpConfig>;
   friend class GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig>;
-  friend class TinyGsmSSL<TinyGsmSim7080>;
+  friend class TinyGsmSSL<TinyGsmSim7080, TinyGsmSim7080SslConfig>;
   friend class TinyGsmSMS<TinyGsmSim7080>;
   friend class TinyGsmGSMLocation<TinyGsmSim7080>;
   friend class TinyGsmGPS<TinyGsmSim7080>;

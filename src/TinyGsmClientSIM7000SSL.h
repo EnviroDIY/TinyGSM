@@ -75,12 +75,20 @@ struct TinyGsmSim7000SSLTcpConfig
           /*muxCount*/ 8,
           /*sendMaxSize*/ 1460> {};
 
+/**
+ * @brief SSL behavior and limits for SIMCom SIM7000 (SSL toolkit).
+ * The module supports 6 SSL contexts.
+ * @ingroup simcom_sim7000ssl
+ */
+struct TinyGsmSim7000SSLSslConfig : public TinyGsmSslConfigPreset<
+                                        /*contextCount*/ 6> {};
+
 /// Class for the SIMCOM SIM7000 with SSL support using the SSL application
 /// @ingroup simcom_sim7000ssl
 class TinyGsmSim7000SSL
     : public TinyGsmSim70xx<TinyGsmSim7000SSL, TinyGsmSim7000SSLModemConfig>,
       public TinyGsmTCP<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>,
-      public TinyGsmSSL<TinyGsmSim7000SSL>,
+      public TinyGsmSSL<TinyGsmSim7000SSL, TinyGsmSim7000SSLSslConfig>,
       public TinyGsmSMS<TinyGsmSim7000SSL>,
       public TinyGsmGSMLocation<TinyGsmSim7000SSL>,
       public TinyGsmTime<TinyGsmSim7000SSL>,
@@ -91,7 +99,7 @@ class TinyGsmSim7000SSL
   friend class TinyGsmGPRS<TinyGsmSim7000SSL>;
   friend class TinyGsmTCP<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>;
   friend class GsmClient<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>;
-  friend class TinyGsmSSL<TinyGsmSim7000SSL>;
+  friend class TinyGsmSSL<TinyGsmSim7000SSL, TinyGsmSim7000SSLSslConfig>;
   friend class TinyGsmSMS<TinyGsmSim7000SSL>;
   friend class TinyGsmGSMLocation<TinyGsmSim7000SSL>;
   friend class TinyGsmGPS<TinyGsmSim7000SSL>;

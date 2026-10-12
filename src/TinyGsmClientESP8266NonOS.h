@@ -103,6 +103,14 @@ struct TinyGsmESP8266NonOSTcpConfig
           /*connectTimeoutS*/ 75,  // default
           /*stopTimeoutS*/ 5> {};
 
+// /*
+//  * @brief SSL behavior and limits for the ESP8266 (NonOS).
+//  * The module supports 2 SSL contexts.
+//  * @ingroup espressif_esp8266_nonos
+//  */
+// struct TinyGsmESP8266NonOSSslConfig : public TinyGsmSslConfigPreset<
+//                                    /*contextCount*/ 2> {};
+
 /**
  * @brief Class for the Espressif ESP8266 modem, which is a Wi-Fi module with
  * SSL support.

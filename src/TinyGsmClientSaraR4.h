@@ -103,6 +103,14 @@ struct TinyGsmSaraR4TcpConfig
           /*connectTimeoutS*/ 120,
           /*stopTimeoutS*/ 135> {};
 
+// /*
+//  * @brief SSL behavior and limits for the u-blox SARA-R4.
+//  * The module supports 5 SSL contexts.
+//  * @ingroup ublox_sara_r4
+//  */
+// struct TinyGsmSaraR4SslConfig : public TinyGsmSslConfigPreset<
+//                                    /*contextCount*/ 5> {};
+
 /// Class for the u-blox SARA-R4
 /// @ingroup ublox_sara_r4
 class TinyGsmSaraR4
