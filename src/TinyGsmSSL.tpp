@@ -940,15 +940,45 @@ class GsmSecureContext {
 
 
 /**
- * @brief Base class that associates a secure client with an SSL context.
+ * @brief CRTP template for secure clients with SSL context index management.
  *
- * This class stores only the selected hardware SSL context index. The modem
- * validates that a context is registered at that index when connecting.
+ * This template provides constructors and SSL context index management for all
+ * modem-specific secure client implementations. Derived classes provide only
+ * protocol-specific functionality.
+ *
+ * @tparam Derived The derived class type (CRTP pattern)
+ * @tparam ClientType The base client class type (e.g., GsmClientA7672X)
+ * @tparam ModemType The modem class type (e.g., TinyGsmA7672X)
  */
-class GsmSecureClient {
+template <typename Derived, typename ClientType, typename ModemType>
+class GsmSecureClient : public ClientType {
  public:
-  /// Create a secure client selecting #TINY_GSM_DEFAULT_SSL_CTX.
-  GsmSecureClient() : sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX) {}
+  /// Default constructor creating an unattached secure client
+  GsmSecureClient() {
+    this->is_secure = true;
+  }
+
+  /**
+   * @brief Create a secure client attached to a modem socket.
+   * @param modem The modem that owns the socket and SSL contexts
+   * @param mux The socket identifier
+   */
+  explicit GsmSecureClient(ModemType& modem, uint8_t mux = 0)
+      : ClientType(modem, mux) {
+    this->is_secure = true;
+  }
+
+  /**
+   * @brief Create a secure client with an explicit SSL context.
+   * @param modem The modem that owns the socket and SSL contexts
+   * @param mux The socket identifier
+   * @param sslCtxIndex The hardware SSL context index
+   */
+  explicit GsmSecureClient(ModemType& modem, uint8_t mux, uint8_t sslCtxIndex)
+      : ClientType(modem, mux) {
+    this->is_secure = true;
+    this->setSSLContextIndex(sslCtxIndex);
+  }
 
   /**
    * @brief Select the hardware SSL context for this client.
@@ -970,38 +1000,8 @@ class GsmSecureClient {
 
  protected:
   /// The SSL context index to use for this connection
-  uint8_t sslCtxIndex;
+  uint8_t sslCtxIndex = TINY_GSM_DEFAULT_SSL_CTX;
 };
-
-
-/// short-cut macro for secure client constructors
-#define TINY_GSM_SECURE_CLIENT_CTORS(modemAbbrev)                             \
-  /** @brief Create an unattached secure client using the default context. */ \
-  GsmClientSecure##modemAbbrev() {                                            \
-    is_secure = true;                                                         \
-  }                                                                           \
-  /**                                                                         \
-   * @brief Create a secure client attached to a modem socket.                \
-   * @param modem The modem that owns the socket and SSL contexts.            \
-   * @param mux The socket identifier.                                        \
-   */                                                                         \
-  explicit GsmClientSecure##modemAbbrev(TinyGsm##modemAbbrev& modem,          \
-                                        uint8_t               mux = 0)        \
-      : GsmClient##modemAbbrev(modem, mux) {                                  \
-    is_secure = true;                                                         \
-  }                                                                           \
-  /**                                                                         \
-   * @brief Create a secure client with an explicit SSL context.              \
-   * @param modem The modem that owns the socket and SSL contexts.            \
-   * @param mux The socket identifier.                                        \
-   * @param sslCtxIndex The hardware SSL context index.                       \
-   */                                                                         \
-  explicit GsmClientSecure##modemAbbrev(TinyGsm##modemAbbrev& modem,          \
-                                        uint8_t mux, uint8_t sslCtxIndex)     \
-      : GsmClient##modemAbbrev(modem, mux) {                                  \
-    is_secure = true;                                                         \
-    setSSLContextIndex(sslCtxIndex);                                          \
-  }
 
 // cSpell:words Palo
 
