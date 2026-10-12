@@ -1126,6 +1126,14 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     const char* clientKeyName  = sslContext ? sslContext->clientKeyName
                                             : nullptr;
 
+    DBG("### SSL context index:", context_id);
+    DBG("### SSL auth mode:", (int)sslAuthMode);
+    DBG("### SSL version:", (int)sslVersion);
+    DBG("### CA cert name:", CAcertName);
+    DBG("### Client cert name:", clientCertName);
+    DBG("### Client key name:", clientKeyName);
+    DBG("### PSK table name:", nullptr);
+
     // apply the correct certificates to the connection
     if (CAcertName != nullptr &&
         strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
@@ -1249,10 +1257,10 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     bool     ssl        = sockets[mux]->is_secure;
 
     if (ssl) {
-      // If we have a secure socket, use a static cast to get the authentication
-      // mode and certificate names. This isn't really "safe" but since we've
-      // already checked that the socket is a secure one, we're pretty sure of
-      // the type and it should work.
+      // If we have a secure socket, use a static cast to get the context index.
+      // This isn't really "safe" but since we've already checked that the
+      // socket is a secure one, we're pretty sure of the type and it should
+      // work.
       const GsmClientSecureBG96* thisClient =
           static_cast<const GsmClientSecureBG96*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;

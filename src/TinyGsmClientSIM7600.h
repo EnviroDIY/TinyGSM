@@ -973,6 +973,14 @@ class TinyGsmSim7600
     const char* clientKeyName  = sslContext ? sslContext->clientKeyName
                                             : nullptr;
 
+    DBG("### SSL context index:", context_id);
+    DBG("### SSL auth mode:", (int)sslAuthMode);
+    DBG("### SSL version:", (int)sslVersion);
+    DBG("### CA cert name:", CAcertName);
+    DBG("### Client cert name:", clientCertName);
+    DBG("### Client key name:", clientKeyName);
+    DBG("### PSK table name:", nullptr);
+
     // set the ssl version
     // AT+CSSLCFG="sslversion",<ssl_ctx_index>,<sslversion>
     // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
@@ -1072,14 +1080,13 @@ class TinyGsmSim7600
     bool     ssl        = sockets[mux]->is_secure;
 
     if (ssl) {
-      // If we have a secure socket, use a static cast to get the authentication
-      // mode and certificate names. This isn't really "safe" but since we've
-      // already checked that the socket is a secure one, we're pretty sure of
-      // the type and it should work.
+      // If we have a secure socket, use a static cast to get the context index.
+      // This isn't really "safe" but since we've already checked that the
+      // socket is a secure one, we're pretty sure of the type and it should
+      // work.
       const GsmClientSecureSim7600* thisClient =
           static_cast<const GsmClientSecureSim7600*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
-
 
       linkSSLContext(mux, sslCtxIndex);
 
