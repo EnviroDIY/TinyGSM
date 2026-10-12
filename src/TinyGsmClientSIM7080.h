@@ -224,20 +224,16 @@ class TinyGsmSim7080
  public:
   /// Inner secure client
   /// @ingroup simcom_sim7080
-  class GsmClientSecureSim7080 : public GsmClientSim7080,
-                                 public GsmSecureClient {
+  class GsmClientSecureSim7080
+: public GsmSecureClient<GsmClientSecureSim7080, GsmClientSim7080,
+                                 TinyGsmSim7080> {
     friend class TinyGsmSim7080;
 
    public:
     using GsmClientSim7080::connect;
     using GsmClientSim7080::stop;
+using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmSim7080TcpConfig;
-
-    /*
-     * Client constructors and initialization
-     */
-
-    TINY_GSM_SECURE_CLIENT_CTORS(Sim7080)
 
     // Because we have the same potential range of mux numbers for secure and
     // insecure connections, we don't need to re-check for mux number

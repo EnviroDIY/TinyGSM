@@ -228,19 +228,16 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
  public:
   /// Inner secure client
   /// @ingroup quectel_bg96
-  class GsmClientSecureBG96 : public GsmClientBG96, public GsmSecureClient {
+  class GsmClientSecureBG96
+      : public GsmSecureClient<GsmClientSecureBG96, GsmClientBG96,
+                               TinyGsmBG96> {
     friend class TinyGsmBG96;
 
    public:
     using GsmClientBG96::connect;
     using GsmClientBG96::stop;
+    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmBG96TcpConfig;
-
-    /*
-     * Client constructors and initialization
-     */
-
-    TINY_GSM_SECURE_CLIENT_CTORS(BG96)
 
     /*
      * Arduino Client interface
