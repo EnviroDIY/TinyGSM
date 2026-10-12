@@ -81,7 +81,7 @@ constexpr char TinyGsmBG96ModemConfig::MODEM_MODEL[] __attribute__((weak));
  *
  * The BG95/BG96 also supports 6 SSL contexts (0-5)
  * The SSL context is a collection of SSL settings, not the connection
- * identifier. This library always uses SSL context 0.
+ * identifier.
  *
  * When sending  data QISEND and QSSLSEND both accept up to 1460 bytes of input.
  *
@@ -95,12 +95,20 @@ struct TinyGsmBG96TcpConfig
           /*sendMaxSize*/ 1460,
           /*connectTimeoutS*/ 150> {};
 
+/**
+ * @brief SSL behavior and limits for Quectel BG96 and BG95.
+ * The module supports 6 SSL contexts.
+ * @ingroup quectel_bg96
+ */
+struct TinyGsmBG96SslConfig : public TinyGsmSslConfigPreset<
+                                  /*contextCount*/ 6> {};
+
 /// Class for the Quectel BG96 and BG95
 /// @ingroup quectel_bg96
 class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
                     public TinyGsmGPRS<TinyGsmBG96>,
                     public TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>,
-                    public TinyGsmSSL<TinyGsmBG96>,
+                    public TinyGsmSSL<TinyGsmBG96, TinyGsmBG96SslConfig>,
                     public TinyGsmCalling<TinyGsmBG96>,
                     public TinyGsmSMS<TinyGsmBG96>,
                     public TinyGsmGPS<TinyGsmBG96>,
@@ -112,7 +120,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   friend class TinyGsmGPRS<TinyGsmBG96>;
   friend class TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>;
   friend class GsmClient<TinyGsmBG96, TinyGsmBG96TcpConfig>;
-  friend class TinyGsmSSL<TinyGsmBG96>;
+  friend class TinyGsmSSL<TinyGsmBG96, TinyGsmBG96SslConfig>;
   friend class TinyGsmCalling<TinyGsmBG96>;
   friend class TinyGsmSMS<TinyGsmBG96>;
   friend class TinyGsmGPS<TinyGsmBG96>;

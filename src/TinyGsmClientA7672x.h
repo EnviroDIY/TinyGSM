@@ -100,7 +100,7 @@ constexpr char TinyGsmA7672XModemConfig::MODEM_MODEL[] __attribute__((weak));
  *
  * The module also supports 10 SSL contexts.
  * The SSL context is a collection of SSL settings, not the connection
- * identifier. This library always uses SSL context 0.
+ * identifier.
  *
  * The secure send data command, CCHSEND, can handle up to 2048 bytes of input,
  * but the unsecured CIPSEND command will only accept 1500, so we'll take the
@@ -113,6 +113,11 @@ struct TinyGsmA7672XTcpConfig
           /*muxMode*/ TinyGsmTcpMuxMode::Static,
           /*muxCount*/ 10> {};
 
+/**
+ * @brief SSL behavior and limits for SIMCom A7672 modules.
+ * The module supports 10 SSL contexts.
+ * @ingroup simcom_a7672x
+ */
 struct TinyGsmA7672XSslConfig : public TinyGsmSslConfigPreset<
                                     /*contextCount*/ 10> {};
 

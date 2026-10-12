@@ -111,6 +111,14 @@ struct TinyGsmESP8266TcpConfig
           /*stopTimeoutS*/ 5> {};
 
 /**
+ * @brief SSL behavior and limits for the ESP8266.
+ * The module supports 2 SSL contexts.
+ * @ingroup espressif_esp8266
+ */
+struct TinyGsmESP8266SslConfig : public TinyGsmSslConfigPreset<
+                                     /*contextCount*/ 2> {};
+
+/**
  * @brief Class for the Espressif ESP8266 modem, which is a Wi-Fi module with
  * SSL support.
  *
@@ -121,7 +129,7 @@ struct TinyGsmESP8266TcpConfig
 class TinyGsmESP8266
     : public TinyGsmEspressif<TinyGsmESP8266, TinyGsmESP8266ModemConfig>,
       public TinyGsmTCP<TinyGsmESP8266, TinyGsmESP8266TcpConfig>,
-      public TinyGsmSSL<TinyGsmESP8266>,
+      public TinyGsmSSL<TinyGsmESP8266, TinyGsmESP8266SslConfig>,
       public TinyGsmTime<TinyGsmESP8266>,
       public TinyGsmNTP<TinyGsmESP8266> {
   friend class TinyGsmEspressif<TinyGsmESP8266, TinyGsmESP8266ModemConfig>;
@@ -129,7 +137,7 @@ class TinyGsmESP8266
   friend class TinyGsmWifi<TinyGsmESP8266>;
   friend class TinyGsmTCP<TinyGsmESP8266, TinyGsmESP8266TcpConfig>;
   friend class GsmClient<TinyGsmESP8266, TinyGsmESP8266TcpConfig>;
-  friend class TinyGsmSSL<TinyGsmESP8266>;
+  friend class TinyGsmSSL<TinyGsmESP8266, TinyGsmESP8266SslConfig>;
   friend class TinyGsmTime<TinyGsmESP8266>;
   friend class TinyGsmNTP<TinyGsmESP8266>;
 

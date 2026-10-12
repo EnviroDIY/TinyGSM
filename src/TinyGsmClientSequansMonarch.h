@@ -96,6 +96,14 @@ struct TinyGsmSequansMonarchTcpConfig
           /*muxCount*/ 6,
           /*sendMaxSize*/ 750> {};
 
+// /*
+//  * @brief SSL behavior and limits for the Sequans Monarch.
+//  * The module supports 6 security profiles / SSL contexts.
+//  * @ingroup sequans_monarch
+//  */
+// struct TinyGsmSequansMonarchSslConfig : public TinyGsmSslConfigPreset<
+//                                    /*contextCount*/ 6> {};
+
 /// Socket status
 enum class SocketStatus {
   SOCK_CLOSED                 = 0,  ///< Socket is closed

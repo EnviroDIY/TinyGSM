@@ -114,13 +114,21 @@ struct TinyGsmSim7600TcpConfig
           /*muxMode*/ TinyGsmTcpMuxMode::Static,
           /*muxCount*/ 10> {};
 
+/**
+ * @brief SSL behavior and limits for SIMCom SIM7600 modules.
+ * The module supports 6 SSL contexts.
+ * @ingroup simcom_sim7600
+ */
+struct TinyGsmSim7600SslConfig : public TinyGsmSslConfigPreset<
+                                     /*contextCount*/ 6> {};
+
 /// Class for the SIMCOM SIM7600, SIM7500, and SIM7800
 /// @ingroup simcom_sim7600
 class TinyGsmSim7600
     : public TinyGsmModem<TinyGsmSim7600, TinyGsmSim7600ModemConfig>,
       public TinyGsmGPRS<TinyGsmSim7600>,
       public TinyGsmTCP<TinyGsmSim7600, TinyGsmSim7600TcpConfig>,
-      public TinyGsmSSL<TinyGsmSim7600>,
+      public TinyGsmSSL<TinyGsmSim7600, TinyGsmSim7600SslConfig>,
       public TinyGsmSMS<TinyGsmSim7600>,
       public TinyGsmGSMLocation<TinyGsmSim7600>,
       public TinyGsmGPS<TinyGsmSim7600>,
@@ -133,7 +141,7 @@ class TinyGsmSim7600
   friend class TinyGsmGPRS<TinyGsmSim7600>;
   friend class TinyGsmTCP<TinyGsmSim7600, TinyGsmSim7600TcpConfig>;
   friend class GsmClient<TinyGsmSim7600, TinyGsmSim7600TcpConfig>;
-  friend class TinyGsmSSL<TinyGsmSim7600>;
+  friend class TinyGsmSSL<TinyGsmSim7600, TinyGsmSim7600SslConfig>;
   friend class TinyGsmSMS<TinyGsmSim7600>;
   friend class TinyGsmGPS<TinyGsmSim7600>;
   friend class TinyGsmGSMLocation<TinyGsmSim7600>;

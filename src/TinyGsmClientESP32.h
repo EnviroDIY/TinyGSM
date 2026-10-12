@@ -109,6 +109,14 @@ struct TinyGsmESP32TcpConfig
           /*connectTimeoutS*/ 75,  // default
           /*stopTimeoutS*/ 5> {};
 
+/**
+ * @brief SSL behavior and limits for the ESP32.
+ * The module supports 2 SSL contexts.
+ * @ingroup espressif_esp32
+ */
+struct TinyGsmESP32SslConfig : public TinyGsmSslConfigPreset<
+                                   /*contextCount*/ 2> {};
+
 
 /**
  * @brief Class for the Espressif ESP32 modem, which is a Wi-Fi module with SSL
@@ -121,7 +129,7 @@ struct TinyGsmESP32TcpConfig
 class TinyGsmESP32
     : public TinyGsmEspressif<TinyGsmESP32, TinyGsmESP32ModemConfig>,
       public TinyGsmTCP<TinyGsmESP32, TinyGsmESP32TcpConfig>,
-      public TinyGsmSSL<TinyGsmESP32>,
+      public TinyGsmSSL<TinyGsmESP32, TinyGsmESP32SslConfig>,
       public TinyGsmTime<TinyGsmESP32>,
       public TinyGsmNTP<TinyGsmESP32> {
   friend class TinyGsmEspressif<TinyGsmESP32, TinyGsmESP32ModemConfig>;
@@ -129,7 +137,7 @@ class TinyGsmESP32
   friend class TinyGsmWifi<TinyGsmESP32>;
   friend class TinyGsmTCP<TinyGsmESP32, TinyGsmESP32TcpConfig>;
   friend class GsmClient<TinyGsmESP32, TinyGsmESP32TcpConfig>;
-  friend class TinyGsmSSL<TinyGsmESP32>;
+  friend class TinyGsmSSL<TinyGsmESP32, TinyGsmESP32SslConfig>;
   friend class TinyGsmTime<TinyGsmESP32>;
   friend class TinyGsmNTP<TinyGsmESP32>;
 
