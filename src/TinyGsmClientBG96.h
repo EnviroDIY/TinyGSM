@@ -132,6 +132,9 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
  public:
   using ModemConfig = TinyGsmBG96ModemConfig;
   using TcpConfig   = TinyGsmBG96TcpConfig;
+  using SslConfig   = TinyGsmBG96SslConfig;
+  using GsmSecureContext =
+      TinyGsmSSL<TinyGsmBG96, TinyGsmBG96SslConfig>::gsmSecureContext;
 
   /*
    * Inner Client
@@ -259,15 +262,15 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
-      if (!sslCtxConfigured) {
-        if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+      if (!at->getSSLContext(sslCtxIndex)->sslCtxConfigured) {
+        if (at->getSSLContext(sslCtxIndex)->sslAuthMode ==
+            SSLAuthMode::PRE_SHARED_KEYS) {
           DBG("### The BG96 does not support SSL using pre-shared keys.");
           return 0;
         } else {
-          sslCtxConfigured = at->configureSSLContext(
-              sslCtxIndex, sslAuthMode, sslVersion, CAcertName, clientCertName,
-              clientKeyName);
-          if (!sslCtxConfigured) {
+          at->getSSLContext(sslCtxIndex)->sslCtxConfigured =
+              at->configureSSLContext(sslCtxIndex);
+          if (!at->getSSLContext(sslCtxIndex)->sslCtxConfigured) {
             DBG("### Failed to configure the SSL context!");
             return 0;
           }
@@ -345,6 +348,24 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     // NOTE: We do NOT need to re-write the peek() function for the secure
     // client, because the peek() function isn't different for buffers that can
     // and can't have the size checked - only for those with no buffer at all.
+  };
+
+  /*
+   * Inner Secure Context
+   */
+ public:
+  /// Inner secure context
+  /// @ingroup simcom_bg96
+  class GsmSecureContextBG96
+      : public ::GsmSecureContext<TinyGsmBG96, TinyGsmBG96SslConfig> {
+    friend class TinyGsmBG96;
+
+   public:
+    using ::GsmSecureContext<TinyGsmBG96,
+                             TinyGsmBG96SslConfig>::GsmSecureContext;
+
+    /// Unregister this context from its modem.
+    ~GsmSecureContextBG96() {}
   };
 
   /*
@@ -1064,13 +1085,46 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
                            SSLVersion sslVersion, const char* CAcertName,
                            const char* clientCertName,
                            const char* clientKeyName) {
+    // store the configuration in the SSL context object
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    if (sslContext) {
+      sslContext->sslAuthMode = sslAuthMode;
+      sslContext->sslVersion  = sslVersion;
+      strncpy(sslContext->CAcertName, CAcertName,
+              sizeof(sslContext->CAcertName) - 1);
+      strncpy(sslContext->clientCertName, clientCertName,
+              sizeof(sslContext->clientCertName) - 1);
+      strncpy(sslContext->clientKeyName, clientKeyName,
+              sizeof(sslContext->clientKeyName) - 1);
+      sslContext->sslCtxConfigured = false;
+    }
+
+    return configureSSLContext(context_id);
+  }
+
+  /**
+   * @brief Configure the SSL context for the modem.
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool configureSSLContext(uint8_t context_id) {
     bool success = true;
 
     // NOTE: The SSL context (<sslctxID>) is not the same as the connection
     // identifier.  The SSL context is the grouping of SSL settings, the
     // connection identifier is the mux/socket number.
-    // For this, we will *always* configure SSL context 0, just as we always
-    // configured PDP context 1.
+
+    // Retrieve the SSL context object for the given context ID.
+    GsmSecureContext* sslContext  = getSSLContext(context_id);
+    SSLAuthMode       sslAuthMode = sslContext ? sslContext->sslAuthMode
+                                               : SSLAuthMode::NO_VALIDATION;
+    SSLVersion        sslVersion  = sslContext ? sslContext->sslVersion
+                                               : SSLVersion::ALL_SSL;
+    const char* CAcertName     = sslContext ? sslContext->CAcertName : nullptr;
+    const char* clientCertName = sslContext ? sslContext->clientCertName
+                                            : nullptr;
+    const char* clientKeyName  = sslContext ? sslContext->clientKeyName
+                                            : nullptr;
 
     // apply the correct certificates to the connection
     if (CAcertName != nullptr &&
