@@ -257,19 +257,20 @@ class TinyGsmA7672X
  public:
   /// Inner secure client
   /// @ingroup simcom_a7672x
-  class GsmClientSecureA7672X : public GsmClientA7672X, public GsmSecureClient {
+  class GsmClientSecureA7672X
+      : public GsmSecureClient<GsmClientSecureA7672X, GsmClientA7672X,
+                               TinyGsmA7672X> {
     friend class TinyGsmA7672X;
 
    public:
     using GsmClientA7672X::connect;
     using GsmClientA7672X::stop;
+    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmA7672XTcpConfig;
 
     /*
      * Client constructors and initialization
      */
-
-    TINY_GSM_SECURE_CLIENT_CTORS(A7672X)
 
     /**
      * @brief Initialize the SSL client with a modem and optionally a
@@ -354,11 +355,8 @@ class TinyGsmA7672X
     friend class TinyGsmA7672X;
 
    public:
-    /*
-     * Context constructors and initialization
-     */
-
-    TINY_GSM_SECURE_CONTEXT_CTORS(A7672X)
+    using ::GsmSecureContext<TinyGsmA7672X,
+                             TinyGsmA7672XSslConfig>::GsmSecureContext;
 
     /// Unregister this context from its modem.
     ~GsmSecureContextA7672X() {}
