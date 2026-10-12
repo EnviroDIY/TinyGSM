@@ -787,7 +787,6 @@ class TinyGsmA7672X
     DBG("### CA cert name:", CAcertName);
     DBG("### Client cert name:", clientCertName);
     DBG("### Client key name:", clientKeyName);
-    DBG("### PSK table name:", nullptr);
 
     // set the ssl version
     // AT+CSSLCFG="sslversion",<ssl_ctx_index>,<sslversion>
