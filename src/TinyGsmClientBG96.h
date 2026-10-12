@@ -1132,7 +1132,6 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     DBG("### CA cert name:", CAcertName);
     DBG("### Client cert name:", clientCertName);
     DBG("### Client key name:", clientKeyName);
-    DBG("### PSK table name:", nullptr);
 
     // apply the correct certificates to the connection
     if (CAcertName != nullptr &&
