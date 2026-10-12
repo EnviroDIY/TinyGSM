@@ -409,19 +409,16 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
  public:
   /// Inner secure client
   /// @ingroup digi_xbee
-  class GsmClientSecureXBee : public GsmClientXBee, public GsmSecureClient {
+  class GsmClientSecureXBee
+      : public GsmSecureClient<GsmClientSecureXBee, GsmClientXBee,
+                               TinyGsmXBee> {
     friend class TinyGsmXBee;
 
    public:
     using GsmClientXBee::connect;
     using GsmClientXBee::stop;
+    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmXBeeTcpConfig;
-
-    /*
-     * Client constructors and initialization
-     */
-
-    TINY_GSM_SECURE_CLIENT_CTORS(XBee)
   };
 
   /*

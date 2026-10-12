@@ -205,20 +205,16 @@ class TinyGsmSim7000SSL
  public:
   /// Inner secure client
   /// @ingroup simcom_sim7000ssl
-  class GsmClientSecureSim7000SSL : public GsmClientSim7000SSL,
-                                    public GsmSecureClient {
+  class GsmClientSecureSim7000SSL
+      : public GsmSecureClient<GsmClientSecureSim7000SSL, GsmClientSim7000SSL,
+                               TinyGsmSim7000SSL> {
     friend class TinyGsmSim7000SSL;
 
    public:
     using GsmClientSim7000SSL::connect;
     using GsmClientSim7000SSL::stop;
+    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmSim7000SSLTcpConfig;
-
-    /*
-     * Client constructors and initialization
-     */
-
-    TINY_GSM_SECURE_CLIENT_CTORS(Sim7000SSL)
 
     // Because we have the same potential range of mux numbers for secure and
     // insecure connections, we don't need to re-check for mux number

@@ -238,20 +238,16 @@ class TinyGsmESP8266
  public:
   /// Inner secure client
   /// @ingroup espressif_esp8266
-  class GsmClientSecureESP8266 : public GsmClientESP8266,
-                                 public GsmSecureClient {
+  class GsmClientSecureESP8266
+: public GsmSecureClient<GsmClientSecureESP8266, GsmClientESP8266,
+                                 TinyGsmESP8266> {
     friend class TinyGsmESP8266;
 
    public:
+using GsmSecureClient::GsmSecureClient;
     using GsmClientESP8266::connect;
     using GsmClientESP8266::stop;
     using TcpConfig = TinyGsmESP8266TcpConfig;
-
-    /*
-     * Client constructors and initialization
-     */
-
-    TINY_GSM_SECURE_CLIENT_CTORS(ESP8266)
 
     // Because we have the same potential range of mux numbers for secure and
     // insecure connections, we don't need to re-check for mux number

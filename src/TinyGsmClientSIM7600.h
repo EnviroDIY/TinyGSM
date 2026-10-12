@@ -252,20 +252,16 @@ class TinyGsmSim7600
  public:
   /// Inner secure client
   /// @ingroup simcom_sim7600
-  class GsmClientSecureSim7600 : public GsmClientSim7600,
-                                 public GsmSecureClient {
+  class GsmClientSecureSim7600
+: public GsmSecureClient<GsmClientSecureSim7600, GsmClientSim7600,
+                                 TinyGsmSim7600> {
     friend class TinyGsmSim7600;
 
    public:
     using GsmClientSim7600::connect;
     using GsmClientSim7600::stop;
+using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmSim7600TcpConfig;
-
-    /*
-     * Client constructors and initialization
-     */
-
-    TINY_GSM_SECURE_CLIENT_CTORS(Sim7600)
 
     /*
      * Arduino Client interface
