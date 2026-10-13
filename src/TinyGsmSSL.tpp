@@ -429,12 +429,11 @@ class TinyGsmSSL {
       case SSLAuthMode::NO_VALIDATION: {
         return true;  // no credentials required
       }
-      case SSLAuthMode::CLIENT_VALIDATION:
-        return {
-          // both a client certificate and key are required
-          context->clientCertName[0] != '\0' &&
-              context->clientKeyName[0] != '\0';
-        }
+      case SSLAuthMode::CLIENT_VALIDATION: {
+        // both a client certificate and key are required
+        return context->clientCertName[0] != '\0' &&
+            context->clientKeyName[0] != '\0';
+      }
       case SSLAuthMode::CA_VALIDATION: {
         // a CA certificate is required
         return context->CAcertName[0] != '\0';
