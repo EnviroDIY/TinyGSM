@@ -790,7 +790,7 @@ class TinyGsmA7672X
 
     // set the ssl version
     // AT+CSSLCFG="sslversion",<ssl_ctx_index>,<sslversion>
-    // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
+    // <ssl_ctx_index> The SSL context ID. The range is 0-9.
     // <sslversion> 0: SSL3.0
     //              1: TLS1.0
     //              2: TLS1.1
@@ -807,7 +807,7 @@ class TinyGsmA7672X
 
     // set authentication mode
     // AT+CSSLCFG="authmode",<ssl_ctx_index>,<authmode>
-    // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
+    // <ssl_ctx_index> The SSL context ID. The range is 0-9.
     // <authmode> 0: No authentication (SSLAuthMode::NO_VALIDATION)
     //            1: server authentication (SSLAuthMode::CA_VALIDATION)
     //            2: server and client authentication

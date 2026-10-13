@@ -116,11 +116,11 @@ struct TinyGsmSim7600TcpConfig
 
 /**
  * @brief SSL behavior and limits for SIMCom SIM7600 modules.
- * The module supports 6 SSL contexts.
+ * The module supports 10 SSL contexts.
  * @ingroup simcom_sim7600
  */
 struct TinyGsmSim7600SslConfig : public TinyGsmSslConfigPreset<
-                                     /*contextCount*/ 6> {};
+                                     /*contextCount*/ 10> {};
 
 /// Class for the SIMCOM SIM7600, SIM7500, and SIM7800
 /// @ingroup simcom_sim7600
@@ -982,7 +982,7 @@ class TinyGsmSim7600
 
     // set the ssl version
     // AT+CSSLCFG="sslversion",<ssl_ctx_index>,<sslversion>
-    // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
+    // <ssl_ctx_index> The SSL context ID. The range is 0-9.
     // <sslversion> 0: SSL3.0
     //              1: TLS1.0
     //              2: TLS1.1
@@ -999,7 +999,7 @@ class TinyGsmSim7600
 
     // set authentication mode
     // AT+CSSLCFG="authmode",<ssl_ctx_index>,<authmode>
-    // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
+    // <ssl_ctx_index> The SSL context ID. The range is 0-9.
     // <authmode> 0: No authentication (SSLAuthMode::NO_VALIDATION)
     //            1: server authentication (SSLAuthMode::CA_VALIDATION)
     //            2: server and client authentication
