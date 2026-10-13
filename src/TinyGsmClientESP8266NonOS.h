@@ -38,9 +38,8 @@
 #include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
-// management for the non-OS version of the ESP8266 firmware, so we define
-// TINY_GSM_MODEM_HAS_SSL here and do not include the SSL module so as not to
-// waste space.
+// management for the non-OS version of the ESP8266 firmware.  Define
+// TINY_GSM_MODEM_HAS_SSL here and do not include the SSL module
 #ifndef TINY_GSM_MODEM_HAS_SSL
 /// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
@@ -100,7 +99,8 @@ struct TinyGsmESP8266NonOSTcpConfig
           /*connectTimeoutS*/ 75,  // default
           /*stopTimeoutS*/ 5> {};
 
-/*/*
+#if 0
+/**
  * @brief SSL behavior and limits for the ESP8266 (NonOS).
  *
  * These modules don't have "SSL Contexts" per-say, but they only support 2
@@ -108,8 +108,9 @@ struct TinyGsmESP8266NonOSTcpConfig
  *
  * @ingroup espressif_esp8266_nonos
  */
-// struct TinyGsmESP8266NonOSSslConfig : public TinyGsmSslConfigPreset<
-//                                    /*contextCount*/ 2> {};
+struct TinyGsmESP8266NonOSSslConfig : public TinyGsmSslConfigPreset<
+                                   /*contextCount*/ 2> {};
+#endif
 
 /**
  * @brief Class for the Espressif ESP8266 modem, which is a Wi-Fi module with
@@ -248,7 +249,7 @@ class TinyGsmESP8266NonOS
     using TcpConfig = TinyGsmESP8266NonOSTcpConfig;
 
     /*
-     * Client constructors and initialization
+     * Secure client constructors and initialization
      */
     /**
      * @brief Create a new secured TCP (SSL) client.
