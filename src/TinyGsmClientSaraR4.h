@@ -17,7 +17,7 @@
  *   - 7
  * - SSL sockets:
  *   - 4
- * - SSL contexts:
+ * - SSL contexts (security profiles):
  *   - 5
  * - Socket Buffering:
  *   - The modem has an internal buffer for incoming data.
@@ -82,9 +82,6 @@ constexpr char TinyGsmSaraR4ModemConfig::MODEM_MODEL[] __attribute__((weak));
  *
  * Per the manual, 7 standard sockets or 4 SSL sockets can be managed.
  *
- * Also supports 5 SSL contexts (0-4), but this library hard-codes to 0.
- * The SSL context is collection of SSL settings, not the connection identifier.
- *
  * @todo Handle the different number of sockets for TCP and SSL in the code.
  *
  * @warning You cannot control the socket mux number on this module! The module
@@ -103,11 +100,13 @@ struct TinyGsmSaraR4TcpConfig
           /*connectTimeoutS*/ 120,
           /*stopTimeoutS*/ 135> {};
 
-// /*
-//  * @brief SSL behavior and limits for the u-blox SARA-R4.
-//  * The module supports 5 SSL contexts.
-//  * @ingroup ublox_sara_r4
-//  */
+/*/*
+ * @brief SSL behavior and limits for the u-blox SARA-R4.
+ * The module supports 5 SSL contexts (called security profiles, numbered 0-4).
+ * This library does not support selecting or modifying the security profiles in
+ * any way.  The module will always use the default profile.
+ * @ingroup ublox_sara_r4
+ */
 // struct TinyGsmSaraR4SslConfig : public TinyGsmSslConfigPreset<
 //                                    /*contextCount*/ 5> {};
 
@@ -837,6 +836,7 @@ class TinyGsmSaraR4
       // AT+USOSEC=<socket>,<ssl_tls_status>[,<usecmng_profile_id>]
       // Must be issued before the +USOCO command
       // support depends on firmware version
+      // If no profile is set a default USECMNG profile is used
       sendAT(GF("+USOSEC="), *dynamicMux, ",1" /*, ',', sslCtxIndex*/);
       if (waitResponse() != 1) { return false; }
     }

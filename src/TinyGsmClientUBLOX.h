@@ -17,6 +17,8 @@
  * - Combined TCP/SSL sockets:
  *   - 7
  *   - a few u-blox modules support more, but this library does not
+ * - SSL contexts (security profiles):
+ *   - 5
  * - Socket Buffering:
  *   - The modem has an internal buffer for incoming data.
  * - Socket Numbering:
@@ -81,9 +83,6 @@ constexpr char TinyGsmUBLOXModemConfig::MODEM_MODEL[] __attribute__((weak));
  * Most modules using this protocol support 7 sockets, the LEON-G1 supports 16.
  * I **think** all sockets can be SSL, but the manual is not clear (to me).
  *
- * Also supports 5 SSL contexts (0-4).
- * The SSL context is collection of SSL settings, not the connection identifier.
- *
  * @warning You cannot control the socket mux number on this module! The module
  * opens the connection and returns the connection number it opened.
  *
@@ -98,6 +97,16 @@ struct TinyGsmUBLOXTcpConfig
           /*muxCount*/ 7,
           /*sendMaxSize*/ 1024,
           /*connectTimeoutS*/ 120> {};
+
+/*/*
+ * @brief SSL behavior and limits for the u-blox family
+ * The module supports 5 SSL contexts (called security profiles, numbered 0-4).
+ * This library does not support selecting or modifying the security profiles in
+ * any way.  The module will always use the default profile.
+ * @ingroup ublox_cellular
+ */
+// struct TinyGsmSaraR5SslConfig : public TinyGsmSslConfigPreset<
+//                                    /*contextCount*/ 5> {};
 
 /// Class for the u-blox family of modems
 /// @ingroup ublox_cellular
@@ -860,6 +869,8 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     *dynamicMux = static_cast<uint8_t>(connected_mux);
 
     if (ssl) {
+      // AT+USOSEC=<socket>,<ssl_tls_status>[,<usecmng_profile_id>]
+      // If no profile is set a default USECMNG profile is used
       sendAT(GF("+USOSEC="), *dynamicMux, ",1");
       waitResponse();
     }

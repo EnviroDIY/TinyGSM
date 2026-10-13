@@ -59,9 +59,6 @@ constexpr char TinyGsmSim7000SSLModemConfig::MODEM_MODEL[]
 /**
  * @brief TCP behavior and limits for the SIMCom SIM7000 (SSL toolkit).
  *
- * Also supports 6 SSL contexts (0-5)
- * The SSL context is collection of SSL settings, not the connection identifier.
- *
  * @todo Handle the different number of sockets for TCP and SSL in the code.
  *
  * The SIM7000 manual doesn't specify the max size for CASEND, but the SIM7080
@@ -77,7 +74,7 @@ struct TinyGsmSim7000SSLTcpConfig
 
 /**
  * @brief SSL behavior and limits for SIMCom SIM7000 (SSL toolkit).
- * The module supports 6 SSL contexts.
+ * The module supports 6 SSL contexts (0-5).
  * @ingroup simcom_sim7000ssl
  */
 struct TinyGsmSim7000SSLSslConfig : public TinyGsmSslConfigPreset<

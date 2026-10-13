@@ -77,11 +77,7 @@ constexpr char TinyGsmBG96ModemConfig::MODEM_MODEL[] __attribute__((weak));
 /**
  * @brief TCP behavior and limits for Quectel BG96 and BG95.
  *
- * The BG95/BG96 supports 12 sockets (0-11); any of them can be SSL
- *
- * The BG95/BG96 also supports 6 SSL contexts (0-5)
- * The SSL context is a collection of SSL settings, not the connection
- * identifier.
+ * The BG95/BG96 supports 12 sockets (0-11); any of them can be SSL.
  *
  * When sending  data QISEND and QSSLSEND both accept up to 1460 bytes of input.
  *
@@ -96,8 +92,8 @@ struct TinyGsmBG96TcpConfig
           /*connectTimeoutS*/ 150> {};
 
 /**
- * @brief SSL behavior and limits for Quectel BG96 and BG95.
- * The module supports 6 SSL contexts.
+ * @brief SSL behavior and limits for Quectel BG96 and BG95. *
+ * The module supports 6 SSL contexts (0-5).
  * @ingroup quectel_bg96
  */
 struct TinyGsmBG96SslConfig : public TinyGsmSslConfigPreset<

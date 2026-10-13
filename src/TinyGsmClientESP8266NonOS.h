@@ -87,9 +87,6 @@ constexpr char TinyGsmESP8266NonOSModemConfig::MODEM_MODEL[]
  * manual warns that module may not be able to handle more than 1 SSL socket at
  * a time.
  *
- * These modules don't have "SSL Contexts" per-say, but they only support 2
- * certificate sets.  The certificates are loaded and referenced by number.
- *
  * The ESP8266 devices can receive 2048 bytes and send 1460 bytes at most in a
  * single transmission.
  * @ingroup espressif_esp8266_nonos
@@ -103,11 +100,14 @@ struct TinyGsmESP8266NonOSTcpConfig
           /*connectTimeoutS*/ 75,  // default
           /*stopTimeoutS*/ 5> {};
 
-// /*
-//  * @brief SSL behavior and limits for the ESP8266 (NonOS).
-//  * The module supports 2 SSL contexts.
-//  * @ingroup espressif_esp8266_nonos
-//  */
+/*/*
+ * @brief SSL behavior and limits for the ESP8266 (NonOS).
+ *
+ * These modules don't have "SSL Contexts" per-say, but they only support 2
+ * certificate sets.  The certificates are loaded and referenced by number.
+ *
+ * @ingroup espressif_esp8266_nonos
+ */
 // struct TinyGsmESP8266NonOSSslConfig : public TinyGsmSslConfigPreset<
 //                                    /*contextCount*/ 2> {};
 

@@ -100,6 +100,15 @@ struct TinyGsmSim800TcpConfig
           /*muxMode*/ TinyGsmTcpMuxMode::Static,
           /*muxCount*/ 8> {};
 
+/*/*
+ * @brief SSL behavior and limits for SIMCom SIM800 variants.
+ * This library does not support selecting or modifying the SSL contexts in any
+ * way.  The module will always use the default context.
+ * @ingroup simcom_sim800
+ */
+// struct TinyGsmSim800SslConfig : public TinyGsmSslConfigPreset<
+//                                    /*contextCount*/ ?> {};
+
 /// Class for the SIMCOM SIM800 and SIM900 (with some limitations)
 /// @ingroup simcom_sim800
 class TinyGsmSim800
