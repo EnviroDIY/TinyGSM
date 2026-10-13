@@ -416,20 +416,6 @@ class TinyGsmSSL {
     return sslContexts[contextIndex];
   }
 
-  /**
-   * @brief Mark every registered SSL context as needing to be reapplied.
-   *
-   * Desired context settings are retained. Modem drivers should call this
-   * after operations that may discard the modem's applied SSL state.
-   */
-  void invalidateSSLContexts() {
-    for (uint8_t i = 0; i < SslConfig::kContextCount; ++i) {
-      if (sslContexts[i] != nullptr) {
-        sslContexts[i]->sslCtxConfigured = false;
-      }
-    }
-  }
-
   // destructor (protected!)
   ~TinyGsmSSL() {}
 
@@ -541,7 +527,6 @@ class GsmSecureContext {
   GsmSecureContext()
       : modem(nullptr),
         sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
-        sslCtxConfigured(false),
         sslAuthMode(SSLAuthMode::NO_VALIDATION),
         sslVersion(SSLVersion::TLS1_2) {
     clearConfigurationStrings();
@@ -559,7 +544,6 @@ class GsmSecureContext {
                    uint8_t    contextIndex = TINY_GSM_DEFAULT_SSL_CTX)
       : modem(nullptr),
         sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
-        sslCtxConfigured(false),
         sslAuthMode(SSLAuthMode::NO_VALIDATION),
         sslVersion(SSLVersion::TLS1_2) {
     clearConfigurationStrings();
@@ -582,7 +566,6 @@ class GsmSecureContext {
                             const char* clientKeyName  = nullptr)
       : modem(nullptr),
         sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
-        sslCtxConfigured(false),
         sslAuthMode(SSLAuthMode::NO_VALIDATION),
         sslVersion(SSLVersion::TLS1_2) {
     clearConfigurationStrings();
@@ -612,7 +595,6 @@ class GsmSecureContext {
                             const char* clientKeyName  = nullptr)
       : modem(nullptr),
         sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
-        sslCtxConfigured(false),
         sslAuthMode(SSLAuthMode::NO_VALIDATION),
         sslVersion(SSLVersion::TLS1_2) {
     clearConfigurationStrings();
@@ -635,7 +617,6 @@ class GsmSecureContext {
                             SSLVersion  sslVersion = SSLVersion::TLS1_2)
       : modem(nullptr),
         sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
-        sslCtxConfigured(false),
         sslAuthMode(SSLAuthMode::NO_VALIDATION),
         sslVersion(SSLVersion::TLS1_2) {
     clearConfigurationStrings();
@@ -658,7 +639,6 @@ class GsmSecureContext {
                             SSLVersion sslVersion = SSLVersion::TLS1_2)
       : modem(nullptr),
         sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
-        sslCtxConfigured(false),
         sslAuthMode(SSLAuthMode::NO_VALIDATION),
         sslVersion(SSLVersion::TLS1_2) {
     clearConfigurationStrings();
@@ -678,7 +658,6 @@ class GsmSecureContext {
                             SSLVersion sslVersion = SSLVersion::TLS1_2)
       : modem(nullptr),
         sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
-        sslCtxConfigured(false),
         sslAuthMode(SSLAuthMode::NO_VALIDATION),
         sslVersion(SSLVersion::TLS1_2) {
     clearConfigurationStrings();
@@ -700,7 +679,6 @@ class GsmSecureContext {
                             SSLVersion  sslVersion = SSLVersion::TLS1_2)
       : modem(nullptr),
         sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
-        sslCtxConfigured(false),
         sslAuthMode(SSLAuthMode::NO_VALIDATION),
         sslVersion(SSLVersion::TLS1_2) {
     clearConfigurationStrings();
@@ -746,7 +724,6 @@ class GsmSecureContext {
     if (!modem->attachSSLContext(this, contextIndex)) { return false; }
     this->modem       = modem;
     this->sslCtxIndex = contextIndex;
-    sslCtxConfigured  = false;
     return true;
   }
 
@@ -777,18 +754,16 @@ class GsmSecureContext {
    * @param mode The SSL authentication mode.
    */
   void setSSLAuthMode(SSLAuthMode mode) {
-    sslAuthMode      = mode;
-    sslCtxConfigured = false;
-  }
+    sslAuthMode = mode;
+      }
 
   /**
    * @brief Set the SSL/TLS protocol version.
    * @param version The SSL/TLS protocol version.
    */
   void setSSLVersion(SSLVersion version) {
-    sslVersion       = version;
-    sslCtxConfigured = false;
-  }
+    sslVersion = version;
+      }
   /**@}*/
 
   /**
@@ -804,8 +779,7 @@ class GsmSecureContext {
   void setCACertName(const char* CAcertName) {
     memset(this->CAcertName, '\0', sizeof(this->CAcertName));
     copyString(this->CAcertName, CAcertName, sizeof(this->CAcertName));
-    sslCtxConfigured = false;
-  }
+      }
   /// @copydoc setCACertName(const char*)
   void setCACertName(const String& CAcertName) {
     setCACertName(CAcertName.c_str());
@@ -831,8 +805,7 @@ class GsmSecureContext {
       copyString(this->clientKeyName, clientKeyName,
                  sizeof(this->clientKeyName));
     }
-    sslCtxConfigured = false;
-  }
+      }
   /// @copydoc setClientCredentials(const char*, const char*)
   void setClientCredentials(const String& clientCertName,
                             const String& clientKeyName) {
@@ -853,8 +826,7 @@ class GsmSecureContext {
   void setPSKTableName(const char* pskTableName) {
     memset(this->pskTableName, '\0', sizeof(this->pskTableName));
     copyString(this->pskTableName, pskTableName, sizeof(this->pskTableName));
-    sslCtxConfigured = false;
-  }
+      }
   /// @copydoc setPSKTableName(const char*)
   void setPSKTableName(const String& pskTableName) {
     setPSKTableName(pskTableName.c_str());
@@ -877,8 +849,7 @@ class GsmSecureContext {
       copyString(this->pskIdent, pskIdent, sizeof(this->pskIdent));
       copyString(this->psKey, psKey, sizeof(this->psKey));
     }
-    sslCtxConfigured = false;
-  }
+      }
   /// @copydoc setPreSharedKey(const char*, const char*)
   void setPreSharedKey(const String& pskIdent, const String& psKey) {
     setPreSharedKey(pskIdent.c_str(), psKey.c_str());
@@ -886,9 +857,7 @@ class GsmSecureContext {
   /**@}*/
 
  protected:
-  /// Flag indicating whether the desired settings are applied to the modem.
-  bool sslCtxConfigured;
-  /// The SSL authentication mode.
+    /// The SSL authentication mode.
   SSLAuthMode sslAuthMode;
   /// The SSL/TLS protocol version.
   SSLVersion sslVersion;
@@ -934,8 +903,7 @@ class GsmSecureContext {
       modem->detachSSLContext(this, sslCtxIndex);
       modem = nullptr;
     }
-    sslCtxConfigured = false;
-  }
+      }
 };
 
 
