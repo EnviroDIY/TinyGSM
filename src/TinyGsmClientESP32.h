@@ -93,8 +93,10 @@ constexpr char TinyGsmESP32ModemConfig::CLIENT_KEY_NAMESPACE[]
  * manual warns that module may not be able to handle more than 1 SSL socket at
  * a time.
  *
- * These modules don't have "SSL Contexts" per-say, but they only support 2
- * certificate sets.  The certificates are loaded and referenced by number.
+ * These modules don't have "SSL Contexts" per-say.  They support 2 each of CA
+ * certificates and and client certificate/key pairs.  The certificates are
+ * loaded and referenced by number.  The number of the CA certificates and
+ * client certificate/key pair does not have to match for a connection.
  *
  * The ESP32 devices can receive 8192 bytes and send 2920 bytes at most in one
  * single transmission.
@@ -368,8 +370,7 @@ class TinyGsmESP32
         // clear the certificate name buffers and slot selection
         memset(this->clientCertName, '\0', sizeof(this->clientCertName));
         memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
-        this->pki_number       = 0;
-        this->sslCtxConfigured = false;
+        this->pki_number = 0;
         return;
       }
       // parse the certificate name
@@ -385,8 +386,7 @@ class TinyGsmESP32
         // invalid credential names: clear buffers and reset slot
         memset(this->clientCertName, '\0', sizeof(this->clientCertName));
         memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
-        this->pki_number       = 0;
-        this->sslCtxConfigured = false;
+        this->pki_number = 0;
         return;
       }
       // copy the certificate name into owned buffer
@@ -399,8 +399,7 @@ class TinyGsmESP32
       this->clientKeyName[sizeof(this->clientKeyName) - 1] = '\0';
       // set the number for the client certificate and private key (only 1 var,
       // they must be the same)
-      pki_number             = certNumber;
-      this->sslCtxConfigured = false;
+      pki_number = certNumber;
     }
     /// @copydoc setClientCredentials(const char*, const char*)
     void setClientCredentials(const String& clientCertName,
@@ -413,7 +412,10 @@ class TinyGsmESP32
      * @param certNumber The CA certificate number, must be 0 or 1.
      */
     void setCACertificateNumber(uint8_t certNumber) {
-      if (certNumber > 1) { return; }
+      if (certNumber > 1) {
+        setCACertName(nullptr);
+        return;
+      }
       ca_number = certNumber;
       // convert the certificate number and type into the proper certificate
       // names for the ESP32
@@ -432,7 +434,10 @@ class TinyGsmESP32
      * must be the same for a given connection.
      */
     void setClientCredentialNumber(uint8_t certNumber) {
-      if (certNumber > 1) { return; }
+      if (certNumber > 1) {
+        setClientCredentials(nullptr, nullptr);
+        return;
+      }
       pki_number = certNumber;
       // generate and set the name for the client certificate from the number
       char cert_name[16] = {};
@@ -1269,27 +1274,37 @@ class TinyGsmESP32
           static_cast<const GsmClientSecureESP32*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
       // Retrieve the SSL context object for the given context ID.
-      GsmSecureContext*            sslContext = getSSLContext(sslCtxIndex);
+      GsmSecureContext* sslContext = getSSLContext(sslCtxIndex);
+      // check for a valid SSL context
+      if (sslContext == nullptr) {
+        DBG("### No SSL context is registered at index", sslCtxIndex);
+        return false;
+      }
+      // Another non-ideal static cast to get the ESP32-specific context.
+      // We cast to the GsmSecureContextESP32 instead of the generic
+      // GsmSecureContext because we want the ca_number or pki_number.
       const GsmSecureContextESP32* thisContext =
           static_cast<const GsmSecureContextESP32*>(sslContext);
 
-      sslAuthMode = sslContext ? sslContext->sslAuthMode
-                               : SSLAuthMode::NO_VALIDATION;
-      ca_number   = sslContext ? thisContext->ca_number : 0;
-      pki_number  = sslContext ? thisContext->pki_number : 0;
-      pskIdent    = sslContext ? thisContext->pskIdent : nullptr;
-      psKey       = sslContext ? thisContext->psKey : nullptr;
+      sslAuthMode = thisContext->sslAuthMode;
+      ca_number   = thisContext->ca_number;
+      pki_number  = thisContext->pki_number;
+      pskIdent    = thisContext->pskIdent;
+      psKey       = thisContext->psKey;
 
       DBG("### SSL context index:", sslCtxIndex);
       DBG("### SSL auth mode:", (int)sslAuthMode);
       DBG("### CA cert number:", ca_number);
       DBG("### PKI number:", pki_number);
-      DBG("### CA cert number:", ca_number);
       DBG("### PSK identity:", pskIdent);
       DBG("### PSK key:", psKey);
-    }
 
-    if (ssl) {
+      // check that the context has the required credentials
+      if (!validateSSLContextCredentials(sslContext)) {
+        DBG("### The SSL context is missing required credentials!");
+        return false;
+      }
+
       // SSL certificate checking will not work without a valid timestamp!
       if ((sslAuthMode != SSLAuthMode::NO_VALIDATION) &&
           !waitForTimeSync(timeout_s)) {
@@ -1336,12 +1351,17 @@ class TinyGsmESP32
         }
         sendAT(GF("+CIPSSLCPSK="), mux, GF(",\""), psKey, GF("\",\""), pskIdent,
                '"');
-      } else {
+      } else if (sslAuthMode == SSLAuthMode::CLIENT_VALIDATION ||
+                 sslAuthMode == SSLAuthMode::CA_VALIDATION ||
+                 sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION) {
         // For auth modes 1, 2, and 3, we need to specify the PKI and CA numbers
         sendAT(GF("+CIPSSLCCONF="), mux, ',', static_cast<uint8_t>(sslAuthMode),
                ',', pki_number, ',', ca_number);
+      } else {
+        DBG("### Unsupported ESP32 SSL authentication mode!");
+        return false;
       }
-      waitResponse();
+      if (waitResponse() != 1) { return false; }
 
       // set the SSL SNI (server name indication)
       // Multiple connections: (AT+CIPMUX=1)
@@ -1349,7 +1369,7 @@ class TinyGsmESP32
       // NOTE: On firmware versions above 0.4.2 this happens automatically, but
       // on older versions it must be done manually.
       sendAT(GF("+CIPSSLCSNI="), mux, GF(",\""), host, '"');
-      waitResponse();
+      if (waitResponse() != 1) { return false; }
     }
 
     String resolved_ip;

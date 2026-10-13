@@ -283,20 +283,28 @@ class TinyGsmSim7600
       stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
-      if (!at->getSSLContext(sslCtxIndex)->sslCtxConfigured) {
-        if (at->getSSLContext(sslCtxIndex)->sslAuthMode ==
-            SSLAuthMode::PRE_SHARED_KEYS) {
-          DBG("### The SIM7600 does not support SSL using pre-shared keys.");
-          return 0;
-        } else {
-          at->getSSLContext(sslCtxIndex)->sslCtxConfigured =
-              at->configureSSLContext(sslCtxIndex);
-          if (!at->getSSLContext(sslCtxIndex)->sslCtxConfigured) {
-            DBG("### Failed to configure the SSL context!");
-            return 0;
-          }
-        }
+      GsmSecureContext* sslContext = at->getSSLContext(sslCtxIndex);
+      // check for a valid SSL context
+      if (sslContext == nullptr) {
+        DBG("### No SSL context is registered at index", sslCtxIndex);
+        return 0;
       }
+      // check that the authentication mode is supported
+      if (sslContext->sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+        DBG("### The SIM7600 does not support SSL using pre-shared keys.");
+        return 0;
+      }
+      // check that the context has the required credentials
+      if (!at->validateSSLContextCredentials(sslContext)) {
+        DBG("### The SSL context is missing required credentials!");
+        return 0;
+      }
+      // configure the context
+      if (!at->configureSSLContext(sslCtxIndex)) {
+        DBG("### Failed to configure the SSL context!");
+        return 0;
+      }
+      // make the connection
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
@@ -936,7 +944,6 @@ class TinyGsmSim7600
               sizeof(sslContext->clientCertName) - 1);
       strncpy(sslContext->clientKeyName, clientKeyName,
               sizeof(sslContext->clientKeyName) - 1);
-      sslContext->sslCtxConfigured = false;
     }
 
     return configureSSLContext(context_id);
@@ -1087,7 +1094,10 @@ class TinyGsmSim7600
           static_cast<const GsmClientSecureSim7600*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
 
-      linkSSLContext(mux, sslCtxIndex);
+      if (!linkSSLContext(mux, sslCtxIndex)) {
+        DBG("### Failed to link the SSL context to mux", mux);
+        return false;
+      }
 
       // Establish a connection in multi-socket mode
       // AT+CCHOPEN=<session_id>,"<host>",<port>[,<client_type>,[<bind_port>]]
