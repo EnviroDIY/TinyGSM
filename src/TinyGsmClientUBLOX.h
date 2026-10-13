@@ -36,8 +36,8 @@
 #include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
-// management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
-// so as not to waste space.
+// management yet. Define TINY_GSM_MODEM_HAS_SSL here and do no include the SSL
+// module.
 #ifndef TINY_GSM_MODEM_HAS_SSL
 /// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
@@ -98,15 +98,17 @@ struct TinyGsmUBLOXTcpConfig
           /*sendMaxSize*/ 1024,
           /*connectTimeoutS*/ 120> {};
 
-/*/*
+#if 0
+/**
  * @brief SSL behavior and limits for the u-blox family
  * The module supports 5 SSL contexts (called security profiles, numbered 0-4).
  * This library does not support selecting or modifying the security profiles in
  * any way.  The module will always use the default profile.
  * @ingroup ublox_cellular
  */
-// struct TinyGsmSaraR5SslConfig : public TinyGsmSslConfigPreset<
-//                                    /*contextCount*/ 5> {};
+struct TinyGsmSaraR5SslConfig : public TinyGsmSslConfigPreset<
+                                   /*contextCount*/ 5> {};
+#endif
 
 /// Class for the u-blox family of modems
 /// @ingroup ublox_cellular
@@ -301,7 +303,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     using TcpConfig = TinyGsmUBLOXTcpConfig;
 
     /*
-     * Client constructors and initialization
+     * Secure client constructors and initialization
      */
     /**
      * @brief Create a new secured TCP (SSL) client.
@@ -501,11 +503,16 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   // addition to adding the functions here):
   //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
   //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  //  - Add `public TinyGsmSSL<TinyGsmUBLOX>,` to the constructor's initializer
-  //  list
-  //  - Add `friend class TinyGsmSSL<TinyGsmUBLOX>;` to the friend list
+  //  - Remove the #if 0 / #endif statements bracketing the SSL configuration
+  //  structure.
+  //  - Add `public TinyGsmSSL<TinyGsmUBLOX, TinyGsmUBLOXSslConfig>,` to the
+  //  constructor's initializer list
+  //  - Add `friend class TinyGsmSSL<TinyGsmUBLOX, TinyGsmUBLOXSslConfig>;` to
+  //  the friend list
   //  - Make the secure client inherit from the secure client class in the SSL
   //  template.
+  //  - Create an inner secure context class inheriting from
+  //  TinyGsmSSLContext<TinyGsmUBLOX, TinyGsmUBLOXSslConfig>
 
   /*
    * Wifi functions
