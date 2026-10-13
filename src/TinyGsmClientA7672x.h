@@ -330,20 +330,28 @@ class TinyGsmA7672X
       stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
-      if (!at->getSSLContext(sslCtxIndex)->sslCtxConfigured) {
-        if (at->getSSLContext(sslCtxIndex)->sslAuthMode ==
-            SSLAuthMode::PRE_SHARED_KEYS) {
-          DBG("### The A7672x does not support SSL using pre-shared keys.");
-          return 0;
-        } else {
-          at->getSSLContext(sslCtxIndex)->sslCtxConfigured =
-              at->configureSSLContext(sslCtxIndex);
-          if (!at->getSSLContext(sslCtxIndex)->sslCtxConfigured) {
-            DBG("### Failed to configure the SSL context!");
-            return 0;
-          }
-        }
+      GsmSecureContext* sslContext = at->getSSLContext(sslCtxIndex);
+      // check for a valid SSL context
+      if (sslContext == nullptr) {
+        DBG("### No SSL context is registered at index", sslCtxIndex);
+        return 0;
       }
+      // check that the authentication mode is supported
+      if (sslContext->sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+        DBG("### The A7672x does not support SSL using pre-shared keys.");
+        return 0;
+      }
+      // check that the context has the required credentials
+      if (!at->validateSSLContextCredentials(sslContext)) {
+        DBG("### The SSL context is missing required credentials!");
+        return 0;
+      }
+      // configure the context
+      if (!at->configureSSLContext(sslCtxIndex)) {
+        DBG("### Failed to configure the SSL context!");
+        return 0;
+      }
+      // make the connection
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
@@ -408,19 +416,11 @@ class TinyGsmA7672X
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
     if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
-      if (getSimStatus() == SIM_READY) {
-        invalidateSSLContexts();
-        return true;
-      }
-      return false;
+      return (getSimStatus() == SIM_READY);
     } else {
       // if the sim is ready, or it's locked but no pin has been provided,
-      // invalidate SSL contexts and return result
-      if (ret == SIM_READY || ret == SIM_LOCKED) {
-        invalidateSSLContexts();
-        return true;
-      }
-      return false;
+      // return true
+      return (ret == SIM_READY || ret == SIM_LOCKED);
     }
   }
 
@@ -434,11 +434,7 @@ class TinyGsmA7672X
     sendAT(GF("+CSCLK=0"));  // Control UART Sleep always work
     waitResponse();
     sendAT(GF("&W"));  // Write configuration
-    if (waitResponse() == 1) {
-      invalidateSSLContexts();
-      return true;
-    }
-    return false;
+    return waitResponse() == 1;
   }
 
   /*
@@ -452,7 +448,6 @@ class TinyGsmA7672X
     if (!setPhoneFunctionality(0)) { return false; }
     if (!setPhoneFunctionality(1, true)) { return false; }
     delay(3000);
-    invalidateSSLContexts();
     return init(pin);
   }
 
@@ -748,7 +743,6 @@ class TinyGsmA7672X
               sizeof(sslContext->clientCertName) - 1);
       strncpy(sslContext->clientKeyName, clientKeyName,
               sizeof(sslContext->clientKeyName) - 1);
-      sslContext->sslCtxConfigured = false;
     }
 
     return configureSSLContext(context_id);
@@ -855,7 +849,7 @@ class TinyGsmA7672X
       success &= waitResponse(5000L) == 1;
     }
 
-    // enable the SSL SNI (server name indication)
+    // enable SSL SNI (server name indication)
     // AT+CSSLCFG="enableSNI",<ssl_ctx_index>,<enableSNI_flag>
     sendAT(GF("+CSSLCFG=\"enableSNI\","), context_id, GF(",1"));
     success &= waitResponse(2000L) == 1;

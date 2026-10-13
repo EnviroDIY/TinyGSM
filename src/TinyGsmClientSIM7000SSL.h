@@ -241,9 +241,26 @@ class TinyGsmSim7000SSL
       stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
-      if (!at->getSSLContext(sslCtxIndex)->sslCtxConfigured) {
-        at->getSSLContext(sslCtxIndex)->sslCtxConfigured =
-            at->configureSSLContext(sslCtxIndex, host);
+      GsmSecureContext* sslContext = at->getSSLContext(sslCtxIndex);
+      // check for a valid SSL context
+      if (sslContext == nullptr) {
+        DBG("### No SSL context is registered at index", sslCtxIndex);
+        return 0;
+      }
+      // check that the context has the required credentials
+      if (!at->validateSSLContextCredentials(sslContext)) {
+        DBG("### The SSL context is missing required credentials!");
+        return 0;
+      }
+      // configure the context
+      if (!at->configureSSLContext(sslCtxIndex)) {
+        DBG("### Failed to configure the SSL context!");
+        return 0;
+      }
+      // set the SNI
+      if (!at->configureSSLSNI(sslCtxIndex, host)) {
+        DBG("### Failed to configure SSL SNI!");
+        return 0;
       }
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
@@ -715,30 +732,27 @@ class TinyGsmSim7000SSL
   /**
    * @brief Configure the SSL context for the modem.
    * @param context_id The SSL context ID.
-   * @param sni The Server Name Indication (SNI) for the SSL connection.
    * @param sslAuthMode The SSL authentication mode.
    * @param sslVersion The SSL version.
    * @return True if the operation was successful, false otherwise.
    */
-  bool configureSSLContext(uint8_t context_id, const char* sni,
-                           SSLAuthMode sslAuthMode, SSLVersion sslVersion) {
+  bool configureSSLContext(uint8_t context_id, SSLAuthMode sslAuthMode,
+                           SSLVersion sslVersion) {
     // store the configuration in the SSL context object
     GsmSecureContext* sslContext = getSSLContext(context_id);
     if (sslContext) {
-      sslContext->sslAuthMode      = sslAuthMode;
-      sslContext->sslVersion       = sslVersion;
-      sslContext->sslCtxConfigured = false;
+      sslContext->sslAuthMode = sslAuthMode;
+      sslContext->sslVersion  = sslVersion;
     }
 
-    return configureSSLContext(context_id, sni);
+    return configureSSLContext(context_id);
   }
   /**
    * @brief Configure the SSL context for the modem.
    * @param context_id The SSL context ID.
-   * @param sni The Server Name Indication (SNI) for the SSL connection.
    * @return True if the operation was successful, false otherwise.
    */
-  bool configureSSLContext(uint8_t context_id, const char* sni) {
+  bool configureSSLContext(uint8_t context_id) {
     bool success = true;
 
     // NOTE: The SSL context (<ctxindex>) is not the same as the connection
@@ -833,14 +847,14 @@ class TinyGsmSim7000SSL
       for (uint8_t i = 0; i < 8; i++) {
         sendAT(GF("+CSSLCFG=\"ciphersuite\","), context_id, ',', i, ',',
                ciphersuites[i]);
-        waitResponse();
+        success &= waitResponse() == 1;
       }
     } else if (sslVersion == SSLVersion::TLS1_3) {
       const char* ciphersuites[3] = {"0x1301", "0x1302", "0x1303"};
       for (uint8_t i = 0; i < 3; i++) {
         sendAT(GF("+CSSLCFG=\"ciphersuite\","), context_id, ',', i, ',',
                ciphersuites[i]);
-        waitResponse();
+        success &= waitResponse() == 1;
       }
     } else {
       // These are selected from this AWS list:
@@ -861,17 +875,9 @@ class TinyGsmSim7000SSL
            i++) {
         sendAT(GF("+CSSLCFG=\"ciphersuite\","), context_id, ',', i, ',',
                ciphersuites[i]);
-        waitResponse();
+        success &= waitResponse() == 1;
       }
     }
-
-    // set the SSL SNI (server name indication)
-    // AT+CSSLCFG="SNI",<ctxindex>,<servername>
-    // <ctxindex> SSL context identifier
-    // <servername> Sever name (we use the host)
-    // NOTE:  despite docs using caps, "sni" must be in lower case
-    sendAT(GF("+CSSLCFG=\"sni\","), context_id, GF(",\""), sni, '"');
-    success &= waitResponse() == 1;
 
     // Ignore the RTC time?
     // AT+CSSLCFG="IGNORERTCTIME",<ctxindex>,<ignorertctime>
@@ -894,6 +900,23 @@ class TinyGsmSim7000SSL
 
     return success;
   }
+
+  /**
+   * @brief Apply hostname-dependent SNI to an SSL context.
+   * @param context_id The SSL context ID.
+   * @param sni The Server Name Indication for this connection.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool configureSSLSNI(uint8_t context_id, const char* sni) {
+    if (getSSLContext(context_id) == nullptr || sni == nullptr ||
+        sni[0] == '\0') {
+      return false;
+    }
+    // Despite the manual using caps, "sni" must be in lower case.
+    sendAT(GF("+CSSLCFG=\"sni\","), context_id, GF(",\""), sni, '"');
+    return waitResponse() == 1;
+  }
+
   /**
    * @brief Apply SSL certificates to the specified connection.
    * @param mux The **zero-indexed** position of the client in the modem's
@@ -919,7 +942,6 @@ class TinyGsmSim7000SSL
               sizeof(sslContext->clientCertName) - 1);
       strncpy(sslContext->clientKeyName, clientKeyName,
               sizeof(sslContext->clientKeyName) - 1);
-      sslContext->sslCtxConfigured = false;
     }
 
     return applySSLCertificates(mux, context_id);
@@ -1003,7 +1025,6 @@ class TinyGsmSim7000SSL
     if (sslContext) {
       strncpy(sslContext->pskTableName, pskTableName,
               sizeof(sslContext->pskTableName) - 1);
-      sslContext->sslCtxConfigured = false;
     }
 
     return applySSLPSK(mux, context_id);
@@ -1392,6 +1413,6 @@ class TinyGsmSim7000SSL
   GsmClientSim7000SSL* sockets[TcpConfig::kMuxCount];
 };
 
-// cspell:words CASEND
+// cspell:words CASEND configureSSLSNI
 
 #endif  // SRC_TINYGSMCLIENTSIM7000SSL_H_
