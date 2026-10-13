@@ -1203,14 +1203,17 @@ class TinyGsmSim7080
 
       // NOTE: We cannot link the SSL context or set the certificates until
       // AFTER setting the connection id (ie, AT+CACID=mux)
-      linkSSLContext(mux,
-                     sslCtxIndex);  // Must be before applying certs
+      bool ssl_configured =
+          linkSSLContext(mux,
+                         sslCtxIndex);  // Must be before applying certs
+      if (!ssl_configured) { return false; }
       if (getSSLContext(sslCtxIndex)->sslAuthMode ==
           SSLAuthMode::PRE_SHARED_KEYS) {
-        applySSLPSK(mux, sslCtxIndex);
+        ssl_configured &= applySSLPSK(mux, sslCtxIndex);
       } else {
-        applySSLCertificates(mux, sslCtxIndex);
+        ssl_configured &= applySSLCertificates(mux, sslCtxIndex);
       }
+      if (!ssl_configured) { return false; }
     }
 
     DBG("### host:", host);
