@@ -963,9 +963,9 @@ class GsmSecureContext {
  * protocol-specific functionality.
  *
  * @tparam ClientType The base client class type (e.g., GsmClientA7672X)
- * @tparam ModemType The modem class type (e.g., TinyGsmA7672X)
+ * @tparam modemType The modem class type (e.g., TinyGsmA7672X)
  */
-template <typename ClientType, typename ModemType>
+template <typename ClientType, typename modemType>
 class GsmSecureClient : public ClientType {
  public:
   /**
@@ -983,7 +983,7 @@ class GsmSecureClient : public ClientType {
    * @param modem The modem that owns the socket and SSL contexts
    * @param mux The socket identifier
    */
-  explicit GsmSecureClient(ModemType& modem, uint8_t mux = 0)
+  explicit GsmSecureClient(modemType& modem, uint8_t mux = 0)
       : ClientType(modem, mux) {
     this->is_secure = true;
   }
@@ -994,7 +994,7 @@ class GsmSecureClient : public ClientType {
    * @param mux The socket identifier
    * @param sslCtxIndex The hardware SSL context index
    */
-  explicit GsmSecureClient(ModemType& modem, uint8_t mux, uint8_t sslCtxIndex)
+  explicit GsmSecureClient(modemType& modem, uint8_t mux, uint8_t sslCtxIndex)
       : ClientType(modem, mux) {
     this->is_secure = true;
     this->setSSLContextIndex(sslCtxIndex);
