@@ -416,6 +416,47 @@ class TinyGsmSSL {
     return sslContexts[contextIndex];
   }
 
+  /**
+   * @brief Check that a context contains the credentials required by its
+   * authentication mode.
+   * @param context The context to validate.
+   * @return `true` when the context and its required credentials are present.
+   */
+  bool validateSSLContextCredentials(const gsmSecureContext* context) const {
+    if (context == nullptr) { return false; }
+
+    switch (context->sslAuthMode) {
+      case SSLAuthMode::NO_VALIDATION: {
+        return true;  // no credentials required
+      }
+      case SSLAuthMode::CLIENT_VALIDATION:
+        return {
+          // both a client certificate and key are required
+          context->clientCertName[0] != '\0' &&
+              context->clientKeyName[0] != '\0';
+        }
+      case SSLAuthMode::CA_VALIDATION: {
+        // a CA certificate is required
+        return context->CAcertName[0] != '\0';
+      }
+      case SSLAuthMode::MUTUAL_AUTHENTICATION: {
+        // a CA certificate, client certificate, and client key are all required
+        return context->CAcertName[0] != '\0' &&
+            context->clientCertName[0] != '\0' &&
+            context->clientKeyName[0] != '\0';
+      }
+      case SSLAuthMode::PRE_SHARED_KEYS: {
+        // either a table that combines the key and identity is present, or both
+        // the individual key and identity (identifier/hint) are provided
+        return context->pskTableName[0] != '\0' ||
+            (context->pskIdent[0] != '\0' && context->psKey[0] != '\0');
+      }
+      default: {
+        return false;
+      }
+    }
+  }
+
   // destructor (protected!)
   ~TinyGsmSSL() {}
 
@@ -755,7 +796,7 @@ class GsmSecureContext {
    */
   void setSSLAuthMode(SSLAuthMode mode) {
     sslAuthMode = mode;
-      }
+  }
 
   /**
    * @brief Set the SSL/TLS protocol version.
@@ -763,7 +804,7 @@ class GsmSecureContext {
    */
   void setSSLVersion(SSLVersion version) {
     sslVersion = version;
-      }
+  }
   /**@}*/
 
   /**
@@ -779,7 +820,7 @@ class GsmSecureContext {
   void setCACertName(const char* CAcertName) {
     memset(this->CAcertName, '\0', sizeof(this->CAcertName));
     copyString(this->CAcertName, CAcertName, sizeof(this->CAcertName));
-      }
+  }
   /// @copydoc setCACertName(const char*)
   void setCACertName(const String& CAcertName) {
     setCACertName(CAcertName.c_str());
@@ -805,7 +846,7 @@ class GsmSecureContext {
       copyString(this->clientKeyName, clientKeyName,
                  sizeof(this->clientKeyName));
     }
-      }
+  }
   /// @copydoc setClientCredentials(const char*, const char*)
   void setClientCredentials(const String& clientCertName,
                             const String& clientKeyName) {
@@ -826,7 +867,7 @@ class GsmSecureContext {
   void setPSKTableName(const char* pskTableName) {
     memset(this->pskTableName, '\0', sizeof(this->pskTableName));
     copyString(this->pskTableName, pskTableName, sizeof(this->pskTableName));
-      }
+  }
   /// @copydoc setPSKTableName(const char*)
   void setPSKTableName(const String& pskTableName) {
     setPSKTableName(pskTableName.c_str());
@@ -849,7 +890,7 @@ class GsmSecureContext {
       copyString(this->pskIdent, pskIdent, sizeof(this->pskIdent));
       copyString(this->psKey, psKey, sizeof(this->psKey));
     }
-      }
+  }
   /// @copydoc setPreSharedKey(const char*, const char*)
   void setPreSharedKey(const String& pskIdent, const String& psKey) {
     setPreSharedKey(pskIdent.c_str(), psKey.c_str());
@@ -857,7 +898,7 @@ class GsmSecureContext {
   /**@}*/
 
  protected:
-    /// The SSL authentication mode.
+  /// The SSL authentication mode.
   SSLAuthMode sslAuthMode;
   /// The SSL/TLS protocol version.
   SSLVersion sslVersion;
@@ -903,7 +944,7 @@ class GsmSecureContext {
       modem->detachSSLContext(this, sslCtxIndex);
       modem = nullptr;
     }
-      }
+  }
 };
 
 
