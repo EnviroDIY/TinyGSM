@@ -156,11 +156,12 @@ typedef ESP8266RegStatus                        RegStatus;
 
 #elif defined(TINY_GSM_MODEM_ESP8266_NONOS)
 #include "TinyGsmClientESP8266NonOS.h"
-typedef TinyGsmESP8266NonOS                               TinyGsm;
-typedef TinyGsmESP8266NonOS::GsmClientESP8266NonOS        TinyGsmClient;
-typedef TinyGsmESP8266NonOS::GsmClientSecureESP8266NonOS  TinyGsmClientSecure;
-typedef TinyGsmESP8266NonOS::GsmSecureContextESP8266NonOS TinyGsmSecureContext;
-typedef ESP8266NonOSRegStatus                             RegStatus;
+typedef TinyGsmESP8266NonOS                              TinyGsm;
+typedef TinyGsmESP8266NonOS::GsmClientESP8266NonOS       TinyGsmClient;
+typedef TinyGsmESP8266NonOS::GsmClientSecureESP8266NonOS TinyGsmClientSecure;
+// typedef TinyGsmESP8266NonOS::GsmSecureContextESP8266NonOS
+// TinyGsmSecureContext;
+typedef ESP8266NonOSRegStatus RegStatus;
 
 #elif defined(TINY_GSM_MODEM_XBEE)
 #include "TinyGsmClientXBee.h"
@@ -176,8 +177,8 @@ typedef TinyGsmSequansMonarch                          TinyGsm;
 typedef TinyGsmSequansMonarch::GsmClientSequansMonarch TinyGsmClient;
 typedef TinyGsmSequansMonarch::GsmClientSecureSequansMonarch
     TinyGsmClientSecure;
-typedef TinyGsmSequansMonarch::GsmSecureContextSequansMonarch
-                         TinyGsmSecureContext;
+// typedef TinyGsmSequansMonarch::GsmSecureContextSequansMonarch
+//                          TinyGsmSecureContext;
 typedef MonarchRegStatus RegStatus;
 
 #elif defined(TINY_GSM_MODEM_A7672X)
