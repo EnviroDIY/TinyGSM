@@ -164,11 +164,11 @@ typedef ESP8266NonOSRegStatus                             RegStatus;
 
 #elif defined(TINY_GSM_MODEM_XBEE)
 #include "TinyGsmClientXBee.h"
-typedef TinyGsmXBee                      TinyGsm;
-typedef TinyGsmXBee::GsmClientXBee       TinyGsmClient;
-typedef TinyGsmXBee::GsmClientSecureXBee TinyGsmClientSecure;
-// typedef TinyGsmXBee::GsmSecureContextXBee TinyGsmSecureContext;
-typedef XBeeRegStatus RegStatus;
+typedef TinyGsmXBee                       TinyGsm;
+typedef TinyGsmXBee::GsmClientXBee        TinyGsmClient;
+typedef TinyGsmXBee::GsmClientSecureXBee  TinyGsmClientSecure;
+typedef TinyGsmXBee::GsmSecureContextXBee TinyGsmSecureContext;
+typedef XBeeRegStatus                     RegStatus;
 
 #elif defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
 #include "TinyGsmClientSequansMonarch.h"
