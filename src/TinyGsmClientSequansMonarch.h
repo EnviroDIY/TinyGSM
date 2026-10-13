@@ -81,10 +81,6 @@ constexpr char TinyGsmSequansMonarchModemConfig::MODEM_MODEL[]
  *
  * @note Unlike most modules, the sockets are numbered starting at 1, not 0.
  *
- * Also supports 6 "security profiles" (1-6)
- * The security profiles is collection of SSL settings, not the connection
- * identifier.
- *
  * The send data command, SQNSSENDEXT, accepts up to 1500 bytes of input, but
  * this is configured to send HEX, so only 1/2 of that is available.
  * @ingroup sequans_monarch
@@ -96,11 +92,14 @@ struct TinyGsmSequansMonarchTcpConfig
           /*muxCount*/ 6,
           /*sendMaxSize*/ 750> {};
 
-// /*
-//  * @brief SSL behavior and limits for the Sequans Monarch.
-//  * The module supports 6 security profiles / SSL contexts.
-//  * @ingroup sequans_monarch
-//  */
+/*/*
+ * @brief SSL behavior and limits for the Sequans Monarch.
+ * The module supports 6 security profiles / SSL contexts, but this library does
+ * not support any functions to configure a profile or upload certificates.  The
+ * SSL context can only be selected by modifying the
+ * TINY_GSM_MONARCH_DEFAULT_SSL_CTX variable.
+ * @ingroup sequans_monarch
+ */
 // struct TinyGsmSequansMonarchSslConfig : public TinyGsmSslConfigPreset<
 //                                    /*contextCount*/ 6> {};
 

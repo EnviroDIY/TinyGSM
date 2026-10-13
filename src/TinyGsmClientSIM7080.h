@@ -65,9 +65,6 @@ constexpr char TinyGsmSim7080ModemConfig::MODEM_MODEL[] __attribute__((weak));
 /**
  * @brief TCP behavior and limits for the SIMCom SIM7080 modem family.
  *
- * Also supports 6 SSL contexts (0-5)
- * The SSL context is collection of SSL settings, not the connection identifier.
- *
  * Up to 1460 bytes can be sent at a time with CASEND.
  * NOTE: The manual says 1460, but the actual value seems to be variable.  I
  * have modules P/N S2-108HB-Z3037 that never report more than 1360 available
@@ -92,8 +89,8 @@ struct TinyGsmSim7080TcpConfig
           /*minFreeTxBuffer*/ 1360> {};
 
 /**
- * @brief SSL behavior and limits for the SIMCom SIM7080 and SIM7070 modem
- * family. The module supports 6 SSL contexts.
+ * @brief SSL behavior and limits for the SIMCom SIM7080 modem family.
+ * The module supports 6 SSL contexts (0-5).
  * @ingroup simcom_sim7080
  */
 struct TinyGsmSim7080SslConfig : public TinyGsmSslConfigPreset<

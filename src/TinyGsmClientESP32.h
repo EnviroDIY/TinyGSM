@@ -93,11 +93,6 @@ constexpr char TinyGsmESP32ModemConfig::CLIENT_KEY_NAMESPACE[]
  * manual warns that module may not be able to handle more than 1 SSL socket at
  * a time.
  *
- * These modules don't have "SSL Contexts" per-say.  They support 2 each of CA
- * certificates and and client certificate/key pairs.  The certificates are
- * loaded and referenced by number.  The number of the CA certificates and
- * client certificate/key pair does not have to match for a connection.
- *
  * The ESP32 devices can receive 8192 bytes and send 2920 bytes at most in one
  * single transmission.
  * @ingroup espressif_esp32
@@ -113,7 +108,12 @@ struct TinyGsmESP32TcpConfig
 
 /**
  * @brief SSL behavior and limits for the ESP32.
- * The module supports 2 SSL contexts.
+ *
+ * These modules don't have "SSL Contexts" per-say.  They support 2 each of CA
+ * certificates and and client certificate/key pairs.  The certificates are
+ * loaded and referenced by number.  The number of the CA certificate and the
+ * client certificate/key pair does not have to match for a connection.
+ *
  * @ingroup espressif_esp32
  */
 struct TinyGsmESP32SslConfig : public TinyGsmSslConfigPreset<

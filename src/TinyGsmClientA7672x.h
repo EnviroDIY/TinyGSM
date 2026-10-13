@@ -98,10 +98,6 @@ constexpr char TinyGsmA7672XModemConfig::MODEM_MODEL[] __attribute__((weak));
  *
  * @todo Handle the different number of sockets for TCP and SSL in the code.
  *
- * The module also supports 10 SSL contexts.
- * The SSL context is a collection of SSL settings, not the connection
- * identifier.
- *
  * The secure send data command, CCHSEND, can handle up to 2048 bytes of input,
  * but the unsecured CIPSEND command will only accept 1500, so we'll take the
  * smaller number as the maximum send size.
