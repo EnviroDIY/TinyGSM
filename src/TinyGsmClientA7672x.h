@@ -259,8 +259,7 @@ class TinyGsmA7672X
   /// Inner secure client
   /// @ingroup simcom_a7672x
   class GsmClientSecureA7672X
-      : public GsmSecureClient<GsmClientSecureA7672X, GsmClientA7672X,
-                               TinyGsmA7672X> {
+      : public GsmSecureClient<GsmClientA7672X, TinyGsmA7672X> {
     friend class TinyGsmA7672X;
 
    public:
@@ -270,7 +269,7 @@ class TinyGsmA7672X
     using TcpConfig = TinyGsmA7672XTcpConfig;
 
     /*
-     * Client constructors and initialization
+     * Secure client constructors and initialization
      */
 
     /**

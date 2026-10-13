@@ -209,16 +209,7 @@ class TinyGsmSSL {
 
   /* =========================================== */
   /* =========================================== */
-  /*
-   * Define the interface
-   */
  public:
-  /**
-   * @anchor ssl_certificate_management_functions
-   * @name Secure socket layer (SSL) certificate management functions
-   */
-  /**@{*/
-
   /**
    * @brief Create the SSL capability mixin.
    */
@@ -232,6 +223,16 @@ class TinyGsmSSL {
   explicit TinyGsmSSL(modemType& /*modem*/, uint8_t /*mux*/ = 0) {
     initializeSSLContexts();
   }
+
+  /*
+   * Define the interface
+   */
+
+  /**
+   * @anchor ssl_certificate_management_functions
+   * @name Secure socket layer (SSL) certificate management functions
+   */
+  /**@{*/
 
   /**
    * @brief Load a new certificate onto the module.
@@ -384,14 +385,13 @@ class TinyGsmSSL {
   }
   /**@}*/
 
-  /*
-   * SSL context functions
-   */
-  // At this time, we have no templates for these functions, so they are
-  // implemented in the modem-specific classes.
-
 
  protected:
+  /**
+   * @anchor ssl_context_functions
+   * @name SSL context functions
+   */
+  /**@{*/
   /**
    * @brief Look up a registered SSL context by hardware context index.
    *
@@ -455,6 +455,7 @@ class TinyGsmSSL {
       }
     }
   }
+  /**@}*/
 
   // destructor (protected!)
   ~TinyGsmSSL() {}
@@ -528,6 +529,7 @@ class TinyGsmSSL {
   }
 
  private:
+  /// Initialize the array of SSL context pointers to nullptr.
   void initializeSSLContexts() {
     for (uint8_t i = 0; i < SslConfig::kContextCount; ++i) {
       sslContexts[i] = nullptr;
@@ -561,6 +563,11 @@ class GsmSecureContext {
   uint8_t    sslCtxIndex;
 
  public:
+  /**
+   * @anchor ssl_context_ctors
+   * @name Secure context constructors and initialization
+   */
+  /**@{*/
   /**
    * @brief Create an unattached SSL context with default settings.
    */
@@ -766,6 +773,7 @@ class GsmSecureContext {
     this->sslCtxIndex = contextIndex;
     return true;
   }
+  /**@}*/
 
   /**
    * @brief Check whether this context is registered with a modem.
@@ -786,7 +794,7 @@ class GsmSecureContext {
 
   /**
    * @anchor context_ssl_config
-   * @name Context SSL configuration functions
+   * @name Secure context configuration functions
    */
   /**@{*/
   /**
@@ -808,7 +816,7 @@ class GsmSecureContext {
 
   /**
    * @anchor context_cert_assignment
-   * @name Context certificate assignment functions
+   * @name Secure context certificate assignment functions
    */
   /**@{*/
 
@@ -856,7 +864,7 @@ class GsmSecureContext {
 
   /**
    * @anchor context_psk_assignment
-   * @name Context PSK assignment functions
+   * @name Secure context PSK assignment functions
    */
   /**@{*/
   /**
@@ -948,19 +956,23 @@ class GsmSecureContext {
 
 
 /**
- * @brief CRTP template for secure clients with SSL context index management.
+ * @brief Template for secure clients with SSL context index management.
  *
  * This template provides constructors and SSL context index management for all
  * modem-specific secure client implementations. Derived classes provide only
  * protocol-specific functionality.
  *
- * @tparam Derived The derived class type (CRTP pattern)
  * @tparam ClientType The base client class type (e.g., GsmClientA7672X)
  * @tparam ModemType The modem class type (e.g., TinyGsmA7672X)
  */
-template <typename Derived, typename ClientType, typename ModemType>
+template <typename ClientType, typename ModemType>
 class GsmSecureClient : public ClientType {
  public:
+  /**
+   * @anchor ssl_client_ctors
+   * @name Secure client constructors and initialization
+   */
+  /**@{*/
   /// Default constructor creating an unattached secure client
   GsmSecureClient() {
     this->is_secure = true;
@@ -987,7 +999,14 @@ class GsmSecureClient : public ClientType {
     this->is_secure = true;
     this->setSSLContextIndex(sslCtxIndex);
   }
+  /**@}*/
 
+
+  /**
+   * @anchor ssl_client_config
+   * @name Secure client configuration
+   */
+  /**@{*/
   /**
    * @brief Select the hardware SSL context for this client.
    * @param sslCtxIndex The hardware SSL context index.

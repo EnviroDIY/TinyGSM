@@ -252,8 +252,7 @@ class TinyGsmESP8266
   /// Inner secure client
   /// @ingroup espressif_esp8266
   class GsmClientSecureESP8266
-      : public GsmSecureClient<GsmClientSecureESP8266, GsmClientESP8266,
-                               TinyGsmESP8266> {
+      : public GsmSecureClient<GsmClientESP8266, TinyGsmESP8266> {
     friend class TinyGsmESP8266;
 
    public:
@@ -285,10 +284,10 @@ class TinyGsmESP8266
     ~GsmSecureContextESP8266() {}
 
     /*
-     * Context certificate assignment functions
+     * Secure context certificate assignment functions
      */
 
-    /// @copydoc GsmSecureClient::setCACertName(const char*)
+    /// @copydoc GsmSecureContext::setCACertName(const char*)
     /// @warning The CA certificate name must be either "client_ca.0" or
     /// "client_ca.1".
     void setCACertName(const char* CAcertName) {
@@ -316,7 +315,7 @@ class TinyGsmESP8266
       // set the number for the CA certificate
       this->ca_number = certNumber;
     }
-    /// @copydoc GsmClientSecureESP32::setCACertName(const char*)
+    /// @copydoc GsmSecureContextESP8266::setCACertName(const char*)
     void setCACertName(const String& CAcertName) {
       setCACertName(CAcertName.c_str());
     }
