@@ -1121,10 +1121,14 @@ EXCLUDE                = ../src/ReadMe.md \
                          ../boards \
                          ../variants \
                          ../archive \
-                         ../docs/moxygen_templates \
+                         ../docs/logs \
+                         ../docs/reviews \
+                         ../docs/.doxybook \
+                         ../docs/__pycache__ \
                          ../docs/SupportedModuleFunctions.md \
                          ../generated_docs \
                          ../src/ArduinoCompat \
+                         ../src/wakeUp.h \
                          ../continuous_integration_artifacts \
                          ../CMakeLists.txt \
                          ../extras/tools/test_simple.txt \
@@ -1133,7 +1137,6 @@ EXCLUDE                = ../src/ReadMe.md \
                          ../examples/more/SIM800_SslSetCert/COMODORSACertificationAuthority.h \
                          ../examples/more/SIM800_SslSetCert/DSTRootCAX3.der.h \
                          ../examples/more/SIM800_SslSetCert/DSTRootCAX3.h \
-                         ../src/wakeUp.h \
                          ../AGENTS.md
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or

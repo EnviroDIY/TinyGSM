@@ -233,8 +233,7 @@ class TinyGsmSim7080
   /// Inner secure client
   /// @ingroup simcom_sim7080
   class GsmClientSecureSim7080
-      : public GsmSecureClient<GsmClientSecureSim7080, GsmClientSim7080,
-                               TinyGsmSim7080> {
+      : public GsmSecureClient<GsmClientSim7080, TinyGsmSim7080> {
     friend class TinyGsmSim7080;
 
    public:

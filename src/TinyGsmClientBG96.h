@@ -236,8 +236,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   /// Inner secure client
   /// @ingroup quectel_bg96
   class GsmClientSecureBG96
-      : public GsmSecureClient<GsmClientSecureBG96, GsmClientBG96,
-                               TinyGsmBG96> {
+      : public GsmSecureClient<GsmClientBG96, TinyGsmBG96> {
     friend class TinyGsmBG96;
 
    public:
@@ -359,7 +358,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
    */
  public:
   /// Inner secure context
-  /// @ingroup simcom_bg96
+  /// @ingroup quectel_bg96
   class GsmSecureContextBG96
       : public ::GsmSecureContext<TinyGsmBG96, TinyGsmBG96SslConfig> {
     friend class TinyGsmBG96;

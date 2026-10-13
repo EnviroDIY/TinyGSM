@@ -215,8 +215,7 @@ class TinyGsmSim7000SSL
   /// Inner secure client
   /// @ingroup simcom_sim7000ssl
   class GsmClientSecureSim7000SSL
-      : public GsmSecureClient<GsmClientSecureSim7000SSL, GsmClientSim7000SSL,
-                               TinyGsmSim7000SSL> {
+      : public GsmSecureClient<GsmClientSim7000SSL, TinyGsmSim7000SSL> {
     friend class TinyGsmSim7000SSL;
 
    public:

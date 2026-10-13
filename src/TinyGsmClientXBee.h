@@ -428,8 +428,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   /// Inner secure client
   /// @ingroup digi_xbee
   class GsmClientSecureXBee
-      : public GsmSecureClient<GsmClientSecureXBee, GsmClientXBee,
-                               TinyGsmXBee> {
+      : public GsmSecureClient<GsmClientXBee, TinyGsmXBee> {
     friend class TinyGsmXBee;
 
    protected:
@@ -501,7 +500,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    */
  public:
   /// Inner secure context
-  /// @ingroup simcom_XBee
+  /// @ingroup digi_xbee
   class GsmSecureContextXBee
       : public ::GsmSecureContext<TinyGsmXBee, TinyGsmXBeeSslConfig> {
     friend class TinyGsmXBee;
