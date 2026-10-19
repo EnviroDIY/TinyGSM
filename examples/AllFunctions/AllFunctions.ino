@@ -460,7 +460,8 @@ void loop() {
   TinyGsmClientSecure secureClient(modem, (uint8_t)0);
 
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
-  secureClient.setSSLAuthMode(SSLAuthMode::CA_VALIDATION);
+  TinyGsmSecureContext secureContext(modem, (uint8_t)0);
+  secureContext.setSSLAuthMode(SSLAuthMode::CA_VALIDATION);
 
 // For Espressif modules, only two certificate sets are supported and the
 // certificates must be named "client_ca.{0|1}", "client_cert.{0|1}", or
@@ -531,17 +532,16 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 #endif
 #endif
 
-  secureClient.setCACertName(root_ca_name);
-  // secureClient.setClientCertName(client_cert_name);
-  // secureClient.setPrivateKeyName(client_key_name);
-  // secureClient.setPreSharedKey(pre_shared_key_hint_text,
+  secureContext.setCACertName(root_ca_name);
+  // secureContext.setClientCredentials(client_cert_name, client_key_name);
+  // secureContext.setPreSharedKey(pre_shared_key_hint_text,
   // pre_shared_key_text);
 #endif
 
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS) && \
     !defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
   // if we didn't actually load a certificate, don't use it
-  secureClient.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
+  secureContext.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
 #endif
 
   DBG("Connecting securely to", server_ssl);
