@@ -210,6 +210,10 @@ class TinyGsmSSL {
   /* =========================================== */
   /* =========================================== */
  public:
+  /*
+   * Mixin Constructors
+   */
+
   /**
    * @brief Create the SSL capability mixin.
    */
