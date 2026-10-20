@@ -1417,8 +1417,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     // The $0 command sets transparent-mode TLS profile 0 using the format
     // <CA certificate>;<client certificate>;<client key>. The TL command sets
     // the TLS protocol version used for subsequently opened sockets. In the
-    // XBee command set, TL = 0x4 enables TLS 1.2 or later, so ALL_SSL maps to
-    // 0x4 rather than meaning every legacy SSL/TLS protocol version.
+    // XBee command set, TL = 0x3 enables TLS 1.2, while TL = 0x4 enables TLS
+    // 1.3 or later. Only SSLVersion::TLS1_2 maps to 0x3; all other versions
+    // (SSL3_0, TLS1_0, TLS1_1, TLS1_3, and ALL_SSL) map to 0x4.
 
     // Retrieve the SSL context object for the given context ID.
     GsmSecureContext* sslContext  = getSSLContext(context_id);
@@ -1445,8 +1446,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     // set the SSL version
     // The SSL/TLS versions supported by the XBee depend on the specific module,
-    // but this library is only going to support setting TLS 1.2 (0x3) and 1.3
-    // (0x4, set as default)
+    // but this library maps as follows: SSLVersion::TLS1_2 (3) -> TL=0x3,
+    // and all other versions (SSL3_0, TLS1_0, TLS1_1, TLS1_3, ALL_SSL) -> TL=0x4.
     changesMadeSSL |= changeSettingIfNeeded(
         GF("TL"), sslVersion == SSLVersion::TLS1_2 ? 0x3 : 0x4);
 
