@@ -140,6 +140,7 @@ def build_custom_matrix(config: dict) -> list[dict]:
         "TINY_GSM_MODEM_SEQUANS_MONARCH",
         "TINY_GSM_MODEM_SIM800",
         "TINY_GSM_MODEM_SIM808",
+        "TINY_GSM_MODEM_ESP8266_NONOS",
     ]
     no_secure_context = [[modem] for modem in no_secure_context_list]
 
