@@ -110,8 +110,8 @@ struct TinyGsmESP8266TcpConfig
 /**
  * @brief SSL behavior and limits for the ESP8266.
  *
- * These modules don't have "SSL Contexts" per-say.  They support 2 each of CA
- * certificates and and client certificate/key pairs.  The certificates are
+ * These modules don't have "SSL Contexts" per se.  They support 2 each of CA
+ * certificates and client certificate/key pairs.  The certificates are
  * loaded and referenced by number.  The number of the CA certificate and the
  * client certificate/key pair does not have to match for a connection.
  *
@@ -147,8 +147,8 @@ class TinyGsmESP8266
   using ModemConfig = TinyGsmESP8266ModemConfig;
   using TcpConfig   = TinyGsmESP8266TcpConfig;
   using SslConfig   = TinyGsmESP8266SslConfig;
-  using GsmSecureContext =
-      TinyGsmSSL<TinyGsmESP8266, TinyGsmESP8266SslConfig>::gsmSecureContext;
+  class GsmSecureContextESP8266;
+  using GsmSecureContext = GsmSecureContextESP8266;
 
   /*
    * Inner Client
@@ -287,7 +287,8 @@ class TinyGsmESP8266
      * Secure context certificate assignment functions
      */
 
-    /// @copydoc GsmSecureContext::setCACertName(const char*)
+    /// @brief Set or clear the CA certificate name.
+    /// @param CAcertName The CA certificate file name.
     /// @warning The CA certificate name must be either "client_ca.0" or
     /// "client_ca.1".
     void setCACertName(const char* CAcertName) {
@@ -315,7 +316,8 @@ class TinyGsmESP8266
       // set the number for the CA certificate
       this->ca_number = certNumber;
     }
-    /// @copydoc GsmSecureContextESP8266::setCACertName(const char*)
+    /// @brief Set or clear the CA certificate name.
+    /// @param CAcertName The CA certificate file name.
     void setCACertName(const String& CAcertName) {
       setCACertName(CAcertName.c_str());
     }
@@ -827,7 +829,8 @@ class TinyGsmESP8266
           static_cast<const GsmClientSecureESP8266*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
       // Retrieve the SSL context object for the given context ID.
-      GsmSecureContext* sslContext = getSSLContext(sslCtxIndex);
+      ::GsmSecureContext<TinyGsmESP8266, TinyGsmESP8266SslConfig>* sslContext =
+          getSSLContext(sslCtxIndex);
       // check for a valid SSL context
       if (sslContext == nullptr) {
         DBG("### No SSL context is registered at index", sslCtxIndex);
