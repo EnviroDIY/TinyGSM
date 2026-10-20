@@ -36,13 +36,31 @@ You can also join our chat:
 
 - [TinyGSM](#tinygsm)
   - [Overview](#overview)
+    - [Arduino Client interface support](#arduino-client-interface-support)
   - [Supported modems](#supported-modems)
   - [Features](#features)
   - [Credits](#credits)
   - [Getting Started](#getting-started)
+    - [First Steps](#first-steps)
+    - [Writing your own code](#writing-your-own-code)
+    - [If you have any issues](#if-you-have-any-issues)
   - [How does it work?](#how-does-it-work)
   - [API Reference](#api-reference)
   - [Troubleshooting](#troubleshooting)
+    - [Ensure stable data \& power connection](#ensure-stable-data--power-connection)
+    - [Baud rates](#baud-rates)
+    - [Broken initial configuration](#broken-initial-configuration)
+    - [Failed connection or no data received](#failed-connection-or-no-data-received)
+    - [Diagnostics sketch](#diagnostics-sketch)
+    - [Web request formatting problems - "but it works with PostMan"](#web-request-formatting-problems---but-it-works-with-postman)
+    - [SoftwareSerial problems](#softwareserial-problems)
+    - [ESP32 Notes](#esp32-notes)
+      - [HardwareSerial](#hardwareserial)
+      - [HttpClient](#httpclient)
+    - [SAMD21](#samd21)
+    - [Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion](#goouuu-tech-iot-ga6-vs-ai-thinker-a6-confusion)
+    - [SIM800 and SSL](#sim800-and-ssl)
+    - [Which version of the SIM7000 code to use](#which-version-of-the-sim7000-code-to-use)
   - [License](#license)
 
 <!--! @endif -->
@@ -258,7 +276,7 @@ This may result in problems such as:
 - etc.
 
 To return module to **Factory Defaults**, use this sketch:
-  File -> Examples -> TinyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/extras/tools/FactoryReset/FactoryReset.ino)
+  Open [`extras/tools/FactoryReset/FactoryReset.ino`](https://github.com/vshymanskyy/TinyGSM/blob/master/extras/tools/FactoryReset/FactoryReset.ino) from the library folder.
 
 In some cases, you may need to set an initial APN to connect to the cellular network.
 Try using the `gprsConnect(APN)` function to set an initial APN if you are unable to register on the network.
@@ -277,7 +295,7 @@ When using MQTT, to keep a continuous connection you may need to reduce your kee
 ### Diagnostics sketch
 
 Use this sketch to help diagnose SIM card and GPRS connection issues:
-  File -> Examples -> TinyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/extras/tools/Diagnostics/Diagnostics.ino)
+  Open [`extras/tools/Diagnostics/Diagnostics.ino`](https://github.com/vshymanskyy/TinyGSM/blob/master/extras/tools/Diagnostics/Diagnostics.ino) from the library folder.
 
 If the diagnostics fail, uncomment this line to output some debugging comments from the library:
 
@@ -355,7 +373,7 @@ Try selecting **57600**, **38400**, or even lower - the one that works best for 
 In some cases **9600** is unstable, but using **38400** helps, etc.
 Be sure to set correct TX/RX pins in the sketch.
 Please note that not every Arduino pin can serve as TX or RX pin.
-**Read more about AVR Serial options and configuration [on Paul Stroffregen's site](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [the Arduino reference site](https://www.arduino.cc/en/Reference/SoftwareSerial).**
+**Read more about AVR Serial options and configuration [on Paul Stoffregen's site](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [the Arduino reference site](https://www.arduino.cc/en/Reference/SoftwareSerial).**
 
 ### ESP32 Notes
 
