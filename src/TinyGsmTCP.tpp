@@ -292,11 +292,10 @@ class TinyGsmTCP {
   size_t moveCharsFromStreamToFifo(uint8_t mux, int16_t expected_len) {
     if (!thisModem().sockets[mux] || expected_len <= 0) { return 0; }
 
-    uint32_t startMillis   = millis();
-    size_t   len           = static_cast<size_t>(expected_len);
-    size_t   len_read      = 0;
-    uint8_t  char_failures = 0;
-    uint8_t  buf[32];
+    size_t  len           = static_cast<size_t>(expected_len);
+    size_t  len_read      = 0;
+    uint8_t char_failures = 0;
+    uint8_t buf[32];
 
     constexpr size_t readCharLen    = HexEncoded ? 2 : 1;
     char             hanging_nibble = '\0';
@@ -399,6 +398,7 @@ class TinyGsmTCP {
       }
 
       // Wait for at least one complete character (or HEX pair).
+      uint32_t startMillis = millis();
       while (static_cast<size_t>(thisModem().stream.available()) < required &&
              (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
         TINY_GSM_YIELD();
