@@ -1249,8 +1249,10 @@ class TinyGsmSim7600
     if (ssl) {
       if (isValidMux(ret_mux)) {
         // Returns +CCHRECV: {mux},0 after the data
-        String await_response = "+CCHRECV: " + String(ret_mux) + ",0";
-        waitResponse(GFP(await_response.c_str()));
+        if (waitResponse(GF("+CCHRECV: ")) == 1) {
+          streamSkipUntil('\n');  // skip the mux and error code
+          waitResponse();         // final OK
+        }
         // we need to check how much is left after the read
         sockets[ret_mux]->sock_available = (uint16_t)modemGetAvailable(ret_mux);
       } else {
