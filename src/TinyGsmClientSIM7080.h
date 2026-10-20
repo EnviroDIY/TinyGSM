@@ -1039,15 +1039,17 @@ class TinyGsmSim7080
                             const char* clientKeyName) {
     // store the configuration in the SSL context object
     GsmSecureContext* sslContext = getSSLContext(context_id);
-    if (sslContext) {
-      sslContext->sslAuthMode = sslAuthMode;
-      strncpy(sslContext->CAcertName, CAcertName,
-              sizeof(sslContext->CAcertName) - 1);
-      strncpy(sslContext->clientCertName, clientCertName,
-              sizeof(sslContext->clientCertName) - 1);
-      strncpy(sslContext->clientKeyName, clientKeyName,
-              sizeof(sslContext->clientKeyName) - 1);
-    }
+    if (sslContext == nullptr) { return false; }
+    sslContext->sslAuthMode = sslAuthMode;
+    strncpy(sslContext->CAcertName, CAcertName ? CAcertName : "",
+            sizeof(sslContext->CAcertName) - 1);
+    sslContext->CAcertName[sizeof(sslContext->CAcertName) - 1] = '\0';
+    strncpy(sslContext->clientCertName, clientCertName ? clientCertName : "",
+            sizeof(sslContext->clientCertName) - 1);
+    sslContext->clientCertName[sizeof(sslContext->clientCertName) - 1] = '\0';
+    strncpy(sslContext->clientKeyName, clientKeyName ? clientKeyName : "",
+            sizeof(sslContext->clientKeyName) - 1);
+    sslContext->clientKeyName[sizeof(sslContext->clientKeyName) - 1] = '\0';
 
     return applySSLCertificates(mux, context_id);
   }
@@ -1127,10 +1129,10 @@ class TinyGsmSim7080
   bool applySSLPSK(uint8_t mux, uint8_t context_id, const char* pskTableName) {
     // store the configuration in the SSL context object
     GsmSecureContext* sslContext = getSSLContext(context_id);
-    if (sslContext) {
-      strncpy(sslContext->pskTableName, pskTableName,
-              sizeof(sslContext->pskTableName) - 1);
-    }
+    if (sslContext == nullptr) { return false; }
+    strncpy(sslContext->pskTableName, pskTableName ? pskTableName : "",
+            sizeof(sslContext->pskTableName) - 1);
+    sslContext->pskTableName[sizeof(sslContext->pskTableName) - 1] = '\0';
 
     return applySSLPSK(mux, context_id);
   }

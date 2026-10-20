@@ -92,7 +92,8 @@ struct TinyGsmBG96TcpConfig
           /*connectTimeoutS*/ 150> {};
 
 /**
- * @brief SSL behavior and limits for Quectel BG96 and BG95. *
+ * @brief SSL behavior and limits for Quectel BG96 and BG95.
+ *
  * The module supports 6 SSL contexts (0-5).
  * @ingroup quectel_bg96
  */
@@ -1090,16 +1091,18 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
                            const char* clientKeyName) {
     // store the configuration in the SSL context object
     GsmSecureContext* sslContext = getSSLContext(context_id);
-    if (sslContext) {
-      sslContext->sslAuthMode = sslAuthMode;
-      sslContext->sslVersion  = sslVersion;
-      strncpy(sslContext->CAcertName, CAcertName,
-              sizeof(sslContext->CAcertName) - 1);
-      strncpy(sslContext->clientCertName, clientCertName,
-              sizeof(sslContext->clientCertName) - 1);
-      strncpy(sslContext->clientKeyName, clientKeyName,
-              sizeof(sslContext->clientKeyName) - 1);
-    }
+    if (sslContext == nullptr) { return false; }
+    sslContext->sslAuthMode = sslAuthMode;
+    sslContext->sslVersion  = sslVersion;
+    strncpy(sslContext->CAcertName, CAcertName ? CAcertName : "",
+            sizeof(sslContext->CAcertName) - 1);
+    sslContext->CAcertName[sizeof(sslContext->CAcertName) - 1] = '\0';
+    strncpy(sslContext->clientCertName, clientCertName ? clientCertName : "",
+            sizeof(sslContext->clientCertName) - 1);
+    sslContext->clientCertName[sizeof(sslContext->clientCertName) - 1] = '\0';
+    strncpy(sslContext->clientKeyName, clientKeyName ? clientKeyName : "",
+            sizeof(sslContext->clientKeyName) - 1);
+    sslContext->clientKeyName[sizeof(sslContext->clientKeyName) - 1] = '\0';
 
     return configureSSLContext(context_id);
   }

@@ -729,16 +729,18 @@ class TinyGsmA7672X
                            const char* clientKeyName) {
     // store the configuration in the SSL context object
     GsmSecureContext* sslContext = getSSLContext(context_id);
-    if (sslContext) {
-      sslContext->sslAuthMode = sslAuthMode;
-      sslContext->sslVersion  = sslVersion;
-      strncpy(sslContext->CAcertName, CAcertName,
-              sizeof(sslContext->CAcertName) - 1);
-      strncpy(sslContext->clientCertName, clientCertName,
-              sizeof(sslContext->clientCertName) - 1);
-      strncpy(sslContext->clientKeyName, clientKeyName,
-              sizeof(sslContext->clientKeyName) - 1);
-    }
+    if (sslContext == nullptr) { return false; }
+    sslContext->sslAuthMode = sslAuthMode;
+    sslContext->sslVersion  = sslVersion;
+    strncpy(sslContext->CAcertName, CAcertName ? CAcertName : "",
+            sizeof(sslContext->CAcertName) - 1);
+    sslContext->CAcertName[sizeof(sslContext->CAcertName) - 1] = '\0';
+    strncpy(sslContext->clientCertName, clientCertName ? clientCertName : "",
+            sizeof(sslContext->clientCertName) - 1);
+    sslContext->clientCertName[sizeof(sslContext->clientCertName) - 1] = '\0';
+    strncpy(sslContext->clientKeyName, clientKeyName ? clientKeyName : "",
+            sizeof(sslContext->clientKeyName) - 1);
+    sslContext->clientKeyName[sizeof(sslContext->clientKeyName) - 1] = '\0';
 
     return configureSSLContext(context_id);
   }

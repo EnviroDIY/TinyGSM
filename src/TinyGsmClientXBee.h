@@ -155,8 +155,8 @@ constexpr char TinyGsmXBeeModemConfig::MODEM_MODEL[] __attribute__((weak));
 /**
  * @brief TCP behavior and limits for the Digi XBee and XBee3.
  *
- * Bee's do not support multiple sockets in transparent/command mode.  The much
- * more complicated API mode is needed.  When using API mode 4-10 sockets can be
+ * XBees do not support multiple sockets in transparent/command mode.  The much
+ * more complicated API mode is needed.  In API mode, 4-10 sockets can be
  * supported, depending on the specific module.
  * @ingroup digi_xbee
  */
@@ -1385,16 +1385,18 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     // store the configuration in the SSL context object
     GsmSecureContext* sslContext = getSSLContext(context_id);
-    if (sslContext) {
-      sslContext->sslAuthMode = sslAuthMode;
-      sslContext->sslVersion  = sslVersion;
-      strncpy(sslContext->CAcertName, CAcertName,
-              sizeof(sslContext->CAcertName) - 1);
-      strncpy(sslContext->clientCertName, clientCertName,
-              sizeof(sslContext->clientCertName) - 1);
-      strncpy(sslContext->clientKeyName, clientKeyName,
-              sizeof(sslContext->clientKeyName) - 1);
-    }
+    if (sslContext == nullptr) { return false; }
+    sslContext->sslAuthMode = sslAuthMode;
+    sslContext->sslVersion  = sslVersion;
+    strncpy(sslContext->CAcertName, CAcertName ? CAcertName : "",
+            sizeof(sslContext->CAcertName) - 1);
+    sslContext->CAcertName[sizeof(sslContext->CAcertName) - 1] = '\0';
+    strncpy(sslContext->clientCertName, clientCertName ? clientCertName : "",
+            sizeof(sslContext->clientCertName) - 1);
+    sslContext->clientCertName[sizeof(sslContext->clientCertName) - 1] = '\0';
+    strncpy(sslContext->clientKeyName, clientKeyName ? clientKeyName : "",
+            sizeof(sslContext->clientKeyName) - 1);
+    sslContext->clientKeyName[sizeof(sslContext->clientKeyName) - 1] = '\0';
 
     return configureSSLContext(context_id);
   }
@@ -1412,12 +1414,11 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     bool success = true;
 
-    // NOTE: The SSL context (<ssl_ctx_index>) is not the same as the
-    // connection identifier.  The SSL context is the grouping of SSL
-    // settings, the connection identifier is the mux/socket number.
-
-    // CSSLCFG commands reference the SSL context number; C**A**SSLCFG
-    // commands reference the connection number (aka, the mux).
+    // The $0 command sets transparent-mode TLS profile 0 using the format
+    // <CA certificate>;<client certificate>;<client key>. The TL command sets
+    // the TLS protocol version used for subsequently opened sockets. In the
+    // XBee command set, TL = 0x4 enables TLS 1.2 or later, so ALL_SSL maps to
+    // 0x4 rather than meaning every legacy SSL/TLS protocol version.
 
     // Retrieve the SSL context object for the given context ID.
     GsmSecureContext* sslContext  = getSSLContext(context_id);
