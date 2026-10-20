@@ -403,7 +403,7 @@ void loop() {
     DBG(GF("Sending a raw HTTP GET request as a single write command."));
 
     // make a buffer to contain the whole request
-    char request[strlen(resource) + strlen(server) + 45] = {
+    char request[sizeof(resource) + sizeof(server) + 45] = {
         '\0',
     };
     // concatenate the request
@@ -518,7 +518,7 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 )EOF";
 
   modem.loadCertificate(root_ca_name, isrgrootx1_certificate,
-                        strlen(isrgrootx1_certificate));
+                        sizeof(isrgrootx1_certificate) - 1);
   modem.convertCACertificate(root_ca_name);
   // modem.loadCertificate(client_cert_name, client_cert,
   //                       strlen(client_cert));
@@ -549,7 +549,7 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
     DBG("... failed");
   } else {
     // make a buffer to contain the whole request
-    char request[strlen(resource_ssl) + strlen(server_ssl) + 45] = {
+    char request[sizeof(resource_ssl) + sizeof(server_ssl) + 45] = {
         '\0',
     };
     // concatenate the request
