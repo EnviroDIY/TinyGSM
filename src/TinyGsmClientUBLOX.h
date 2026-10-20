@@ -106,8 +106,8 @@ struct TinyGsmUBLOXTcpConfig
  * any way.  The module will always use the default profile.
  * @ingroup ublox_cellular
  */
-struct TinyGsmSaraR5SslConfig : public TinyGsmSslConfigPreset<
-                                   /*contextCount*/ 5> {};
+struct TinyGsmUBLOXSslConfig : public TinyGsmSslConfigPreset<
+                                  /*contextCount*/ 5> {};
 #endif
 
 /// Class for the u-blox family of modems
