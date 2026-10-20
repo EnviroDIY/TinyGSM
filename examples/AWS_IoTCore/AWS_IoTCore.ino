@@ -190,6 +190,7 @@ uint32_t lastReconnectAttempt = 0;
 uint32_t lastStatusPublished  = 0;
 bool     setupSuccess         = false;
 bool     certificateSuccess   = false;
+bool     networkSuccess       = false;
 
 bool wakeModem() {
   // !!!!!!!!!!!
@@ -540,13 +541,6 @@ bool setupNetwork() {
   success &= modem.gprsConnect(apn, gprsUser, gprsPass);
 #endif
 
-#ifdef TINY_GSM_MODEM_HAS_NTP
-  // enable/force time sync with NTP server
-  // This is **REQUIRED** for validated SSL connections
-  DBG("Enabling time sync with NTP server");
-  modem.NTPServerSync("pool.ntp.org", -4);
-#endif
-
   return success;
 }
 
@@ -578,6 +572,17 @@ bool getInternetConnection() {
       return false;
     }
     if (modem.isGprsConnected()) { SerialMon.println("GPRS reconnected"); }
+  }
+#endif
+
+#ifdef TINY_GSM_MODEM_HAS_NTP
+  // enable/force time sync with NTP server
+  // This is **REQUIRED** for validated SSL connections
+  static bool timeSyncSuccess = false;
+  if (!timeSyncSuccess) {
+    DBG("Enabling time sync with NTP server");
+    timeSyncSuccess = modem.NTPServerSync("pool.ntp.org", -4);
+    if (!timeSyncSuccess) { return false; }
   }
 #endif
 
@@ -640,7 +645,8 @@ void setup() {
   SerialMon.println(" ...success");
 
   SerialMon.println("Setting up network...");
-  if (!setupNetwork()) {
+  networkSuccess = setupNetwork();
+  if (!networkSuccess) {
     SerialMon.println(" ...failed to set up network!");
     delay(15000L);
     return;
@@ -670,6 +676,17 @@ void loop() {
     certificateSuccess = setupCertificates();
     if (!certificateSuccess) {
       SerialMon.println(" ...failed to set up certificates!");
+      delay(15000L);
+      return;
+    }
+    SerialMon.println(" ...success");
+  }
+
+  if (!networkSuccess) {
+    SerialMon.println("Network setup failed, re-trying...");
+    networkSuccess = setupNetwork();
+    if (!networkSuccess) {
+      SerialMon.println(" ...failed to set up network!");
       delay(15000L);
       return;
     }

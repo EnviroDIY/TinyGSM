@@ -289,9 +289,9 @@ void loop() {
 #endif
 
   if (!mqtt.connected()) {
-    SerialMon.println("=== MQTT NOT CONNECTED ===");
     // Reconnect every 10 seconds
     if (millis() - lastReconnectAttempt > 10000L) {
+      SerialMon.println("=== MQTT NOT CONNECTED ===");
       lastReconnectAttempt = millis();
       mqttConnect();
     }

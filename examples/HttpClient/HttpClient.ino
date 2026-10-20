@@ -65,7 +65,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 // need enough space in the buffer for the entire response
 // else data will be lost (and the http library will fail).
 #if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 256
+#define TINY_GSM_RX_BUFFER 650
 #endif
 
 // See all AT commands, if wanted
