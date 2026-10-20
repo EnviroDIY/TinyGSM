@@ -645,7 +645,7 @@ void loop() {
   context_secure_default.isAttached();
   context_secure_default.getSSLContextIndex();
 
-  TinyGsmSecureContext context_secure(modem, (uint8_t)0);
+  TinyGsmSecureContext context_secure(modem, 0);
   TinyGsmSecureContext(modem, SSLAuthMode::MUTUAL_AUTHENTICATION);
   TinyGsmSecureContext(modem, SSLAuthMode::MUTUAL_AUTHENTICATION,
                        SSLVersion::TLS1_2);
@@ -661,7 +661,7 @@ void loop() {
   TinyGsmSecureContext(modem, 0, "pskIdent", "psKey", SSLVersion::TLS1_2);
   TinyGsmSecureContext(modem, "pskTableName", SSLVersion::TLS1_2);
   TinyGsmSecureContext(modem, "pskTableName");
-  TinyGsmSecureContext(modem, (uint8_t)0, "pskTableName", SSLVersion::TLS1_2);
+  TinyGsmSecureContext(modem, 0, "pskTableName", SSLVersion::TLS1_2);
 #endif
 
   client_secure.init(&modem);
