@@ -125,8 +125,8 @@ TinyGsm        modem(debugger);
 TinyGsm modem(SerialAT);
 #endif
 
-#if defined(TINY_GSM_MODEM_HAS_SSL)
-#define USE_SSL
+#if defined(USE_SSL) && !defined(TINY_GSM_MODEM_HAS_SSL)
+#undef USE_SSL
 #endif
 
 #ifdef USE_SSL
@@ -175,8 +175,8 @@ void loop() {
     SerialMon.println(F(" Is your serial speed (baud rate) correct?"));
     SerialMon.println(F(" Is your modem powered on?"));
     SerialMon.println(F(" Do you use a good, stable power source?"));
-    SerialMon.println(F(" Try using File -> Examples -> TinyGSM -> tools -> "
-                        "AT_Debug to find correct configuration"));
+    SerialMon.println(F(" Try the extras/tools/AT_Debug sketch in the TinyGSM "
+                        "library folder to find correct configuration"));
     SerialMon.println(F("************************"));
     delay(10000);
     return;

@@ -124,8 +124,8 @@ TinyGsm        modem(debugger);
 TinyGsm modem(SerialAT);
 #endif
 
-#if defined(TINY_GSM_MODEM_HAS_SSL)
-#define USE_SSL
+#if defined(USE_SSL) && !defined(TINY_GSM_MODEM_HAS_SSL)
+#undef USE_SSL
 #endif
 
 #ifdef USE_SSL

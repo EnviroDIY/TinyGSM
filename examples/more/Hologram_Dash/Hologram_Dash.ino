@@ -42,6 +42,10 @@ TinyGsm        mdm(debugger);
 TinyGsm mdm(SerialAT);
 #endif
 
+#if defined(USE_SSL) && !defined(TINY_GSM_MODEM_HAS_SSL)
+#undef USE_SSL
+#endif
+
 #ifdef USE_SSL
 TinyGsmClientSecure client(mdm);
 // Server details to test TCP over SSL
