@@ -273,17 +273,27 @@ void setup() {
 
   SerialMon.println(GF("Initializing modem..."));
   if (!modem.init()) {
-    SerialMon.println(GF("Failed to restart modem, delaying 10s and retrying"));
+    SerialMon.println(
+        GF("Failed to initialize modem; reset the board to retry"));
     delay(10000L);
     return;
   }
 
   printModemInfo();
 
-  connectNetwork();
+  if (!connectNetwork()) {
+    SerialMon.println(
+        GF("Failed to connect to network; aborting firmware update"));
+    return;
+  }
   checkNetworkTime();
 
-  updateFirmware();
+  bool firmware_update_success = updateFirmware();
+  if (firmware_update_success) {
+    SerialMon.println(GF("Firmware update succeeded"));
+  } else {
+    SerialMon.println(GF("Firmware update failed"));
+  }
 
   printModemInfo();
 
