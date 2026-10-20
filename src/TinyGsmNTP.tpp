@@ -50,7 +50,7 @@ class TinyGsmNTP {
    * returns a boolean indicating success or failure.
    *
    * @param server The NTP server to use
-   * @param TimeZone The timezone offset
+   * @param TimeZone The timezone offset from UTC, in hours
    *
    * @return True if the synchronization was successful, false otherwise.
    */
@@ -138,7 +138,7 @@ class TinyGsmNTP {
     // extended four time zones X, so that when the time zone of the input
     // integers are used, without the need for decimal. Time zone in front of
     // the West if it is a negative number indicates the time zone.
-    thisModem().sendAT(GF("+CNTP=\""), server, GF("\","), TimeZone);
+    thisModem().sendAT(GF("+CNTP=\""), server, GF("\","), TimeZone * 4);
     if (thisModem().waitResponse(10000L) != 1) { return false; }
 
     // TODO: Should we have a "quick fail" here? We don't want to wait for the
