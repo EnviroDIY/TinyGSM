@@ -34,6 +34,7 @@ enum class Sim70xxRegStatus {
  * @brief Parent class for the SIMCom SIM70xx family of modems
  *
  * @tparam SIM70xxType The derived class type
+ * @tparam SIM70xxModemConfig The modem configuration type
  *
  * @ingroup simcom_sim70xx
  */
