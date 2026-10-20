@@ -1688,13 +1688,13 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     // For the pre XBee3 Bees, we need to look up the IP address manually
 
-    // If we don't have a good IP for the host or if our last lookup was more
-    // than 12 hours ago, or if the configuration with the FQBN failed, we do a
-    // DNS search
-    bool lookupNeeded = (!fqdnSupported &&
-                         (savedIP == NULL_IP || lastHostLookupMillis == 0 ||
-                          millis() - lastHostLookupMillis > 43200000LL)) ||
-        !success;
+    // Use an IP for pre-XBee3 modules or when FQDN configuration failed.
+    bool useIP = !fqdnSupported || !success;
+    // Only repeat the DNS lookup if there is no cached IP or it is more than 12
+    // hours old.
+    bool lookupNeeded = useIP &&
+        (savedIP == NULL_IP || lastHostLookupMillis == 0 ||
+         millis() - lastHostLookupMillis > 43200000LL);
     if (lookupNeeded) {
       // This will return NULL_IP if lookup fails
       savedIP = lookupHostIP(host, timeout_s);
@@ -1703,7 +1703,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     char hostFromIP[16] = {};
 
     // If we now have a valid IP address, use it to connect
-    if (lookupNeeded && savedIP != NULL_IP) {
+    if (useIP && savedIP != NULL_IP) {
       // Call configureConnection to set up the connection parameters with the
       // found IP address and port
       TinyGsmIptoBuffer(savedIP, hostFromIP);
