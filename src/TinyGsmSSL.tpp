@@ -602,6 +602,14 @@ class GsmSecureContext {
   }
 
   /**
+   * @brief Create and attach an SSL context using an integer context index.
+   * @param modem The modem that owns the hardware SSL context.
+   * @param contextIndex The zero-based hardware SSL context index.
+   */
+  GsmSecureContext(modemType& modem, int contextIndex)
+      : GsmSecureContext(modem, static_cast<uint8_t>(contextIndex)) {}
+
+  /**
    * @brief Create an SSL context with certificate authentication settings.
    * @param modem The modem that owns the SSL contexts
    * @param sslAuthMode The SSL authentication mode
@@ -738,6 +746,19 @@ class GsmSecureContext {
     this->setSSLVersion(sslVersion);
     this->setPSKTableName(pskTableName);
   }
+
+  /**
+   * @brief Create an SSL context with a PSK table and integer context index.
+   * @param modem The modem that owns the SSL contexts
+   * @param contextIndex The SSL context index
+   * @param pskTableName The name of the PSK table file
+   * @param sslVersion The SSL/TLS version (default: TLS1_2)
+   */
+  explicit GsmSecureContext(modemType& modem, int contextIndex,
+                            const char* pskTableName,
+                            SSLVersion  sslVersion = SSLVersion::TLS1_2)
+      : GsmSecureContext(modem, static_cast<uint8_t>(contextIndex),
+                         pskTableName, sslVersion) {}
 
   /**
    * @brief Unregister this context from its modem.
