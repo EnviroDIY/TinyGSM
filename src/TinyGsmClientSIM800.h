@@ -32,8 +32,8 @@
 #include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
-// management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
-// so as not to waste space.
+// management yet. Define TINY_GSM_MODEM_HAS_SSL here and do no include the SSL
+// module.
 // See the example examples/more/SIM800_SslSetCert/SIM800_SslSetCert.ino for an
 // example of how to manage the certificates
 #if !defined(TINY_GSM_MODEM_SIM900)
@@ -99,6 +99,17 @@ struct TinyGsmSim800TcpConfig
           /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
           /*muxMode*/ TinyGsmTcpMuxMode::Static,
           /*muxCount*/ 8> {};
+
+#if 0
+/**
+ * @brief SSL behavior and limits for SIMCom SIM800 variants.
+ * This library does not support selecting or modifying the SSL contexts in any
+ * way.  The module will always use the default context.
+ * @ingroup simcom_sim800
+ */
+struct TinyGsmSim800SslConfig : public TinyGsmSslConfigPreset<
+                                   /*contextCount*/ ?> {};
+#endif
 
 /// Class for the SIMCOM SIM800 and SIM900 (with some limitations)
 /// @ingroup simcom_sim800
@@ -239,7 +250,7 @@ class TinyGsmSim800
     using TcpConfig = TinyGsmSim800TcpConfig;
 
     /*
-     * Client constructors and initialization
+     * Secure client constructors and initialization
      */
     /**
      * @brief Create a new secured TCP (SSL) client.
@@ -417,11 +428,16 @@ class TinyGsmSim800
   // addition to adding the functions here):
   //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
   //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  //  - Add `public TinyGsmSSL<TinyGsmSim800>,` to the constructor's initializer
-  //  list
-  //  - Add `friend class TinyGsmSSL<TinyGsmSim800>;` to the friend list
+  //  - Remove the #if 0 / #endif statements bracketing the SSL configuration
+  //  structure.
+  //  - Add `public TinyGsmSSL<TinyGsmSim800, TinyGsmSim800SslConfig>,` to the
+  //  constructor's initializer list
+  //  - Add `friend class TinyGsmSSL<TinyGsmSim800, TinyGsmSim800SslConfig>;` to
+  //  the friend list
   //  - Make the secure client inherit from the secure client class in the SSL
   //  template.
+  //  - Create an inner secure context class inheriting from
+  //  TinyGsmSSLContext<TinyGsmSim800, TinyGsmSim800SslConfig>
 
   /*
    * Wifi functions

@@ -261,10 +261,14 @@ void loop() {
 
 #if defined(TINY_GSM_MODEM_HAS_SSL) && defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
   modem.loadCertificate("certificateName", "certificate_content", 20);
+  modem.loadCertificate(String("certificateName"),
+                        String("certificate_content"), 20);
 #if !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600)
   modem.printCertificate("certificateName", Serial);
+  modem.printCertificate(String("certificateName"), Serial);
 #endif
   modem.deleteCertificate("certificateName");
+  modem.deleteCertificate(String("certificateName"));
 
   modem.convertCertificate(CertificateType::CA_CERTIFICATE, "filename");
   modem.convertCertificate(CertificateType::CA_CERTIFICATE, String("filename"));
@@ -300,38 +304,35 @@ void loop() {
   modem.configureSSLContext(1, SSLAuthMode::CA_VALIDATION, SSLVersion::TLS1_2,
                             "ca_cert_name", "client_cert_name",
                             "client_key_name");
+  modem.configureSSLContext(1);
 #endif
 
-#if defined(TINY_GSM_MODEM_SIM7000SSL)
-  modem.configureSSLContext(1, "my_host_sni", SSLAuthMode::CA_VALIDATION,
-                            SSLVersion::TLS1_2);
-  modem.applySSLCertificates(0, SSLAuthMode::CA_VALIDATION, "ca_cert_name",
+#if defined(TINY_GSM_MODEM_SIM7000SSL) || defined(TINY_GSM_MODEM_SIM7080)
+  modem.configureSSLContext(1, SSLAuthMode::CA_VALIDATION, SSLVersion::TLS1_2);
+  modem.configureSSLContext(1);
+  modem.configureSSLSNI(0, "sni_hostname");
+  modem.applySSLCertificates(0, 1, SSLAuthMode::CA_VALIDATION, "ca_cert_name",
                              "client_cert_name", "client_key_name");
-  modem.applySSLPSK(0, "psk_table_name");
+  modem.applySSLCertificates(0, 1);
+  modem.applySSLPSK(0, 1, "psk_table_name");
+  modem.applySSLPSK(0, 1);
   modem.linkSSLContext(0, 1);
 #endif
 
-#if defined(TINY_GSM_MODEM_SIM7080)
-  modem.configureSSLContext(1, "my_host_sni", SSLAuthMode::CA_VALIDATION,
-                            SSLVersion::TLS1_2);
-  modem.applySSLCertificates(0, SSLAuthMode::CA_VALIDATION, "ca_cert_name",
-                             "client_cert_name", "client_key_name");
-  modem.applySSLPSK(0, "psk_table_name");
-  modem.linkSSLContext(0, 1);
-#endif
-
-#if defined(TINY_GSM_MODEM_A7672X)
+#if defined(TINY_GSM_MODEM_A7672X) || defined(TINY_GSM_MODEM_SIM7600)
   modem.configureSSLContext(1, SSLAuthMode::CA_VALIDATION, SSLVersion::TLS1_2,
                             "ca_cert_name", "client_cert_name",
                             "client_key_name");
+  modem.configureSSLContext(1);
   modem.linkSSLContext(0, 1);
 #endif
 
-#if defined(TINY_GSM_MODEM_SIM7600)
-  modem.configureSSLContext(1, SSLAuthMode::CA_VALIDATION, SSLVersion::TLS1_2,
+#if defined(TINY_GSM_MODEM_XBEE)
+  modem.configureSSLContext(0, SSLAuthMode::CA_VALIDATION, SSLVersion::TLS1_2,
                             "ca_cert_name", "client_cert_name",
                             "client_key_name");
-  modem.linkSSLContext(0, 1);
+  modem.configureSSLContext(0);
+  modem.linkSSLContext(0, 0);
 #endif
 
   // ========================================================================
@@ -630,28 +631,37 @@ void loop() {
   // See examples/CapabilityQuery for a full demonstration.
 
 #if defined(TINY_GSM_MODEM_HAS_SSL)
+  TinyGsmClientSecure client_secure_default;
   TinyGsmClientSecure client_secure(modem);
-  TinyGsmClientSecure client_secure2(modem);
-  TinyGsmClientSecure client_secure3(modem, (uint8_t)0);
+  TinyGsmClientSecure client_secure2(modem, (uint8_t)0);
 
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
-  TinyGsmClientSecure client_secure4(modem, 1);
-  TinyGsmClientSecure(modem, SSLAuthMode::MUTUAL_AUTHENTICATION);
-  TinyGsmClientSecure(modem, SSLAuthMode::MUTUAL_AUTHENTICATION,
-                      SSLVersion::TLS1_2);
-  TinyGsmClientSecure(modem, SSLAuthMode::MUTUAL_AUTHENTICATION,
-                      SSLVersion::TLS1_2, "CAcertName");
-  TinyGsmClientSecure(modem, SSLAuthMode::MUTUAL_AUTHENTICATION,
-                      SSLVersion::TLS1_2, "CAcertName", "clientCertName");
-  TinyGsmClientSecure(modem, 0, SSLAuthMode::MUTUAL_AUTHENTICATION,
-                      SSLVersion::TLS1_2, "CAcertName", "clientCertName",
-                      "clientKeyName");
-  TinyGsmClientSecure(modem, "pskIdent", "psKey");
-  TinyGsmClientSecure(modem, "pskIdent", "psKey", SSLVersion::TLS1_2);
-  TinyGsmClientSecure(modem, 0, "pskIdent", "psKey", SSLVersion::TLS1_2);
-  TinyGsmClientSecure(modem, "pskTableName", SSLVersion::TLS1_2);
-  TinyGsmClientSecure(modem, "pskTableName");
-  TinyGsmClientSecure(modem, (uint8_t)0, "pskTableName", SSLVersion::TLS1_2);
+  TinyGsmClientSecure client_secure3(modem, (uint8_t)0, (uint8_t)0);
+
+  TinyGsmSecureContext context_secure_default;
+  context_secure_default.isAttached();
+  context_secure_default.getSSLContextIndex();
+  context_secure_default.init(&modem, (uint8_t)1);
+  context_secure_default.isAttached();
+  context_secure_default.getSSLContextIndex();
+
+  TinyGsmSecureContext context_secure(modem, 0);
+  TinyGsmSecureContext(modem, SSLAuthMode::MUTUAL_AUTHENTICATION);
+  TinyGsmSecureContext(modem, SSLAuthMode::MUTUAL_AUTHENTICATION,
+                       SSLVersion::TLS1_2);
+  TinyGsmSecureContext(modem, SSLAuthMode::MUTUAL_AUTHENTICATION,
+                       SSLVersion::TLS1_2, "CAcertName");
+  TinyGsmSecureContext(modem, SSLAuthMode::MUTUAL_AUTHENTICATION,
+                       SSLVersion::TLS1_2, "CAcertName", "clientCertName");
+  TinyGsmSecureContext(modem, 0, SSLAuthMode::MUTUAL_AUTHENTICATION,
+                       SSLVersion::TLS1_2, "CAcertName", "clientCertName",
+                       "clientKeyName");
+  TinyGsmSecureContext(modem, "pskIdent", "psKey");
+  TinyGsmSecureContext(modem, "pskIdent", "psKey", SSLVersion::TLS1_2);
+  TinyGsmSecureContext(modem, 0, "pskIdent", "psKey", SSLVersion::TLS1_2);
+  TinyGsmSecureContext(modem, "pskTableName", SSLVersion::TLS1_2);
+  TinyGsmSecureContext(modem, "pskTableName");
+  TinyGsmSecureContext(modem, 0, "pskTableName", SSLVersion::TLS1_2);
 #endif
 
   client_secure.init(&modem);
@@ -706,20 +716,21 @@ void loop() {
   client_secure.getConnectionID();
 
   // ========================================================================
-  // TinyGsmClientSecure - Client SSL configuration functions
+  // TinyGsmClientSecure - Secure client configuration
   // ========================================================================
 
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
-  client_secure.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
-  client_secure.setSSLAuthMode(SSLAuthMode::MUTUAL_AUTHENTICATION);
+  client_secure.setSSLContextIndex((uint8_t)0);
+  context_secure.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
+  context_secure.setSSLAuthMode(SSLAuthMode::MUTUAL_AUTHENTICATION);
 #if defined(TINY_GSM_MODEM_XBEE) || defined(TINY_GSM_MODEM_ESP32) ||      \
     defined(TINY_GSM_MODEM_ESP8266) || defined(TINY_GSM_MODEM_A7672X) ||  \
     defined(TINY_GSM_MODEM_BG96) || defined(TINY_GSM_MODEM_SIM7000SSL) || \
     defined(TINY_GSM_MODEM_SIM7080) || defined(TINY_GSM_MODEM_SIM7600)
-  client_secure.setSSLVersion(SSLVersion::TLS1_2);
+  context_secure.setSSLVersion(SSLVersion::TLS1_2);
 #endif
 #if defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
-  client_secure.setStrictSSL(true);
+  context_secure.setStrictSSL(true);
 #endif
 #endif
 
@@ -728,24 +739,21 @@ void loop() {
   // ========================================================================
 
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
-  client_secure.setCACertName("certificateName");
-  client_secure.setCACertName(String("certificateName"));
-  client_secure.setClientCertName("certificateName");
-  client_secure.setClientCertName(String("certificateName"));
-  client_secure.setPrivateKeyName("certificateName");
-  client_secure.setPrivateKeyName(String("certificateName"));
+  context_secure.setCACertName("certificateName");
+  context_secure.setCACertName(String("certificateName"));
+  context_secure.setClientCredentials("certificateName", "keyName");
+  context_secure.setClientCredentials(String("certificateName"),
+                                      String("keyName"));
 #endif
 
 #if defined(TINY_GSM_MODEM_ESP8266)
-  client_secure.setCACertificateNumber(1);
-  client_secure.setClientCertificateNumber(1);
-  client_secure.setPrivateKeyNumber(1);
+  context_secure.setCACertificateNumber(1);
+  context_secure.setClientCredentialNumber(0);
 #endif
 
 #if defined(TINY_GSM_MODEM_ESP32)
-  client_secure.setCACertificateNumber(1);
-  client_secure.setClientCertificateNumber(1);
-  client_secure.setPrivateKeyNumber(1);
+  context_secure.setCACertificateNumber(1);
+  context_secure.setClientCredentialNumber(0);
 #endif
 
   // ========================================================================
@@ -753,9 +761,10 @@ void loop() {
   // ========================================================================
 
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
-  client_secure.setPreSharedKey("pskIdent", "psKey");
-  client_secure.setPreSharedKey(String("pskIdent"), String("psKey"));
-  client_secure.setPSKTableName("pskTableName");
+  context_secure.setPreSharedKey("pskIdent", "psKey");
+  context_secure.setPreSharedKey(String("pskIdent"), String("psKey"));
+  context_secure.setPSKTableName("pskTableName");
+  context_secure.setPSKTableName(String("pskTableName"));
 #endif
 
 #endif  // TINY_GSM_MODEM_HAS_SSL

@@ -17,7 +17,7 @@
  *   - 7
  * - SSL sockets:
  *   - 4
- * - SSL contexts:
+ * - SSL contexts (security profiles):
  *   - 5
  * - Socket Buffering:
  *   - The modem has an internal buffer for incoming data.
@@ -36,8 +36,8 @@
 #include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
-// management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
-// so as not to waste space.
+// management yet. Define TINY_GSM_MODEM_HAS_SSL here and do no include the SSL
+// module.
 #ifndef TINY_GSM_MODEM_HAS_SSL
 /// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
@@ -82,9 +82,6 @@ constexpr char TinyGsmSaraR4ModemConfig::MODEM_MODEL[] __attribute__((weak));
  *
  * Per the manual, 7 standard sockets or 4 SSL sockets can be managed.
  *
- * Also supports 5 SSL contexts (0-4), but this library hard-codes to 0.
- * The SSL context is collection of SSL settings, not the connection identifier.
- *
  * @todo Handle the different number of sockets for TCP and SSL in the code.
  *
  * @warning You cannot control the socket mux number on this module! The module
@@ -102,6 +99,18 @@ struct TinyGsmSaraR4TcpConfig
           /*sendMaxSize*/ 1024,
           /*connectTimeoutS*/ 120,
           /*stopTimeoutS*/ 135> {};
+
+#if 0
+/**
+ * @brief SSL behavior and limits for the u-blox SARA-R4.
+ * The module supports 5 SSL contexts (called security profiles, numbered 0-4).
+ * This library does not support selecting or modifying the security profiles in
+ * any way.  The module will always use the default profile.
+ * @ingroup ublox_sara_r4
+ */
+struct TinyGsmSaraR4SslConfig : public TinyGsmSslConfigPreset<
+                                   /*contextCount*/ 5> {};
+#endif
 
 /// Class for the u-blox SARA-R4
 /// @ingroup ublox_sara_r4
@@ -298,7 +307,7 @@ class TinyGsmSaraR4
     using TcpConfig = TinyGsmSaraR4TcpConfig;
 
     /*
-     * Client constructors and initialization
+     * Secure client constructors and initialization
      */
     /**
      * @brief Create a new secured TCP (SSL) client.
@@ -489,11 +498,16 @@ class TinyGsmSaraR4
   // addition to adding the functions here):
   //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
   //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  //  - Add `public TinyGsmSSL<TinyGsmSaraR4>,` to the constructor's initializer
-  //  list
-  //  - Add `friend class TinyGsmSSL<TinyGsmSaraR4>;` to the friend list
+  //  - Remove the #if 0 / #endif statements bracketing the SSL configuration
+  //  structure.
+  //  - Add `public TinyGsmSSL<TinyGsmSaraR4, TinyGsmSaraR4SslConfig>,` to the
+  //  constructor's initializer list
+  //  - Add `friend class TinyGsmSSL<TinyGsmSaraR4, TinyGsmSaraR4SslConfig>;` to
+  //  the friend list
   //  - Make the secure client inherit from the secure client class in the SSL
   //  template.
+  //  - Create an inner secure context class inheriting from
+  //  TinyGsmSSLContext<TinyGsmSaraR4, TinyGsmSaraR4SslConfig>
 
   /*
    * Wifi functions
@@ -829,6 +843,7 @@ class TinyGsmSaraR4
       // AT+USOSEC=<socket>,<ssl_tls_status>[,<usecmng_profile_id>]
       // Must be issued before the +USOCO command
       // support depends on firmware version
+      // If no profile is set a default USECMNG profile is used
       sendAT(GF("+USOSEC="), *dynamicMux, ",1" /*, ',', sslCtxIndex*/);
       if (waitResponse() != 1) { return false; }
     }

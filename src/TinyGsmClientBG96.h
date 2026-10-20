@@ -77,11 +77,7 @@ constexpr char TinyGsmBG96ModemConfig::MODEM_MODEL[] __attribute__((weak));
 /**
  * @brief TCP behavior and limits for Quectel BG96 and BG95.
  *
- * The BG95/BG96 supports 12 sockets (0-11); any of them can be SSL
- *
- * The BG95/BG96 also supports 6 SSL contexts (0-5)
- * The SSL context is a collection of SSL settings, not the connection
- * identifier. This library always uses SSL context 0.
+ * The BG95/BG96 supports 12 sockets (0-11); any of them can be SSL.
  *
  * When sending  data QISEND and QSSLSEND both accept up to 1460 bytes of input.
  *
@@ -95,12 +91,21 @@ struct TinyGsmBG96TcpConfig
           /*sendMaxSize*/ 1460,
           /*connectTimeoutS*/ 150> {};
 
+/**
+ * @brief SSL behavior and limits for Quectel BG96 and BG95.
+ *
+ * The module supports 6 SSL contexts (0-5).
+ * @ingroup quectel_bg96
+ */
+struct TinyGsmBG96SslConfig : public TinyGsmSslConfigPreset<
+                                  /*contextCount*/ 6> {};
+
 /// Class for the Quectel BG96 and BG95
 /// @ingroup quectel_bg96
 class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
                     public TinyGsmGPRS<TinyGsmBG96>,
                     public TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>,
-                    public TinyGsmSSL<TinyGsmBG96>,
+                    public TinyGsmSSL<TinyGsmBG96, TinyGsmBG96SslConfig>,
                     public TinyGsmCalling<TinyGsmBG96>,
                     public TinyGsmSMS<TinyGsmBG96>,
                     public TinyGsmGPS<TinyGsmBG96>,
@@ -112,7 +117,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   friend class TinyGsmGPRS<TinyGsmBG96>;
   friend class TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>;
   friend class GsmClient<TinyGsmBG96, TinyGsmBG96TcpConfig>;
-  friend class TinyGsmSSL<TinyGsmBG96>;
+  friend class TinyGsmSSL<TinyGsmBG96, TinyGsmBG96SslConfig>;
   friend class TinyGsmCalling<TinyGsmBG96>;
   friend class TinyGsmSMS<TinyGsmBG96>;
   friend class TinyGsmGPS<TinyGsmBG96>;
@@ -124,6 +129,9 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
  public:
   using ModemConfig = TinyGsmBG96ModemConfig;
   using TcpConfig   = TinyGsmBG96TcpConfig;
+  using SslConfig   = TinyGsmBG96SslConfig;
+  using GsmSecureContext =
+      TinyGsmSSL<TinyGsmBG96, TinyGsmBG96SslConfig>::gsmSecureContext;
 
   /*
    * Inner Client
@@ -228,19 +236,15 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
  public:
   /// Inner secure client
   /// @ingroup quectel_bg96
-  class GsmClientSecureBG96 : public GsmClientBG96, public GsmSecureClient {
+  class GsmClientSecureBG96
+      : public GsmSecureClient<GsmClientBG96, TinyGsmBG96> {
     friend class TinyGsmBG96;
 
    public:
     using GsmClientBG96::connect;
     using GsmClientBG96::stop;
+    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmBG96TcpConfig;
-
-    /*
-     * Client constructors and initialization
-     */
-
-    TINY_GSM_SECURE_CLIENT_CTORS(BG96)
 
     /*
      * Arduino Client interface
@@ -254,20 +258,28 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
-      if (!sslCtxConfigured) {
-        if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
-          DBG("### The BG96 does not support SSL using pre-shared keys.");
-          return 0;
-        } else {
-          sslCtxConfigured = at->configureSSLContext(
-              sslCtxIndex, sslAuthMode, sslVersion, CAcertName, clientCertName,
-              clientKeyName);
-          if (!sslCtxConfigured) {
-            DBG("### Failed to configure the SSL context!");
-            return 0;
-          }
-        }
+      GsmSecureContext* sslContext = at->getSSLContext(sslCtxIndex);
+      // check for a valid SSL context
+      if (sslContext == nullptr) {
+        DBG("### No SSL context is registered at index", sslCtxIndex);
+        return 0;
       }
+      // check that the authentication mode is supported
+      if (sslContext->sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+        DBG("### The BG96 does not support SSL using pre-shared keys.");
+        return 0;
+      }
+      // check that the context has the required credentials
+      if (!at->validateSSLContextCredentials(sslContext)) {
+        DBG("### The SSL context is missing required credentials!");
+        return 0;
+      }
+      // configure the context
+      if (!at->configureSSLContext(sslCtxIndex)) {
+        DBG("### Failed to configure the SSL context!");
+        return 0;
+      }
+      // make the connection
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
@@ -340,6 +352,24 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     // NOTE: We do NOT need to re-write the peek() function for the secure
     // client, because the peek() function isn't different for buffers that can
     // and can't have the size checked - only for those with no buffer at all.
+  };
+
+  /*
+   * Inner Secure Context
+   */
+ public:
+  /// Inner secure context
+  /// @ingroup quectel_bg96
+  class GsmSecureContextBG96
+      : public ::GsmSecureContext<TinyGsmBG96, TinyGsmBG96SslConfig> {
+    friend class TinyGsmBG96;
+
+   public:
+    using ::GsmSecureContext<TinyGsmBG96,
+                             TinyGsmBG96SslConfig>::GsmSecureContext;
+
+    /// Unregister this context from its modem.
+    ~GsmSecureContextBG96() {}
   };
 
   /*
@@ -1059,13 +1089,54 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
                            SSLVersion sslVersion, const char* CAcertName,
                            const char* clientCertName,
                            const char* clientKeyName) {
+    // store the configuration in the SSL context object
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    if (sslContext == nullptr) { return false; }
+    sslContext->sslAuthMode = sslAuthMode;
+    sslContext->sslVersion  = sslVersion;
+    strncpy(sslContext->CAcertName, CAcertName ? CAcertName : "",
+            sizeof(sslContext->CAcertName) - 1);
+    sslContext->CAcertName[sizeof(sslContext->CAcertName) - 1] = '\0';
+    strncpy(sslContext->clientCertName, clientCertName ? clientCertName : "",
+            sizeof(sslContext->clientCertName) - 1);
+    sslContext->clientCertName[sizeof(sslContext->clientCertName) - 1] = '\0';
+    strncpy(sslContext->clientKeyName, clientKeyName ? clientKeyName : "",
+            sizeof(sslContext->clientKeyName) - 1);
+    sslContext->clientKeyName[sizeof(sslContext->clientKeyName) - 1] = '\0';
+
+    return configureSSLContext(context_id);
+  }
+
+  /**
+   * @brief Configure the SSL context for the modem.
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool configureSSLContext(uint8_t context_id) {
     bool success = true;
 
     // NOTE: The SSL context (<sslctxID>) is not the same as the connection
     // identifier.  The SSL context is the grouping of SSL settings, the
     // connection identifier is the mux/socket number.
-    // For this, we will *always* configure SSL context 0, just as we always
-    // configured PDP context 1.
+
+    // Retrieve the SSL context object for the given context ID.
+    GsmSecureContext* sslContext  = getSSLContext(context_id);
+    SSLAuthMode       sslAuthMode = sslContext ? sslContext->sslAuthMode
+                                               : SSLAuthMode::NO_VALIDATION;
+    SSLVersion        sslVersion  = sslContext ? sslContext->sslVersion
+                                               : SSLVersion::ALL_SSL;
+    const char* CAcertName     = sslContext ? sslContext->CAcertName : nullptr;
+    const char* clientCertName = sslContext ? sslContext->clientCertName
+                                            : nullptr;
+    const char* clientKeyName  = sslContext ? sslContext->clientKeyName
+                                            : nullptr;
+
+    DBG("### SSL context index:", context_id);
+    DBG("### SSL auth mode:", (int)sslAuthMode);
+    DBG("### SSL version:", (int)sslVersion);
+    DBG("### CA cert name:", CAcertName);
+    DBG("### Client cert name:", clientCertName);
+    DBG("### Client key name:", clientKeyName);
 
     // apply the correct certificates to the connection
     if (CAcertName != nullptr &&
@@ -1190,10 +1261,10 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     bool     ssl        = sockets[mux]->is_secure;
 
     if (ssl) {
-      // If we have a secure socket, use a static cast to get the authentication
-      // mode and certificate names. This isn't really "safe" but since we've
-      // already checked that the socket is a secure one, we're pretty sure of
-      // the type and it should work.
+      // If we have a secure socket, use a static cast to get the context index.
+      // This isn't really "safe" but since we've already checked that the
+      // socket is a secure one, we're pretty sure of the type and it should
+      // work.
       const GsmClientSecureBG96* thisClient =
           static_cast<const GsmClientSecureBG96*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;

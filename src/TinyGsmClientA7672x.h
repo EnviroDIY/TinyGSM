@@ -98,10 +98,6 @@ constexpr char TinyGsmA7672XModemConfig::MODEM_MODEL[] __attribute__((weak));
  *
  * @todo Handle the different number of sockets for TCP and SSL in the code.
  *
- * The module also supports 10 SSL contexts.
- * The SSL context is a collection of SSL settings, not the connection
- * identifier. This library always uses SSL context 0.
- *
  * The secure send data command, CCHSEND, can handle up to 2048 bytes of input,
  * but the unsecured CIPSEND command will only accept 1500, so we'll take the
  * smaller number as the maximum send size.
@@ -114,6 +110,14 @@ struct TinyGsmA7672XTcpConfig
           /*muxCount*/ 10> {};
 
 /**
+ * @brief SSL behavior and limits for SIMCom A7672 modules.
+ * The module supports 10 SSL contexts.
+ * @ingroup simcom_a7672x
+ */
+struct TinyGsmA7672XSslConfig : public TinyGsmSslConfigPreset<
+                                    /*contextCount*/ 10> {};
+
+/**
  * @brief Class for the SIMCom A7672X modem, which is a 4G LTE Cat-M1/NB-IoT
  * modem with GPS and SSL support.
  * @ingroup simcom_a7672x
@@ -122,7 +126,7 @@ class TinyGsmA7672X
     : public TinyGsmModem<TinyGsmA7672X, TinyGsmA7672XModemConfig>,
       public TinyGsmGPRS<TinyGsmA7672X>,
       public TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672XTcpConfig>,
-      public TinyGsmSSL<TinyGsmA7672X>,
+      public TinyGsmSSL<TinyGsmA7672X, TinyGsmA7672XSslConfig>,
       public TinyGsmCalling<TinyGsmA7672X>,
       public TinyGsmSMS<TinyGsmA7672X>,
       public TinyGsmGSMLocation<TinyGsmA7672X>,
@@ -134,7 +138,7 @@ class TinyGsmA7672X
   friend class TinyGsmGPRS<TinyGsmA7672X>;
   friend class TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672XTcpConfig>;
   friend class GsmClient<TinyGsmA7672X, TinyGsmA7672XTcpConfig>;
-  friend class TinyGsmSSL<TinyGsmA7672X>;
+  friend class TinyGsmSSL<TinyGsmA7672X, TinyGsmA7672XSslConfig>;
   friend class TinyGsmCalling<TinyGsmA7672X>;
   friend class TinyGsmSMS<TinyGsmA7672X>;
   friend class TinyGsmGSMLocation<TinyGsmA7672X>;
@@ -146,6 +150,9 @@ class TinyGsmA7672X
  public:
   using ModemConfig = TinyGsmA7672XModemConfig;
   using TcpConfig   = TinyGsmA7672XTcpConfig;
+  using SslConfig   = TinyGsmA7672XSslConfig;
+  using GsmSecureContext =
+      TinyGsmSSL<TinyGsmA7672X, TinyGsmA7672XSslConfig>::gsmSecureContext;
 
   /*
    * Inner Client
@@ -251,19 +258,19 @@ class TinyGsmA7672X
  public:
   /// Inner secure client
   /// @ingroup simcom_a7672x
-  class GsmClientSecureA7672X : public GsmClientA7672X, public GsmSecureClient {
+  class GsmClientSecureA7672X
+      : public GsmSecureClient<GsmClientA7672X, TinyGsmA7672X> {
     friend class TinyGsmA7672X;
 
    public:
     using GsmClientA7672X::connect;
     using GsmClientA7672X::stop;
+    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmA7672XTcpConfig;
 
     /*
-     * Client constructors and initialization
+     * Secure client constructors and initialization
      */
-
-    TINY_GSM_SECURE_CLIENT_CTORS(A7672X)
 
     /**
      * @brief Initialize the SSL client with a modem and optionally a
@@ -318,23 +325,49 @@ class TinyGsmA7672X
       stop(TcpConfig::kStopTimeoutS * 1000L);
       TINY_GSM_YIELD();
       rx.clear();
-      if (!sslCtxConfigured) {
-        if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
-          DBG("### The A7672x does not support SSL using pre-shared keys.");
-          return 0;
-        } else {
-          sslCtxConfigured = at->configureSSLContext(
-              sslCtxIndex, sslAuthMode, sslVersion, CAcertName, clientCertName,
-              clientKeyName);
-          if (!sslCtxConfigured) {
-            DBG("### Failed to configure the SSL context!");
-            return 0;
-          }
-        }
+      GsmSecureContext* sslContext = at->getSSLContext(sslCtxIndex);
+      // check for a valid SSL context
+      if (sslContext == nullptr) {
+        DBG("### No SSL context is registered at index", sslCtxIndex);
+        return 0;
       }
+      // check that the authentication mode is supported
+      if (sslContext->sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+        DBG("### The A7672x does not support SSL using pre-shared keys.");
+        return 0;
+      }
+      // check that the context has the required credentials
+      if (!at->validateSSLContextCredentials(sslContext)) {
+        DBG("### The SSL context is missing required credentials!");
+        return 0;
+      }
+      // configure the context
+      if (!at->configureSSLContext(sslCtxIndex)) {
+        DBG("### Failed to configure the SSL context!");
+        return 0;
+      }
+      // make the connection
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
+  };
+
+  /*
+   * Inner Secure Context
+   */
+ public:
+  /// Inner secure context
+  /// @ingroup simcom_a7672x
+  class GsmSecureContextA7672X
+      : public ::GsmSecureContext<TinyGsmA7672X, TinyGsmA7672XSslConfig> {
+    friend class TinyGsmA7672X;
+
+   public:
+    using ::GsmSecureContext<TinyGsmA7672X,
+                             TinyGsmA7672XSslConfig>::GsmSecureContext;
+
+    /// Unregister this context from its modem.
+    ~GsmSecureContextA7672X() {}
   };
 
   /*
@@ -694,19 +727,61 @@ class TinyGsmA7672X
                            SSLVersion sslVersion, const char* CAcertName,
                            const char* clientCertName,
                            const char* clientKeyName) {
+    // store the configuration in the SSL context object
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    if (sslContext == nullptr) { return false; }
+    sslContext->sslAuthMode = sslAuthMode;
+    sslContext->sslVersion  = sslVersion;
+    strncpy(sslContext->CAcertName, CAcertName ? CAcertName : "",
+            sizeof(sslContext->CAcertName) - 1);
+    sslContext->CAcertName[sizeof(sslContext->CAcertName) - 1] = '\0';
+    strncpy(sslContext->clientCertName, clientCertName ? clientCertName : "",
+            sizeof(sslContext->clientCertName) - 1);
+    sslContext->clientCertName[sizeof(sslContext->clientCertName) - 1] = '\0';
+    strncpy(sslContext->clientKeyName, clientKeyName ? clientKeyName : "",
+            sizeof(sslContext->clientKeyName) - 1);
+    sslContext->clientKeyName[sizeof(sslContext->clientKeyName) - 1] = '\0';
+
+    return configureSSLContext(context_id);
+  }
+
+  /**
+   * @brief Configure the SSL context for the modem.
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool configureSSLContext(uint8_t context_id) {
     bool success = true;
 
     // NOTE: The SSL context (<ssl_ctx_index>) is not the same as the
     // connection identifier.  The SSL context is the grouping of SSL
-    // settings, the connection identifier is the mux/socket number. For this,
-    // we will *always* configure SSL context 0, just as we always configured
-    // PDP context 1.
+    // settings, the connection identifier is the mux/socket number.
+
     // CSSLCFG commands reference the SSL context number; C**A**SSLCFG
     // commands reference the connection number (aka, the mux).
 
+    // Retrieve the SSL context object for the given context ID.
+    GsmSecureContext* sslContext  = getSSLContext(context_id);
+    SSLAuthMode       sslAuthMode = sslContext ? sslContext->sslAuthMode
+                                               : SSLAuthMode::NO_VALIDATION;
+    SSLVersion        sslVersion  = sslContext ? sslContext->sslVersion
+                                               : SSLVersion::ALL_SSL;
+    const char* CAcertName     = sslContext ? sslContext->CAcertName : nullptr;
+    const char* clientCertName = sslContext ? sslContext->clientCertName
+                                            : nullptr;
+    const char* clientKeyName  = sslContext ? sslContext->clientKeyName
+                                            : nullptr;
+
+    DBG("### SSL context index:", context_id);
+    DBG("### SSL auth mode:", (int)sslAuthMode);
+    DBG("### SSL version:", (int)sslVersion);
+    DBG("### CA cert name:", CAcertName);
+    DBG("### Client cert name:", clientCertName);
+    DBG("### Client key name:", clientKeyName);
+
     // set the ssl version
     // AT+CSSLCFG="sslversion",<ssl_ctx_index>,<sslversion>
-    // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
+    // <ssl_ctx_index> The SSL context ID. The range is 0-9.
     // <sslversion> 0: SSL3.0
     //              1: TLS1.0
     //              2: TLS1.1
@@ -723,7 +798,7 @@ class TinyGsmA7672X
 
     // set authentication mode
     // AT+CSSLCFG="authmode",<ssl_ctx_index>,<authmode>
-    // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
+    // <ssl_ctx_index> The SSL context ID. The range is 0-9.
     // <authmode> 0: No authentication (SSLAuthMode::NO_VALIDATION)
     //            1: server authentication (SSLAuthMode::CA_VALIDATION)
     //            2: server and client authentication
@@ -771,7 +846,7 @@ class TinyGsmA7672X
       success &= waitResponse(5000L) == 1;
     }
 
-    // set the SSL SNI (server name indication)
+    // enable SSL SNI (server name indication)
     // AT+CSSLCFG="enableSNI",<ssl_ctx_index>,<enableSNI_flag>
     sendAT(GF("+CSSLCFG=\"enableSNI\","), context_id, GF(",1"));
     success &= waitResponse(2000L) == 1;
@@ -826,10 +901,10 @@ class TinyGsmA7672X
       sendAT(GF("+CCHSET=1,1"));
       if (waitResponse(2000L) != 1) { return false; }
 
-      // If we have a secure socket, use a static cast to get the authentication
-      // mode and certificate names. This isn't really "safe" but since we've
-      // already checked that the socket is a secure one, we're pretty sure of
-      // the type and it should work.
+      // If we have a secure socket, use a static cast to get the context index.
+      // This isn't really "safe" but since we've already checked that the
+      // socket is a secure one, we're pretty sure of the type and it should
+      // work.
       const GsmClientSecureA7672X* thisClient =
           static_cast<const GsmClientSecureA7672X*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
