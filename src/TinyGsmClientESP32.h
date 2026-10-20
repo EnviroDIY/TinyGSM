@@ -109,8 +109,8 @@ struct TinyGsmESP32TcpConfig
 /**
  * @brief SSL behavior and limits for the ESP32.
  *
- * These modules don't have "SSL Contexts" per-say.  They support 2 each of CA
- * certificates and and client certificate/key pairs.  The certificates are
+ * These modules don't have "SSL Contexts" per se.  They support 2 each of CA
+ * certificates and client certificate/key pairs.  The certificates are
  * loaded and referenced by number.  The number of the CA certificate and the
  * client certificate/key pair does not have to match for a connection.
  *
@@ -147,8 +147,8 @@ class TinyGsmESP32
   using ModemConfig = TinyGsmESP32ModemConfig;
   using TcpConfig   = TinyGsmESP32TcpConfig;
   using SslConfig   = TinyGsmESP32SslConfig;
-  using GsmSecureContext =
-      TinyGsmSSL<TinyGsmESP32, TinyGsmESP32SslConfig>::gsmSecureContext;
+  class GsmSecureContextESP32;
+  using GsmSecureContext = GsmSecureContextESP32;
 
   /*
    * Inner Client
@@ -316,7 +316,8 @@ class TinyGsmESP32
      * Secure context certificate assignment functions
      */
 
-    /// @copydoc GsmSecureContext::setCACertName(const char*)
+    /// @brief Set or clear the CA certificate name.
+    /// @param CAcertName The CA certificate file name.
     /// @warning The CA certificate name must be either "client_ca.0" or
     /// "client_ca.1".
     void setCACertName(const char* CAcertName) {
@@ -344,7 +345,8 @@ class TinyGsmESP32
       // set the number for the CA certificate
       this->ca_number = certNumber;
     }
-    /// @copydoc GsmSecureContext::setCACertName(const char*)
+    /// @brief Set or clear the CA certificate name.
+    /// @param CAcertName The CA certificate file name.
     void setCACertName(const String& CAcertName) {
       setCACertName(CAcertName.c_str());
     }
@@ -1273,7 +1275,8 @@ class TinyGsmESP32
           static_cast<const GsmClientSecureESP32*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
       // Retrieve the SSL context object for the given context ID.
-      GsmSecureContext* sslContext = getSSLContext(sslCtxIndex);
+      ::GsmSecureContext<TinyGsmESP32, TinyGsmESP32SslConfig>* sslContext =
+          getSSLContext(sslCtxIndex);
       // check for a valid SSL context
       if (sslContext == nullptr) {
         DBG("### No SSL context is registered at index", sslCtxIndex);
@@ -1345,7 +1348,8 @@ class TinyGsmESP32
         if (psKey == nullptr || strnlen(psKey, TINY_GSM_PSK_LENGTH) == 0 ||
             pskIdent == nullptr ||
             strnlen(pskIdent, TINY_GSM_PSK_IDENTITY_LENGTH) == 0) {
-          DBG("### PSK authentication requires both a PSK and a PSK identity!");
+          DBG("### PSK authentication requires both a PSK and a PSK identity "
+              "(hint)!");
           return false;
         }
         sendAT(GF("+CIPSSLCPSK="), mux, GF(",\""), psKey, GF("\",\""), pskIdent,
