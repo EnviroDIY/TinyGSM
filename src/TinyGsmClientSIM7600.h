@@ -504,11 +504,12 @@ class TinyGsmSim7600
    * Secure socket layer (SSL) certificate management functions
    */
  protected:
-  bool loadCertificateImpl(const char* certificateName, const char* cert,
+  template <typename TCert>
+  bool loadCertificateImpl(const char* certificateName, TCert cert,
                            const uint16_t len) {
     sendAT(GF("+CCERTDOWN=\""), certificateName, GF("\","), len);
     if (waitResponse(5000L, GF(">")) != 1) { return false; }
-    stream.write(cert, len);
+    this->streamWrite(cert, len);
     stream.flush();
     return waitResponse(5000L) == 1;
   }

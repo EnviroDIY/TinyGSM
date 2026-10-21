@@ -254,6 +254,20 @@ class TinyGsmSSL {
                        const uint16_t len) {
     return thisModem().loadCertificateImpl(certificateName, cert, len);
   }
+#if defined(TINY_GSM_HAS_PROGMEM)
+  /**
+   * @brief Load a new certificate stored in program memory onto the module.
+   *
+   * @param certificateName The name of the certificate.
+   * @param cert The certificate content wrapped in GFP().
+   * @param len The length of the certificate content.
+   * @return True if the certificate was successfully loaded, false otherwise.
+   */
+  bool loadCertificate(const char* certificateName, GsmConstStr cert,
+                       const uint16_t len) {
+    return thisModem().loadCertificateImpl(certificateName, cert, len);
+  }
+#endif
   /// @copydoc loadCertificate(const char*, const char*, const uint16_t)
   bool loadCertificate(const String& certificateName, const String& cert,
                        const uint16_t len) {

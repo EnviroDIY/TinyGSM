@@ -632,6 +632,39 @@ class TinyGsmModem {
   }
 
   /**
+   * @brief Write length-delimited data from RAM to the modem stream.
+   *
+   * @param data Pointer to the data in RAM.
+   * @param len The number of bytes to write.
+   */
+  void streamWrite(const char* data, uint16_t len) {
+    thisModem().stream.write(reinterpret_cast<const uint8_t*>(data), len);
+  }
+
+#if defined(TINY_GSM_HAS_PROGMEM)
+  /**
+   * @brief Write length-delimited data from program memory to the modem stream.
+   *
+   * @param data Pointer to the data in program memory.
+   * @param len The number of bytes to write.
+   */
+  void streamWrite(GsmConstStr data, uint16_t len) {
+    const uint8_t* source = reinterpret_cast<const uint8_t*>(data);
+    uint8_t        buffer[32];
+    uint16_t       offset = 0;
+
+    while (offset < len) {
+      const uint16_t chunk = TinyGsmMin(
+          static_cast<uint16_t>(sizeof(buffer)),
+          static_cast<uint16_t>(len - offset));
+      memcpy_P(buffer, source + offset, chunk);
+      thisModem().stream.write(buffer, chunk);
+      offset += chunk;
+    }
+  }
+#endif
+
+  /**
    * @brief Recursively write multiple values to the modem stream.
    *
    * @tparam T The type of the first value to write.

@@ -428,7 +428,8 @@ class TinyGsmSim7080
   // have type like ".pem" or ".der".
   // NOTE: Uploading the certificate only happens by filename, the type of
   // certificate does not matter here
-  bool loadCertificateImpl(const char* certificateName, const char* cert,
+  template <typename TCert>
+  bool loadCertificateImpl(const char* certificateName, TCert cert,
                            const uint16_t len) {
     bool success = true;
     // Initialize AT relate to file system functions
@@ -463,7 +464,7 @@ class TinyGsmSim7080
                             GFP(ModemConfig::GSM_ERROR)) == 1;
 
     if (success) {
-      stream.write(cert, len);
+      this->streamWrite(cert, len);
       stream.flush();
       success &= waitResponse(5000L) == 1;
     } else {

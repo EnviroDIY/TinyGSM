@@ -260,7 +260,11 @@ void loop() {
   // ========================================================================
 
 #if defined(TINY_GSM_MODEM_HAS_SSL) && defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
+  static const char flash_certificate_content[] TINY_GSM_PROGMEM =
+      "certificate_content";
   modem.loadCertificate("certificateName", "certificate_content", 20);
+  modem.loadCertificate("certificateName", GFP(flash_certificate_content),
+                        sizeof(flash_certificate_content) - 1);
   modem.loadCertificate(String("certificateName"),
                         String("certificate_content"), 20);
 #if !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600)
@@ -292,6 +296,9 @@ void loop() {
   modem.loadPrivateKey(0, "private_key_data", 17);
   modem.loadCertificateByNumber(CertificateType::CA_CERTIFICATE, 0,
                                 "ca_certificate_data", 19);
+  modem.loadCertificateByNumber(CertificateType::CA_CERTIFICATE, 0,
+                                GFP(flash_certificate_content),
+                                sizeof(flash_certificate_content) - 1);
   modem.deleteCertificateByNumber(CertificateType::CA_CERTIFICATE, 0);
   modem.printCertificateByNumber(CertificateType::CA_CERTIFICATE, 0, Serial);
 #endif

@@ -1447,7 +1447,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     // set the SSL version
     // The SSL/TLS versions supported by the XBee depend on the specific module,
     // but this library maps as follows: SSLVersion::TLS1_2 (3) -> TL=0x3,
-    // and all other versions (SSL3_0, TLS1_0, TLS1_1, TLS1_3, ALL_SSL) -> TL=0x4.
+    // and all other versions (SSL3_0, TLS1_0, TLS1_1, TLS1_3, ALL_SSL) ->
+    // TL=0x4.
     changesMadeSSL |= changeSettingIfNeeded(
         GF("TL"), sslVersion == SSLVersion::TLS1_2 ? 0x3 : 0x4);
 
@@ -1775,7 +1776,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       DBG(GF("Ping failed, exiting command and sending blank lines"));
       // exit command mode so we're sending the line[s] to the server
       exitCommand();
-      stream.write(GF("\r\n"));
+      streamWrite(GF("\r\n"));
       stream.flush();
       delay(4);  // wait >3 charater spaces (at 9600) to ensure the line is
                  // packetized and sent.

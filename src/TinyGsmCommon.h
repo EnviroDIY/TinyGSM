@@ -132,6 +132,8 @@
  */
 #if defined(PROGMEM) && (defined(__AVR__) || defined(ARDUINO_ARCH_AVR)) && \
     !defined(__AVR_ATmega4809__) && !defined(GFP) && !defined(GF)
+/// Defined when program memory requires special access functions.
+#define TINY_GSM_HAS_PROGMEM
 #define TINY_GSM_PROGMEM PROGMEM
 typedef const __FlashStringHelper* GsmConstStr;
 #define GFP(x) (reinterpret_cast<GsmConstStr>(x))

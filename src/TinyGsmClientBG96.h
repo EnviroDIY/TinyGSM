@@ -499,7 +499,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     if (waitResponse(GF("CONNECT")) != 1) {
       return false;
     }
-    stream.write(cert, len);
+    streamWrite(cert, len);
     stream.flush();
     // After module switches to data mode, and the certificate or key data can
     // be inputted. When the size of the inputted data reaches <filesize> (unit:
@@ -565,11 +565,12 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 #endif
 
   // AT+QFUPL=<filename>[,<file_size>[,<timeout>[,<ackmode>]]]
-  bool loadCertificateImpl(const char* certificateName, const char* cert,
+  template <typename TCert>
+  bool loadCertificateImpl(const char* certificateName, TCert cert,
                            const uint16_t len) {
     sendAT(GF("+QFUPL=\""), certificateName, GF("\","), len, GF(",10"));
     if (waitResponse(GF("CONNECT")) != 1) { return false; }
-    stream.write(cert, len);
+    this->streamWrite(cert, len);
     stream.flush();
     // TA switches to the data mode (transparent access mode), and the binary
     // data of file can be inputted. When the total size of the inputted data

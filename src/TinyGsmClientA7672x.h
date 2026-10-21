@@ -519,11 +519,12 @@ class TinyGsmA7672X
   // len of certificate like - sizeof(ca_cert)
   // NOTE: Uploading the certificate only happens by filename, the type of
   // certificate does not matter here
-  bool loadCertificateImpl(const char* certificateName, const char* cert,
+  template <typename TCert>
+  bool loadCertificateImpl(const char* certificateName, TCert cert,
                            const uint16_t len) {
     sendAT(GF("+CCERTDOWN="), certificateName, ',', len);
     if (waitResponse(5000L, GF(">")) != 1) { return false; }
-    stream.write(cert, len);
+    this->streamWrite(cert, len);
     stream.flush();
     return waitResponse(5000L) == 1;
   }

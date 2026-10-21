@@ -699,6 +699,30 @@ class TinyGsmESP32
    */
   bool loadCertificateByNumber(CertificateType cert_type, uint8_t certNumber,
                                const char* cert, const uint16_t len) {
+    return loadCertificateByNumberImpl(cert_type, certNumber, cert, len);
+  }
+#if defined(TINY_GSM_HAS_PROGMEM)
+  /**
+   * @brief Load a certificate stored in program memory into the modem's flash
+   * memory by its number.
+   *
+   * @param cert_type The type of certificate to load.
+   * @param certNumber The certificate number to load.
+   * @param cert The certificate data wrapped in GFP().
+   * @param len The length of the certificate data.
+   * @return True if the certificate was successfully loaded, false otherwise.
+   */
+  bool loadCertificateByNumber(CertificateType cert_type, uint8_t certNumber,
+                               GsmConstStr cert, const uint16_t len) {
+    return loadCertificateByNumberImpl(cert_type, certNumber, cert, len);
+  }
+#endif
+
+ protected:
+  template <typename TCert>
+  bool loadCertificateByNumberImpl(CertificateType cert_type,
+                                   uint8_t certNumber, TCert cert,
+                                   const uint16_t len) {
     if (certNumber > 1) { return false; }
     char cert_number_char = certNumber + '0';
 
@@ -746,11 +770,13 @@ class TinyGsmESP32
     }
 
     if (waitResponse(GF(">")) != 1) { return false; }
-    stream.write(reinterpret_cast<const uint8_t*>(cert), len);
+    this->streamWrite(cert, len);
     stream.flush();
     if (waitResponse(10000L) != 1) { return false; }
     return true;
   }
+
+ public:
 
   /**
    * @brief Delete a certificate from the modem's flash memory for SSL
@@ -961,7 +987,8 @@ class TinyGsmESP32
   }
 
 
-  bool loadCertificateImpl(const char* certificateName, const char* cert,
+  template <typename TCert>
+  bool loadCertificateImpl(const char* certificateName, TCert cert,
                            const uint16_t len) {
     // parse the certificate name
     CertificateType parsed_type = CertificateType::UNKNOWN;
