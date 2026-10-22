@@ -27,6 +27,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Made adjustments and corrections to the A7672x based on similar functionality of the SIM7600.
 - Fixed various compiler warnings, where possible
 - Increased max baud rate for autobauding.
+- Made `waitResponse()` use explicit overall and inter-character timeouts instead of delaying after each received character.
 - Minor changes in notes and comments
 - **BREAKING** Corrected the spelling of the function `setRadioAccessTecnology` to `setRadioAccessTechnology` and `getCurrentRadioAccessTecnology` to `getCurrentRadioAccessTechnology` for generic u-blox modules.
 - **BREAKING** Renamed the function `setURAT` to `setRadioAccessTechnology` for u-blox SARA R4 modules.
@@ -48,13 +49,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ```cpp
 gsmClient.beginWrite(topic_len + msg_len + MQTT_MAX_HEADER_SIZE);
 // NOTE: total length _**MUST**_ be less than the specific module's maximum send size
-// You can call TINY_GSM_SEND_MAX_SIZE to verify you haven't exceeded the maximum
+// You can compare against TINY_GSM_SEND_MAX_SIZE to verify you haven't exceeded the maximum
 mqttClient.beginPublish(topic, msg_len, false);
 gsmClient.write((uint8_t*)message, strlen(message));
 // or mqttClient.write(...) or stream.write(...)
 // print/println functions should also work here
 mqttClient.endPublish();
-gsmClient.endWrite(strlen(request));
+gsmClient.endWrite(strlen(message));
 ```
 
 - Added an example connecting to AWS IoT Core with mutual authentication.

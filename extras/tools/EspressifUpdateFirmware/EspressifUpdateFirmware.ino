@@ -55,8 +55,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TARGET_BAUD 115200
 #endif
 
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
+// Optionally add a cooperative delay while waiting for modem input.
 // #define TINY_GSM_YIELD_MS 2
 
 // Your WiFi connection credentials, if applicable

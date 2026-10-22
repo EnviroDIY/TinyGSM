@@ -38,7 +38,7 @@
 #endif
 
 #ifndef TINY_GSM_YIELD_MS
-/// The number of milliseconds to yield to the system in the main loop
+/// The number of milliseconds used by TINY_GSM_YIELD()
 #define TINY_GSM_YIELD_MS 0
 #endif
 
@@ -46,6 +46,29 @@
 /// The macro to yield to the system in the main loop
 #define TINY_GSM_YIELD() \
   { delay(TINY_GSM_YIELD_MS); }
+#endif
+
+#ifndef TINY_GSM_RESPONSE_INTERCHAR_TIMEOUT_MS
+/**
+ * @def TINY_GSM_RESPONSE_INTERCHAR_TIMEOUT_MS
+ * @brief Maximum silence between characters during response completion.
+ *
+ * If a modem response is already in progress when the overall waitResponse()
+ * timeout expires, waitResponse() allows this much time for each subsequent
+ * character so that it does not split a response at the timeout boundary.
+ */
+#define TINY_GSM_RESPONSE_INTERCHAR_TIMEOUT_MS 10L
+#endif
+
+#ifndef TINY_GSM_RESPONSE_MAX_GRACE_MS
+/**
+ * @def TINY_GSM_RESPONSE_MAX_GRACE_MS
+ * @brief Maximum total response-completion time after the overall timeout.
+ *
+ * This bounds the inter-character grace period so that continuous input cannot
+ * cause waitResponse() to wait indefinitely.
+ */
+#define TINY_GSM_RESPONSE_MAX_GRACE_MS 1000L
 #endif
 
 /**

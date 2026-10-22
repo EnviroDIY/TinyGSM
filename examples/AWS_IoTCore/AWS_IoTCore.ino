@@ -67,8 +67,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 921600
 
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
+// Optionally add a cooperative delay while waiting for modem input.
 // #define TINY_GSM_YIELD_MS 2
 
 #include <TinyGsmClient.h>

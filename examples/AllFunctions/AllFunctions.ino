@@ -70,8 +70,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TARGET_BAUD 115200
 #endif
 
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
+// Optionally add a cooperative delay while waiting for modem input.
 // #define TINY_GSM_YIELD_MS 2
 
 /*
@@ -452,7 +451,9 @@ void loop() {
 
 #if TINY_GSM_TEST_SSL && \
     (defined TINY_GSM_MODEM_ESP32 || defined TINY_GSM_MODEM_ESP8266)
+  DBG(GF("Setting timezone..."));
   modem.setTimeZone(-5);
+  DBG(GF("Waiting for time sync..."));
   modem.waitForTimeSync();
 #endif
 
@@ -461,6 +462,7 @@ void loop() {
 
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
   TinyGsmSecureContext secureContext(modem, (uint8_t)0);
+  DBG(GF("Setting SSL authentication mode..."));
   secureContext.setSSLAuthMode(SSLAuthMode::CA_VALIDATION);
 
 // For Espressif modules, only two certificate sets are supported and the
@@ -517,30 +519,46 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 -----END CERTIFICATE-----
 )EOF";
 
-  modem.loadCertificate(root_ca_name, isrgrootx1_certificate,
+  DBG(GF("\nLoading root CA certificate..."));
+  modem.loadCertificate(root_ca_name, GFP(isrgrootx1_certificate),
                         sizeof(isrgrootx1_certificate) - 1);
+  DBG(GF("\n\nConverting root CA certificate..."));
   modem.convertCACertificate(root_ca_name);
-  // modem.loadCertificate(client_cert_name, client_cert,
-  //                       strlen(client_cert));
-  // modem.loadCertificate(client_key_name, client_key,
-  //                       strlen(client_key));
-  // modem.convertClientCertificates(client_cert_name, client_key_name);
-  // modem.convertPSKandID(psk_name, psk_hint_name);
+#if 0
+  DBG(GF("Loading client certificate..."));
+  modem.loadCertificate(client_cert_name, client_cert,
+                        strlen(client_cert));
+  DBG(GF("Loading client key..."));
+  modem.loadCertificate(client_key_name, client_key,
+                        strlen(client_key));
+  DBG(GF("Converting client certificate..."));
+  modem.convertClientCertificates(client_cert_name, client_key_name);
+  DBG(GF("Converting PSK and ID..."));
+  modem.convertPSKandID(psk_name, psk_hint_name);
+#endif
 
 #if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_BG96)
+  DBG(GF("Deleting root CA certificate..."));
   modem.deleteCertificate(root_ca_name);
 #endif
 #endif
 
+  DBG(GF("Setting the CA certificate name in the secure context..."));
   secureContext.setCACertName(root_ca_name);
-  // secureContext.setClientCredentials(client_cert_name, client_key_name);
-  // secureContext.setPreSharedKey(pre_shared_key_hint_text,
-  // pre_shared_key_text);
+#if 0
+  DBG(GF("Setting the client credentials in the secure context..."));
+  secureContext.setClientCredentials(client_cert_name, client_key_name);
+  DBG(GF("Setting the pre-shared key in the secure context..."));
+  secureContext.setPreSharedKey(pre_shared_key_hint_text, pre_shared_key_text);
+#endif
+
 #endif
 
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS) && \
     !defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
   // if we didn't actually load a certificate, don't use it
+  DBG(GF("Setting SSL authentication mode to not validate because certificates "
+         "weren't loaded..."));
   secureContext.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
 #endif
 

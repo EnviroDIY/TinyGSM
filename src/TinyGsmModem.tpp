@@ -278,7 +278,9 @@ class TinyGsmModem {
   /**
    * @brief Listen for responses to commands and handle URCs
    *
-   * @param timeout_ms The time to wait for a response
+   * @param timeout_ms The time to wait for a response. If a response is in
+   * progress when this expires, a bounded inter-character grace period allows
+   * the current response to finish.
    * @param data A string of data to fill in with response results
    * @param r1 The first output to test against, optional with a default value
    * of "OK"
@@ -311,7 +313,9 @@ class TinyGsmModem {
   /**
    * @brief Listen for responses to commands and handle URCs
    *
-   * @param timeout_ms The time to wait for a response
+   * @param timeout_ms The time to wait for a response. If a response is in
+   * progress when this expires, a bounded inter-character grace period allows
+   * the current response to finish.
    * @param r1 The first output to test against, optional with a default value
    * of "OK"
    * @param r2 The second output to test against, optional with a default value
@@ -654,9 +658,8 @@ class TinyGsmModem {
     uint16_t       offset = 0;
 
     while (offset < len) {
-      const uint16_t chunk = TinyGsmMin(
-          static_cast<uint16_t>(sizeof(buffer)),
-          static_cast<uint16_t>(len - offset));
+      const uint16_t chunk = TinyGsmMin(static_cast<uint16_t>(sizeof(buffer)),
+                                        static_cast<uint16_t>(len - offset));
       memcpy_P(buffer, source + offset, chunk);
       thisModem().stream.write(buffer, chunk);
       offset += chunk;
@@ -734,6 +737,26 @@ class TinyGsmModem {
 
 
  protected:
+  /**
+   * @brief Read one character from the modem stream with a timeout.
+   *
+   * Unlike Stream::timedRead(), this helper accepts an explicit timeout and
+   * yields while waiting without changing the Stream object's shared timeout.
+   *
+   * @param timeout_ms Maximum time to wait for a character.
+   * @return The character value, or -1 if no character arrived in time.
+   */
+  inline int streamTimedRead(const uint32_t timeout_ms) {
+    uint32_t startMillis = millis();
+    while (true) {
+      int c = thisModem().stream.read();
+      if (c >= 0) { return c; }
+      if (millis() - startMillis >= timeout_ms) { return -1; }
+      TINY_GSM_YIELD();
+      if (millis() - startMillis >= timeout_ms) { return -1; }
+    }
+  }
+
   inline bool streamGetLength(char* buf, int8_t numChars,
                               const uint32_t timeout_ms = 1000L) {
     if (!buf || numChars <= 0) { return false; }
@@ -1216,8 +1239,26 @@ class TinyGsmModem {
         GF("> r7 <"), r7 ? r7 : GF("NULL"), GF("> r8 <"), r8 ? r8 : GF("NULL"),
         '>');
 #endif
-    uint8_t  index       = 0;
-    uint32_t startMillis = millis();
+    bool hasExpectedResponse = false;  //< Flag indicating if there is at least
+                                       // one expected response defined
+    for (uint8_t i = 0; i < 8; i++) {
+      if (responses[i]) {
+        hasExpectedResponse = true;
+        break;
+      }
+    }
+
+    uint8_t  index = 0;  //< The index of the current response being checked
+    uint32_t startMillis = millis();  //< The overall timeout timer start
+    uint32_t lastCharMillis =
+        startMillis;  //< The timestamp of the last character read
+    uint32_t graceStartMillis =
+        0;  //< The timestamp when the grace period started
+    bool responseStarted = false;  //< Flag indicating if a response has started
+    bool inGracePeriod =
+        false;  //< Flag indicating if we are in the grace period
+    bool firstRead =
+        true;  //< Flag indicating if this is the first character read
 #if defined TINY_GSM_DEBUG
     const String verbosePrefix1 = String(GFP(ModemConfig::GSM_VERBOSE));
     const String verbosePrefix2 = String(GFP(ModemConfig::GSM_VERBOSE_2));
@@ -1227,37 +1268,107 @@ class TinyGsmModem {
     const int    len_atnl    = atnlString.length();
     const char   last_atnl_c = len_atnl > 0 ? atnlString[len_atnl - 1] : '\n';
 #endif
-    do {
-      TINY_GSM_YIELD();
-      while (thisModem().stream.available() > 0) {
-        TINY_GSM_YIELD();
-        int8_t a = thisModem().stream.read();
-        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
-        data += static_cast<char>(a);
-        // loop through the possible responses and see if we have a match
-        for (uint8_t i = 0; i < 8; i++) {
-          if (responses[i] && data.endsWith(responses[i])) {
-            index = i + 1;
-            goto finish;
-          }
+
+    while (true) {
+      uint32_t now            = millis();
+      uint32_t elapsed        = now - startMillis;
+      uint32_t readTimeout_ms = 0;
+
+      // The conditionals below are to decide what phase of our wait we are in
+      // and how long to wait for the next character
+      if (elapsed < timeout_ms) {
+        // If we're still within the overall timeout, just update the time to
+        // wait for the next character read based on what's left of the overall
+        // timeout
+        readTimeout_ms = timeout_ms - elapsed;
+      } else if (timeout_ms == 0) {
+        // If the overall timeout is set to 0, consume only data that is already
+        // buffered without waiting for another character.
+        if (!firstRead && thisModem().stream.available() <= 0) { break; }
+      } else if (firstRead) {
+        // If we just got the first character, but we're now outside of the
+        // overall timeout, reserve the initial read attempt if setup consumed a
+        // very short timeout before the loop began.
+      } else {
+        if (!hasExpectedResponse || !responseStarted || !data.length()) {
+          // if the timeout has been exceeded and we got nothing, break out of
+          // the loop
+          break;
         }
-#if defined TINY_GSM_DEBUG
-        if ((data.endsWith(verbosePrefix1)) ||
-            (data.endsWith(verbosePrefix2))) {
-          // Read out the verbose message, until the last character of the new
-          // line
-          data += thisModem().stream.readStringUntil(last_atnl_c);
-#ifdef TINY_GSM_DEBUG_DEEP
-          data.trim();
-          DBG(GF("Verbose details <<<"), data, GF(">>>"));
-#endif
-          data = "";
+
+        uint32_t interCharElapsed = now - lastCharMillis;
+        if (interCharElapsed >= TINY_GSM_RESPONSE_INTERCHAR_TIMEOUT_MS) {
+          // if the inter-character timeout has *also* been exceeded, break out
+          // of the loop
+          break;
+        }
+
+        if (!inGracePeriod) {
+          // if we hadn't already set the grace period flag, set it
+          inGracePeriod    = true;
+          graceStartMillis = now;
+        }
+
+        uint32_t graceElapsed = now - graceStartMillis;
+        // if the grace period has been exceeded, break out of the loop
+        if (graceElapsed >= TINY_GSM_RESPONSE_MAX_GRACE_MS) { break; }
+
+        // update the amount of time to wait for the next character read based
+        // on the remaining grace period and inter-character timeout
+        uint32_t graceRemaining = TINY_GSM_RESPONSE_MAX_GRACE_MS - graceElapsed;
+        readTimeout_ms          = TINY_GSM_RESPONSE_INTERCHAR_TIMEOUT_MS -
+            interCharElapsed;
+        if (readTimeout_ms > graceRemaining) {
+          readTimeout_ms = graceRemaining;
+        }
+      }
+
+      // we're about to attempt to read the first character, so unset the flag
+      firstRead = false;
+      int a     = thisModem().streamTimedRead(readTimeout_ms);
+      if (a < 0) {
+        if (timeout_ms > 0 && !inGracePeriod &&
+            millis() - startMillis >= timeout_ms) {
+          // if we got no return from the read (ie, a  -1 response) and the
+          // overall timeout has been exceeded, continue to the next iteration.
+          // In the next iteration, the grade period will be checked an action
+          // taking accordingly.
+          continue;
+        }
+        // but if we're still within the overall timeout or in the grace period,
+        // break out of the loop once we can't get a character from the read
+        break;
+      }
+      if (a == 0) { continue; }  // Skip 0x00 bytes, just in case
+
+      // set the flag for a response started and update the last character
+      // timestamp
+      responseStarted = true;
+      lastCharMillis  = millis();
+      // append the character to the response data string being assembled
+      data += static_cast<char>(a);
+      // loop through the possible responses and see if we have a match
+      for (uint8_t i = 0; i < 8; i++) {
+        if (responses[i] && data.endsWith(responses[i])) {
+          index = i + 1;
           goto finish;
         }
-#endif
-        if (thisModem().handleURCs(data)) { data = ""; }
       }
-    } while (millis() - startMillis < timeout_ms);
+#if defined TINY_GSM_DEBUG
+      if ((data.endsWith(verbosePrefix1)) || (data.endsWith(verbosePrefix2))) {
+        // Read out the verbose message, until the last character of the new
+        // line
+        data += thisModem().stream.readStringUntil(last_atnl_c);
+#ifdef TINY_GSM_DEBUG_DEEP
+        data.trim();
+        DBG(GF("Verbose details <<<"), data, GF(">>>"));
+#endif
+        data = "";
+        goto finish;
+      }
+#endif
+      if (thisModem().handleURCs(data)) { data = ""; }
+    }
   finish:
 #ifdef TINY_GSM_DEBUG_DEEP
     data.replace("\r", "←");
