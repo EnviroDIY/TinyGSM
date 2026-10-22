@@ -261,8 +261,9 @@ Once you've established communication with the module, set the baud rate using t
 
 Some caveats with baud rates:
 
-- `waitResponse()` uses a short, bounded inter-character grace period to avoid splitting a response that is still arriving when its overall timeout expires.
-- `TINY_GSM_YIELD_MS` controls the cooperative delay used while the library is waiting; it does not control response framing.
+- `TINY_GSM_INTERCHAR_TIMEOUT_MS` sets the maximum silence allowed while waiting for the next character during short inter-character operations. `waitResponse()` also uses it to avoid splitting a response that is still arriving when its overall timeout expires. The default is 10 ms.
+- `TINY_GSM_RESPONSE_MAX_GRACE_MS` limits how long `waitResponse()` can continue beyond its overall timeout while a response is still arriving. The default is 1000 ms.
+- These timing defaults should work for most users. Override them before including TinyGSM only when a modem or stream transport is known to require different timing.
 - If you are using a slow baud rate to communicate with your module, you may end up with data loss when buffers fill faster than they can be emptied.
 - If you are using a very fast baud rate to communicate with your module, you may need to turn off AT debugging (using StreamDebugger or `DUMP_AT_COMMANDS`) to prevent data loss
 
