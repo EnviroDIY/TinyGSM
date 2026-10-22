@@ -712,23 +712,12 @@ class TinyGsmModem {
     // allow up to 3 timeouts on individual characters before we quit the whole
     // read operation
     while (len && char_failures < 3) {
-      // if something is available, read it
-      if (thisModem().stream.available()) {
-        if (thisModem().stream.read() >= 0) {
-          len--;
-          len_read++;
-        }
-        continue;
-      }
-      // wait for a new character to be available on the stream
-      uint32_t startMillis = millis();
-      while (!thisModem().stream.available() &&
-             (millis() - startMillis < 1000L)) {
-        TINY_GSM_YIELD();
-      }
-      if (!thisModem().stream.available()) {
+      if (thisModem().streamTimedRead(1000L) < 0) {
         DBG("### ERROR: Timed out waiting for character from stream!");
         char_failures++;
+      } else {
+        len--;
+        len_read++;
       }
     }
 
@@ -759,6 +748,51 @@ class TinyGsmModem {
     }
   }
 
+  /**
+   * @brief Read one character using an existing operation timeout.
+   *
+   * The timeout is measured from @p startMillis, allowing multiple reads to
+   * share one overall timeout instead of restarting the timeout for every
+   * character.
+   *
+   * @param startMillis The value of millis() when the operation began.
+   * @param timeout_ms Maximum total time for the operation.
+   * @return The character value, or -1 if no character arrived in time.
+   */
+  inline int streamTimedRead(const uint32_t startMillis,
+                             const uint32_t timeout_ms) {
+    int c = thisModem().stream.read();
+    if (c >= 0 || timeout_ms == 0) { return c; }
+
+    while (true) {
+      yield();
+      if (millis() - startMillis >= timeout_ms) { return -1; }
+      c = thisModem().stream.read();
+      if (c >= 0) { return c; }
+    }
+  }
+
+  /**
+   * @brief Reads a fixed number of characters from the modem stream into a
+   * buffer.
+   *
+   * This function attempts to read exactly @p numChars characters from the
+   * modem stream into the provided buffer @p buf. If the required number of
+   * characters cannot be read within the specified timeout, the function
+   * returns false.
+   *
+   * Unlike Stream::readBytes(), this function enforces reading the exact number
+   * of characters requested and treats the timeout as a the time for the entire
+   * count of characters instead of each individual character.
+   *
+   * @param buf        Pointer to the buffer where the characters will be
+   * stored.
+   * @param numChars   Number of characters to read.
+   * @param timeout_ms Maximum time, in milliseconds, to wait for the
+   * characters.
+   * @return true if the requested number of characters were successfully read,
+   *         false otherwise.
+   */
   inline bool streamGetLength(char* buf, int8_t numChars,
                               const uint32_t timeout_ms = 1000L) {
     if (!buf || numChars <= 0) { return false; }
@@ -767,13 +801,12 @@ class TinyGsmModem {
     memset(buf, 0, numChars);
 
     uint32_t startMillis = millis();
-    while (thisModem().stream.available() < numChars) {
-      if (millis() - startMillis >= timeout_ms) { return false; }
-      TINY_GSM_YIELD();
+    for (int8_t i = 0; i < numChars; ++i) {
+      int readChar = thisModem().streamTimedRead(startMillis, timeout_ms);
+      if (readChar < 0) { return false; }
+      buf[i] = static_cast<char>(readChar);
     }
-
-    return thisModem().stream.readBytes(buf, numChars) ==
-        static_cast<size_t>(numChars);
+    return true;
   }
 
   /**
@@ -1113,15 +1146,14 @@ class TinyGsmModem {
   }
 
   inline bool streamSkipUntil(const char c, const uint32_t timeout_ms = 1000L) {
+    if (timeout_ms == 0) { return false; }
     uint32_t startMillis = millis();
-    while (millis() - startMillis < timeout_ms) {
-      while (millis() - startMillis < timeout_ms &&
-             !thisModem().stream.available()) {
-        TINY_GSM_YIELD();
-      }
-      if (thisModem().stream.read() == c) { return true; }
+    while (true) {
+      int readChar = thisModem().streamTimedRead(startMillis, timeout_ms);
+      if (readChar < 0) { return false; }
+      if (readChar == c) { return true; }
+      if (millis() - startMillis >= timeout_ms) { return false; }
     }
-    return false;
   }
 
   inline void cleanResponseString(String& res) {

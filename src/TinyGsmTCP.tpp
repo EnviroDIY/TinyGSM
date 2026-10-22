@@ -240,18 +240,10 @@ class TinyGsmTCP {
   // stream into the mux FIFO
   inline bool moveCharFromStreamToFifo(uint8_t mux) {
     if (!thisModem().sockets[mux]) { return false; }
-    uint32_t startMillis = millis();
-    while (!thisModem().stream.available() &&
-           (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
-      TINY_GSM_YIELD();
-    }
-    if (thisModem().stream.available()) {
-      char c = thisModem().stream.read();
-      thisModem().sockets[mux]->rx.put(c);
-      return true;
-    } else {
-      return false;
-    }
+    int c = thisModem().streamTimedRead(thisModem().sockets[mux]->_timeout);
+    if (c < 0) { return false; }
+    thisModem().sockets[mux]->rx.put(static_cast<char>(c));
+    return true;
   }
 
   /**
@@ -301,11 +293,13 @@ class TinyGsmTCP {
     char             hanging_nibble = '\0';
     // ^^ Used to store a single nibble if we get an odd number of hex
     // characters from the stream
+#ifdef TINY_GSM_DEBUG_DEEP
     if (HexEncoded) {
-      // DBG("### Reading input in HEX mode");
+      DBG("### Reading input in HEX mode");
     } else {
-      // DBG("### Reading input in ASCII mode");
+      DBG("### Reading input in ASCII mode");
     }
+#endif
 
     // allow up to 3 timeouts on individual characters before we quit the whole
     // read operation

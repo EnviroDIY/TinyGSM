@@ -613,10 +613,8 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
         // the mux is valid before we call it.
         moveCharsFromStreamToFifo(mux, len_reported);
       } else {
-        do {  // If the mux is invalid, throw away the stream data
-          stream.read();
-          TINY_GSM_YIELD();
-        } while (stream.available());
+        // If the mux is invalid, throw away the reported stream data
+        streamDump(len_reported);
       }
       data = "";
       return true;

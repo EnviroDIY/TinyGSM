@@ -1577,11 +1577,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     while ((millis() - startMillis) < timeout_ms) {
       DBG("Looking up IP address for host:", host);
       sendAT(GF("LA"), host);
-      while (stream.available() < 4 && (millis() - startMillis < timeout_ms)) {
-        TINY_GSM_YIELD()
-      }
-      strIP = stream.readStringUntil('\r');  // read result
-      strIP.trim();
+      uint32_t elapsed = millis() - startMillis;
+      strIP = readResponseString(elapsed < timeout_ms ? timeout_ms - elapsed
+                                                      : 0);
       if (strIP != "" && strIP != GF("ERROR")) {
         gotIP                = true;
         lastHostLookupMillis = millis();
@@ -2178,11 +2176,11 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    * @return The response from the XBee module as a string.
    */
   String readResponseString(uint32_t timeout_ms = 1000L) {
-    TINY_GSM_YIELD();
-    uint32_t startMillis = millis();
-    while (!stream.available() && millis() - startMillis < timeout_ms) {}
-    String res =
-        stream.readStringUntil('\r');  // lines end with carriage returns
+    String res;
+    int    firstChar = streamTimedRead(timeout_ms);
+    if (firstChar < 0 || firstChar == '\r') { return res; }
+    res += static_cast<char>(firstChar);
+    res += stream.readStringUntil('\r');  // lines end with carriage returns
     res.trim();
     return res;
   }
@@ -2195,15 +2193,15 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    * @return The response from the XBee module as an integer.
    */
   int16_t readResponseInt(uint32_t timeout_ms = 1000L) {
-    TINY_GSM_YIELD();
-    uint32_t startMillis = millis();
-    while (!stream.available() && millis() - startMillis < timeout_ms) {}
-
-    char   buf[16];  // buffer to store the response as a C-string
-    size_t bytesRead = stream.readBytesUntil('\r', buf, sizeof(buf));
+    char buf[16];  // buffer to store the response as a C-string
+    int  firstChar = streamTimedRead(timeout_ms);
 
     // Return -1 for empty response
-    if (bytesRead == 0) { return -1; }
+    if (firstChar < 0 || firstChar == '\r') { return -1; }
+
+    buf[0]           = static_cast<char>(firstChar);
+    size_t bytesRead = 1 +
+        stream.readBytesUntil('\r', buf + 1, sizeof(buf) - 1);
 
     uint16_t result = 0;
 
