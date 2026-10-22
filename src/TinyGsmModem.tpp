@@ -727,6 +727,57 @@ class TinyGsmModem {
 
  protected:
   /**
+   * @brief Wait for characters to become available without consuming them.
+   *
+   * @param required The minimum number of characters to wait for.
+   * @param timeout_ms Maximum time to wait for the characters.
+   * @return The number of characters available when the requested count is
+   *         reached or the timeout expires.
+   */
+  inline int streamTimedAvailable(const size_t   required,
+                                  const uint32_t timeout_ms) {
+    int available = thisModem().stream.available();
+    if ((available >= 0 && static_cast<size_t>(available) >= required) ||
+        timeout_ms == 0) {
+      return available;
+    }
+
+    uint32_t startMillis = millis();
+    while (true) {
+      yield();
+      available = thisModem().stream.available();
+      if (available >= 0 && static_cast<size_t>(available) >= required) {
+        return available;
+      }
+      if (millis() - startMillis >= timeout_ms) { return available; }
+    }
+  }
+
+  /**
+   * @brief Peek at the next character in the modem stream with a timeout.
+   *
+   * Unlike Stream::timedPeek(), this helper is accessible to modem mixins and
+   * accepts an explicit timeout without changing the Stream object's shared
+   * timeout.
+   *
+   * @param timeout_ms Maximum time to wait for a character.
+   * @return The next character value without consuming it, or -1 if no
+   *         character arrived in time.
+   */
+  inline int streamTimedPeek(const uint32_t timeout_ms) {
+    int c = thisModem().stream.peek();
+    if (c >= 0 || timeout_ms == 0) { return c; }
+
+    uint32_t startMillis = millis();
+    while (true) {
+      yield();
+      if (millis() - startMillis >= timeout_ms) { return -1; }
+      c = thisModem().stream.peek();
+      if (c >= 0) { return c; }
+    }
+  }
+
+  /**
    * @brief Read one character from the modem stream with a timeout.
    *
    * Unlike Stream::timedRead(), this helper accepts an explicit timeout and

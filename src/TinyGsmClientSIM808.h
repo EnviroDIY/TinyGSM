@@ -117,11 +117,11 @@ class TinyGsmSim808 : public TinyGsmSim800,
     // check if the date and time is present by checking if the next character
     // is a comma.  If it is a comma, then the date and time is missing and we
     // will skip parsing it.
-    TINY_GSM_YIELD();
-    // NOTE: only wait one 'yield' period for the next character to be
-    // available, not a whole timeout.  This character is in the middle of a
-    // long string set by the modem in a single chunk.
-    bool hasDateTime = stream.peek() != ',';
+    // NOTE: only wait for the response inter-character timeout, not a whole
+    // timeout. This character is in the middle of a long string sent by the
+    // modem in a single chunk.
+    bool hasDateTime =
+        streamTimedPeek(TINY_GSM_RESPONSE_INTERCHAR_TIMEOUT_MS) != ',';
     if (hasDateTime) {
       iyear  = streamGetIntLength(4);  // Four digit year
       imonth = streamGetIntLength(2);  // Two digit month

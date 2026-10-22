@@ -721,13 +721,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   void maintainImpl() {
     // this only happens OUTSIDE command mode, so if we're getting characters
     // they should be data received from the TCP connection
-    // TINY_GSM_YIELD();
-    // if (!inCommandMode) {
-    //   while (stream.available()) {
-    //     char c = stream.read();
-    //     if (c > 0) sockets[0]->rx.put(c);
-    //   }
-    // }
   }
 
   bool factoryDefaultImpl() {
@@ -2060,10 +2053,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
  public:
   /// Clear out the stream buffer
   void streamClear() {
-    TINY_GSM_YIELD();
-    while (stream.available()) {
+    while (streamTimedAvailable(1, TINY_GSM_RESPONSE_INTERCHAR_TIMEOUT_MS) >
+           0) {
       stream.read();
-      TINY_GSM_YIELD();
     }
   }
 

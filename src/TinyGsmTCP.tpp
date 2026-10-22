@@ -304,16 +304,18 @@ class TinyGsmTCP {
     // allow up to 3 timeouts on individual characters before we quit the whole
     // read operation
     while (len && char_failures < 3) {
-      size_t available = thisModem().stream.available();
-
-      const size_t carry    = HexEncoded && hanging_nibble != '\0' ? 1 : 0;
-      const size_t required = readCharLen - carry;
-      if (available >= required) {
+      const size_t carry     = HexEncoded && hanging_nibble != '\0' ? 1 : 0;
+      const size_t required  = readCharLen - carry;
+      int          available = thisModem().streamTimedAvailable(
+          required, thisModem().sockets[mux]->_timeout);
+      if (available >= 0 && static_cast<size_t>(available) >= required) {
         size_t count = len * readCharLen - carry;
         // don't read more than the size of the temporary buffer
         if (count > sizeof(buf)) { count = sizeof(buf); }
         // don't read more than the number of characters available in the stream
-        if (count > available) { count = available; }
+        if (count > static_cast<size_t>(available)) {
+          count = static_cast<size_t>(available);
+        }
         if (HexEncoded) {
           // Never consume a partial hex pair.
           count -= (count + carry) % 2;
@@ -391,17 +393,8 @@ class TinyGsmTCP {
         continue;
       }
 
-      // Wait for at least one complete character (or HEX pair).
-      uint32_t startMillis = millis();
-      while (static_cast<size_t>(thisModem().stream.available()) < required &&
-             (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-
-      if (static_cast<size_t>(thisModem().stream.available()) < required) {
-        DBG("### ERROR: Timed out waiting for character from stream!");
-        ++char_failures;
-      }
+      DBG("### ERROR: Timed out waiting for character from stream!");
+      ++char_failures;
     }
 
     if (len_read) { DBG("### READ:", len_read, "from", mux); }
