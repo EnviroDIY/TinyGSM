@@ -9,75 +9,28 @@
 
 GsmClient	KEYWORD1
 GsmSecureClient	KEYWORD1
+TinyGsm	KEYWORD1
+TinyGsmClient	KEYWORD1
+TinyGsmClientSecure	KEYWORD1
+TinyGsmSecureContext	KEYWORD1
 TinyGsmA6	KEYWORD1
-TinyGsmA6::GsmClientA6	KEYWORD1
 TinyGsmA6ModemConfig	KEYWORD1
 TinyGsmA6TcpConfig	KEYWORD1
 TinyGsmA7672X	KEYWORD1
-TinyGsmA7672X::GsmClientA7672X	KEYWORD1
-TinyGsmA7672X::GsmClientSecureA7672X	KEYWORD1
 TinyGsmA7672XModemConfig	KEYWORD1
 TinyGsmA7672XTcpConfig	KEYWORD1
 TinyGsmBattery	KEYWORD1
 TinyGsmBG96	KEYWORD1
-TinyGsmBG96::GsmClientBG96	KEYWORD1
-TinyGsmBG96::GsmClientSecureBG96	KEYWORD1
 TinyGsmBG96ModemConfig	KEYWORD1
 TinyGsmBG96TcpConfig	KEYWORD1
 TinyGsmBluetooth	KEYWORD1
 TinyGsmCalling	KEYWORD1
-TinyGsmCapabilities::can_load_certs	KEYWORD1
-TinyGsmCapabilities::can_load_certs< TinyGsmESP8266 >	KEYWORD1
-TinyGsmCapabilities::can_load_certs< TinyGsmESP8266NonOS >	KEYWORD1
-TinyGsmCapabilities::can_load_certs< TinyGsmSaraR4 >	KEYWORD1
-TinyGsmCapabilities::can_load_certs< TinyGsmSaraR5 >	KEYWORD1
-TinyGsmCapabilities::can_load_certs< TinyGsmSequansMonarch >	KEYWORD1
-TinyGsmCapabilities::can_load_certs< TinyGsmSim800 >	KEYWORD1
-TinyGsmCapabilities::can_load_certs< TinyGsmSim808 >	KEYWORD1
-TinyGsmCapabilities::can_load_certs< TinyGsmUBLOX >	KEYWORD1
-TinyGsmCapabilities::can_load_certs< TinyGsmXBee >	KEYWORD1
-TinyGsmCapabilities::can_specify_certs	KEYWORD1
-TinyGsmCapabilities::can_specify_certs< TinyGsmESP8266NonOS >	KEYWORD1
-TinyGsmCapabilities::can_specify_certs< TinyGsmSaraR4 >	KEYWORD1
-TinyGsmCapabilities::can_specify_certs< TinyGsmSaraR5 >	KEYWORD1
-TinyGsmCapabilities::can_specify_certs< TinyGsmSequansMonarch >	KEYWORD1
-TinyGsmCapabilities::can_specify_certs< TinyGsmSim800 >	KEYWORD1
-TinyGsmCapabilities::can_specify_certs< TinyGsmSim808 >	KEYWORD1
-TinyGsmCapabilities::can_specify_certs< TinyGsmUBLOX >	KEYWORD1
-TinyGsmCapabilities::has_battery	KEYWORD1
-TinyGsmCapabilities::has_bluetooth	KEYWORD1
-TinyGsmCapabilities::has_calling	KEYWORD1
-TinyGsmCapabilities::has_gprs	KEYWORD1
-TinyGsmCapabilities::has_gps	KEYWORD1
-TinyGsmCapabilities::has_gsm_location	KEYWORD1
-TinyGsmCapabilities::has_ntp	KEYWORD1
-TinyGsmCapabilities::has_sms	KEYWORD1
-TinyGsmCapabilities::has_ssl	KEYWORD1
-TinyGsmCapabilities::has_ssl< TinyGsmESP8266NonOS >	KEYWORD1
-TinyGsmCapabilities::has_ssl< TinyGsmSaraR4 >	KEYWORD1
-TinyGsmCapabilities::has_ssl< TinyGsmSaraR5 >	KEYWORD1
-TinyGsmCapabilities::has_ssl< TinyGsmSequansMonarch >	KEYWORD1
-TinyGsmCapabilities::has_ssl< TinyGsmSim800 >	KEYWORD1
-TinyGsmCapabilities::has_ssl< TinyGsmSim808 >	KEYWORD1
-TinyGsmCapabilities::has_ssl< TinyGsmUBLOX >	KEYWORD1
-TinyGsmCapabilities::has_tcp	KEYWORD1
-TinyGsmCapabilities::has_temperature	KEYWORD1
-TinyGsmCapabilities::has_time	KEYWORD1
-TinyGsmCapabilities::has_wifi	KEYWORD1
-TinyGsmCapabilities::integral_constant	KEYWORD1
-TinyGsmCapabilities::is_base_of	KEYWORD1
 TinyGsmESP32	KEYWORD1
-TinyGsmESP32::GsmClientESP32	KEYWORD1
-TinyGsmESP32::GsmClientSecureESP32	KEYWORD1
 TinyGsmESP32ModemConfig	KEYWORD1
 TinyGsmESP32TcpConfig	KEYWORD1
 TinyGsmESP8266	KEYWORD1
-TinyGsmESP8266::GsmClientESP8266	KEYWORD1
-TinyGsmESP8266::GsmClientSecureESP8266	KEYWORD1
 TinyGsmESP8266ModemConfig	KEYWORD1
 TinyGsmESP8266NonOS	KEYWORD1
-TinyGsmESP8266NonOS::GsmClientESP8266NonOS	KEYWORD1
-TinyGsmESP8266NonOS::GsmClientSecureESP8266NonOS	KEYWORD1
 TinyGsmESP8266NonOSModemConfig	KEYWORD1
 TinyGsmESP8266NonOSTcpConfig	KEYWORD1
 TinyGsmESP8266TcpConfig	KEYWORD1
@@ -86,62 +39,43 @@ TinyGsmGPRS	KEYWORD1
 TinyGsmGPS	KEYWORD1
 TinyGsmGSMLocation	KEYWORD1
 TinyGsmM590	KEYWORD1
-TinyGsmM590::GsmClientM590	KEYWORD1
 TinyGsmM590ModemConfig	KEYWORD1
 TinyGsmM590TcpConfig	KEYWORD1
 TinyGsmM95	KEYWORD1
-TinyGsmM95::GsmClientM95	KEYWORD1
 TinyGsmM95ModemConfig	KEYWORD1
 TinyGsmM95TcpConfig	KEYWORD1
 TinyGsmMC60	KEYWORD1
-TinyGsmMC60::GsmClientMC60	KEYWORD1
 TinyGsmMC60ModemConfig	KEYWORD1
 TinyGsmMC60TcpConfig	KEYWORD1
 TinyGsmModem	KEYWORD1
 TinyGsmModemConfigPreset	KEYWORD1
 TinyGsmNTP	KEYWORD1
 TinyGsmSaraR4	KEYWORD1
-TinyGsmSaraR4::GsmClientSaraR4	KEYWORD1
-TinyGsmSaraR4::GsmClientSecureSaraR4	KEYWORD1
 TinyGsmSaraR4ModemConfig	KEYWORD1
 TinyGsmSaraR4TcpConfig	KEYWORD1
 TinyGsmSaraR5	KEYWORD1
-TinyGsmSaraR5::GsmClientSaraR5	KEYWORD1
-TinyGsmSaraR5::GsmClientSecureSaraR5	KEYWORD1
 TinyGsmSaraR5ModemConfig	KEYWORD1
 TinyGsmSaraR5TcpConfig	KEYWORD1
 TinyGsmSequansMonarch	KEYWORD1
-TinyGsmSequansMonarch::GsmClientSecureSequansMonarch	KEYWORD1
-TinyGsmSequansMonarch::GsmClientSequansMonarch	KEYWORD1
 TinyGsmSequansMonarchModemConfig	KEYWORD1
 TinyGsmSequansMonarchTcpConfig	KEYWORD1
 TinyGsmSim5360	KEYWORD1
-TinyGsmSim5360::GsmClientSim5360	KEYWORD1
 TinyGsmSim5360ModemConfig	KEYWORD1
 TinyGsmSim5360TcpConfig	KEYWORD1
 TinyGsmSim7000	KEYWORD1
-TinyGsmSim7000::GsmClientSim7000	KEYWORD1
 TinyGsmSim7000ModemConfig	KEYWORD1
 TinyGsmSim7000SSL	KEYWORD1
-TinyGsmSim7000SSL::GsmClientSecureSim7000SSL	KEYWORD1
-TinyGsmSim7000SSL::GsmClientSim7000SSL	KEYWORD1
 TinyGsmSim7000SSLModemConfig	KEYWORD1
 TinyGsmSim7000SSLTcpConfig	KEYWORD1
 TinyGsmSim7000TcpConfig	KEYWORD1
 TinyGsmSim7080	KEYWORD1
-TinyGsmSim7080::GsmClientSecureSim7080	KEYWORD1
-TinyGsmSim7080::GsmClientSim7080	KEYWORD1
 TinyGsmSim7080ModemConfig	KEYWORD1
 TinyGsmSim7080TcpConfig	KEYWORD1
 TinyGsmSim70xx	KEYWORD1
 TinyGsmSim7600	KEYWORD1
-TinyGsmSim7600::GsmClientSecureSim7600	KEYWORD1
-TinyGsmSim7600::GsmClientSim7600	KEYWORD1
 TinyGsmSim7600ModemConfig	KEYWORD1
 TinyGsmSim7600TcpConfig	KEYWORD1
 TinyGsmSim800	KEYWORD1
-TinyGsmSim800::GsmClientSecureSim800	KEYWORD1
-TinyGsmSim800::GsmClientSim800	KEYWORD1
 TinyGsmSim800ModemConfig	KEYWORD1
 TinyGsmSim800TcpConfig	KEYWORD1
 TinyGsmSim808	KEYWORD1
@@ -152,14 +86,10 @@ TinyGsmTcpConfigPreset	KEYWORD1
 TinyGsmTemperature	KEYWORD1
 TinyGsmTime	KEYWORD1
 TinyGsmUBLOX	KEYWORD1
-TinyGsmUBLOX::GsmClientSecureUBLOX	KEYWORD1
-TinyGsmUBLOX::GsmClientUBLOX	KEYWORD1
 TinyGsmUBLOXModemConfig	KEYWORD1
 TinyGsmUBLOXTcpConfig	KEYWORD1
 TinyGsmWifi	KEYWORD1
 TinyGsmXBee	KEYWORD1
-TinyGsmXBee::GsmClientSecureXBee	KEYWORD1
-TinyGsmXBee::GsmClientXBee	KEYWORD1
 TinyGsmXBeeModemConfig	KEYWORD1
 TinyGsmXBeeTcpConfig	KEYWORD1
 
@@ -176,13 +106,12 @@ read	KEYWORD2
 peek	KEYWORD2
 flush	KEYWORD2
 connected	KEYWORD2
-operator bool	KEYWORD2
-~GsmClient	KEYWORD2
 remoteIP	KEYWORD2
 getMux	KEYWORD2
 beginWrite	KEYWORD2
 endWrite	KEYWORD2
 TinyGsmStringFromIp	KEYWORD2
+TinyGsmAutoBaud	KEYWORD2
 setSSLContextIndex	KEYWORD2
 setSSLAuthMode	KEYWORD2
 setSSLVersion	KEYWORD2
@@ -192,7 +121,6 @@ setPrivateKeyName	KEYWORD2
 setPSKTableName	KEYWORD2
 setPreSharedKey	KEYWORD2
 GsmSecureClient	KEYWORD2
-~GsmSecureClient	KEYWORD2
 begin	KEYWORD2
 sendAT	KEYWORD2
 setBaud	KEYWORD2
@@ -323,12 +251,10 @@ GsmClientMC60	KEYWORD2
 TinyGsmSaraR4	KEYWORD2
 setRadioAccessTechnology	KEYWORD2
 GsmClientSaraR4	KEYWORD2
-~GsmClientSaraR4	KEYWORD2
 GsmClientSecureSaraR4	KEYWORD2
 TinyGsmSaraR5	KEYWORD2
 getCurrentRadioAccessTechnology	KEYWORD2
 GsmClientSaraR5	KEYWORD2
-~GsmClientSaraR5	KEYWORD2
 GsmClientSecureSaraR5	KEYWORD2
 TinyGsmSequansMonarch	KEYWORD2
 GsmClientSecureSequansMonarch	KEYWORD2
