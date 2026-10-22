@@ -1410,7 +1410,7 @@ class TinyGsmModem {
 
       // we're about to attempt to read the first character, so unset the flag
       firstRead = false;
-      int a     = thisModem().streamTimedRead(readTimeout_ms);
+      int a     = thisModem().streamTimedRead(now, readTimeout_ms);
       if (a < 0) {
         now = millis();
         if (timeout_ms > 0 && !inGracePeriod &&
