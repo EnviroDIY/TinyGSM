@@ -1252,7 +1252,6 @@ class GsmClient : public Client {
       rx.clear();
       at->streamClear();
     } else {
-      TINY_GSM_YIELD();
       uint32_t startMillis = millis();
       while (sock_available > 0 && (millis() - startMillis < maxWaitMs)) {
         rx.clear();
