@@ -120,8 +120,7 @@ class TinyGsmSim808 : public TinyGsmSim800,
     // NOTE: only wait for the response inter-character timeout, not a whole
     // timeout. This character is in the middle of a long string sent by the
     // modem in a single chunk.
-    bool hasDateTime =
-        streamTimedPeek(TINY_GSM_RESPONSE_INTERCHAR_TIMEOUT_MS) != ',';
+    bool hasDateTime = streamTimedPeek(TINY_GSM_INTERCHAR_TIMEOUT_MS) != ',';
     if (hasDateTime) {
       iyear  = streamGetIntLength(4);  // Four digit year
       imonth = streamGetIntLength(2);  // Two digit month

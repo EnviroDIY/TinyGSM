@@ -1382,7 +1382,7 @@ class TinyGsmModem {
         }
 
         uint32_t interCharElapsed = now - lastCharMillis;
-        if (interCharElapsed >= TINY_GSM_RESPONSE_INTERCHAR_TIMEOUT_MS) {
+        if (interCharElapsed >= TINY_GSM_INTERCHAR_TIMEOUT_MS) {
           // if the inter-character timeout has *also* been exceeded, break out
           // of the loop
           break;
@@ -1401,8 +1401,7 @@ class TinyGsmModem {
         // update the amount of time to wait for the next character read based
         // on the remaining grace period and inter-character timeout
         uint32_t graceRemaining = TINY_GSM_RESPONSE_MAX_GRACE_MS - graceElapsed;
-        readTimeout_ms          = TINY_GSM_RESPONSE_INTERCHAR_TIMEOUT_MS -
-            interCharElapsed;
+        readTimeout_ms = TINY_GSM_INTERCHAR_TIMEOUT_MS - interCharElapsed;
         if (readTimeout_ms > graceRemaining) {
           readTimeout_ms = graceRemaining;
         }

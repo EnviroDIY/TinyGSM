@@ -2053,8 +2053,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
  public:
   /// Clear out the stream buffer
   void streamClear() {
-    while (streamTimedAvailable(1, TINY_GSM_RESPONSE_INTERCHAR_TIMEOUT_MS) >
-           0) {
+    while (streamTimedAvailable(1, TINY_GSM_INTERCHAR_TIMEOUT_MS) > 0) {
       stream.read();
     }
   }

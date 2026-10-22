@@ -64,12 +64,12 @@
 #endif
 #endif
 
-#ifndef TINY_GSM_RESPONSE_INTERCHAR_TIMEOUT_MS
+#ifndef TINY_GSM_INTERCHAR_TIMEOUT_MS
 /**
- * @def TINY_GSM_RESPONSE_INTERCHAR_TIMEOUT_MS
+ * @def TINY_GSM_INTERCHAR_TIMEOUT_MS
  * @brief Maximum silence between characters before timing out.
  */
-#define TINY_GSM_RESPONSE_INTERCHAR_TIMEOUT_MS 10L
+#define TINY_GSM_INTERCHAR_TIMEOUT_MS 10L
 #endif
 
 #ifndef TINY_GSM_RESPONSE_MAX_GRACE_MS
