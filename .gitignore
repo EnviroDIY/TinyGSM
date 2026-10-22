@@ -1,4 +1,4 @@
-# Compiled files, executables
+cd# Compiled files, executables
 *.o
 *.a
 *.exe
@@ -107,3 +107,4 @@ src/wakeUp.h
 AGENTS.md
 .github/copilot-instructions.md
 .bumpversion.toml
+passwords.txt
