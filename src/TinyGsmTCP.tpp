@@ -902,7 +902,6 @@ class GsmClient : public Client {
     if (mux >= TcpConfig::kMuxCount || at->sockets[mux] == nullptr) {
       return 0;
     }
-    TINY_GSM_YIELD();
     at->maintain();
     // If the modem is one where we can read and check the size of the buffer,
     // then the 'available()' function will call a check of the current size
@@ -943,7 +942,6 @@ class GsmClient : public Client {
     if (at == nullptr) { return 0; }
     is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                           // send to fail
-    TINY_GSM_YIELD();
     // Returns the number of characters available in the TinyGSM fifo
     if (TcpConfig::kBufferMode == TinyGsmTcpBufferMode::NoModemBuffer) {
       if (!rx.size() && sock_connected) { at->maintain(); }
@@ -982,7 +980,6 @@ class GsmClient : public Client {
    */
   int read(uint8_t* buf, size_t size) override {
     if (at == nullptr) { return -1; }
-    TINY_GSM_YIELD();
     is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                           // send to fail
     size_t cnt  = 0;
@@ -1087,7 +1084,6 @@ class GsmClient : public Client {
    */
   int peek() override {
     if (at == nullptr) { return -1; }
-    TINY_GSM_YIELD();
     // If data is already in the FIFO, peek at it
     if (rx.size() > 0) { return rx.peek(); }
     // Without a modem buffer, the FIFO is only filled while parsing URCs.

@@ -293,7 +293,6 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       if (at == nullptr) { return 0; }
       is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                             // send to fail
-      TINY_GSM_YIELD();
       // Returns the combined number of characters available in the TinyGSM
       // fifo and the modem chips internal fifo.
       if (!rx.size()) { at->maintain(); }
@@ -305,8 +304,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       if (at == nullptr) { return -1; }
       is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                             // send to fail
-      TINY_GSM_YIELD();
-      size_t cnt = 0;
+      size_t cnt  = 0;
 
       // Reads characters out of the TinyGSM fifo, and from the modem chip's
       // internal fifo if available.
