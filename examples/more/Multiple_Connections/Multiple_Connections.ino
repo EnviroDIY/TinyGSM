@@ -66,10 +66,6 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 921600
 
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
-// #define TINY_GSM_YIELD_MS 2
-
 // Uncomment this if you want to use SSL
 // #define USE_SSL
 
@@ -129,8 +125,8 @@ TinyGsm modem(SerialAT);
 TinyGsmClient client0(modem, 0);
 const int     port0 = 80;
 
-#if defined(TINY_GSM_MODEM_HAS_SSL)
-#define USE_SSL
+#if defined(USE_SSL) && !defined(TINY_GSM_MODEM_HAS_SSL)
+#undef USE_SSL
 #endif
 
 #ifdef USE_SSL

@@ -142,7 +142,7 @@ class TinyGsmModem {
     thisModem().streamWrite(GFP(ModemConfig::GSM_AT), cmd...,
                             GFP(ModemConfig::GSM_NL));
     thisModem().stream.flush();
-    TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
+    /* DBG("### AT:", cmd...); */
   }
 
   /**
@@ -232,7 +232,7 @@ class TinyGsmModem {
 
     for (uint8_t i = 0; i < 14;
          i++) {  // sizeof(TINY_GSM_AUTOBAUD_RATES)/sizeof(uint32_t)
-      uint32_t rate = rates[i];
+      uint32_t rate = TINY_GSM_F_READ(&rates[i]);
       for (uint8_t j = 0; j < 3; j++) {
         DBG("Trying to set the baud rate from a rate of", rate, "...");
         at_serial.end();
@@ -278,7 +278,9 @@ class TinyGsmModem {
   /**
    * @brief Listen for responses to commands and handle URCs
    *
-   * @param timeout_ms The time to wait for a response
+   * @param timeout_ms The time to wait for a response. If a response is in
+   * progress when this expires, a bounded inter-character grace period allows
+   * the current response to finish.
    * @param data A string of data to fill in with response results
    * @param r1 The first output to test against, optional with a default value
    * of "OK"
@@ -311,7 +313,9 @@ class TinyGsmModem {
   /**
    * @brief Listen for responses to commands and handle URCs
    *
-   * @param timeout_ms The time to wait for a response
+   * @param timeout_ms The time to wait for a response. If a response is in
+   * progress when this expires, a bounded inter-character grace period allows
+   * the current response to finish.
    * @param r1 The first output to test against, optional with a default value
    * of "OK"
    * @param r2 The second output to test against, optional with a default value
@@ -632,6 +636,38 @@ class TinyGsmModem {
   }
 
   /**
+   * @brief Write length-delimited data from RAM to the modem stream.
+   *
+   * @param data Pointer to the data in RAM.
+   * @param len The number of bytes to write.
+   */
+  void streamWrite(const char* data, uint16_t len) {
+    thisModem().stream.write(reinterpret_cast<const uint8_t*>(data), len);
+  }
+
+#if defined(TINY_GSM_HAS_PROGMEM)
+  /**
+   * @brief Write length-delimited data from program memory to the modem stream.
+   *
+   * @param data Pointer to the data in program memory.
+   * @param len The number of bytes to write.
+   */
+  void streamWrite(GsmConstStr data, uint16_t len) {
+    const uint8_t* source = reinterpret_cast<const uint8_t*>(data);
+    uint8_t        buffer[32];
+    uint16_t       offset = 0;
+
+    while (offset < len) {
+      const uint16_t chunk = TinyGsmMin(static_cast<uint16_t>(sizeof(buffer)),
+                                        static_cast<uint16_t>(len - offset));
+      memcpy_P(buffer, source + offset, chunk);
+      thisModem().stream.write(buffer, chunk);
+      offset += chunk;
+    }
+  }
+#endif
+
+  /**
    * @brief Recursively write multiple values to the modem stream.
    *
    * @tparam T The type of the first value to write.
@@ -676,23 +712,12 @@ class TinyGsmModem {
     // allow up to 3 timeouts on individual characters before we quit the whole
     // read operation
     while (len && char_failures < 3) {
-      // if something is available, read it
-      if (thisModem().stream.available()) {
-        if (thisModem().stream.read() >= 0) {
-          len--;
-          len_read++;
-        }
-        continue;
-      }
-      // wait for a new character to be available on the stream
-      uint32_t startMillis = millis();
-      while (!thisModem().stream.available() &&
-             (millis() - startMillis < 1000L)) {
-        TINY_GSM_YIELD();
-      }
-      if (!thisModem().stream.available()) {
+      if (thisModem().streamTimedRead(1000L) < 0) {
         DBG("### ERROR: Timed out waiting for character from stream!");
         char_failures++;
+      } else {
+        len--;
+        len_read++;
       }
     }
 
@@ -701,26 +726,138 @@ class TinyGsmModem {
 
 
  protected:
+  /**
+   * @brief Wait for characters to become available without consuming them.
+   *
+   * @param required The minimum number of characters to wait for.
+   * @param timeout_ms Maximum time to wait for the characters.
+   * @return The number of characters available when the requested count is
+   *         reached or the timeout expires.
+   */
+  inline int streamTimedAvailable(const size_t   required,
+                                  const uint32_t timeout_ms) {
+    int available = thisModem().stream.available();
+    if ((available >= 0 && static_cast<size_t>(available) >= required) ||
+        timeout_ms == 0) {
+      return available;
+    }
+
+    uint32_t startMillis = millis();
+    while (true) {
+      yield();
+      available = thisModem().stream.available();
+      if (available >= 0 && static_cast<size_t>(available) >= required) {
+        return available;
+      }
+      if (millis() - startMillis >= timeout_ms) { return available; }
+    }
+  }
+
+  /**
+   * @brief Peek at the next character in the modem stream with a timeout.
+   *
+   * Unlike Stream::timedPeek(), this helper is accessible to modem mixins and
+   * accepts an explicit timeout without changing the Stream object's shared
+   * timeout.
+   *
+   * @param timeout_ms Maximum time to wait for a character.
+   * @return The next character value without consuming it, or -1 if no
+   *         character arrived in time.
+   */
+  inline int streamTimedPeek(const uint32_t timeout_ms) {
+    int c = thisModem().stream.peek();
+    if (c >= 0 || timeout_ms == 0) { return c; }
+
+    uint32_t startMillis = millis();
+    while (true) {
+      yield();
+      if (millis() - startMillis >= timeout_ms) { return -1; }
+      c = thisModem().stream.peek();
+      if (c >= 0) { return c; }
+    }
+  }
+
+  /**
+   * @brief Read one character from the modem stream with a timeout.
+   *
+   * Unlike Stream::timedRead(), this helper accepts an explicit timeout and
+   * yields while waiting without changing the Stream object's shared timeout.
+   *
+   * @param timeout_ms Maximum time to wait for a character.
+   * @return The character value, or -1 if no character arrived in time.
+   */
+  inline int streamTimedRead(const uint32_t timeout_ms) {
+    int c = thisModem().stream.read();
+    if (c >= 0 || timeout_ms == 0) { return c; }
+
+    uint32_t startMillis = millis();
+    while (true) {
+      yield();
+      if (millis() - startMillis >= timeout_ms) { return -1; }
+      c = thisModem().stream.read();
+      if (c >= 0) { return c; }
+    }
+  }
+
+  /**
+   * @brief Read one character using an existing operation timeout.
+   *
+   * The timeout is measured from @p startMillis, allowing multiple reads to
+   * share one overall timeout instead of restarting the timeout for every
+   * character.
+   *
+   * @param startMillis The value of millis() when the operation began.
+   * @param timeout_ms Maximum total time for the operation.
+   * @return The character value, or -1 if no character arrived in time.
+   */
+  inline int streamTimedRead(const uint32_t startMillis,
+                             const uint32_t timeout_ms) {
+    int c = thisModem().stream.read();
+    if (c >= 0 || timeout_ms == 0) { return c; }
+
+    while (true) {
+      yield();
+      if (millis() - startMillis >= timeout_ms) { return -1; }
+      c = thisModem().stream.read();
+      if (c >= 0) { return c; }
+    }
+  }
+
+  /**
+   * @brief Reads a fixed number of characters from the modem stream into a
+   * buffer.
+   *
+   * This function attempts to read exactly @p numChars characters from the
+   * modem stream into the provided buffer @p buf. If the required number of
+   * characters cannot be read within the specified timeout, the function
+   * returns false.
+   *
+   * Unlike Stream::readBytes(), this function enforces reading the exact number
+   * of characters requested and treats the timeout as a the time for the entire
+   * count of characters instead of each individual character.
+   *
+   * @param buf        Pointer to the buffer where the characters will be
+   * stored.
+   * @param numChars   Number of characters to read.
+   * @param timeout_ms Maximum time, in milliseconds, to wait for the
+   * characters.
+   * @return true if the requested number of characters were successfully read,
+   *         false otherwise.
+   */
   inline bool streamGetLength(char* buf, int8_t numChars,
                               const uint32_t timeout_ms = 1000L) {
-    if (!buf) { return false; }
+    if (!buf || numChars <= 0) { return false; }
 
     // Clear the buffer before reading into it
     memset(buf, 0, numChars);
 
-    int8_t   numCharsReady = -1;
-    uint32_t startMillis   = millis();
-    while (millis() - startMillis < timeout_ms &&
-           (numCharsReady = thisModem().stream.available()) < numChars) {
-      TINY_GSM_YIELD();
+    uint32_t startMillis = millis();
+    for (int8_t i = 0; i < numChars; ++i) {
+      int readChar = thisModem().streamTimedRead(startMillis, timeout_ms);
+      if (readChar < 0) { return false; }
+      buf[i] = static_cast<char>(readChar);
     }
-
-    if (numCharsReady >= numChars) {
-      thisModem().stream.readBytes(buf, numChars);
-      return true;
-    }
-
-    return false;
+    return true;
   }
 
   /**
@@ -749,7 +886,7 @@ class TinyGsmModem {
     // max 6 digits for int16_t (-32767)
     if (numChars <= 0 || numChars > 6) { return -9999; }
 
-    char buf[numChars];
+    char buf[6] = {};
 
     if (!streamGetLength(buf, numChars, timeout_ms)) { return -9999; }
 
@@ -757,8 +894,11 @@ class TinyGsmModem {
     bool    negative = false;
     uint8_t i        = 0;
 
-    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
-    while (i < numChars && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
+    // Skip until a digit or sign; '.' and '/' cannot start a number.
+    while (i < numChars && buf[i] != '+' && buf[i] != '-' &&
+           (buf[i] < '0' || buf[i] > '9')) {
+      ++i;
+    }
 
     if (i < numChars && (buf[i] == '-' || buf[i] == '+')) {
       negative = buf[i] == '-';
@@ -767,8 +907,14 @@ class TinyGsmModem {
 
     // Parse until the first non-digit (accept only 0-9).
     for (; i < numChars && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
-      res = res * 10 + buf[i] - '0';
+      uint8_t digit = buf[i] - '0';
+      // Check for overflow before multiply-and-add
+      if (res > (32767 - digit) / 10) { return -9999; }
+      res = res * 10 + digit;
     }
+
+    // Check sign overflow: -32768 is valid, but 32768 is not
+    if (negative && res > 32768) { return -9999; }
 
     return negative ? -res : res;
   }
@@ -780,7 +926,8 @@ class TinyGsmModem {
    * Reads characters from the modem stream until @p lastChar is encountered
    * and converts the characters preceding it to a signed 16-bit decimal
    * integer. Leading and trailing non-digits are ignored. A leading '-' or '+'
-   * are supported.
+   * is supported.  Decimals points are treated as non-digit characters - they
+   * terminate the integer parsing.
    *
    * This is a lightweight replacement for strtol()/atoi() intended for
    * parsing the small decimal integer fields returned by modems. It does
@@ -806,8 +953,11 @@ class TinyGsmModem {
     bool    negative = false;
     uint8_t i        = 0;
 
-    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
-    while (i < bytesRead && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
+    // Skip until a digit or sign; '.' and '/' cannot start a number.
+    while (i < bytesRead && buf[i] != '+' && buf[i] != '-' &&
+           (buf[i] < '0' || buf[i] > '9')) {
+      ++i;
+    }
 
     if (i < bytesRead && (buf[i] == '-' || buf[i] == '+')) {
       negative = buf[i] == '-';
@@ -816,8 +966,14 @@ class TinyGsmModem {
 
     // Parse until the first non-digit (accept only 0-9).
     for (; i < bytesRead && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
-      res = res * 10 + buf[i] - '0';
+      uint8_t digit = buf[i] - '0';
+      // Check for overflow before multiply-and-add
+      if (res > (32767 - digit) / 10) { return -9999; }
+      res = res * 10 + digit;
     }
+
+    // Check sign overflow: -32768 is valid, but 32768 is not
+    if (negative && res > 32768) { return -9999; }
 
     return negative ? -res : res;
   }
@@ -841,7 +997,7 @@ class TinyGsmModem {
     // max 12 digits for unsigned long
     if (numChars <= 0 || numChars > 12) { return static_cast<uint32_t>(-1); }
 
-    char buf[numChars];
+    char buf[12] = {};
 
     if (!streamGetLength(buf, numChars, timeout_ms)) {
       return static_cast<uint32_t>(-1);
@@ -855,7 +1011,12 @@ class TinyGsmModem {
 
     // Parse until the first non-digit (accept only 0-9).
     for (; i < numChars && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
-      res = res * 10 + buf[i] - '0';
+      uint8_t digit = buf[i] - '0';
+      // Check for overflow before multiply-and-add
+      if (res > (4294967295U - digit) / 10) {
+        return static_cast<uint32_t>(-1);
+      }
+      res = res * 10 + digit;
     }
 
     return res;
@@ -894,7 +1055,12 @@ class TinyGsmModem {
 
     // Parse until the first non-digit (accept only 0-9).
     for (; i < bytesRead && (buf[i] >= 0x30 && buf[i] <= 0x39); ++i) {
-      res = res * 10 + buf[i] - '0';
+      uint8_t digit = buf[i] - '0';
+      // Check for overflow before multiply-and-add
+      if (res > (4294967295U - digit) / 10) {
+        return static_cast<uint32_t>(-1);
+      }
+      res = res * 10 + digit;
     }
 
     return res;
@@ -925,7 +1091,7 @@ class TinyGsmModem {
     // max 15 digits, sign, and decimal point
     if (numChars <= 0 || numChars > 16) { return -9999.0F; }
 
-    char buf[numChars];
+    char buf[16] = {};
 
     if (!streamGetLength(buf, numChars, timeout_ms)) { return -9999.0F; }
 
@@ -935,16 +1101,21 @@ class TinyGsmModem {
     bool    decimal  = false;
     uint8_t i        = 0;
 
-    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
-    while (i < numChars && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
+    // Skip until a digit or sign; '.' and '/' cannot start a number.
+    while (i < numChars && buf[i] != '+' && buf[i] != '-' &&
+           (buf[i] < '0' || buf[i] > '9')) {
+      ++i;
+    }
 
     if (i < numChars && (buf[i] == '-' || buf[i] == '+')) {
       negative = buf[i] == '-';
       ++i;
     }
 
-    // Parse until the first non-digit (also accept '.' and '/')
-    for (; i < numChars && (buf[i] >= 0x2E && buf[i] <= 0x39); ++i) {
+    // Parse until the first non-digit (also accept a single '.'; '/' is not a
+    // digit).
+    for (; i < numChars && (buf[i] == '.' || (buf[i] >= '0' && buf[i] <= '9'));
+         ++i) {
       char c = buf[i];
 
       if (c == '.') {
@@ -995,16 +1166,21 @@ class TinyGsmModem {
     bool    decimal  = false;
     uint8_t i        = 0;
 
-    // Skip leading non-digits (also accept '+' ',', '-', '.', and '/').
-    while (i < bytesRead && (buf[i] < 0x2B || buf[i] > 0x39)) { ++i; }
+    // Skip until a digit or sign; '.' and '/' cannot start a number.
+    while (i < bytesRead && buf[i] != '+' && buf[i] != '-' &&
+           (buf[i] < '0' || buf[i] > '9')) {
+      ++i;
+    }
 
     if (i < bytesRead && (buf[i] == '-' || buf[i] == '+')) {
       negative = buf[i] == '-';
       ++i;
     }
 
-    // Parse until the first non-digit (also accept '.' and '/')
-    for (; i < bytesRead && (buf[i] >= 0x2E && buf[i] <= 0x39); ++i) {
+    // Parse until the first non-digit (also accept a single '.'; '/' is not a
+    // digit).
+    for (; i < bytesRead && (buf[i] == '.' || (buf[i] >= '0' && buf[i] <= '9'));
+         ++i) {
       char c = buf[i];
 
       if (c == '.') {
@@ -1021,15 +1197,14 @@ class TinyGsmModem {
   }
 
   inline bool streamSkipUntil(const char c, const uint32_t timeout_ms = 1000L) {
+    if (timeout_ms == 0) { return false; }
     uint32_t startMillis = millis();
-    while (millis() - startMillis < timeout_ms) {
-      while (millis() - startMillis < timeout_ms &&
-             !thisModem().stream.available()) {
-        TINY_GSM_YIELD();
-      }
-      if (thisModem().stream.read() == c) { return true; }
+    while (true) {
+      int readChar = thisModem().streamTimedRead(startMillis, timeout_ms);
+      if (readChar < 0) { return false; }
+      if (readChar == c) { return true; }
+      if (millis() - startMillis >= timeout_ms) { return false; }
     }
-    return false;
   }
 
   inline void cleanResponseString(String& res) {
@@ -1149,8 +1324,27 @@ class TinyGsmModem {
         GF("> r7 <"), r7 ? r7 : GF("NULL"), GF("> r8 <"), r8 ? r8 : GF("NULL"),
         '>');
 #endif
-    uint8_t  index       = 0;
-    uint32_t startMillis = millis();
+    bool hasExpectedResponse = false;  //< Flag indicating if there is at least
+                                       // one expected response defined
+    for (uint8_t i = 0; i < 8; i++) {
+      if (responses[i]) {
+        hasExpectedResponse = true;
+        break;
+      }
+    }
+
+    uint8_t  index = 0;  //< The index of the current response being checked
+    uint32_t startMillis = millis();  //< The overall timeout timer start
+    uint32_t lastCharMillis =
+        startMillis;  //< The timestamp of the last character read
+    uint32_t graceStartMillis =
+        0;  //< The timestamp when the grace period started
+    bool responseStarted = false;  //< Flag indicating if a response has started
+    bool inGracePeriod =
+        false;  //< Flag indicating if we are in the grace period
+    bool firstRead =
+        true;  //< Flag indicating if this is the first character read
+    uint32_t now = startMillis;
 #if defined TINY_GSM_DEBUG
     const String verbosePrefix1 = String(GFP(ModemConfig::GSM_VERBOSE));
     const String verbosePrefix2 = String(GFP(ModemConfig::GSM_VERBOSE_2));
@@ -1160,37 +1354,130 @@ class TinyGsmModem {
     const int    len_atnl    = atnlString.length();
     const char   last_atnl_c = len_atnl > 0 ? atnlString[len_atnl - 1] : '\n';
 #endif
-    do {
-      TINY_GSM_YIELD();
-      while (thisModem().stream.available() > 0) {
-        TINY_GSM_YIELD();
-        int8_t a = thisModem().stream.read();
-        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
-        data += static_cast<char>(a);
-        // loop through the possible responses and see if we have a match
-        for (uint8_t i = 0; i < 8; i++) {
-          if (responses[i] && data.endsWith(responses[i])) {
-            index = i + 1;
+
+    while (true) {
+      uint32_t elapsed        = now - startMillis;
+      uint32_t readTimeout_ms = 0;
+
+      // The conditionals below are to decide what phase of our wait we are in
+      // and how long to wait for the next character
+      if (elapsed < timeout_ms) {
+        // If we're still within the overall timeout, just update the time to
+        // wait for the next character read based on what's left of the overall
+        // timeout
+        readTimeout_ms = timeout_ms - elapsed;
+      } else if (timeout_ms == 0) {
+        // If the overall timeout is set to 0, consume only data that is already
+        // buffered without waiting for another character.
+        if (!firstRead && thisModem().stream.available() <= 0) { break; }
+      } else if (firstRead) {
+        // If we just got the first character, but we're now outside of the
+        // overall timeout, reserve the initial read attempt if setup consumed a
+        // very short timeout before the loop began.
+      } else {
+        if (!hasExpectedResponse || !responseStarted || !data.length()) {
+          // if the timeout has been exceeded and we got nothing, break out of
+          // the loop
+          break;
+        }
+
+        uint32_t interCharElapsed = now - lastCharMillis;
+        if (interCharElapsed >= TINY_GSM_INTERCHAR_TIMEOUT_MS) {
+          // if the inter-character timeout has *also* been exceeded, break out
+          // of the loop
+          break;
+        }
+
+        if (!inGracePeriod) {
+          // if we hadn't already set the grace period flag, set it
+          inGracePeriod    = true;
+          graceStartMillis = now;
+        }
+
+        uint32_t graceElapsed = now - graceStartMillis;
+        // if the grace period has been exceeded, break out of the loop
+        if (graceElapsed >= TINY_GSM_RESPONSE_MAX_GRACE_MS) { break; }
+
+        // update the amount of time to wait for the next character read based
+        // on the remaining grace period and inter-character timeout
+        uint32_t graceRemaining = TINY_GSM_RESPONSE_MAX_GRACE_MS - graceElapsed;
+        readTimeout_ms = TINY_GSM_INTERCHAR_TIMEOUT_MS - interCharElapsed;
+        if (readTimeout_ms > graceRemaining) {
+          readTimeout_ms = graceRemaining;
+        }
+      }
+
+      // we're about to attempt to read the first character, so unset the flag
+      firstRead = false;
+      int a     = thisModem().streamTimedRead(now, readTimeout_ms);
+      if (a < 0) {
+        now = millis();
+        if (timeout_ms > 0 && !inGracePeriod &&
+            now - startMillis >= timeout_ms) {
+          // if we got no return from the read (ie, a  -1 response) and the
+          // overall timeout has been exceeded, continue to the next iteration.
+          // In the next iteration, the grace period will be checked and action
+          // taken accordingly.
+          continue;
+        }
+        // but if we're still within the overall timeout or in the grace period,
+        // break out of the loop once we can't get a character from the read
+        break;
+      }
+
+      // In this inner loop, process up to 16 buffered characters before
+      // checking the clock again. This reduces timer overhead without allowing
+      // continuous input to postpone timeout checks indefinitely.
+      int bufferedChars = thisModem().stream.available();
+      if (bufferedChars > 15) { bufferedChars = 15; }
+      bool receivedResponseData = false;
+      while (true) {
+        if (a > 0) {  // Skip 0x00 bytes, just in case
+          receivedResponseData = true;
+          // append the character to the response data string being assembled
+          data += static_cast<char>(a);
+          // loop through the possible responses and see if we have a match
+          for (uint8_t i = 0; i < 8; i++) {
+            if (responses[i] && data.endsWith(responses[i])) {
+              index = i + 1;
+              goto finish;
+            }
+          }
+#if defined TINY_GSM_DEBUG
+          // check the verbose prefixes for a match
+          if ((data.endsWith(verbosePrefix1)) ||
+              (data.endsWith(verbosePrefix2))) {
+            // Read out the verbose message, until the last character of the
+            // new line
+            data += thisModem().stream.readStringUntil(last_atnl_c);
+#ifdef TINY_GSM_DEBUG_DEEP
+            data.trim();
+            DBG(GF("Verbose details <<<"), data, GF(">>>"));
+#endif
+            data = "";
             goto finish;
           }
-        }
-#if defined TINY_GSM_DEBUG
-        if ((data.endsWith(verbosePrefix1)) ||
-            (data.endsWith(verbosePrefix2))) {
-          // Read out the verbose message, until the last character of the new
-          // line
-          data += thisModem().stream.readStringUntil(last_atnl_c);
-#ifdef TINY_GSM_DEBUG_DEEP
-          data.trim();
-          DBG(GF("Verbose details <<<"), data, GF(">>>"));
 #endif
-          data = "";
-          goto finish;
+          if (thisModem().handleURCs(data)) { data = ""; }
         }
-#endif
-        if (thisModem().handleURCs(data)) { data = ""; }
+
+        // If we run out of buffered characters, break the loop
+        if (bufferedChars-- <= 0) { break; }
+        // Try to get the next character, break if there isn't one
+        a = thisModem().stream.read();
+        if (a < 0) { break; }
+
+        // Breaking from this inner loop will dump us in the outer loop which
+        // will try to read with the timeout and grace period checks again.
       }
-    } while (millis() - startMillis < timeout_ms);
+
+      // Update the clock after the inner loop finishes
+      now = millis();
+      if (receivedResponseData) {
+        responseStarted = true;
+        lastCharMillis  = now;
+      }
+    }
   finish:
 #ifdef TINY_GSM_DEBUG_DEEP
     data.replace("\r", "←");
@@ -1311,7 +1598,9 @@ class TinyGsmModem {
                                            GFP(ModemConfig::GSM_ERROR));
     if (resp != 1 && resp != 2 && resp != 3) { return -1; }
     thisModem().streamSkipUntil(','); /* Skip format (0) */
-    int status = thisModem().streamGetIntBefore(ModemConfig::GSM_NL[0]);
+    const String atnlString = String(GFP(ModemConfig::GSM_NL));
+    const char   nl_c       = atnlString.length() ? atnlString[0] : '\r';
+    int          status     = thisModem().streamGetIntBefore(nl_c);
     thisModem().waitResponse();
     return status;
   }

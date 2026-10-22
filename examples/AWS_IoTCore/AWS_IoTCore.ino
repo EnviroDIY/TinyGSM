@@ -67,10 +67,6 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 921600
 
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
-// #define TINY_GSM_YIELD_MS 2
-
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
 #include "aws_iot_config.h"
@@ -173,8 +169,9 @@ TinyGsm        modem(debugger);
 TinyGsm modem(SerialAT);
 #endif
 
-TinyGsmClientSecure secureClient(modem, (uint8_t)0);
-PubSubClient        mqtt(secureClient);
+TinyGsmSecureContext secureContext(modem, (uint8_t)0);
+TinyGsmClientSecure  secureClient(modem, (uint8_t)0);
+PubSubClient         mqtt(secureClient);
 
 #define LED_PIN 13
 int ledStatus = LOW;
@@ -189,6 +186,7 @@ uint32_t lastReconnectAttempt = 0;
 uint32_t lastStatusPublished  = 0;
 bool     setupSuccess         = false;
 bool     certificateSuccess   = false;
+bool     networkSuccess       = false;
 
 bool wakeModem() {
   // !!!!!!!!!!!
@@ -330,16 +328,15 @@ bool setupCertificates() {
   // ================= SET CERTIFICATES FOR THE CONNECTION =================
   // AWS IoT Core requires mutual authentication
   DBG("Requiring mutual authentication on socket");
-  secureClient.setSSLAuthMode(SSLAuthMode::MUTUAL_AUTHENTICATION);
+  secureContext.setSSLAuthMode(SSLAuthMode::MUTUAL_AUTHENTICATION);
   DBG("Requesting TLS 1.3 on socket");
-  secureClient.setSSLVersion(SSLVersion::TLS1_3);
-  // attach the uploaded certificates to the secure client
+  secureContext.setSSLVersion(SSLVersion::TLS1_3);
+  // attach the uploaded certificates to the secure context
   DBG("Assigning", root_ca_name, "as certificate authority on socket");
-  secureClient.setCACertName(root_ca_name);
+  secureContext.setCACertName(root_ca_name);
   DBG("Assigning", client_cert_name, "as client certificate on socket");
-  secureClient.setClientCertName(client_cert_name);
   DBG("Assigning", client_key_name, "as client key on socket");
-  secureClient.setPrivateKeyName(client_key_name);
+  secureContext.setClientCredentials(client_cert_name, client_key_name);
 
   return ca_cert_success & client_cert_success;
 #else
@@ -540,13 +537,6 @@ bool setupNetwork() {
   success &= modem.gprsConnect(apn, gprsUser, gprsPass);
 #endif
 
-#ifdef TINY_GSM_MODEM_HAS_NTP
-  // enable/force time sync with NTP server
-  // This is **REQUIRED** for validated SSL connections
-  DBG("Enabling time sync with NTP server");
-  modem.NTPServerSync("pool.ntp.org", -4);
-#endif
-
   return success;
 }
 
@@ -578,6 +568,17 @@ bool getInternetConnection() {
       return false;
     }
     if (modem.isGprsConnected()) { SerialMon.println("GPRS reconnected"); }
+  }
+#endif
+
+#ifdef TINY_GSM_MODEM_HAS_NTP
+  // enable/force time sync with NTP server
+  // This is **REQUIRED** for validated SSL connections
+  static bool timeSyncSuccess = false;
+  if (!timeSyncSuccess) {
+    DBG("Enabling time sync with NTP server");
+    timeSyncSuccess = modem.NTPServerSync("pool.ntp.org", -4);
+    if (!timeSyncSuccess) { return false; }
   }
 #endif
 
@@ -640,7 +641,8 @@ void setup() {
   SerialMon.println(" ...success");
 
   SerialMon.println("Setting up network...");
-  if (!setupNetwork()) {
+  networkSuccess = setupNetwork();
+  if (!networkSuccess) {
     SerialMon.println(" ...failed to set up network!");
     delay(15000L);
     return;
@@ -670,6 +672,17 @@ void loop() {
     certificateSuccess = setupCertificates();
     if (!certificateSuccess) {
       SerialMon.println(" ...failed to set up certificates!");
+      delay(15000L);
+      return;
+    }
+    SerialMon.println(" ...success");
+  }
+
+  if (!networkSuccess) {
+    SerialMon.println("Network setup failed, re-trying...");
+    networkSuccess = setupNetwork();
+    if (!networkSuccess) {
+      SerialMon.println(" ...failed to set up network!");
       delay(15000L);
       return;
     }

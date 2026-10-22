@@ -25,14 +25,16 @@
 typedef TinyGsmSim800                        TinyGsm;
 typedef TinyGsmSim800::GsmClientSim800       TinyGsmClient;
 typedef TinyGsmSim800::GsmClientSecureSim800 TinyGsmClientSecure;
-typedef Sim800RegStatus                      RegStatus;
+// typedef TinyGsmSim800::GsmSecureContextSim800 TinyGsmSecureContext;
+typedef Sim800RegStatus RegStatus;
 
 #elif defined(TINY_GSM_MODEM_SIM808) || defined(TINY_GSM_MODEM_SIM868)
 #include "TinyGsmClientSIM808.h"
 typedef TinyGsmSim808                        TinyGsm;
 typedef TinyGsmSim808::GsmClientSim800       TinyGsmClient;
 typedef TinyGsmSim808::GsmClientSecureSim800 TinyGsmClientSecure;
-typedef Sim800RegStatus                      RegStatus;
+// typedef TinyGsmSim808::GsmSecureContextSim808 TinyGsmSecureContext;
+typedef Sim800RegStatus RegStatus;
 
 #elif defined(TINY_GSM_MODEM_SIM900)
 #include "TinyGsmClientSIM800.h"
@@ -48,18 +50,20 @@ typedef Sim70xxRegStatus                 RegStatus;
 
 #elif defined(TINY_GSM_MODEM_SIM7000SSL)
 #include "TinyGsmClientSIM7000SSL.h"
-typedef TinyGsmSim7000SSL                            TinyGsm;
-typedef TinyGsmSim7000SSL::GsmClientSim7000SSL       TinyGsmClient;
-typedef TinyGsmSim7000SSL::GsmClientSecureSim7000SSL TinyGsmClientSecure;
-typedef Sim70xxRegStatus                             RegStatus;
+typedef TinyGsmSim7000SSL                             TinyGsm;
+typedef TinyGsmSim7000SSL::GsmClientSim7000SSL        TinyGsmClient;
+typedef TinyGsmSim7000SSL::GsmClientSecureSim7000SSL  TinyGsmClientSecure;
+typedef TinyGsmSim7000SSL::GsmSecureContextSim7000SSL TinyGsmSecureContext;
+typedef Sim70xxRegStatus                              RegStatus;
 
 #elif defined(TINY_GSM_MODEM_SIM7070) || defined(TINY_GSM_MODEM_SIM7080) || \
     defined(TINY_GSM_MODEM_SIM7090)
 #include "TinyGsmClientSIM7080.h"
-typedef TinyGsmSim7080                         TinyGsm;
-typedef TinyGsmSim7080::GsmClientSim7080       TinyGsmClient;
-typedef TinyGsmSim7080::GsmClientSecureSim7080 TinyGsmClientSecure;
-typedef Sim70xxRegStatus                       RegStatus;
+typedef TinyGsmSim7080                          TinyGsm;
+typedef TinyGsmSim7080::GsmClientSim7080        TinyGsmClient;
+typedef TinyGsmSim7080::GsmClientSecureSim7080  TinyGsmClientSecure;
+typedef TinyGsmSim7080::GsmSecureContextSim7080 TinyGsmSecureContext;
+typedef Sim70xxRegStatus                        RegStatus;
 
 #elif defined(TINY_GSM_MODEM_SIM5320) || defined(TINY_GSM_MODEM_SIM5360) || \
     defined(TINY_GSM_MODEM_SIM5300) || defined(TINY_GSM_MODEM_SIM7100)
@@ -71,31 +75,35 @@ typedef Sim5360RegStatus                 RegStatus;
 #elif defined(TINY_GSM_MODEM_SIM7600) || defined(TINY_GSM_MODEM_SIM7800) || \
     defined(TINY_GSM_MODEM_SIM7500)
 #include "TinyGsmClientSIM7600.h"
-typedef TinyGsmSim7600                         TinyGsm;
-typedef TinyGsmSim7600::GsmClientSim7600       TinyGsmClient;
-typedef TinyGsmSim7600::GsmClientSecureSim7600 TinyGsmClientSecure;
-typedef Sim7600RegStatus                       RegStatus;
+typedef TinyGsmSim7600                          TinyGsm;
+typedef TinyGsmSim7600::GsmClientSim7600        TinyGsmClient;
+typedef TinyGsmSim7600::GsmClientSecureSim7600  TinyGsmClientSecure;
+typedef TinyGsmSim7600::GsmSecureContextSim7600 TinyGsmSecureContext;
+typedef Sim7600RegStatus                        RegStatus;
 
 #elif defined(TINY_GSM_MODEM_UBLOX)
 #include "TinyGsmClientUBLOX.h"
 typedef TinyGsmUBLOX                       TinyGsm;
 typedef TinyGsmUBLOX::GsmClientUBLOX       TinyGsmClient;
 typedef TinyGsmUBLOX::GsmClientSecureUBLOX TinyGsmClientSecure;
-typedef UBLOXRegStatus                     RegStatus;
+// typedef TinyGsmUBLOX::GsmSecureContextUBLOX TinyGsmSecureContext;
+typedef UBLOXRegStatus RegStatus;
 
 #elif defined(TINY_GSM_MODEM_SARAR4)
 #include "TinyGsmClientSaraR4.h"
 typedef TinyGsmSaraR4                        TinyGsm;
 typedef TinyGsmSaraR4::GsmClientSaraR4       TinyGsmClient;
 typedef TinyGsmSaraR4::GsmClientSecureSaraR4 TinyGsmClientSecure;
-typedef SaraR4RegStatus                      RegStatus;
+// typedef TinyGsmSaraR4::GsmSecureContextSaraR4 TinyGsmSecureContext;
+typedef SaraR4RegStatus RegStatus;
 
 #elif defined(TINY_GSM_MODEM_SARAR5)
 #include "TinyGsmClientSaraR5.h"
 typedef TinyGsmSaraR5                        TinyGsm;
 typedef TinyGsmSaraR5::GsmClientSaraR5       TinyGsmClient;
 typedef TinyGsmSaraR5::GsmClientSecureSaraR5 TinyGsmClientSecure;
-typedef SaraR5RegStatus                      RegStatus;
+// typedef TinyGsmSaraR5::GsmSecureContextSaraR5 TinyGsmSecureContext;
+typedef SaraR5RegStatus RegStatus;
 
 #elif defined(TINY_GSM_MODEM_M95)
 #include "TinyGsmClientM95.h"
@@ -106,10 +114,11 @@ typedef M95RegStatus             RegStatus;
 #elif defined(TINY_GSM_MODEM_BG96) || defined(TINY_GSM_MODEM_BG95) || \
     defined(TINY_GSM_MODEM_BG95SSL)
 #include "TinyGsmClientBG96.h"
-typedef TinyGsmBG96                      TinyGsm;
-typedef TinyGsmBG96::GsmClientBG96       TinyGsmClient;
-typedef TinyGsmBG96::GsmClientSecureBG96 TinyGsmClientSecure;
-typedef BG96RegStatus                    RegStatus;
+typedef TinyGsmBG96                       TinyGsm;
+typedef TinyGsmBG96::GsmClientBG96        TinyGsmClient;
+typedef TinyGsmBG96::GsmClientSecureBG96  TinyGsmClientSecure;
+typedef TinyGsmBG96::GsmSecureContextBG96 TinyGsmSecureContext;
+typedef BG96RegStatus                     RegStatus;
 
 #elif defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_A7)
 #include "TinyGsmClientA6.h"
@@ -131,46 +140,54 @@ typedef MC60RegStatus              RegStatus;
 
 #elif defined(TINY_GSM_MODEM_ESP32)
 #include "TinyGsmClientESP32.h"
-typedef TinyGsmESP32                       TinyGsm;
-typedef TinyGsmESP32::GsmClientESP32       TinyGsmClient;
-typedef TinyGsmESP32::GsmClientSecureESP32 TinyGsmClientSecure;
-typedef ESP32RegStatus                     RegStatus;
+typedef TinyGsmESP32                        TinyGsm;
+typedef TinyGsmESP32::GsmClientESP32        TinyGsmClient;
+typedef TinyGsmESP32::GsmClientSecureESP32  TinyGsmClientSecure;
+typedef TinyGsmESP32::GsmSecureContextESP32 TinyGsmSecureContext;
+typedef ESP32RegStatus                      RegStatus;
 
 #elif defined(TINY_GSM_MODEM_ESP8266)
 #include "TinyGsmClientESP8266.h"
-typedef TinyGsmESP8266                         TinyGsm;
-typedef TinyGsmESP8266::GsmClientESP8266       TinyGsmClient;
-typedef TinyGsmESP8266::GsmClientSecureESP8266 TinyGsmClientSecure;
-typedef ESP8266RegStatus                       RegStatus;
+typedef TinyGsmESP8266                          TinyGsm;
+typedef TinyGsmESP8266::GsmClientESP8266        TinyGsmClient;
+typedef TinyGsmESP8266::GsmClientSecureESP8266  TinyGsmClientSecure;
+typedef TinyGsmESP8266::GsmSecureContextESP8266 TinyGsmSecureContext;
+typedef ESP8266RegStatus                        RegStatus;
 
 #elif defined(TINY_GSM_MODEM_ESP8266_NONOS)
 #include "TinyGsmClientESP8266NonOS.h"
 typedef TinyGsmESP8266NonOS                              TinyGsm;
 typedef TinyGsmESP8266NonOS::GsmClientESP8266NonOS       TinyGsmClient;
 typedef TinyGsmESP8266NonOS::GsmClientSecureESP8266NonOS TinyGsmClientSecure;
-typedef ESP8266NonOSRegStatus                            RegStatus;
+// typedef TinyGsmESP8266NonOS::GsmSecureContextESP8266NonOS
+// TinyGsmSecureContext;
+typedef ESP8266NonOSRegStatus RegStatus;
 
 #elif defined(TINY_GSM_MODEM_XBEE)
 #include "TinyGsmClientXBee.h"
-typedef TinyGsmXBee                      TinyGsm;
-typedef TinyGsmXBee::GsmClientXBee       TinyGsmClient;
-typedef TinyGsmXBee::GsmClientSecureXBee TinyGsmClientSecure;
-typedef XBeeRegStatus                    RegStatus;
+typedef TinyGsmXBee                       TinyGsm;
+typedef TinyGsmXBee::GsmClientXBee        TinyGsmClient;
+typedef TinyGsmXBee::GsmClientSecureXBee  TinyGsmClientSecure;
+typedef TinyGsmXBee::GsmSecureContextXBee TinyGsmSecureContext;
+typedef XBeeRegStatus                     RegStatus;
 
 #elif defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
 #include "TinyGsmClientSequansMonarch.h"
 typedef TinyGsmSequansMonarch                          TinyGsm;
 typedef TinyGsmSequansMonarch::GsmClientSequansMonarch TinyGsmClient;
 typedef TinyGsmSequansMonarch::GsmClientSecureSequansMonarch
-                         TinyGsmClientSecure;
+    TinyGsmClientSecure;
+// typedef TinyGsmSequansMonarch::GsmSecureContextSequansMonarch
+//                          TinyGsmSecureContext;
 typedef MonarchRegStatus RegStatus;
 
 #elif defined(TINY_GSM_MODEM_A7672X)
 #include "TinyGsmClientA7672x.h"
-typedef TinyGsmA7672X                        TinyGsm;
-typedef TinyGsmA7672X::GsmClientA7672X       TinyGsmClient;
-typedef TinyGsmA7672X::GsmClientSecureA7672X TinyGsmClientSecure;
-typedef A7672XRegStatus                      RegStatus;
+typedef TinyGsmA7672X                         TinyGsm;
+typedef TinyGsmA7672X::GsmClientA7672X        TinyGsmClient;
+typedef TinyGsmA7672X::GsmClientSecureA7672X  TinyGsmClientSecure;
+typedef TinyGsmA7672X::GsmSecureContextA7672X TinyGsmSecureContext;
+typedef A7672XRegStatus                       RegStatus;
 
 #else
 #error "Please define GSM modem model"

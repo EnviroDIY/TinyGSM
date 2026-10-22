@@ -33,8 +33,8 @@
 #include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
-// management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
-// so as not to waste space.
+// management yet. Define TINY_GSM_MODEM_HAS_SSL here and do no include the SSL
+// module.
 #ifndef TINY_GSM_MODEM_HAS_SSL
 /// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
@@ -81,10 +81,6 @@ constexpr char TinyGsmSequansMonarchModemConfig::MODEM_MODEL[]
  *
  * @note Unlike most modules, the sockets are numbered starting at 1, not 0.
  *
- * Also supports 6 "security profiles" (1-6)
- * The security profiles is collection of SSL settings, not the connection
- * identifier.
- *
  * The send data command, SQNSSENDEXT, accepts up to 1500 bytes of input, but
  * this is configured to send HEX, so only 1/2 of that is available.
  * @ingroup sequans_monarch
@@ -95,6 +91,19 @@ struct TinyGsmSequansMonarchTcpConfig
           /*muxMode*/ TinyGsmTcpMuxMode::Static,
           /*muxCount*/ 6,
           /*sendMaxSize*/ 750> {};
+
+#if 0
+/**
+ * @brief SSL behavior and limits for the Sequans Monarch.
+ * The module supports 6 security profiles / SSL contexts, but this library does
+ * not support any functions to configure a profile or upload certificates.  The
+ * SSL context can only be selected by modifying the
+ * TINY_GSM_MONARCH_DEFAULT_SSL_CTX variable.
+ * @ingroup sequans_monarch
+ */
+struct TinyGsmSequansMonarchSslConfig : public TinyGsmSslConfigPreset<
+                                   /*contextCount*/ 6> {};
+#endif
 
 /// Socket status
 enum class SocketStatus {
@@ -265,7 +274,7 @@ class TinyGsmSequansMonarch
     using TcpConfig = TinyGsmSequansMonarchTcpConfig;
 
     /*
-     * Client constructors and initialization
+     * Secure client constructors and initialization
      */
     /**
      * @brief Create a new secured TCP (SSL) client.
@@ -292,10 +301,12 @@ class TinyGsmSequansMonarch
     uint8_t sslCtxIndex = TINY_GSM_MONARCH_DEFAULT_SSL_CTX;
 
    public:
+    /*
+     * Arduino Client interface
+     */
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
       stop(TcpConfig::kStopTimeoutS * 1000L);
-      TINY_GSM_YIELD();
       rx.clear();
 
       // configure security profile 1 with parameters:
@@ -326,7 +337,7 @@ class TinyGsmSequansMonarch
     }
 
     /*
-     * Client SSL configuration functions
+     * Secure client configuration
      */
 
     /**
@@ -496,12 +507,16 @@ class TinyGsmSequansMonarch
   // addition to adding the functions here):
   //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
   //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  //  - Add `public TinyGsmSSL<TinyGsmSequansMonarch>,` to
-  //    the constructor's initializer list
+  //  - Remove the #if 0 / #endif statements bracketing the SSL configuration
+  //  structure.
+  //  - Add `public TinyGsmSSL<TinyGsmSequansMonarch,
+  //  TinyGsmSequansMonarchSslConfig>,` to the constructor's initializer list
   //  - Add `friend class TinyGsmSSL<TinyGsmSequansMonarch,
-  //    TcpConfig::kMuxCount>;` to the friend list.
+  //  TinyGsmSequansMonarchSslConfig>;` to the friend list
   //  - Make the secure client inherit from the secure client class in the SSL
   //  template.
+  //  - Create an inner secure context class inheriting from
+  //  TinyGsmSSLContext<TinyGsmSequansMonarch, TinyGsmSequansMonarchSslConfig>
 
   /*
    * Wifi functions

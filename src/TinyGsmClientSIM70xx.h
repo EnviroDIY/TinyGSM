@@ -34,6 +34,7 @@ enum class Sim70xxRegStatus {
  * @brief Parent class for the SIMCom SIM70xx family of modems
  *
  * @tparam SIM70xxType The derived class type
+ * @tparam SIM70xxModemConfig The modem configuration type
  *
  * @ingroup simcom_sim70xx
  */
@@ -348,11 +349,11 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
     // check if the date and time is present by checking if the next character
     // is a comma.  If it is a comma, then the date and time is missing and we
     // will skip parsing it.
-    TINY_GSM_YIELD();
-    // NOTE: only wait one 'yield' period for the next character to be
-    // available, not a whole timeout.  This character is in the middle of a
-    // long string set by the modem in a single chunk.
-    bool hasDateTime = stream.peek() != ',';
+    // NOTE: only wait for the response inter-character timeout, not a whole
+    // timeout. This character is in the middle of a long string sent by the
+    // modem in a single chunk.
+    bool hasDateTime =
+        thisModem().streamTimedPeek(TINY_GSM_INTERCHAR_TIMEOUT_MS) != ',';
     if (hasDateTime) {
       iyear        = thisModem().streamGetIntLength(4);  // Four digit year
       imonth       = thisModem().streamGetIntLength(2);  // Two digit month

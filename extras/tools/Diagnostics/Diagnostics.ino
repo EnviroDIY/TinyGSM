@@ -73,10 +73,6 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 921600
 
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
-// #define TINY_GSM_YIELD_MS 2
-
 // Uncomment this if you want to use SSL
 // #define USE_SSL
 
@@ -125,22 +121,25 @@ TinyGsm        modem(debugger);
 TinyGsm modem(SerialAT);
 #endif
 
-#if defined(TINY_GSM_MODEM_HAS_SSL)
-#define USE_SSL
+#if defined(USE_SSL) && !defined(TINY_GSM_MODEM_HAS_SSL)
+#undef USE_SSL
 #endif
 
 #ifdef USE_SSL
 TinyGsmClientSecure client(modem);
 // Server details to test TCP over SSL
-const char server[]   = "vsh.pp.ua";
-const char resource[] = "/TinyGSM/logo.txt";
-const int  port       = 443;
+const char     server[]      = "vsh.pp.ua";
+const char     resource[]    = "/TinyGSM/logo.txt";
+const int      port          = 443;
+const uint32_t expectedBytes = 121;
 #else
 TinyGsmClient client(modem);
-// Server details to test TCP without SSL
-const char server[]   = "time.sodaq.net";
-const char resource[] = "/";
-const int  port       = 80;
+// Server details to test TCP without SSL; body is the current unix
+// timestamp (10 digits) plus a trailing newline
+const char     server[]      = "time.sodaq.net";
+const char     resource[]    = "/";
+const int      port          = 80;
+const uint32_t expectedBytes = 11;
 #endif
 
 void setup() {
@@ -172,8 +171,8 @@ void loop() {
     SerialMon.println(F(" Is your serial speed (baud rate) correct?"));
     SerialMon.println(F(" Is your modem powered on?"));
     SerialMon.println(F(" Do you use a good, stable power source?"));
-    SerialMon.println(F(" Try using File -> Examples -> TinyGSM -> tools -> "
-                        "AT_Debug to find correct configuration"));
+    SerialMon.println(F(" Try the extras/tools/AT_Debug sketch in the TinyGSM "
+                        "library folder to find correct configuration"));
     SerialMon.println(F("************************"));
     delay(10000);
     return;
@@ -304,7 +303,7 @@ void loop() {
   SerialMon.print(bytesReceived);
   SerialMon.println(F(" bytes"));
   SerialMon.print(F(" Test:     "));
-  SerialMon.println((bytesReceived == 121) ? "PASSED" : "FAILED");
+  SerialMon.println((bytesReceived == expectedBytes) ? "PASSED" : "FAILED");
   SerialMon.println(F("************************"));
 
   // Do nothing forevermore

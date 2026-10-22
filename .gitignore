@@ -1,4 +1,4 @@
-# Compiled files, executables
+cd# Compiled files, executables
 *.o
 *.a
 *.exe
@@ -74,6 +74,7 @@ buildCI.bat
 generated_docs/*
 docs/__pycache__/*
 docs/css/*
+docs/reviews/*
 docs/*output*
 docs/*.png
 docs/*.js
@@ -93,6 +94,10 @@ docs/generateLogos.py
 DoxygenLayout.xml
 docs/mcss-Doxyfile
 docs/mcss-conf.py
+docs/mcss-Doxyfile-md
+docs/mcss-conf-md.py
+docs/generate_usable_fxn_docs.py
+docs/update_wiki_docs.py
 
 # Other stuff
 *.tar.gz
@@ -102,5 +107,4 @@ src/wakeUp.h
 AGENTS.md
 .github/copilot-instructions.md
 .bumpversion.toml
-docs/generate_usable_fxn_docs.py
-docs/update_wiki_docs.py
+passwords.txt

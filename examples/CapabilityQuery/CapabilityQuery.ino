@@ -66,6 +66,7 @@ TinyGsm modem(SerialAT);
 
 void setup() {
   SerialMon.begin(115200);
+  while (!SerialMon && millis() < 10000L) {}  // wait for the port
   delay(10);
 
   SerialMon.println(F("\n\n==========================================="));

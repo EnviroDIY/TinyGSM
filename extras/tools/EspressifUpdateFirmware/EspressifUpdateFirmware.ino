@@ -55,10 +55,6 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TARGET_BAUD 115200
 #endif
 
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
-// #define TINY_GSM_YIELD_MS 2
-
 // Your WiFi connection credentials, if applicable
 const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
@@ -273,17 +269,27 @@ void setup() {
 
   SerialMon.println(GF("Initializing modem..."));
   if (!modem.init()) {
-    SerialMon.println(GF("Failed to restart modem, delaying 10s and retrying"));
+    SerialMon.println(
+        GF("Failed to initialize modem; reset the board to retry"));
     delay(10000L);
     return;
   }
 
   printModemInfo();
 
-  connectNetwork();
+  if (!connectNetwork()) {
+    SerialMon.println(
+        GF("Failed to connect to network; aborting firmware update"));
+    return;
+  }
   checkNetworkTime();
 
-  updateFirmware();
+  bool firmware_update_success = updateFirmware();
+  if (firmware_update_success) {
+    SerialMon.println(GF("Firmware update succeeded"));
+  } else {
+    SerialMon.println(GF("Firmware update failed"));
+  }
 
   printModemInfo();
 

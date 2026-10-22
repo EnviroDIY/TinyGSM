@@ -55,7 +55,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 // need enough space in the buffer for the entire response
 // else data will be lost (and the http library will fail).
 #if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 650
+#define TINY_GSM_RX_BUFFER 256
 #endif
 
 // See all AT commands, if wanted
@@ -71,10 +71,6 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 // communication, set a fixed baud rate using modem.setBaud(#).
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 921600
-
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
-// #define TINY_GSM_YIELD_MS 2
 
 // Uncomment this if you want to use SSL
 // #define USE_SSL
@@ -124,8 +120,8 @@ TinyGsm        modem(debugger);
 TinyGsm modem(SerialAT);
 #endif
 
-#if defined(TINY_GSM_MODEM_HAS_SSL)
-#define USE_SSL
+#if defined(USE_SSL) && !defined(TINY_GSM_MODEM_HAS_SSL)
+#undef USE_SSL
 #endif
 
 #ifdef USE_SSL

@@ -71,10 +71,6 @@ SoftwareSerial SerialAT2(2, 3);  // RX, TX
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 921600
 
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
-// #define TINY_GSM_YIELD_MS 2
-
 // set GSM PIN, if any
 #define GSM_PIN ""
 
@@ -246,7 +242,7 @@ void loop() {
   SerialMon.println(GF("Performing HTTP GET request..."));
   client1.print(String("GET ") + resource1 + " HTTP/1.1\r\n");
   client1.print(String("Host: ") + server1 + "\r\n");
-  client1.print("Connection: keep-alive\r\n\r\n");
+  client1.print("Connection: close\r\n\r\n");
 
   uint32_t timeout = millis();
   while (client1.connected() && millis() - timeout < 50000L) {
@@ -279,7 +275,7 @@ void loop() {
   SerialMon.println(GF("Performing HTTP GET request..."));
   client2.print(String("GET ") + resource2 + " HTTP/1.1\r\n");
   client2.print(String("Host: ") + server2 + "\r\n");
-  client2.print("Connection: keep-alive\r\n\r\n");
+  client2.print("Connection: close\r\n\r\n");
 
   timeout = millis();
   while (client2.connected() && millis() - timeout < 50000L) {

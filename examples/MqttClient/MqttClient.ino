@@ -76,10 +76,6 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 921600
 
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
-// #define TINY_GSM_YIELD_MS 2
-
 // Define how you're planning to connect to the internet.
 // This is only needed for this example, not in other code.
 #define TINY_GSM_USE_GPRS true
@@ -289,9 +285,9 @@ void loop() {
 #endif
 
   if (!mqtt.connected()) {
-    SerialMon.println("=== MQTT NOT CONNECTED ===");
     // Reconnect every 10 seconds
     if (millis() - lastReconnectAttempt > 10000L) {
+      SerialMon.println("=== MQTT NOT CONNECTED ===");
       lastReconnectAttempt = millis();
       mqttConnect();
     }

@@ -54,7 +54,7 @@ PROJECT_NUMBER         = 0.12.0
 # for a project that appears at the top of each page and should give viewers a
 # quick idea about the purpose of the project. Keep the description short.
 
-PROJECT_BRIEF          = "A small Arduino library for GPRS modules, that just works."
+PROJECT_BRIEF          = "A small Arduino library for AT-command-based internet modules, that just works."
 
 # With the PROJECT_LOGO tag one can specify a logo or an icon that is included
 # in the documentation. The maximum height of the logo should not exceed 55
@@ -1121,10 +1121,14 @@ EXCLUDE                = ../src/ReadMe.md \
                          ../boards \
                          ../variants \
                          ../archive \
-                         ../docs/moxygen_templates \
+                         ../docs/logs \
+                         ../docs/reviews \
+                         ../docs/.doxybook \
+                         ../docs/__pycache__ \
                          ../docs/SupportedModuleFunctions.md \
                          ../generated_docs \
                          ../src/ArduinoCompat \
+                         ../src/wakeUp.h \
                          ../continuous_integration_artifacts \
                          ../CMakeLists.txt \
                          ../extras/tools/test_simple.txt \
@@ -1133,7 +1137,6 @@ EXCLUDE                = ../src/ReadMe.md \
                          ../examples/more/SIM800_SslSetCert/COMODORSACertificationAuthority.h \
                          ../examples/more/SIM800_SslSetCert/DSTRootCAX3.der.h \
                          ../examples/more/SIM800_SslSetCert/DSTRootCAX3.h \
-                         ../src/wakeUp.h \
                          ../AGENTS.md
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or

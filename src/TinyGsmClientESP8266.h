@@ -94,9 +94,6 @@ constexpr char TinyGsmESP8266ModemConfig::CLIENT_KEY_NAMESPACE[]
  * manual warns that module may not be able to handle more than 1 SSL socket at
  * a time.
  *
- * These modules don't have "SSL Contexts" per-say, but they only support 2
- * certificate sets.  The certificates are loaded and referenced by number.
- *
  * The ESP8266 devices can receive 2048 bytes and send 1460 bytes at most in a
  * single transmission.
  * @ingroup espressif_esp8266
@@ -111,6 +108,19 @@ struct TinyGsmESP8266TcpConfig
           /*stopTimeoutS*/ 5> {};
 
 /**
+ * @brief SSL behavior and limits for the ESP8266.
+ *
+ * These modules don't have "SSL Contexts" per se.  They support 2 each of CA
+ * certificates and client certificate/key pairs.  The certificates are
+ * loaded and referenced by number.  The number of the CA certificate and the
+ * client certificate/key pair does not have to match for a connection.
+ *
+ * @ingroup espressif_esp8266
+ */
+struct TinyGsmESP8266SslConfig : public TinyGsmSslConfigPreset<
+                                     /*contextCount*/ 2> {};
+
+/**
  * @brief Class for the Espressif ESP8266 modem, which is a Wi-Fi module with
  * SSL support.
  *
@@ -121,7 +131,7 @@ struct TinyGsmESP8266TcpConfig
 class TinyGsmESP8266
     : public TinyGsmEspressif<TinyGsmESP8266, TinyGsmESP8266ModemConfig>,
       public TinyGsmTCP<TinyGsmESP8266, TinyGsmESP8266TcpConfig>,
-      public TinyGsmSSL<TinyGsmESP8266>,
+      public TinyGsmSSL<TinyGsmESP8266, TinyGsmESP8266SslConfig>,
       public TinyGsmTime<TinyGsmESP8266>,
       public TinyGsmNTP<TinyGsmESP8266> {
   friend class TinyGsmEspressif<TinyGsmESP8266, TinyGsmESP8266ModemConfig>;
@@ -129,13 +139,16 @@ class TinyGsmESP8266
   friend class TinyGsmWifi<TinyGsmESP8266>;
   friend class TinyGsmTCP<TinyGsmESP8266, TinyGsmESP8266TcpConfig>;
   friend class GsmClient<TinyGsmESP8266, TinyGsmESP8266TcpConfig>;
-  friend class TinyGsmSSL<TinyGsmESP8266>;
+  friend class TinyGsmSSL<TinyGsmESP8266, TinyGsmESP8266SslConfig>;
   friend class TinyGsmTime<TinyGsmESP8266>;
   friend class TinyGsmNTP<TinyGsmESP8266>;
 
  public:
   using ModemConfig = TinyGsmESP8266ModemConfig;
   using TcpConfig   = TinyGsmESP8266TcpConfig;
+  using SslConfig   = TinyGsmESP8266SslConfig;
+  class GsmSecureContextESP8266;
+  using GsmSecureContext = GsmSecureContextESP8266;
 
   /*
    * Inner Client
@@ -238,34 +251,47 @@ class TinyGsmESP8266
  public:
   /// Inner secure client
   /// @ingroup espressif_esp8266
-  class GsmClientSecureESP8266 : public GsmClientESP8266,
-                                 public GsmSecureClient {
+  class GsmClientSecureESP8266
+      : public GsmSecureClient<GsmClientESP8266, TinyGsmESP8266> {
     friend class TinyGsmESP8266;
 
    public:
     using GsmClientESP8266::connect;
     using GsmClientESP8266::stop;
+    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmESP8266TcpConfig;
-
-    /*
-     * Client constructors and initialization
-     */
-
-    TINY_GSM_SECURE_CLIENT_CTORS(ESP8266)
 
     // Because we have the same potential range of mux numbers for secure and
     // insecure connections, we don't need to re-check for mux number
     // availability.
+  };
+
+  /*
+   * Inner Secure Context
+   */
+ public:
+  /// Inner secure context
+  /// @ingroup espressif_esp8266
+  class GsmSecureContextESP8266
+      : public ::GsmSecureContext<TinyGsmESP8266, TinyGsmESP8266SslConfig> {
+    friend class TinyGsmESP8266;
+
+   public:
+    using ::GsmSecureContext<TinyGsmESP8266,
+                             TinyGsmESP8266SslConfig>::GsmSecureContext;
+
+    /// Unregister this context from its modem.
+    ~GsmSecureContextESP8266() {}
 
     /*
-     * Client certificate assignment functions
+     * Secure context certificate assignment functions
      */
 
-    /// @copydoc GsmSecureClient::setCACertName(const char*)
+    /// @brief Set or clear the CA certificate name.
+    /// @param CAcertName The CA certificate file name.
     /// @warning The CA certificate name must be either "client_ca.0" or
     /// "client_ca.1".
-    void setCACertName(const char* CAcertName) override {
-      if (at == nullptr) { return; }
+    void setCACertName(const char* CAcertName) {
       // handle null or empty certificate name
       if (CAcertName == nullptr ||
           strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
@@ -277,7 +303,7 @@ class TinyGsmESP8266
       // parse the certificate name
       CertificateType parsed_type = CertificateType::UNKNOWN;
       uint8_t         certNumber  = 0;
-      at->parseCertificateName(CAcertName, parsed_type, certNumber);
+      TinyGsmESP8266::parseCertificateName(CAcertName, parsed_type, certNumber);
       if (parsed_type != CertificateType::CA_CERTIFICATE || certNumber > 1) {
         // invalid certificate name: clear buffers and reset slot
         memset(this->CAcertName, '\0', sizeof(this->CAcertName));
@@ -290,25 +316,29 @@ class TinyGsmESP8266
       // set the number for the CA certificate
       this->ca_number = certNumber;
     }
-    /// @copydoc GsmClientSecureESP8266::setCACertName(const char*)
-    void setCACertName(const String& CAcertName) override {
+    /// @brief Set or clear the CA certificate name.
+    /// @param CAcertName The CA certificate file name.
+    void setCACertName(const String& CAcertName) {
       setCACertName(CAcertName.c_str());
     }
 
     /**
-     * @copydoc GsmSecureClient::setClientCertName(const char*)
+     * @brief Set or clear the client certificate and private key names.
+     * @param clientCertName The client certificate file name.
+     * @param clientKeyName The matching private-key file name.
+     *
      * @warning The client certificate name must be either "client_cert.0" or
-     * "client_cert.1".
+     * "client_cert.1", and the private key name must be either "client_key.0"
+     * or "client_key.1".
      * @note The client certificate number and the client private key number
-     * must be the same for a given connection.  Calling either
-     * setClientCertName() or setPrivateKeyName() will set the other
-     * to the equivalent name with the same number.
+     * must be the same for a given connection.
      */
-    void setClientCertName(const char* clientCertName) override {
-      if (at == nullptr) { return; }
-      // handle null or empty certificate name
-      if (clientCertName == nullptr ||
-          strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
+    void setClientCredentials(const char* clientCertName,
+                              const char* clientKeyName) {
+      // handle null or empty certificate or key name
+      if (clientCertName == nullptr || clientKeyName == nullptr ||
+          strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) == 0 ||
+          strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
         // clear the certificate name buffers and slot selection
         memset(this->clientCertName, '\0', sizeof(this->clientCertName));
         memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
@@ -316,12 +346,17 @@ class TinyGsmESP8266
         return;
       }
       // parse the certificate name
-      CertificateType parsed_type = CertificateType::UNKNOWN;
-      uint8_t         certNumber  = 0;
-      at->parseCertificateName(clientCertName, parsed_type, certNumber);
-      if (parsed_type != CertificateType::CLIENT_CERTIFICATE ||
-          certNumber > 1) {
-        // invalid certificate name: clear buffers and reset slot
+      CertificateType cert_type  = CertificateType::UNKNOWN;
+      CertificateType key_type   = CertificateType::UNKNOWN;
+      uint8_t         certNumber = 0;
+      uint8_t         keyNumber  = 0;
+      TinyGsmESP8266::parseCertificateName(clientCertName, cert_type,
+                                           certNumber);
+      TinyGsmESP8266::parseCertificateName(clientKeyName, key_type, keyNumber);
+      if (cert_type != CertificateType::CLIENT_CERTIFICATE ||
+          key_type != CertificateType::CLIENT_KEY || certNumber > 1 ||
+          keyNumber > 1 || certNumber != keyNumber) {
+        // invalid credential names: clear buffers and reset slot
         memset(this->clientCertName, '\0', sizeof(this->clientCertName));
         memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
         this->pki_number = 0;
@@ -331,74 +366,18 @@ class TinyGsmESP8266
       strncpy(this->clientCertName, clientCertName,
               sizeof(this->clientCertName) - 1);
       this->clientCertName[sizeof(this->clientCertName) - 1] = '\0';
-      // set thenumber for the client certificate and private key (only 1 var,
-      // they must be the same)
-      pki_number = certNumber;
-      // generate the matching client private key name from the certificate
-      // number and type
-      char cert_name[16] = {};
-      at->getCertificateName(CertificateType::CLIENT_KEY, certNumber,
-                             cert_name);
       // set the client key name in the owned buffer
-      strncpy(this->clientKeyName, cert_name, sizeof(this->clientKeyName) - 1);
-      this->clientKeyName[sizeof(this->clientKeyName) - 1] = '\0';
-    }
-    /// @copydoc GsmClientSecureESP8266::setClientCertName(const char*)
-    void setClientCertName(const String& clientCertName) override {
-      setClientCertName(clientCertName.c_str());
-    }
-
-    /**
-     * @copydoc GsmSecureClient::setPrivateKeyName(const char*)
-     * @warning The private key name must be either "client_key.0" or
-     * "client_key.1".
-     * @note The client certificate number and the client private key number
-     * must be the same for a given connection.  Calling either
-     * setClientCertName() or setPrivateKeyName() will set the other
-     * to the equivalent name with the same number.
-     */
-    void setPrivateKeyName(const char* clientKeyName) override {
-      if (at == nullptr) { return; }
-      // handle null or empty key name
-      if (clientKeyName == nullptr ||
-          strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
-        // clear the certificate name buffers and slot selection
-        memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
-        memset(this->clientCertName, '\0', sizeof(this->clientCertName));
-        this->pki_number = 0;
-        return;
-      }
-      // parse the certificate name
-      CertificateType parsed_type = CertificateType::UNKNOWN;
-      uint8_t         certNumber  = 0;
-      at->parseCertificateName(clientKeyName, parsed_type, certNumber);
-      if (parsed_type != CertificateType::CLIENT_KEY || certNumber > 1) {
-        // invalid key name: clear buffers and reset slot
-        memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
-        memset(this->clientCertName, '\0', sizeof(this->clientCertName));
-        this->pki_number = 0;
-        return;
-      }
-      // copy the key name into owned buffer
       strncpy(this->clientKeyName, clientKeyName,
               sizeof(this->clientKeyName) - 1);
       this->clientKeyName[sizeof(this->clientKeyName) - 1] = '\0';
-      // set thenumber for the client certificate and private key (only 1 var,
+      // set the number for the client certificate and private key (only 1 var,
       // they must be the same)
       pki_number = certNumber;
-      // generate the matching client certificate name from the private key
-      // number and type
-      char cert_name[16] = {};
-      at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
-                             cert_name);
-      // set the client certificate name in the owned buffer
-      strncpy(this->clientCertName, cert_name,
-              sizeof(this->clientCertName) - 1);
-      this->clientCertName[sizeof(this->clientCertName) - 1] = '\0';
     }
-    /// @copydoc GsmClientSecureESP8266::setPrivateKeyName(const char*)
-    void setPrivateKeyName(const String& clientKeyName) override {
-      setPrivateKeyName(clientKeyName.c_str());
+    /// @copydoc setClientCredentials(const char*, const char*)
+    void setClientCredentials(const String& clientCertName,
+                              const String& clientKeyName) {
+      setClientCredentials(clientCertName.c_str(), clientKeyName.c_str());
     }
 
     /**
@@ -406,14 +385,16 @@ class TinyGsmESP8266
      * @param certNumber The CA certificate number, must be 0 or 1.
      */
     void setCACertificateNumber(uint8_t certNumber) {
-      if (at == nullptr) { return; }
-      if (certNumber > 1) { return; }
+      if (certNumber > 1) {
+        setCACertName(nullptr);
+        return;
+      }
       ca_number = certNumber;
       // convert the certificate number and type into the proper certificate
       // names for the ESP32
       char cert_name[16] = {};
-      at->getCertificateName(CertificateType::CA_CERTIFICATE, certNumber,
-                             cert_name);
+      TinyGsmESP8266::getCertificateName(CertificateType::CA_CERTIFICATE,
+                                         certNumber, cert_name);
       memcpy(this->CAcertName, cert_name,
              TinyGsmMin(sizeof(this->CAcertName), sizeof(cert_name)));
       this->CAcertName[TinyGsmMin(sizeof(this->CAcertName), sizeof(cert_name)) -
@@ -423,42 +404,31 @@ class TinyGsmESP8266
      * @brief Set the client certificate number to use for this connection
      * @param certNumber The client certificate number, must be 0 or 1.
      * @note The client certificate number and the client private key number
-     * must be the same for a given connection.  Calling either
-     * setClientCertificateNumber() or setPrivateKeyNumber() will set the other
-     * to the same number.
+     * must be the same for a given connection.
      */
-    void setClientCertificateNumber(uint8_t certNumber) {
-      if (at == nullptr) { return; }
-      if (certNumber > 1) { return; }
+    void setClientCredentialNumber(uint8_t certNumber) {
+      if (certNumber > 1) {
+        setClientCredentials(nullptr, nullptr);
+        return;
+      }
       pki_number = certNumber;
       // generate and set the name for the client certificate from the number
       char cert_name[16] = {};
-      at->getCertificateName(CertificateType::CLIENT_CERTIFICATE, certNumber,
-                             cert_name);
+      TinyGsmESP8266::getCertificateName(CertificateType::CLIENT_CERTIFICATE,
+                                         certNumber, cert_name);
       memcpy(this->clientCertName, cert_name,
              TinyGsmMin(sizeof(this->clientCertName), sizeof(cert_name)));
       this->clientCertName[TinyGsmMin(sizeof(this->clientCertName),
                                       sizeof(cert_name)) -
                            1] = '\0';
       // generate and set the name for the client private key from the number
-      at->getCertificateName(CertificateType::CLIENT_KEY, certNumber,
-                             cert_name);
+      TinyGsmESP8266::getCertificateName(CertificateType::CLIENT_KEY,
+                                         certNumber, cert_name);
       memcpy(this->clientKeyName, cert_name,
              TinyGsmMin(sizeof(this->clientKeyName), sizeof(cert_name)));
       this->clientKeyName[TinyGsmMin(sizeof(this->clientKeyName),
                                      sizeof(cert_name)) -
                           1] = '\0';
-    }
-    /**
-     * @brief Set the client private key number to use for this connection
-     * @param keyNumber The client private key number, must be 0 or 1.
-     * @note The client certificate number and the client private key number
-     * must be the same for a given connection.  Calling either
-     * setClientCertificateNumber() or setPrivateKeyNumber() will set the other
-     * to the same number.
-     */
-    void setPrivateKeyNumber(uint8_t keyNumber) {
-      setClientCertificateNumber(keyNumber);
     }
 
    protected:
@@ -526,22 +496,25 @@ class TinyGsmESP8266
 #undef TINY_GSM_MODEM_CAN_LOAD_CERTS
 
  protected:
-  void parseCertificateName(const char* cert_name, CertificateType& parsed_type,
-                            uint8_t& parsed_number) {
+  static void parseCertificateName(const char*      cert_name,
+                                   CertificateType& parsed_type,
+                                   uint8_t&         parsed_number) {
     uint8_t ns_length = 0;
     // look for the namespace in the name and determine the certificate type
-    if (strncmp(cert_name, ModemConfig::CA_CERT_NAMESPACE,
-                strlen(ModemConfig::CA_CERT_NAMESPACE)) == 0) {
+    if (TINY_GSM_F_STRNCMP(cert_name, GFP(ModemConfig::CA_CERT_NAMESPACE),
+                           sizeof(ModemConfig::CA_CERT_NAMESPACE) - 1) == 0) {
       parsed_type = CertificateType::CA_CERTIFICATE;
-      ns_length   = strlen(ModemConfig::CA_CERT_NAMESPACE);
-    } else if (strncmp(cert_name, ModemConfig::CLIENT_CERT_NAMESPACE,
-                       strlen(ModemConfig::CLIENT_CERT_NAMESPACE)) == 0) {
+      ns_length   = sizeof(ModemConfig::CA_CERT_NAMESPACE) - 1;
+    } else if (TINY_GSM_F_STRNCMP(
+                   cert_name, GFP(ModemConfig::CLIENT_CERT_NAMESPACE),
+                   sizeof(ModemConfig::CLIENT_CERT_NAMESPACE) - 1) == 0) {
       parsed_type = CertificateType::CLIENT_CERTIFICATE;
-      ns_length   = strlen(ModemConfig::CLIENT_CERT_NAMESPACE);
-    } else if (strncmp(cert_name, ModemConfig::CLIENT_KEY_NAMESPACE,
-                       strlen(ModemConfig::CLIENT_KEY_NAMESPACE)) == 0) {
+      ns_length   = sizeof(ModemConfig::CLIENT_CERT_NAMESPACE) - 1;
+    } else if (TINY_GSM_F_STRNCMP(
+                   cert_name, GFP(ModemConfig::CLIENT_KEY_NAMESPACE),
+                   sizeof(ModemConfig::CLIENT_KEY_NAMESPACE) - 1) == 0) {
       parsed_type = CertificateType::CLIENT_KEY;
-      ns_length   = strlen(ModemConfig::CLIENT_KEY_NAMESPACE);
+      ns_length   = sizeof(ModemConfig::CLIENT_KEY_NAMESPACE) - 1;
     } else {
       goto parsing_error;
     }
@@ -564,8 +537,8 @@ class TinyGsmESP8266
     return;
   }
 
-  void getCertificateName(CertificateType cert_type, uint8_t certNumber,
-                          char* cert_name) {
+  static void getCertificateName(CertificateType cert_type, uint8_t certNumber,
+                                 char* cert_name) {
     // Validate certNumber is 0 or 1
     if (certNumber > 1) {
       if (cert_name != nullptr) { cert_name[0] = '\0'; }
@@ -585,16 +558,16 @@ class TinyGsmESP8266
         return;
       }
       case CertificateType::CLIENT_KEY: {
-        strcpy(cert_name, ModemConfig::CLIENT_KEY_NAMESPACE);
+        TINY_GSM_F_STRCPY(cert_name, GFP(ModemConfig::CLIENT_KEY_NAMESPACE));
         break;
       }
       case CertificateType::CLIENT_CERTIFICATE: {
-        strcpy(cert_name, ModemConfig::CLIENT_CERT_NAMESPACE);
+        TINY_GSM_F_STRCPY(cert_name, GFP(ModemConfig::CLIENT_CERT_NAMESPACE));
         break;
       }
       case CertificateType::CA_CERTIFICATE:
       default: {
-        strcpy(cert_name, ModemConfig::CA_CERT_NAMESPACE);
+        TINY_GSM_F_STRCPY(cert_name, GFP(ModemConfig::CA_CERT_NAMESPACE));
         break;
       }
     }
@@ -849,20 +822,41 @@ class TinyGsmESP8266
     uint8_t     pki_number  = 0;
     // If we actually have a secure socket populate the above with real values
     if (ssl) {
+      // Use a static cast to get the context index.
+      // This isn't ideal; hopefully the compiler will save us from ourselves.
+      // We cannot use a dynamic cast because Arduino compiles with -fno-rtti.
       const GsmClientSecureESP8266* thisClient =
           static_cast<const GsmClientSecureESP8266*>(sockets[mux]);
-      sslAuthMode = thisClient->sslAuthMode;
-      ca_number   = thisClient->ca_number;
-      pki_number  = thisClient->pki_number;
-    }
-
-    if (ssl) {
-      if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
-        DBG("### The ESP8266 does not support SSL using pre-shared keys.");
-        // The ESP8266 does not support SSL using pre-shared keys with AT
-        // firmware.
+      uint8_t sslCtxIndex = thisClient->sslCtxIndex;
+      // Retrieve the SSL context object for the given context ID.
+      ::GsmSecureContext<TinyGsmESP8266, TinyGsmESP8266SslConfig>* sslContext =
+          getSSLContext(sslCtxIndex);
+      // check for a valid SSL context
+      if (sslContext == nullptr) {
+        DBG("### No SSL context is registered at index", sslCtxIndex);
         return false;
       }
+      // Another non-ideal static cast to get the ESP8266-specific context.
+      // We cast to the GsmSecureContextESP8266 instead of the generic
+      // GsmSecureContext because we want the ca_number or pki_number.
+      const GsmSecureContextESP8266* thisContext =
+          static_cast<const GsmSecureContextESP8266*>(sslContext);
+
+      sslAuthMode = thisContext->sslAuthMode;
+      ca_number   = thisContext->ca_number;
+      pki_number  = thisContext->pki_number;
+
+      DBG("### SSL context index:", sslCtxIndex);
+      DBG("### SSL auth mode:", (int)sslAuthMode);
+      DBG("### CA cert number:", ca_number);
+      DBG("### PKI number:", pki_number);
+
+      // check that the context has the required credentials
+      if (!validateSSLContextCredentials(sslContext)) {
+        DBG("### The SSL context is missing required credentials!");
+        return false;
+      }
+
       // SSL certificate checking will not work without a valid timestamp!
       if ((sslAuthMode != SSLAuthMode::NO_VALIDATION) &&
           !waitForTimeSync(timeout_s)) {
@@ -898,18 +892,28 @@ class TinyGsmESP8266
       // and 1.
       if ((sslAuthMode == SSLAuthMode::NO_VALIDATION)) {
         sendAT(GF("+CIPSSLCCONF="), mux, GF(",0"));
-      } else {
+      } else if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+        DBG("### The ESP8266 does not support SSL using pre-shared keys.");
+        // The ESP8266 does not support SSL using pre-shared keys with AT
+        // firmware.
+        return false;
+      } else if (sslAuthMode == SSLAuthMode::CLIENT_VALIDATION ||
+                 sslAuthMode == SSLAuthMode::CA_VALIDATION ||
+                 sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION) {
         // For auth modes 1, 2, and 3, we need to specify the PKI and CA numbers
         sendAT(GF("+CIPSSLCCONF="), mux, ',', static_cast<uint8_t>(sslAuthMode),
                ',', pki_number, ',', ca_number);
+      } else {
+        DBG("### Unsupported ESP8266 SSL authentication mode!");
+        return false;
       }
-      waitResponse();
+      if (waitResponse() != 1) { return false; }
 
       // set the SSL SNI (server name indication)
       // Multiple connections: (AT+CIPMUX=1)
       // AT+CIPSSLCSNI=<link ID>,<"sni">
       sendAT(GF("+CIPSSLCSNI="), mux, GF(",\""), host, '"');
-      waitResponse();
+      if (waitResponse() != 1) { return false; }
     }
 
     String resolved_ip;
@@ -1031,10 +1035,8 @@ class TinyGsmESP8266
         // the mux is valid before we call it.
         moveCharsFromStreamToFifo(mux, len_reported);
       } else {
-        do {  // If the mux is invalid, throw away the stream data
-          stream.read();
-          TINY_GSM_YIELD();
-        } while (stream.available());
+        // If the mux is invalid, throw away the reported stream data
+        streamDump(len_reported);
       }
       data = "";
       DBG("### Got Data:", len_reported, "on", mux);

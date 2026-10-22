@@ -155,8 +155,9 @@ constexpr char TinyGsmXBeeModemConfig::MODEM_MODEL[] __attribute__((weak));
 /**
  * @brief TCP behavior and limits for the Digi XBee and XBee3.
  *
- * Bee's do not support multiplexing in transparent/command mode.  The much more
- * complicated API mode is needed for multiplexing.
+ * XBees do not support multiple sockets in transparent/command mode.  The much
+ * more complicated API mode is needed.  In API mode, 4-10 sockets can be
+ * supported, depending on the specific module.
  * @ingroup digi_xbee
  */
 struct TinyGsmXBeeTcpConfig
@@ -167,6 +168,15 @@ struct TinyGsmXBeeTcpConfig
           /*sendMaxSize*/ 1500,    // default
           /*connectTimeoutS*/ 75,  // default
           /*stopTimeoutS*/ 5> {};
+
+/**
+ * @brief SSL behavior and limits for Digi XBee and XBee3.
+ * All supported XBee modules support 3 SSL contexts in API mode, but only 1
+ * ($0) in transparent mode.
+ * @ingroup digi_xbee
+ */
+struct TinyGsmXBeeSslConfig : public TinyGsmSslConfigPreset<
+                                  /*contextCount*/ 1> {};
 
 /// The known types of XBees
 /// The values are responses to the HS command to get "hardware series"
@@ -187,6 +197,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
                     public TinyGsmGPRS<TinyGsmXBee>,
                     public TinyGsmWifi<TinyGsmXBee>,
                     public TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>,
+                    public TinyGsmSSL<TinyGsmXBee, TinyGsmXBeeSslConfig>,
                     public TinyGsmSMS<TinyGsmXBee>,
                     public TinyGsmBattery<TinyGsmXBee>,
                     public TinyGsmTemperature<TinyGsmXBee> {
@@ -195,6 +206,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   friend class TinyGsmWifi<TinyGsmXBee>;
   friend class TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>;
   friend class GsmClient<TinyGsmXBee, TinyGsmXBeeTcpConfig>;
+  friend class TinyGsmSSL<TinyGsmXBee, TinyGsmXBeeSslConfig>;
   friend class TinyGsmSMS<TinyGsmXBee>;
   friend class TinyGsmBattery<TinyGsmXBee>;
   friend class TinyGsmTemperature<TinyGsmXBee>;
@@ -202,6 +214,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
  public:
   using ModemConfig = TinyGsmXBeeModemConfig;
   using TcpConfig   = TinyGsmXBeeTcpConfig;
+  using SslConfig   = TinyGsmXBeeSslConfig;
+  using GsmSecureContext =
+      TinyGsmSSL<TinyGsmXBee, TinyGsmXBeeSslConfig>::gsmSecureContext;
 
   /*
    * Inner Client
@@ -260,6 +275,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       return true;
     }
 
+    /*
+     * Arduino Client interface
+     */
    public:
     /**
      * @copydoc GsmClient::connect(const char*, uint16_t, int)
@@ -409,19 +427,90 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
  public:
   /// Inner secure client
   /// @ingroup digi_xbee
-  class GsmClientSecureXBee : public GsmClientXBee, public GsmSecureClient {
+  class GsmClientSecureXBee
+      : public GsmSecureClient<GsmClientXBee, TinyGsmXBee> {
     friend class TinyGsmXBee;
+
+   protected:
+    /**
+     * @brief Validates and configures the SSL context for the XBee modem.
+     */
+    bool validateAndConfigureSSLContext() {
+      if (at == nullptr) { return false; }
+      // NOTE:  Not calling stop() or yield() here
+      at->streamClear();  // Empty anything in the buffer before starting
+
+      GsmSecureContext* sslContext = at->getSSLContext(sslCtxIndex);
+      // check for a valid SSL context
+      if (sslContext == nullptr) {
+        DBG("### No SSL context is registered at index", sslCtxIndex);
+        return false;
+      }
+      // check that the authentication mode is supported
+      if (sslContext->sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+        DBG("### The XBee does not support SSL using pre-shared keys.");
+        return false;
+      }
+      // check that the context has the required credentials
+      if (!at->validateSSLContextCredentials(sslContext)) {
+        DBG("### The SSL context is missing required credentials!");
+        return false;
+      }
+      // configure the context
+      if (!at->configureSSLContext(sslCtxIndex)) {
+        DBG("### Failed to configure the SSL context!");
+        return false;
+      }
+      return true;
+    }
 
    public:
     using GsmClientXBee::connect;
     using GsmClientXBee::stop;
+    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmXBeeTcpConfig;
 
     /*
-     * Client constructors and initialization
+     * Arduino Client interface
      */
 
-    TINY_GSM_SECURE_CLIENT_CTORS(XBee)
+    int connect(const char* host, uint16_t port, int timeout_s) override {
+      // NOTE:  Not calling stop() or yield() here
+      if (!validateAndConfigureSSLContext()) { return 0; }
+      // do the rest of the connection process
+      sock_connected      = at->modemConnect(host, port, mux, timeout_s);
+      lastConnectionCheck = millis();
+      return sock_connected;
+    }
+
+    int connect(IPAddress ip, uint16_t port, int timeout_s) override {
+      // NOTE:  Not calling stop() or yield() here
+      if (!validateAndConfigureSSLContext()) { return 0; }
+      if (timeout_s != 0) {
+        DBG("Timeout [", timeout_s, "] doesn't apply here.");
+      }
+      sock_connected      = at->modemConnect(ip, port, mux, timeout_s);
+      lastConnectionCheck = millis();
+      return sock_connected;
+    }
+  };
+
+  /*
+   * Inner Secure Context
+   */
+ public:
+  /// Inner secure context
+  /// @ingroup digi_xbee
+  class GsmSecureContextXBee
+      : public ::GsmSecureContext<TinyGsmXBee, TinyGsmXBeeSslConfig> {
+    friend class TinyGsmXBee;
+
+   public:
+    using ::GsmSecureContext<TinyGsmXBee,
+                             TinyGsmXBeeSslConfig>::GsmSecureContext;
+
+    /// Unregister this context from its modem.
+    ~GsmSecureContextXBee() {}
   };
 
   /*
@@ -632,13 +721,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   void maintainImpl() {
     // this only happens OUTSIDE command mode, so if we're getting characters
     // they should be data received from the TCP connection
-    // TINY_GSM_YIELD();
-    // if (!inCommandMode) {
-    //   while (stream.available()) {
-    //     char c = stream.read();
-    //     if (c > 0) sockets[0]->rx.put(c);
-    //   }
-    // }
   }
 
   bool factoryDefaultImpl() {
@@ -1270,9 +1352,184 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     return static_cast<float>(static_cast<int8_t>(intRes));
   }
 
+
+  /*
+   * SSL context functions
+   */
+ public:
+  /**
+   * @brief Configure the SSL context for the modem.
+   * @param context_id The SSL context ID.
+   * @param sslAuthMode The SSL authentication mode.
+   * @param sslVersion The SSL version.
+   * @param CAcertName The CA certificate name.
+   * @param clientCertName The client certificate name.
+   * @param clientKeyName The client key name.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool configureSSLContext(uint8_t context_id, SSLAuthMode sslAuthMode,
+                           SSLVersion sslVersion, const char* CAcertName,
+                           const char* clientCertName,
+                           const char* clientKeyName) {
+    if (context_id != 0) {
+      DBG("XBee only supports 1 SSL context in transparent mode!");
+      return false;
+    }
+
+    // store the configuration in the SSL context object
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    if (sslContext == nullptr) { return false; }
+    sslContext->sslAuthMode = sslAuthMode;
+    sslContext->sslVersion  = sslVersion;
+    strncpy(sslContext->CAcertName, CAcertName ? CAcertName : "",
+            sizeof(sslContext->CAcertName) - 1);
+    sslContext->CAcertName[sizeof(sslContext->CAcertName) - 1] = '\0';
+    strncpy(sslContext->clientCertName, clientCertName ? clientCertName : "",
+            sizeof(sslContext->clientCertName) - 1);
+    sslContext->clientCertName[sizeof(sslContext->clientCertName) - 1] = '\0';
+    strncpy(sslContext->clientKeyName, clientKeyName ? clientKeyName : "",
+            sizeof(sslContext->clientKeyName) - 1);
+    sslContext->clientKeyName[sizeof(sslContext->clientKeyName) - 1] = '\0';
+
+    return configureSSLContext(context_id);
+  }
+
+  /**
+   * @brief Configure the SSL context for the modem.
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool configureSSLContext(uint8_t context_id) {
+    if (context_id != 0) {
+      DBG("XBee only supports 1 SSL context in transparent mode!");
+      return false;
+    }
+
+    bool success = true;
+
+    // The $0 command sets transparent-mode TLS profile 0 using the format
+    // <CA certificate>;<client certificate>;<client key>. The TL command sets
+    // the TLS protocol version used for subsequently opened sockets. In the
+    // XBee command set, TL = 0x3 enables TLS 1.2, while TL = 0x4 enables TLS
+    // 1.3 or later. Only SSLVersion::TLS1_2 maps to 0x3; all other versions
+    // (SSL3_0, TLS1_0, TLS1_1, TLS1_3, and ALL_SSL) map to 0x4.
+
+    // Retrieve the SSL context object for the given context ID.
+    GsmSecureContext* sslContext  = getSSLContext(context_id);
+    SSLAuthMode       sslAuthMode = sslContext ? sslContext->sslAuthMode
+                                               : SSLAuthMode::NO_VALIDATION;
+    SSLVersion        sslVersion  = sslContext ? sslContext->sslVersion
+                                               : SSLVersion::ALL_SSL;
+    const char* CAcertName     = sslContext ? sslContext->CAcertName : nullptr;
+    const char* clientCertName = sslContext ? sslContext->clientCertName
+                                            : nullptr;
+    const char* clientKeyName  = sslContext ? sslContext->clientKeyName
+                                            : nullptr;
+
+    DBG("### SSL context index:", context_id);
+    DBG("### SSL auth mode:", (int)sslAuthMode);
+    DBG("### SSL version:", (int)sslVersion);
+    DBG("### CA cert name:", CAcertName);
+    DBG("### Client cert name:", clientCertName);
+    DBG("### Client key name:", clientKeyName);
+
+    XBEE_COMMAND_START_DECORATOR(5, false)
+
+    bool changesMadeSSL = false;
+
+    // set the SSL version
+    // The SSL/TLS versions supported by the XBee depend on the specific module,
+    // but this library maps as follows: SSLVersion::TLS1_2 (3) -> TL=0x3,
+    // and all other versions (SSL3_0, TLS1_0, TLS1_1, TLS1_3, ALL_SSL) ->
+    // TL=0x4.
+    changesMadeSSL |= changeSettingIfNeeded(
+        GF("TL"), sslVersion == SSLVersion::TLS1_2 ? 0x3 : 0x4);
+
+    // apply the correct certificates to the connection
+    // NOTE: We supply the number of certs we expect to use!  The module selects
+    // the authentication mode based on how many certificates are provided.
+    switch (sslAuthMode) {
+      case SSLAuthMode::NO_VALIDATION: {
+        // set all certs to empty
+        changesMadeSSL |= changeSettingIfNeeded("$0", GF(";;"));
+        break;
+      }
+      case SSLAuthMode::CA_VALIDATION: {
+        if (CAcertName != nullptr &&
+            strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
+          char newTLSProfile[TINY_GSM_CERT_NAME_LENGTH + 3] = {0};
+          strncpy(newTLSProfile, CAcertName, strlen(CAcertName));
+          strncat(newTLSProfile, ";;", 3);
+          changesMadeSSL |= changeSettingIfNeeded("$0", newTLSProfile);
+        } else {
+          DBG("### The CA certificate name is not set or empty.");
+          XBEE_COMMAND_END_DECORATOR
+          return false;
+        }
+        break;
+      }
+      case SSLAuthMode::MUTUAL_AUTHENTICATION: {
+        if (CAcertName != nullptr &&
+            strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
+            clientCertName != nullptr &&
+            strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
+            clientKeyName != nullptr &&
+            strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
+          char newTLSProfile[3 * TINY_GSM_CERT_NAME_LENGTH + 3] = {0};
+          strncpy(newTLSProfile, CAcertName, strlen(CAcertName));
+          strncat(newTLSProfile, ";", 2);
+          strncat(newTLSProfile, clientCertName, strlen(clientCertName));
+          strncat(newTLSProfile, ";", 2);
+          strncat(newTLSProfile, clientKeyName, strlen(clientKeyName));
+          changesMadeSSL |= changeSettingIfNeeded("$0", newTLSProfile);
+        } else {
+          DBG("### One or more of the certificate names for mutual "
+              "authentication are not set or empty.");
+          XBEE_COMMAND_END_DECORATOR
+          return false;
+        }
+        break;
+      }
+      case SSLAuthMode::PRE_SHARED_KEYS:
+      case SSLAuthMode::CLIENT_VALIDATION:
+      default: {
+        DBG("### The XBee only supports SSL using no validation, server "
+            "authentication, and mutual authentication.");
+        XBEE_COMMAND_END_DECORATOR
+        return false;
+      }
+    }
+
+    if (changesMadeSSL) { success &= writeChanges(); }
+
+    XBEE_COMMAND_END_DECORATOR
+    return success;
+  }
+
+  /**
+   * @brief Link the SSL context to a specific connection (mux).
+   * @param mux The **zero-indexed** position of the client in the modem's
+   * socket array.
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool linkSSLContext(uint8_t mux, uint8_t context_id) {
+    // Nothing to do here but check that the mux and context IDs are valid.
+    if (mux != 0) {
+      DBG("XBee only supports 1 IP channel in transparent mode!");
+      return false;
+    }
+    if (context_id != 0) {
+      DBG("XBee only supports 1 SSL context in transparent mode!");
+      return false;
+    }
+    return true;
+  }
+
   /*
    * Client-related functions
    */
+
  protected:
   int16_t getConnectionIndicator() {
     XBEE_COMMAND_START_DECORATOR(5, false)
@@ -1313,11 +1570,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     while ((millis() - startMillis) < timeout_ms) {
       DBG("Looking up IP address for host:", host);
       sendAT(GF("LA"), host);
-      while (stream.available() < 4 && (millis() - startMillis < timeout_ms)) {
-        TINY_GSM_YIELD()
-      }
-      strIP = stream.readStringUntil('\r');  // read result
-      strIP.trim();
+      uint32_t elapsed = millis() - startMillis;
+      strIP = readResponseString(elapsed < timeout_ms ? timeout_ms - elapsed
+                                                      : 0);
       if (strIP != "" && strIP != GF("ERROR")) {
         gotIP                = true;
         lastHostLookupMillis = millis();
@@ -1361,94 +1616,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     changesMade |= changeSettingIfNeeded(GF("RO"), 0x03);
 
     if (ssl) {
-      bool changesMadeSSL = false;
-
-      // If we have a secure socket, use a static cast to get the
-      // authentication mode and certificate names. This isn't really "safe"
-      // but since we've already checked that the socket is a secure one,
-      // we're pretty sure of the type and it should work.
-      const GsmClientSecureXBee* thisClient =
-          static_cast<const GsmClientSecureXBee*>(sockets[mux]);
-      SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
-      SSLVersion  sslVersion     = thisClient->sslVersion;
-      uint8_t     sslCtxIndex    = thisClient->sslCtxIndex;
-      const char* CAcertName     = thisClient->CAcertName;
-      const char* clientCertName = thisClient->clientCertName;
-      const char* clientKeyName  = thisClient->clientKeyName;
-
-      char sslCtxStr[3] = {0};
-      if (sslCtxIndex == 0) {
-        strncpy(sslCtxStr, "$0", 3);
-      } else if (sslCtxIndex == 1) {
-        strncpy(sslCtxStr, "$1", 3);
-      } else if (sslCtxIndex == 2) {
-        strncpy(sslCtxStr, "$2", 3);
-      } else {
-        DBG("### Invalid SSL context index.");
-        return false;
-      }
-
       // Put in SSL over TCP communication mode
-      changesMadeSSL |= changeSettingIfNeeded(GF("IP"), 0x4);
-
-      // NOTE: We will always configure TLS profile 0 ($0)
-
-      // set the ssl version
-      // The XBee only supports TLS 1.2 (0x3) and 1.3 (0x4, set as default)
-      changesMadeSSL |= changeSettingIfNeeded(
-          GF("TL"), sslVersion == SSLVersion::TLS1_2 ? 0x3 : 0x4);
-
-      // apply the correct certificates to the connection
-      // NOTE: We supply the number of certs we expect to use!
-      switch (sslAuthMode) {
-        case SSLAuthMode::NO_VALIDATION: {
-          // set all certs to empty
-          changesMadeSSL |= changeSettingIfNeeded(sslCtxStr, GF(";;"));
-          break;
-        }
-        case SSLAuthMode::CA_VALIDATION: {
-          if (CAcertName != nullptr &&
-              strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
-            char newTLSProfile[TINY_GSM_CERT_NAME_LENGTH + 3] = {0};
-            strncpy(newTLSProfile, CAcertName, strlen(CAcertName));
-            strncat(newTLSProfile, ";;", 3);
-            changesMadeSSL |= changeSettingIfNeeded(sslCtxStr, newTLSProfile);
-          } else {
-            DBG("### The CA certificate name is not set or empty.");
-            return false;
-          }
-          break;
-        }
-        case SSLAuthMode::MUTUAL_AUTHENTICATION: {
-          if (CAcertName != nullptr &&
-              strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
-              clientCertName != nullptr &&
-              strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
-              clientKeyName != nullptr &&
-              strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
-            char newTLSProfile[3 * TINY_GSM_CERT_NAME_LENGTH + 3] = {0};
-            strncpy(newTLSProfile, CAcertName, strlen(CAcertName));
-            strncat(newTLSProfile, ";", 2);
-            strncat(newTLSProfile, clientCertName, strlen(clientCertName));
-            strncat(newTLSProfile, ";", 2);
-            strncat(newTLSProfile, clientKeyName, strlen(clientKeyName));
-            changesMadeSSL |= changeSettingIfNeeded(sslCtxStr, newTLSProfile);
-          } else {
-            DBG("### One or more of the certificate names for mutual "
-                "authentication are not set or empty.");
-            return false;
-          }
-          break;
-        }
-        case SSLAuthMode::PRE_SHARED_KEYS:
-        case SSLAuthMode::CLIENT_VALIDATION:
-        default: {
-          DBG("### The XBee only supports SSL using no validation, server "
-              "authentication, and mutual authentication.");
-          return false;
-        }
-      }
-      changesMade |= changesMadeSSL;
+      changesMade |= changeSettingIfNeeded(GF("IP"), 0x4);
     } else {
       // Put in unsecured TCP mode
       changesMade |= changeSettingIfNeeded(GF("IP"), 0x1);
@@ -1511,13 +1680,13 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     // For the pre XBee3 Bees, we need to look up the IP address manually
 
-    // If we don't have a good IP for the host or if our last lookup was more
-    // than 12 hours ago, or if the configuration with the FQBN failed, we do a
-    // DNS search
-    bool lookupNeeded = (!fqdnSupported &&
-                         (savedIP == NULL_IP || lastHostLookupMillis == 0 ||
-                          millis() - lastHostLookupMillis > 43200000LL)) ||
-        !success;
+    // Use an IP for pre-XBee3 modules or when FQDN configuration failed.
+    bool useIP = !fqdnSupported || !success;
+    // Only repeat the DNS lookup if there is no cached IP or it is more than 12
+    // hours old.
+    bool lookupNeeded = useIP &&
+        (savedIP == NULL_IP || lastHostLookupMillis == 0 ||
+         millis() - lastHostLookupMillis > 43200000LL);
     if (lookupNeeded) {
       // This will return NULL_IP if lookup fails
       savedIP = lookupHostIP(host, timeout_s);
@@ -1526,7 +1695,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     char hostFromIP[16] = {};
 
     // If we now have a valid IP address, use it to connect
-    if (lookupNeeded && savedIP != NULL_IP) {
+    if (useIP && savedIP != NULL_IP) {
       // Call configureConnection to set up the connection parameters with the
       // found IP address and port
       TinyGsmIptoBuffer(savedIP, hostFromIP);
@@ -1598,7 +1767,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       DBG(GF("Ping failed, exiting command and sending blank lines"));
       // exit command mode so we're sending the line[s] to the server
       exitCommand();
-      stream.write(GF("\r\n"));
+      streamWrite(GF("\r\n"));
       stream.flush();
       delay(4);  // wait >3 charater spaces (at 9600) to ensure the line is
                  // packetized and sent.
@@ -1883,11 +2052,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
  public:
   /// Clear out the stream buffer
-  void streamClear(void) {
-    TINY_GSM_YIELD();
-    while (stream.available()) {
+  void streamClear() {
+    while (streamTimedAvailable(1, TINY_GSM_INTERCHAR_TIMEOUT_MS) > 0) {
       stream.read();
-      TINY_GSM_YIELD();
     }
   }
 
@@ -2000,11 +2167,11 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    * @return The response from the XBee module as a string.
    */
   String readResponseString(uint32_t timeout_ms = 1000L) {
-    TINY_GSM_YIELD();
-    uint32_t startMillis = millis();
-    while (!stream.available() && millis() - startMillis < timeout_ms) {}
-    String res =
-        stream.readStringUntil('\r');  // lines end with carriage returns
+    String res;
+    int    firstChar = streamTimedRead(timeout_ms);
+    if (firstChar < 0 || firstChar == '\r') { return res; }
+    res += static_cast<char>(firstChar);
+    res += stream.readStringUntil('\r');  // lines end with carriage returns
     res.trim();
     return res;
   }
@@ -2013,27 +2180,43 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    * @brief Reads a response from the XBee module as an integer, waiting up to
    * timeout milliseconds for data to become available.
    *
-   * @param timeout The maximum time to wait for a response, in milliseconds.
+   * @param timeout_ms The maximum time to wait for a response, in milliseconds.
    * @return The response from the XBee module as an integer.
    */
   int16_t readResponseInt(uint32_t timeout_ms = 1000L) {
-    TINY_GSM_YIELD();
-    uint32_t startMillis = millis();
-    while (!stream.available() && millis() - startMillis < timeout_ms) {}
+    char buf[16];  // buffer to store the response as a C-string
+    int  firstChar = streamTimedRead(timeout_ms);
 
-    char   buf[16];  // buffer to store the response as a C-string
-    size_t bytesRead = stream.readBytesUntil('\r', buf, sizeof(buf));
+    // Return -1 for empty response
+    if (firstChar < 0 || firstChar == '\r') { return -1; }
 
-    int16_t result = 0;
+    buf[0]           = static_cast<char>(firstChar);
+    size_t bytesRead = 1 +
+        stream.readBytesUntil('\r', buf + 1, sizeof(buf) - 1);
+
+    uint16_t result = 0;
 
     for (uint16_t i = 0; i < bytesRead; ++i) {
-      char c = buf[i];
+      char    c        = buf[i];
+      uint8_t hexDigit = 0;
+
+      // Convert valid hexadecimal digit to its numeric value
+      if (c >= '0' && c <= '9') {
+        hexDigit = c - '0';
+      } else if (c >= 'A' && c <= 'F') {
+        hexDigit = c - 'A' + 10;
+      } else if (c >= 'a' && c <= 'f') {
+        hexDigit = c - 'a' + 10;
+      } else {
+        // Invalid character outside 0-9, A-F, a-f
+        return -1;
+      }
 
       result <<= 4;
-      result |= (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+      result |= hexDigit;
     }
 
-    return result;
+    return static_cast<int16_t>(result);
   }
 
   /**

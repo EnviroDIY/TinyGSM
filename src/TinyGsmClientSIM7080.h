@@ -65,9 +65,6 @@ constexpr char TinyGsmSim7080ModemConfig::MODEM_MODEL[] __attribute__((weak));
 /**
  * @brief TCP behavior and limits for the SIMCom SIM7080 modem family.
  *
- * Also supports 6 SSL contexts (0-5)
- * The SSL context is collection of SSL settings, not the connection identifier.
- *
  * Up to 1460 bytes can be sent at a time with CASEND.
  * NOTE: The manual says 1460, but the actual value seems to be variable.  I
  * have modules P/N S2-108HB-Z3037 that never report more than 1360 available
@@ -91,12 +88,20 @@ struct TinyGsmSim7080TcpConfig
           /*stopTimeoutS*/ 15,
           /*minFreeTxBuffer*/ 1360> {};
 
+/**
+ * @brief SSL behavior and limits for the SIMCom SIM7080 modem family.
+ * The module supports 6 SSL contexts (0-5).
+ * @ingroup simcom_sim7080
+ */
+struct TinyGsmSim7080SslConfig : public TinyGsmSslConfigPreset<
+                                     /*contextCount*/ 6> {};
+
 /// Class for the SIMCOM SIM7070, SIM7080, and SIM7090
 /// @ingroup simcom_sim7080
 class TinyGsmSim7080
     : public TinyGsmSim70xx<TinyGsmSim7080, TinyGsmSim7080ModemConfig>,
       public TinyGsmTCP<TinyGsmSim7080, TinyGsmSim7080TcpConfig>,
-      public TinyGsmSSL<TinyGsmSim7080>,
+      public TinyGsmSSL<TinyGsmSim7080, TinyGsmSim7080SslConfig>,
       public TinyGsmSMS<TinyGsmSim7080>,
       public TinyGsmGSMLocation<TinyGsmSim7080>,
       public TinyGsmTime<TinyGsmSim7080>,
@@ -107,7 +112,7 @@ class TinyGsmSim7080
   friend class TinyGsmGPRS<TinyGsmSim7080>;
   friend class TinyGsmTCP<TinyGsmSim7080, TinyGsmSim7080TcpConfig>;
   friend class GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig>;
-  friend class TinyGsmSSL<TinyGsmSim7080>;
+  friend class TinyGsmSSL<TinyGsmSim7080, TinyGsmSim7080SslConfig>;
   friend class TinyGsmSMS<TinyGsmSim7080>;
   friend class TinyGsmGSMLocation<TinyGsmSim7080>;
   friend class TinyGsmGPS<TinyGsmSim7080>;
@@ -118,6 +123,9 @@ class TinyGsmSim7080
  public:
   using ModemConfig = TinyGsmSim7080ModemConfig;
   using TcpConfig   = TinyGsmSim7080TcpConfig;
+  using SslConfig   = TinyGsmSim7080SslConfig;
+  using GsmSecureContext =
+      TinyGsmSSL<TinyGsmSim7080, TinyGsmSim7080SslConfig>::gsmSecureContext;
 
   /*
    * Inner Client
@@ -224,20 +232,15 @@ class TinyGsmSim7080
  public:
   /// Inner secure client
   /// @ingroup simcom_sim7080
-  class GsmClientSecureSim7080 : public GsmClientSim7080,
-                                 public GsmSecureClient {
+  class GsmClientSecureSim7080
+      : public GsmSecureClient<GsmClientSim7080, TinyGsmSim7080> {
     friend class TinyGsmSim7080;
 
    public:
     using GsmClientSim7080::connect;
     using GsmClientSim7080::stop;
+    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmSim7080TcpConfig;
-
-    /*
-     * Client constructors and initialization
-     */
-
-    TINY_GSM_SECURE_CLIENT_CTORS(Sim7080)
 
     // Because we have the same potential range of mux numbers for secure and
     // insecure connections, we don't need to re-check for mux number
@@ -250,11 +253,27 @@ class TinyGsmSim7080
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
       stop(TcpConfig::kStopTimeoutS * 1000L);
-      TINY_GSM_YIELD();
       rx.clear();
-      if (!sslCtxConfigured) {
-        sslCtxConfigured = at->configureSSLContext(sslCtxIndex, host,
-                                                   sslAuthMode, sslVersion);
+      GsmSecureContext* sslContext = at->getSSLContext(sslCtxIndex);
+      // check for a valid SSL context
+      if (sslContext == nullptr) {
+        DBG("### No SSL context is registered at index", sslCtxIndex);
+        return 0;
+      }
+      // check that the context has the required credentials
+      if (!at->validateSSLContextCredentials(sslContext)) {
+        DBG("### The SSL context is missing required credentials!");
+        return 0;
+      }
+      // configure the context
+      if (!at->configureSSLContext(sslCtxIndex)) {
+        DBG("### Failed to configure the SSL context!");
+        return 0;
+      }
+      // set the SNI
+      if (!at->configureSSLSNI(sslCtxIndex, host)) {
+        DBG("### Failed to configure SSL SNI!");
+        return 0;
       }
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
@@ -263,6 +282,24 @@ class TinyGsmSim7080
 
   /// Typedef for backward compatibility
   using GsmClientSecureSIM7080 = GsmClientSecureSim7080;
+
+  /*
+   * Inner Secure Context
+   */
+ public:
+  /// Inner secure context
+  /// @ingroup simcom_sim7080
+  class GsmSecureContextSim7080
+      : public ::GsmSecureContext<TinyGsmSim7080, TinyGsmSim7080SslConfig> {
+    friend class TinyGsmSim7080;
+
+   public:
+    using ::GsmSecureContext<TinyGsmSim7080,
+                             TinyGsmSim7080SslConfig>::GsmSecureContext;
+
+    /// Unregister this context from its modem.
+    ~GsmSecureContextSim7080() {}
+  };
 
   /*
    * GSM Modem Constructor
@@ -390,7 +427,8 @@ class TinyGsmSim7080
   // have type like ".pem" or ".der".
   // NOTE: Uploading the certificate only happens by filename, the type of
   // certificate does not matter here
-  bool loadCertificateImpl(const char* certificateName, const char* cert,
+  template <typename TCert>
+  bool loadCertificateImpl(const char* certificateName, TCert cert,
                            const uint16_t len) {
     bool success = true;
     // Initialize AT relate to file system functions
@@ -425,7 +463,7 @@ class TinyGsmSim7080
                             GFP(ModemConfig::GSM_ERROR)) == 1;
 
     if (success) {
-      stream.write(cert, len);
+      this->streamWrite(cert, len);
       stream.flush();
       success &= waitResponse(5000L) == 1;
     } else {
@@ -796,13 +834,27 @@ class TinyGsmSim7080
   /**
    * @brief Configure the SSL context for the modem.
    * @param context_id The SSL context ID.
-   * @param sni The Server Name Indication (SNI) for the SSL connection.
    * @param sslAuthMode The SSL authentication mode.
    * @param sslVersion The SSL version.
    * @return True if the operation was successful, false otherwise.
    */
-  bool configureSSLContext(uint8_t context_id, const char* sni,
-                           SSLAuthMode sslAuthMode, SSLVersion sslVersion) {
+  bool configureSSLContext(uint8_t context_id, SSLAuthMode sslAuthMode,
+                           SSLVersion sslVersion) {
+    // store the configuration in the SSL context object
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    if (sslContext) {
+      sslContext->sslAuthMode = sslAuthMode;
+      sslContext->sslVersion  = sslVersion;
+    }
+
+    return configureSSLContext(context_id);
+  }
+  /**
+   * @brief Configure the SSL context for the modem.
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool configureSSLContext(uint8_t context_id) {
     bool success = true;
 
     // NOTE: The SSL context (<ctxindex>) is not the same as the connection
@@ -814,6 +866,17 @@ class TinyGsmSim7080
     // NOTE: If you want to tie the same SSL context to an MQTT application on
     // the module, you need to add one to the index in the SMSSL command (ie,
     // SMSSL=1,... will call settings configured for SSL context 0)
+
+    // Retrieve the SSL context object for the given context ID.
+    GsmSecureContext* sslContext  = getSSLContext(context_id);
+    SSLAuthMode       sslAuthMode = sslContext ? sslContext->sslAuthMode
+                                               : SSLAuthMode::NO_VALIDATION;
+    SSLVersion        sslVersion  = sslContext ? sslContext->sslVersion
+                                               : SSLVersion::ALL_SSL;
+
+    DBG("### SSL context index:", context_id);
+    DBG("### SSL auth mode:", (int)sslAuthMode);
+    DBG("### SSL version:", (int)sslVersion);
 
     // set the ssl version
     // AT+CSSLCFG="SSLVERSION",<ctxindex>,<sslversion>
@@ -889,14 +952,14 @@ class TinyGsmSim7080
       for (uint8_t i = 0; i < 8; i++) {
         sendAT(GF("+CSSLCFG=\"ciphersuite\","), context_id, ',', i, ',',
                ciphersuites[i]);
-        waitResponse();
+        success &= waitResponse() == 1;
       }
     } else if (sslVersion == SSLVersion::TLS1_3) {
       const char* ciphersuites[3] = {"0x1301", "0x1302", "0x1303"};
       for (uint8_t i = 0; i < 3; i++) {
         sendAT(GF("+CSSLCFG=\"ciphersuite\","), context_id, ',', i, ',',
                ciphersuites[i]);
-        waitResponse();
+        success &= waitResponse() == 1;
       }
     } else {
       // These are selected from this AWS list:
@@ -917,23 +980,15 @@ class TinyGsmSim7080
            i++) {
         sendAT(GF("+CSSLCFG=\"ciphersuite\","), context_id, ',', i, ',',
                ciphersuites[i]);
-        waitResponse();
+        success &= waitResponse() == 1;
       }
     }
-
-    // set the SSL SNI (server name indication)
-    // AT+CSSLCFG="SNI",<ctxindex>,<servername>
-    // <ctxindex> SSL context identifier
-    // <servername> Sever name (we use the host)
-    // NOTE:  despite docs using caps, "sni" must be in lower case
-    sendAT(GF("+CSSLCFG=\"sni\","), context_id, GF(",\""), sni, '"');
-    success &= waitResponse() == 1;
 
     // Ignore the RTC time?
     // AT+CSSLCFG="IGNORERTCTIME",<ctxindex>,<ignorertctime>
     // <ctxindex> SSL context identifier
-    // <ignorertctime> 0 to ignore, 1 to use
-    sendAT(GF("+CSSLCFG=\"ignorertctime\","), context_id, GF(",1"));
+    // <ignorertctime> 0: Do not ignore the RTC time, 1: Ignore the RTC time
+    sendAT(GF("+CSSLCFG=\"ignorertctime\","), context_id, GF(",0"));
     success &= waitResponse() == 1;
 
     // Query all the parameters that have been set for this SSL context
@@ -950,20 +1005,79 @@ class TinyGsmSim7080
 
     return success;
   }
+
+  /**
+   * @brief Apply hostname-dependent SNI to an SSL context.
+   * @param context_id The SSL context ID.
+   * @param sni The Server Name Indication for this connection.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool configureSSLSNI(uint8_t context_id, const char* sni) {
+    if (getSSLContext(context_id) == nullptr || sni == nullptr ||
+        sni[0] == '\0') {
+      return false;
+    }
+    // Despite the manual using caps, "sni" must be in lower case.
+    sendAT(GF("+CSSLCFG=\"sni\","), context_id, GF(",\""), sni, '"');
+    return waitResponse() == 1;
+  }
+
   /**
    * @brief Apply SSL certificates to the specified connection.
    * @param mux The **zero-indexed** position of the client in the modem's
    * socket array.
+   * @param context_id The SSL context ID.
    * @param sslAuthMode The SSL authentication mode.
    * @param CAcertName The CA certificate name.
    * @param clientCertName The client certificate name.
    * @param clientKeyName The client key name.
    * @return True if the operation was successful, false otherwise.
    */
-  bool applySSLCertificates(uint8_t mux, SSLAuthMode sslAuthMode,
-                            const char* CAcertName, const char* clientCertName,
+  bool applySSLCertificates(uint8_t mux, uint8_t context_id,
+                            SSLAuthMode sslAuthMode, const char* CAcertName,
+                            const char* clientCertName,
                             const char* clientKeyName) {
+    // store the configuration in the SSL context object
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    if (sslContext == nullptr) { return false; }
+    sslContext->sslAuthMode = sslAuthMode;
+    strncpy(sslContext->CAcertName, CAcertName ? CAcertName : "",
+            sizeof(sslContext->CAcertName) - 1);
+    sslContext->CAcertName[sizeof(sslContext->CAcertName) - 1] = '\0';
+    strncpy(sslContext->clientCertName, clientCertName ? clientCertName : "",
+            sizeof(sslContext->clientCertName) - 1);
+    sslContext->clientCertName[sizeof(sslContext->clientCertName) - 1] = '\0';
+    strncpy(sslContext->clientKeyName, clientKeyName ? clientKeyName : "",
+            sizeof(sslContext->clientKeyName) - 1);
+    sslContext->clientKeyName[sizeof(sslContext->clientKeyName) - 1] = '\0';
+
+    return applySSLCertificates(mux, context_id);
+  }
+  /**
+   * @brief Apply SSL certificates to the specified connection.
+   * @param mux The **zero-indexed** position of the client in the modem's
+   * socket array.
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool applySSLCertificates(uint8_t mux, uint8_t context_id) {
     bool success = true;
+
+    // Retrieve the SSL context object for the given context ID.
+    GsmSecureContext* sslContext  = getSSLContext(context_id);
+    SSLAuthMode       sslAuthMode = sslContext ? sslContext->sslAuthMode
+                                               : SSLAuthMode::NO_VALIDATION;
+    const char* CAcertName     = sslContext ? sslContext->CAcertName : nullptr;
+    const char* clientCertName = sslContext ? sslContext->clientCertName
+                                            : nullptr;
+    const char* clientKeyName  = sslContext ? sslContext->clientKeyName
+                                            : nullptr;
+
+    DBG("### SSL context index:", context_id);
+    DBG("### SSL auth mode:", (int)sslAuthMode);
+    DBG("### CA cert name:", CAcertName);
+    DBG("### Client cert name:", clientCertName);
+    DBG("### Client key name:", clientKeyName);
 
     // Re-convert the certificates, just in case
     if (CAcertName != nullptr &&
@@ -1008,11 +1122,37 @@ class TinyGsmSim7080
    * @brief Apply SSL pre-shared key (PSK) to the specified connection.
    * @param mux The **zero-indexed** position of the client in the modem's
    * socket array.
+   * @param context_id The SSL context ID.
    * @param pskTableName The PSK table name.
    * @return True if the operation was successful, false otherwise.
    */
-  bool applySSLPSK(uint8_t mux, const char* pskTableName) {
+  bool applySSLPSK(uint8_t mux, uint8_t context_id, const char* pskTableName) {
+    // store the configuration in the SSL context object
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    if (sslContext == nullptr) { return false; }
+    strncpy(sslContext->pskTableName, pskTableName ? pskTableName : "",
+            sizeof(sslContext->pskTableName) - 1);
+    sslContext->pskTableName[sizeof(sslContext->pskTableName) - 1] = '\0';
+
+    return applySSLPSK(mux, context_id);
+  }
+
+  /**
+   * @brief Apply SSL pre-shared key (PSK) to the specified connection.
+   * @param mux The **zero-indexed** position of the client in the modem's
+   * socket array.
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool applySSLPSK(uint8_t mux, uint8_t context_id) {
     bool success = true;
+
+    // Retrieve the SSL context object for the given context ID.
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    const char* pskTableName = sslContext ? sslContext->pskTableName : nullptr;
+
+    DBG("### SSL context index:", context_id);
+    DBG("### PSK table name:", pskTableName);
 
     // SRGD WARNING: UNTESTED!!
     if (pskTableName != nullptr &&
@@ -1069,38 +1209,30 @@ class TinyGsmSim7080
     // <sslFlag> 0: Not support SSL
     //           1: Support SSL
     sendAT(GF("+CASSLCFG="), mux, ',', GF("\"ssl\","), ssl);
-    waitResponse();
-    // If we have a secure socket, use a static cast to get the authentication
-    // mode and certificate names. This isn't ideal; hopefully the compiler will
-    // save us from ourselves. We cannot use a dynamic cast because Arduino
-    // compiles with -fno-rtti.
+    bool set_ssl = waitResponse(timeout_ms) == 1;
+    if (!set_ssl && ssl) return false;  // allow to fail for non-ssl connections
+
+    // If we have a secure socket, use a static cast to get the context index.
+    // This isn't ideal; hopefully the compiler will save us from ourselves. We
+    // cannot use a dynamic cast because Arduino compiles with -fno-rtti.
     if (ssl) {
       const GsmClientSecureSim7080* thisClient =
           static_cast<const GsmClientSecureSim7080*>(sockets[mux]);
-      uint8_t     sslCtxIndex    = thisClient->sslCtxIndex;
-      SSLAuthMode sslAuthMode    = thisClient->sslAuthMode;
-      const char* CAcertName     = thisClient->CAcertName;
-      const char* clientCertName = thisClient->clientCertName;
-      const char* clientKeyName  = thisClient->clientKeyName;
-      const char* pskTableName   = thisClient->pskTableName;
-
-      DBG("### SSL context index:", sslCtxIndex);
-      DBG("### SSL auth mode:", (int)sslAuthMode);
-      DBG("### CA cert name:", CAcertName);
-      DBG("### Client cert name:", clientCertName);
-      DBG("### Client key name:", clientKeyName);
-      DBG("### PSK table name:", pskTableName);
+      uint8_t sslCtxIndex = thisClient->sslCtxIndex;
 
       // NOTE: We cannot link the SSL context or set the certificates until
       // AFTER setting the connection id (ie, AT+CACID=mux)
-      linkSSLContext(mux,
-                     sslCtxIndex);  // Must be before applying certs
-      if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
-        applySSLPSK(mux, pskTableName);
+      bool ssl_configured =
+          linkSSLContext(mux,
+                         sslCtxIndex);  // Must be before applying certs
+      if (!ssl_configured) { return false; }
+      if (getSSLContext(sslCtxIndex)->sslAuthMode ==
+          SSLAuthMode::PRE_SHARED_KEYS) {
+        ssl_configured &= applySSLPSK(mux, sslCtxIndex);
       } else {
-        applySSLCertificates(mux, sslAuthMode, CAcertName, clientCertName,
-                             clientKeyName);
+        ssl_configured &= applySSLCertificates(mux, sslCtxIndex);
       }
+      if (!ssl_configured) { return false; }
     }
 
     DBG("### host:", host);
@@ -1263,8 +1395,9 @@ class TinyGsmSim7080
   }
 
   size_t modemGetAvailable(uint8_t mux) {
-    // If the socket doesn't exist, just return
-    if (!isValidMux(mux)) { return 0; }
+    // NOTE: This function gets the number of available characters for all
+    // sockets at once, so we don't check if the specific mux is valid until
+    // right before returning the value for that mux.
     // NOTE: This gets how many characters are available on all connections that
     // have data.  It does not return all the connections, just those with data.
     sendAT(GF("+CARECV?"));
@@ -1311,13 +1444,21 @@ class TinyGsmSim7080
       // If only a portion were returned, catch it above.
       if (muxNo == TcpConfig::kMuxCount - 1) { waitResponse(); }
     }
-    modemGetConnected(mux);  // check the state of all connections
+    // check the state of all connections
+    // like this function, modemGetConnected doesn't check if the specific mux
+    // is valid until right before returning the value for that mux, so calling
+    // this will check and update the connection status for all valid muxes even
+    // if the supplied mux wasn't a valid one.
+    modemGetConnected(mux);
+    if (!isValidMux(mux)) { return 0; }
     if (!sockets[mux]) { return 0; }
     return sockets[mux]->sock_available;
   }
 
   bool modemGetConnected(uint8_t mux) {
-    if (!isValidMux(mux)) { return false; }
+    // NOTE: This function gets the number of available characters for all
+    // sockets at once, so we don't check if the specific mux is valid until
+    // right before returning the value for that mux.
     // NOTE:  This gets the state of all connections that have been opened
     // since the last connection
     sendAT(GF("+CASTATE?"));
@@ -1367,6 +1508,7 @@ class TinyGsmSim7080
       // If only a portion were returned, catch it above.
       if (muxNo == TcpConfig::kMuxCount - 1) { waitResponse(); }
     }
+    if (!isValidMux(mux)) { return false; }
     return sockets[mux]->sock_connected;
   }
 
@@ -1436,6 +1578,6 @@ class TinyGsmSim7080
   GsmClientSim7080* sockets[TcpConfig::kMuxCount];
 };
 
-// cspell:words CASEND gotATOK
+// cspell:words CASEND gotATOK configureSSLSNI
 
 #endif  // SRC_TINYGSMCLIENTSIM7080_H_
