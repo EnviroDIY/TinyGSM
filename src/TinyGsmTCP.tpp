@@ -799,7 +799,6 @@ class GsmClient : public Client {
     }                                                                     \
     /* always clear the rx buffer before connecting */                    \
     rx.clear();                                                           \
-    TINY_GSM_YIELD();                                                     \
     /*connect at the specified mux number, which is assumed to be valid*/ \
     sock_connected = at->modemConnect(host, port, mux, timeout_s);        \
     return sock_connected;                                                \

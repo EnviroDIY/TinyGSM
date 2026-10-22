@@ -323,7 +323,6 @@ class TinyGsmA7672X
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
       stop(TcpConfig::kStopTimeoutS * 1000L);
-      TINY_GSM_YIELD();
       rx.clear();
       GsmSecureContext* sslContext = at->getSSLContext(sslCtxIndex);
       // check for a valid SSL context

@@ -239,8 +239,7 @@ class TinyGsmESP32
 
     void stop(uint32_t maxWaitMs) override {
       if (at == nullptr) { return; }
-      is_mid_send = false;
-      TINY_GSM_YIELD();
+      is_mid_send          = false;
       uint32_t startMillis = millis();
       if (sock_connected || sock_available) {
         // Update available data first, because if the socket was closed
@@ -777,7 +776,6 @@ class TinyGsmESP32
   }
 
  public:
-
   /**
    * @brief Delete a certificate from the modem's flash memory for SSL
    * connections by its number.

@@ -242,7 +242,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
         stop(TcpConfig::kStopTimeoutS * 1000L);
       }
 #endif
-      TINY_GSM_YIELD();
       rx.clear();
       // attempt to use the requested mux number first
       uint8_t assignedMux = mux;
