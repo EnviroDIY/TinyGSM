@@ -71,9 +71,6 @@ SoftwareSerial SerialAT2(2, 3);  // RX, TX
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 921600
 
-// Optionally add a cooperative delay while waiting for modem input.
-// #define TINY_GSM_YIELD_MS 2
-
 // set GSM PIN, if any
 #define GSM_PIN ""
 

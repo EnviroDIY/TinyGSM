@@ -70,9 +70,6 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TARGET_BAUD 115200
 #endif
 
-// Optionally add a cooperative delay while waiting for modem input.
-// #define TINY_GSM_YIELD_MS 2
-
 /*
  * Tests enabled
  */
