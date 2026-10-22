@@ -142,7 +142,7 @@ class TinyGsmModem {
     thisModem().streamWrite(GFP(ModemConfig::GSM_AT), cmd...,
                             GFP(ModemConfig::GSM_NL));
     thisModem().stream.flush();
-    TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
+    /* DBG("### AT:", cmd...); */
   }
 
   /**
