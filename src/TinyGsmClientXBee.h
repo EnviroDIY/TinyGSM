@@ -1767,7 +1767,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       DBG(GF("Ping failed, exiting command and sending blank lines"));
       // exit command mode so we're sending the line[s] to the server
       exitCommand();
-      streamWrite(GF("\r\n"));
+      streamPrint(GF("\r\n"));
       stream.flush();
       delay(4);  // wait >3 charater spaces (at 9600) to ensure the line is
                  // packetized and sent.

@@ -139,7 +139,7 @@ class TinyGsmModem {
    */
   template <typename... Args>
   void sendAT(Args... cmd) {
-    thisModem().streamWrite(GFP(ModemConfig::GSM_AT), cmd...,
+    thisModem().streamPrint(GFP(ModemConfig::GSM_AT), cmd...,
                             GFP(ModemConfig::GSM_NL));
     thisModem().stream.flush();
     /* DBG("### AT:", cmd...); */
@@ -631,8 +631,22 @@ class TinyGsmModem {
    * @param last The value to write.
    */
   template <typename T>
-  void streamWrite(T last) {
+  void streamPrint(T last) {
     thisModem().stream.print(last);
+  }
+
+  /**
+   * @brief Recursively write multiple values to the modem stream.
+   *
+   * @tparam T The type of the first value to write.
+   * @tparam Args The types of the remaining values to write.
+   * @param head The first value to write.
+   * @param tail The remaining values to write.
+   */
+  template <typename T, typename... Args>
+  void streamPrint(T head, Args... tail) {
+    thisModem().stream.print(head);
+    thisModem().streamPrint(tail...);
   }
 
   /**
@@ -666,20 +680,6 @@ class TinyGsmModem {
     }
   }
 #endif
-
-  /**
-   * @brief Recursively write multiple values to the modem stream.
-   *
-   * @tparam T The type of the first value to write.
-   * @tparam Args The types of the remaining values to write.
-   * @param head The first value to write.
-   * @param tail The remaining values to write.
-   */
-  template <typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    thisModem().stream.print(head);
-    thisModem().streamWrite(tail...);
-  }
 
   /**
    * @brief Clear the modem stream attempting to parse any URC's in it.

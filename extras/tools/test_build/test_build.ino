@@ -139,7 +139,7 @@ void loop() {
   // TinyGsm - Utilities
   // ========================================================================
 
-  modem.streamWrite("AT", "\r\n");
+  modem.streamPrint("AT", "\r\n");
   modem.streamClear();
   modem.streamDump(2);
 
