@@ -265,12 +265,42 @@ class TinyGsmA7672X
    public:
     using GsmClientA7672X::connect;
     using GsmClientA7672X::stop;
-    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmA7672XTcpConfig;
 
     /*
      * Secure client constructors and initialization
      */
+
+    /**
+     * @brief Create a new secured TCP (SSL) client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
+     */
+    GsmClientSecureA7672X() : GsmSecureClient() {}
+
+    /**
+     * @brief Create a new secured TCP (SSL) client and bind it to a modem and
+     * optionally a multiplexing channel.
+     * @copydetails GsmClientA7672X::GsmClientA7672X(TinyGsmA7672X&, uint8_t)
+     */
+    explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux = 0)
+        : GsmSecureClient() {
+      init(&modem, mux);
+    }
+
+    /**
+     * @brief Create a new secured TCP (SSL) client with an explicit SSL
+     * context and bind it to a modem and multiplexing channel.
+     * @param modem The modem that owns the socket and SSL contexts.
+     * @param mux The socket identifier.
+     * @param sslCtxIndex The hardware SSL context index.
+     */
+    explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux,
+                                   uint8_t sslCtxIndex)
+        : GsmSecureClient() {
+      setSSLContextIndex(sslCtxIndex);
+      init(&modem, mux);
+    }
 
     /**
      * @brief Initialize the SSL client with a modem and optionally a
