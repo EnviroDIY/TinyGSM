@@ -1553,7 +1553,7 @@ class TinyGsmESP32
       data = "";
       DBG("### Got Data:", len_reported, "on", mux);
       return true;
-    } else if (data.endsWith(GF("CLOSED"))) {
+    } else if (data.endsWith(GF("CLOSED\r\n"))) {
       int16_t muxStart =
           TinyGsmMax(0,
                      data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
@@ -1563,7 +1563,6 @@ class TinyGsmESP32
       if (isValidMux(mux)) {
         sockets[static_cast<uint8_t>(mux)]->sock_connected = false;
       }
-      streamSkipUntil('\n');  // throw away the new line
       data = "";
       DBG("### Closed: ", mux);
       return true;

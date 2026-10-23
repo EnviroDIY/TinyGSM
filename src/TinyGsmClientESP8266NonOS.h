@@ -515,7 +515,7 @@ class TinyGsmESP8266NonOS
       }
       data = "";
       return true;
-    } else if (data.endsWith(GF("CLOSED"))) {
+    } else if (data.endsWith(GF("CLOSED\r\n"))) {
       int16_t muxStart =
           TinyGsmMax(0,
                      data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
@@ -528,7 +528,6 @@ class TinyGsmESP8266NonOS
         }
         DBG("### Closed: ", mux);
       }
-      streamSkipUntil('\n');  // throw away the new line
       data = "";
       return true;
     } else if (data.endsWith(GF("busy p..."))) {
