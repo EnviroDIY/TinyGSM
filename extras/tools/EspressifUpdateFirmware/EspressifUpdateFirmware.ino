@@ -194,7 +194,7 @@ bool updateFirmware(uint32_t update_timeout = 300000UL) {
     delay(2500L);  // let things settle
     SerialMon.println("Restoring initial configuration...");
     modem.sendAT(GF("+RESTORE"));
-    success &= modem.waitResponse(5000L);
+    success &= modem.waitResponse(5000L) == 1;
     delay(2500L);  // let things settle
 
     SerialAT.end();
