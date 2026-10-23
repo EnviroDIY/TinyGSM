@@ -322,26 +322,20 @@ class TinyGsmESP32
       // handle null or empty certificate name
       if (CAcertName == nullptr ||
           strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
-        // clear the certificate name buffer and slot selection
+        // clear the certificate name buffer
         memset(this->CAcertName, '\0', sizeof(this->CAcertName));
-        this->ca_number = 0;
         return;
       }
       // parse the certificate name
-      CertificateType parsed_type = CertificateType::UNKNOWN;
-      uint8_t         certNumber  = 0;
-      TinyGsmESP32::parseCertificateName(CAcertName, parsed_type, certNumber);
-      if (parsed_type != CertificateType::CA_CERTIFICATE || certNumber > 1) {
-        // invalid certificate name: clear buffers and reset slot
+      uint8_t certNumber = 0;
+      if (!TinyGsmESP32::parseCACertificateNumber(CAcertName, certNumber)) {
+        // invalid certificate name: clear the buffer
         memset(this->CAcertName, '\0', sizeof(this->CAcertName));
-        this->ca_number = 0;
         return;
       }
       // copy the certificate name into owned buffer
       strncpy(this->CAcertName, CAcertName, sizeof(this->CAcertName) - 1);
       this->CAcertName[sizeof(this->CAcertName) - 1] = '\0';
-      // set the number for the CA certificate
-      this->ca_number = certNumber;
     }
     /// @brief Set or clear the CA certificate name.
     /// @param CAcertName The CA certificate file name.
@@ -366,26 +360,18 @@ class TinyGsmESP32
       if (clientCertName == nullptr || clientKeyName == nullptr ||
           strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) == 0 ||
           strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) == 0) {
-        // clear the certificate name buffers and slot selection
+        // clear the certificate name buffers
         memset(this->clientCertName, '\0', sizeof(this->clientCertName));
         memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
-        this->pki_number = 0;
         return;
       }
       // parse the certificate name
-      CertificateType cert_type  = CertificateType::UNKNOWN;
-      CertificateType key_type   = CertificateType::UNKNOWN;
-      uint8_t         certNumber = 0;
-      uint8_t         keyNumber  = 0;
-      TinyGsmESP32::parseCertificateName(clientCertName, cert_type, certNumber);
-      TinyGsmESP32::parseCertificateName(clientKeyName, key_type, keyNumber);
-      if (cert_type != CertificateType::CLIENT_CERTIFICATE ||
-          key_type != CertificateType::CLIENT_KEY || certNumber > 1 ||
-          keyNumber > 1 || certNumber != keyNumber) {
-        // invalid credential names: clear buffers and reset slot
+      uint8_t certNumber = 0;
+      if (!TinyGsmESP32::parseClientCredentialNumber(
+              clientCertName, clientKeyName, certNumber)) {
+        // invalid credential names: clear the buffers
         memset(this->clientCertName, '\0', sizeof(this->clientCertName));
         memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
-        this->pki_number = 0;
         return;
       }
       // copy the certificate name into owned buffer
@@ -396,9 +382,6 @@ class TinyGsmESP32
       strncpy(this->clientKeyName, clientKeyName,
               sizeof(this->clientKeyName) - 1);
       this->clientKeyName[sizeof(this->clientKeyName) - 1] = '\0';
-      // set the number for the client certificate and private key (only 1 var,
-      // they must be the same)
-      pki_number = certNumber;
     }
     /// @copydoc setClientCredentials(const char*, const char*)
     void setClientCredentials(const String& clientCertName,
@@ -415,7 +398,6 @@ class TinyGsmESP32
         setCACertName(nullptr);
         return;
       }
-      ca_number = certNumber;
       // convert the certificate number and type into the proper certificate
       // names for the ESP32
       char cert_name[16] = {};
@@ -437,7 +419,6 @@ class TinyGsmESP32
         setClientCredentials(nullptr, nullptr);
         return;
       }
-      pki_number = certNumber;
       // generate and set the name for the client certificate from the number
       char cert_name[16] = {};
       TinyGsmESP32::getCertificateName(CertificateType::CLIENT_CERTIFICATE,
@@ -457,9 +438,6 @@ class TinyGsmESP32
                           1] = '\0';
     }
 
-   protected:
-    int8_t ca_number  = 0;
-    int8_t pki_number = 0;
   };
 
   /*
@@ -542,22 +520,23 @@ class TinyGsmESP32
   void maintainImpl() {
     // Keep listening for modem URC's and proactively iterate through
     // sockets asking if any data is available
-    bool check_socks = false;
+    uint8_t check_mux = static_cast<uint8_t>(-1);
     for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; mux++) {
       GsmClientESP32* sock = sockets[mux];
       if (sock && sock->got_data) {
         sock->got_data = false;
-        if (sock->sock_available == 0) {
+        if (sock->sock_available == 0 &&
+            check_mux == static_cast<uint8_t>(-1)) {
           // NOTE: Only check the socket if says it got new data by the amount
           // available is 0. This avoids extra un-needed checks.
-          check_socks = true;
+          check_mux = mux;
         }
       }
     }
     // modemGetAvailable checks all socks, so we only want to do it once
     // modemGetAvailable calls modemGetConnected(), which also checks all
     // socks
-    if (check_socks) { modemGetAvailable(0); }
+    if (check_mux != static_cast<uint8_t>(-1)) { modemGetAvailable(check_mux); }
     while (stream.available()) { waitResponse(15, nullptr, nullptr); }
   }
 
@@ -942,6 +921,26 @@ class TinyGsmESP32
     return;
   }
 
+  static bool parseCACertificateNumber(const char* cert_name,
+                                       uint8_t&    cert_number) {
+    CertificateType cert_type = CertificateType::UNKNOWN;
+    parseCertificateName(cert_name, cert_type, cert_number);
+    return cert_type == CertificateType::CA_CERTIFICATE && cert_number <= 1;
+  }
+
+  static bool parseClientCredentialNumber(const char* cert_name,
+                                          const char* key_name,
+                                          uint8_t&    cert_number) {
+    CertificateType cert_type  = CertificateType::UNKNOWN;
+    CertificateType key_type   = CertificateType::UNKNOWN;
+    uint8_t         key_number = 0;
+    parseCertificateName(cert_name, cert_type, cert_number);
+    parseCertificateName(key_name, key_type, key_number);
+    return cert_type == CertificateType::CLIENT_CERTIFICATE &&
+        key_type == CertificateType::CLIENT_KEY && cert_number <= 1 &&
+        key_number <= 1 && cert_number == key_number;
+  }
+
   static void getCertificateName(CertificateType cert_type, uint8_t certNumber,
                                  char* cert_name) {
     // Validate certNumber is 0 or 1
@@ -1306,17 +1305,33 @@ class TinyGsmESP32
         DBG("### No SSL context is registered at index", sslCtxIndex);
         return false;
       }
-      // Another non-ideal static cast to get the ESP32-specific context.
-      // We cast to the GsmSecureContextESP32 instead of the generic
-      // GsmSecureContext because we want the ca_number or pki_number.
-      const GsmSecureContextESP32* thisContext =
-          static_cast<const GsmSecureContextESP32*>(sslContext);
+      sslAuthMode = sslContext->sslAuthMode;
+      pskIdent    = sslContext->pskIdent;
+      psKey       = sslContext->psKey;
 
-      sslAuthMode = thisContext->sslAuthMode;
-      ca_number   = thisContext->ca_number;
-      pki_number  = thisContext->pki_number;
-      pskIdent    = thisContext->pskIdent;
-      psKey       = thisContext->psKey;
+      // check that the context has the required credentials
+      if (!validateSSLContextCredentials(sslContext)) {
+        DBG("### The SSL context is missing required credentials!");
+        return false;
+      }
+
+      if (sslAuthMode == SSLAuthMode::CA_VALIDATION ||
+          sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION) {
+        if (!parseCACertificateNumber(sslContext->CAcertName, ca_number)) {
+          DBG("### Invalid CA certificate name for ESP32 SSL context!");
+          return false;
+        }
+      }
+
+      if (sslAuthMode == SSLAuthMode::CLIENT_VALIDATION ||
+          sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION) {
+        if (!parseClientCredentialNumber(sslContext->clientCertName,
+                                         sslContext->clientKeyName,
+                                         pki_number)) {
+          DBG("### Invalid client credentials for ESP32 SSL context!");
+          return false;
+        }
+      }
 
       DBG("### SSL context index:", sslCtxIndex);
       DBG("### SSL auth mode:", (int)sslAuthMode);
@@ -1324,12 +1339,6 @@ class TinyGsmESP32
       DBG("### PKI number:", pki_number);
       DBG("### PSK identity:", pskIdent);
       DBG("### PSK key:", psKey);
-
-      // check that the context has the required credentials
-      if (!validateSSLContextCredentials(sslContext)) {
-        DBG("### The SSL context is missing required credentials!");
-        return false;
-      }
 
       // SSL certificate checking will not work without a valid timestamp!
       if ((sslAuthMode != SSLAuthMode::NO_VALIDATION) &&
@@ -1382,8 +1391,12 @@ class TinyGsmESP32
                  sslAuthMode == SSLAuthMode::CA_VALIDATION ||
                  sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION) {
         // For auth modes 1, 2, and 3, we need to specify the PKI and CA numbers
-        sendAT(GF("+CIPSSLCCONF="), mux, ',', static_cast<uint8_t>(sslAuthMode),
-               ',', pki_number, ',', ca_number);
+        const uint8_t espAtAuthMode =
+            sslAuthMode == SSLAuthMode::CLIENT_VALIDATION ? 1
+            : sslAuthMode == SSLAuthMode::CA_VALIDATION   ? 2
+                                                          : 3;
+        sendAT(GF("+CIPSSLCCONF="), mux, ',', espAtAuthMode, ',', pki_number,
+               ',', ca_number);
       } else {
         DBG("### Unsupported ESP32 SSL authentication mode!");
         return false;
