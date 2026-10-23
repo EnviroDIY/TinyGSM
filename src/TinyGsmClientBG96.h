@@ -1340,6 +1340,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     if (ssl) {
       sendAT(GF("+QSSLRECV="), mux, ',', (uint16_t)size);
       if (waitResponse(GF("+QSSLRECV:")) != 1) {
+        sockets[mux]->sock_available = 0;
         DBG("### READ: For unknown reason close");
         return 0;
       }
