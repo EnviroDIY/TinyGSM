@@ -183,10 +183,9 @@ class TinyGsmESP32
      * corresponding modem's socket array.  This is identical to the identifier
      * the modem uses internally to identify the socket for the ESP32.
      *
-     * @note The ESP32 assigns the multiplexing channel number itself.  The mux
-     * argument is only a preliminary placeholder used until the connection
-     * completes.  Use the getMux() function to get the assigned multiplexing
-     * channel number after a successful connection.
+     * @note The requested mux is used when available. If it is already in use,
+     * another available mux may be selected. Use getMux() to get the mux
+     * assigned to the connection.
      */
     explicit GsmClientESP32(TinyGsmESP32& modem, uint8_t mux = 0)
         : GsmClient<TinyGsmESP32, TinyGsmESP32TcpConfig>(modem, mux) {

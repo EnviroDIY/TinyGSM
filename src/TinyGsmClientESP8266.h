@@ -184,7 +184,7 @@ class TinyGsmESP8266
      * corresponding modem's socket array.  This is identical to the identifier
      * the modem uses internally to identify the socket for the ESP8266.
      *
-     * @note The ESP8266 allows you choose the multiplexing channel number, but
+     * @note The ESP8266 allows you to choose the multiplexing channel number, but
      * if the input mux channel number is already in use and other mux channels
      * are available, this library will select the next available one.  Use the
      * getMux() function to get the assigned multiplexing channel number after a
