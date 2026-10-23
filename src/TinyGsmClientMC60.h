@@ -653,18 +653,6 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
       data = "";
       // DBG("### Got Data:", len_total, "on", mux);
       return true;
-    } else if (data.endsWith(GF("CLOSED\r\n"))) {
-      int16_t nl = TinyGsmMax(0,
-                              data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
-                                               data.length() - 8));
-      int16_t coma = data.indexOf(',', nl + 2);
-      if (coma > nl + 2) {
-        int16_t mux = data.substring(nl + 2, coma).toInt();
-        if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
-        DBG("### Closed: ", mux);
-      }
-      data = "";
-      return true;
     } else if (data.endsWith(GF("+QNITZ:"))) {
       streamSkipUntil('\n');  // URC for time sync
       data = "";
