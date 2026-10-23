@@ -534,7 +534,9 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
   modem.convertPSKandID(psk_name, psk_hint_name);
 #endif
 
-#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_BG96)
+#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_BG96) &&     \
+    !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600) && \
+    !defined(TINY_GSM_MODEM_XBEE)
   DBG(GF("Deleting root CA certificate..."));
   modem.deleteCertificate(root_ca_name);
 #endif
