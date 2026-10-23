@@ -513,19 +513,19 @@ class TinyGsmSaraR5
 
   /**
    * @brief Get the current radio access technology (RAT) of the modem.
-   * @return The current RAT mode, or 0 if the command failed.
+   * @return The current RAT mode, or -1 if the command or parsing failed.
    * Possible values are:
    * - 3: LTE
    * - 7: LTE Cat M1
    * - 8: LTE Cat NB1
    * - 9: GPRS / eGPRS
    */
-  uint8_t getCurrentRadioAccessTechnology() {
+  int8_t getCurrentRadioAccessTechnology() {
     sendAT(GF("+URAT?"));
-    if (waitResponse(10000L, GF("+URAT:")) != 1) { return 0; }
+    if (waitResponse(10000L, GF("+URAT:")) != 1) { return -1; }
     int16_t parsedRat = streamGetIntBefore('\n');
-    if (waitResponse() != 1 || parsedRat == -9999) { return 0; }
-    return static_cast<uint8_t>(parsedRat);
+    if (waitResponse() != 1 || parsedRat == -9999) { return -1; }
+    return static_cast<int8_t>(parsedRat);
   }
 
   /*
