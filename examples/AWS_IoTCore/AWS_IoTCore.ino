@@ -577,7 +577,7 @@ bool getInternetConnection() {
   static bool timeSyncSuccess = false;
   if (!timeSyncSuccess) {
     DBG("Enabling time sync with NTP server");
-    timeSyncSuccess = modem.NTPServerSync("pool.ntp.org", -4);
+    timeSyncSuccess = modem.NTPServerSync("pool.ntp.org", -16);
     if (!timeSyncSuccess) { return false; }
   }
 #endif

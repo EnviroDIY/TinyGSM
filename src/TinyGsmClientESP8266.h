@@ -781,8 +781,10 @@ class TinyGsmESP8266
  protected:
   // NOTE: I don't think this forces an immediate sync
   bool NTPServerSyncImpl(const char* server, int TimeZone) {
+    // AT+CIPSNTPCFG uses signed HHMM for non-whole-hour UTC offsets.
+    const int timeZoneOffset = (TimeZone / 4) * 100 + (TimeZone % 4) * 15;
     // configure the NTP settings for the modem
-    sendAT(GF("+CIPSNTPCFG="), 1, ',', TimeZone, GF(",\""), server, '"');
+    sendAT(GF("+CIPSNTPCFG="), 1, ',', timeZoneOffset, GF(",\""), server, '"');
     // returns a simple OK or ERROR
     return waitResponse() == 1;
   }

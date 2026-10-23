@@ -117,7 +117,7 @@ bool connectNetwork() {
 }
 
 void checkNetworkTime() {
-  modem.NTPServerSync("pool.ntp.org", -5);
+  modem.NTPServerSync("pool.ntp.org", -20);
   modem.waitForTimeSync();
   int   ntp_year     = 0;
   int   ntp_month    = 0;

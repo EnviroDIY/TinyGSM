@@ -783,7 +783,7 @@ class TinyGsmSim7080
     //        - 0 Just set UTC to localtime
     //        - 1 Just output UTC time to AT port
     //        - 2 Set UTC to localtime and output UTC time to AT port
-    sendAT(GF("+CNTP=\""), server, GF("\","), TimeZone * 4, GF(",0,2"));
+    sendAT(GF("+CNTP=\""), server, GF("\","), TimeZone, GF(",0,2"));
     if (waitResponse(10000L) != 1) { return false; }
 
     // TODO: Should we have a "quick fail" here? We don't want to wait for the

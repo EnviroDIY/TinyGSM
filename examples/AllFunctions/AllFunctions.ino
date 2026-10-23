@@ -738,7 +738,7 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 // Test the Network time functions
 #if TINY_GSM_TEST_NTP && defined TINY_GSM_MODEM_HAS_NTP
   DBG("Asking modem to sync with NTP");
-  modem.NTPServerSync("pool.ntp.org", -5);
+  modem.NTPServerSync("pool.ntp.org", -20);
 #endif
 
 #if TINY_GSM_TEST_TIME && defined TINY_GSM_MODEM_HAS_TIME

@@ -462,7 +462,7 @@ void loop() {
   // ========================================================================
 
 #if defined(TINY_GSM_MODEM_HAS_NTP)
-  modem.NTPServerSync("pool.ntp.org", 3);
+  modem.NTPServerSync("pool.ntp.org", 12);
   modem.waitForTimeSync(1);
 #endif
 
