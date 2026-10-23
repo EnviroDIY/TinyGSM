@@ -476,7 +476,6 @@ class TinyGsmESP8266NonOS
                                         GFP(ModemConfig::GSM_ERROR));
       if (has_status == 1) {
         int16_t returned_mux = streamGetIntBefore(',');
-        streamSkipUntil(',');   // Skip mux (?)
         streamSkipUntil(',');   // Skip type
         streamSkipUntil(',');   // Skip remote IP
         streamSkipUntil(',');   // Skip remote port
