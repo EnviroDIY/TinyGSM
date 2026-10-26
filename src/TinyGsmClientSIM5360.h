@@ -624,7 +624,10 @@ class TinyGsmSim5360
     ialt   = streamGetFloatBefore(',');  // MSL Altitude. Unit is meters
     ispeed = streamGetFloatBefore(',');  // Speed Over Ground. Unit is knots.
 
-    // Set pointers
+    // Set pointers **even if the fix is not valid!!**
+    // The module returns avlues even without a valid GNSS fix, so we set the
+    // pointers regardless. Allow the user to decide whether to use the data
+    // based on the fix status.
     if (lat != nullptr)
       *lat = (floor(ilat / 100) + fmod(ilat, 100.) / 60) *
           (north == 'N' ? 1 : -1);

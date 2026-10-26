@@ -400,7 +400,10 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
       iusat = rest.substring(0, rest.indexOf(',')).toInt();
     }
 
-    // Set pointers
+    // Set pointers **even if the fix is not valid!!**
+    // The module returns avlues even without a valid GNSS fix, so we set the
+    // pointers regardless. Allow the user to decide whether to use the data
+    // based on the fix status.
     if (lat != nullptr) *lat = ilat;
     if (lon != nullptr) *lon = ilon;
     if (speed != nullptr) *speed = ispeed;
