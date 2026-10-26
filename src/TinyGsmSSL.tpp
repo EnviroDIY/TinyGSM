@@ -875,8 +875,8 @@ class GsmSecureContext {
   /**
    * @brief Set or clear the client certificate and private key.
    *
-   * Both names are stored only when both are non-null and non-empty. Otherwise
-   * both stored names are cleared.
+   * Both names are stored only when both are non-null, non-empty, and fit in
+   * the configured buffers. Otherwise both stored names are cleared.
    *
    * @param clientCertName The client certificate file name.
    * @param clientKeyName The matching private-key file name.
@@ -887,10 +887,16 @@ class GsmSecureContext {
     memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
     if (hasText(clientCertName, TINY_GSM_CERT_NAME_LENGTH) &&
         hasText(clientKeyName, TINY_GSM_CERT_NAME_LENGTH)) {
-      copyString(this->clientCertName, clientCertName,
-                 sizeof(this->clientCertName));
-      copyString(this->clientKeyName, clientKeyName,
-                 sizeof(this->clientKeyName));
+      const bool certCopied = copyString(this->clientCertName, clientCertName,
+                                         sizeof(this->clientCertName));
+      const bool keyCopied  = copyString(this->clientKeyName, clientKeyName,
+                                         sizeof(this->clientKeyName));
+      if (!certCopied || !keyCopied) {
+        DBG(GF("### Rejected oversized client credential name(s):"),
+            clientCertName, clientKeyName);
+        memset(this->clientCertName, '\0', sizeof(this->clientCertName));
+        memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
+      }
     }
   }
   /// @copydoc setClientCredentials(const char*, const char*)
@@ -922,8 +928,8 @@ class GsmSecureContext {
   /**
    * @brief Set or clear a pre-shared key identity and key.
    *
-   * Both values are stored only when both are non-null and non-empty. Otherwise
-   * both stored values are cleared.
+   * Both values are stored only when both are non-null, non-empty, and fit in
+   * the configured buffers. Otherwise both stored values are cleared.
    *
    * @param pskIdent The pre-shared key identity.
    * @param psKey The pre-shared key.
@@ -933,8 +939,16 @@ class GsmSecureContext {
     memset(this->psKey, '\0', sizeof(this->psKey));
     if (hasText(pskIdent, TINY_GSM_PSK_IDENTITY_LENGTH) &&
         hasText(psKey, TINY_GSM_PSK_LENGTH)) {
-      copyString(this->pskIdent, pskIdent, sizeof(this->pskIdent));
-      copyString(this->psKey, psKey, sizeof(this->psKey));
+      const bool identityCopied = copyString(this->pskIdent, pskIdent,
+                                             sizeof(this->pskIdent));
+      const bool keyCopied      = copyString(this->psKey, psKey,
+                                             sizeof(this->psKey));
+      if (!identityCopied || !keyCopied) {
+        DBG(GF("### Rejected oversized pre-shared key value(s) for identity:"),
+            pskIdent);
+        memset(this->pskIdent, '\0', sizeof(this->pskIdent));
+        memset(this->psKey, '\0', sizeof(this->psKey));
+      }
     }
   }
   /// @copydoc setPreSharedKey(const char*, const char*)
@@ -969,11 +983,13 @@ class GsmSecureContext {
     return value != nullptr && strnlen(value, maximumLength) != 0;
   }
 
-  static void copyString(char* destination, const char* source,
+  static bool copyString(char* destination, const char* source,
                          size_t destinationSize) {
-    if (source != nullptr && strnlen(source, destinationSize) != 0) {
-      strncpy(destination, source, destinationSize - 1);
-    }
+    if (source == nullptr) { return false; }
+    const size_t sourceLength = strnlen(source, destinationSize);
+    if (sourceLength == 0 || sourceLength >= destinationSize) { return false; }
+    memcpy(destination, source, sourceLength + 1);
+    return true;
   }
 
   void clearConfigurationStrings() {
