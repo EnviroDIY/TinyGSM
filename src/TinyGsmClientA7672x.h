@@ -38,8 +38,6 @@
  * @todo In `connect()` (non-secure path): Should NETOPEN be called once during
  * the GPRS connection process instead of repeatedly here?
  * @todo In `modemSend()`: make sure requested and confirmed bytes match
- * @todo In `modemGetConnected()`: Does this work?  It's not the right
- * command by the manual
  */
 
 #ifndef SRC_TINYGSMCLIENTA7672X_H_
@@ -911,6 +909,7 @@ class TinyGsmA7672X
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     bool     ssl        = sockets[mux]->is_secure;
 
+    // Configure TCP heartbeat
     // +CTCPKA:<keepalive>,<keepidle>,<keepcount>,<keepinterval>
     sendAT(GF("+CTCPKA=1,2,5,1"));
     if (waitResponse(2000L) != 1) { return false; }
@@ -1175,6 +1174,7 @@ class TinyGsmA7672X
   }
 
   bool modemGetConnected(uint8_t mux) {
+#if 0
     if (!isValidMux(mux)) { return false; }
     // TODO(SRGD): Does this work?  It's not the right command by the manual
     int8_t res = 0;
@@ -1184,14 +1184,64 @@ class TinyGsmA7672X
       // DBG("### Connected:", connected);
       return connected;
     } else {
+      // Query TCP Connection Data Transmitting Status
       sendAT(GF("+CIPACK="), mux);
+      // +CIPACK: <sent_data_size>,<ack_data_size>,<recv_data_size>
       waitResponse(GF("+CIPACK:"));
-      res = waitResponse(2000L);  //(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),
-                                  // GF(",\"CLOSING\""), GF(",\"REMOTE
-                                  // CLOSING\""), GF(",\"INITIAL\""));
+      res = waitResponse(2000L);
       waitResponse();
     }
     return 1 == res;
+#endif
+    // NOTE: This function gets the status for all sockets at once, so we don't
+    // check if the specific mux is valid until right before returning the value
+    // for that mux.
+    if (sockets[mux]->is_secure) {
+      sendAT(GF("+CCHOPEN?"));
+      // If connect to a server, it will show the connected information.
+      // Otherwise, the connected information is empty.
+      // +CCHOPEN: 0,”<host>”,<port>,<client_type>,[<bind_port>]
+      // +CCHOPEN: 1,”<host>”,<port>,<client_type>,[<bind_port>]
+      // […]
+      // OK
+      // <client_type> The type of client:
+      //   - 1 – TCP client.
+      //   - 2 – SSL/TLS client.
+      if (waitResponse(GF("+CCHOPEN:")) != 1) { return false; }
+      // for (uint8_t muxNo = 0; muxNo < SslConfig::kMuxCount; muxNo++) {
+      for (uint8_t muxNo = 0; muxNo < 2; muxNo++) {
+        String state = stream.readStringUntil('\n');
+        if (sockets[muxNo] && sockets[muxNo]->is_secure) {
+          // if there's at least one comma, there's connection info which
+          // means it's connected
+          sockets[muxNo]->sock_connected = (state.indexOf(',') > 0);
+        }
+      }
+    } else {
+      sendAT(GF("+CIPOPEN?"));
+      // If connect to a server, it will show the connected information.
+      // Otherwise, the connected information is empty.
+      // +CIPOPEN:<mux>,<State or blank...>
+      // +CIPOPEN: <link_num>[,<type>,<serverIP>,<serverPort>,<index>]
+      // +CIPOPEN: <link_num>[,<type>,<serverIP>,<serverPort>,<index>]
+      // +CIPOPEN: <link_num> // no further content for closed connections
+      // […]
+      // OK
+      if (waitResponse(GF("+CIPOPEN:")) != 1) { return false; }
+      for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+        String state = stream.readStringUntil('\n');
+        if (sockets[muxNo] && !sockets[muxNo]->is_secure) {
+          // if there's at least one comma, there's connection info which
+          // means it's connected
+          sockets[muxNo]->sock_connected = (state.indexOf(',') > 0);
+        }
+      }
+    }
+
+    waitResponse();  // Should be an OK at the end
+
+    if (!isValidMux(mux)) { return false; }
+    return sockets[mux]->sock_connected;
   }
 
   /*

@@ -34,8 +34,6 @@
  * client_type as 2=SSL/TLS?
  * @todo In `GsmClientSecureSim7600::connect()`: verify CCHOPEN
  * @todo In `modemSend()`: make sure requested and confirmed bytes match
- * @todo In `modemGetConnected()`: I think this only returns the TCP socket
- * connection status, not the SSL connection status
  */
 
 #ifndef SRC_TINYGSMCLIENTSIM7600_H_
@@ -1102,7 +1100,8 @@ class TinyGsmSim7600
 
       // Establish a connection in multi-socket mode
       // AT+CCHOPEN=<session_id>,"<host>",<port>[,<client_type>,[<bind_port>]]
-      // TODO: Should we specify the client_type as 2=SSL/TLS?
+      // TODO: Should we specify the client_type as 2=SSL/TLS?  It is the
+      // default, it shouldn't be necessary.
       sendAT(GF("+CCHOPEN="), mux, GF(",\""), host, GF("\","), port);
       // The reply is OK or ERROR followed by +CCHOPEN: <session_id>,<err> where
       // <session_id> is the mux number and <err> should be 0 if there's no
@@ -1323,20 +1322,54 @@ class TinyGsmSim7600
   }
 
   bool modemGetConnected(uint8_t mux) {
-    if (!isValidMux(mux)) { return false; }
-    // TODO(SRGD): I think this only returns the TCP socket connection status,
-    // not the SSL connection status
-    // Read the status of all sockets at once
-    sendAT(GF("+CIPOPEN?"));
-    if (waitResponse(GF("+CIPOPEN:")) != 1) { return false; }
-    for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+    // NOTE: This function gets the status for all sockets at once, so we don't
+    // check if the specific mux is valid until right before returning the value
+    // for that mux.
+    if (sockets[mux]->is_secure) {
+      sendAT(GF("+CCHOPEN?"));
+      // If connect to a server, it will show the connected information.
+      // Otherwise, the connected information is empty.
+      // +CCHOPEN: 0,”<host>”,<port>,<client_type>,[<bind_port>]
+      // +CCHOPEN: 1,”<host>”,<port>,<client_type>,[<bind_port>]
+      // […]
+      // OK
+      // <client_type> The type of client:
+      //   - 1 – TCP client.
+      //   - 2 – SSL/TLS client.
+      if (waitResponse(GF("+CCHOPEN:")) != 1) { return false; }
+      // for (uint8_t muxNo = 0; muxNo < SslConfig::kMuxCount; muxNo++) {
+      for (uint8_t muxNo = 0; muxNo < 2; muxNo++) {
+        String state = stream.readStringUntil('\n');
+        if (sockets[muxNo] && sockets[muxNo]->is_secure) {
+          // if there's at least one comma, there's connection info which
+          // means it's connected
+          sockets[muxNo]->sock_connected = (state.indexOf(',') > 0);
+        }
+      }
+    } else {
+      sendAT(GF("+CIPOPEN?"));
+      // If connect to a server, it will show the connected information.
+      // Otherwise, the connected information is empty.
       // +CIPOPEN:<mux>,<State or blank...>
-      String state = stream.readStringUntil('\n');
-      if (sockets[muxNo]) {
-        sockets[muxNo]->sock_connected = (state.indexOf(',') > 0);
+      // +CIPOPEN: <link_num>[,<type>,<serverIP>,<serverPort>,<index>]
+      // +CIPOPEN: <link_num>[,<type>,<serverIP>,<serverPort>,<index>]
+      // +CIPOPEN: <link_num> // no further content for closed connections
+      // […]
+      // OK
+      if (waitResponse(GF("+CIPOPEN:")) != 1) { return false; }
+      for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+        String state = stream.readStringUntil('\n');
+        if (sockets[muxNo] && !sockets[muxNo]->is_secure) {
+          // if there's at least one comma, there's connection info which
+          // means it's connected
+          sockets[muxNo]->sock_connected = (state.indexOf(',') > 0);
+        }
       }
     }
+
     waitResponse();  // Should be an OK at the end
+
+    if (!isValidMux(mux)) { return false; }
     return sockets[mux]->sock_connected;
   }
 
