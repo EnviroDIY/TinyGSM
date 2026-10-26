@@ -670,4 +670,6 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
   GsmClientMC60* sockets[TcpConfig::kMuxCount];
 };
 
+// cspell:words QIRD QIRDI
+
 #endif  // SRC_TINYGSMCLIENTMC60_H_

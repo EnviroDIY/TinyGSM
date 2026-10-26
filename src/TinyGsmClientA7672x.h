@@ -1416,6 +1416,6 @@ class TinyGsmA7672X
 /// Typedef for backward compatibility
 typedef TinyGsmA7672X TinyGsmA7672x;
 
-// cspell:words CCHSEND CCHSET CCHSTART CCHOPEN
+// cspell:words CCHSEND CCHSET CCHSTART CCHOPEN CCHSTOP
 
 #endif  // SRC_TINYGSMCLIENTA7672X_H_
