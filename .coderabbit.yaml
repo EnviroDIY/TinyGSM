@@ -29,6 +29,7 @@ reviews:
     - '!**/.bumpversion.toml'
     - '!**/.gitattributes'
     - '!**/.gitignore'
+    - '!**/keywords.txt'
     - '!**/*.png'
     - '!**/*.bin'
     - '!**/*.hex'
