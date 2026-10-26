@@ -390,11 +390,13 @@ def build_custom_matrix(config: dict) -> list[dict]:
 
     # %%
     # decide on the filtered matrix to use for the job matrix
+    expanded_matrix_exclusions_lookup = set(expanded_matrix_exclusions_list)
+    expanded_matrix_inclusions_lookup = set(expanded_matrix_inclusions_list)
     assembled_matrix = [
         json.loads(e)
         for e in cart_join_list
-        if e not in expanded_matrix_exclusions_list
-        and e in expanded_matrix_inclusions_list
+        if e not in expanded_matrix_exclusions_lookup
+        and e in expanded_matrix_inclusions_lookup
     ]
     assembled_matrix = sorted(
         assembled_matrix,
