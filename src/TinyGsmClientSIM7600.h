@@ -30,8 +30,6 @@
  * @todo In `gprsDisconnectImpl()`: Should CCHSTOP come before NETCLOSE?  Is it
  * needed in addition to NETCLOSE?
  * @todo In `getGPSImpl()`: Can 1 be returned
- * @todo In `GsmClientSecureSim7600::connect()`: Should we specify the
- * client_type as 2=SSL/TLS?
  * @todo In `GsmClientSecureSim7600::connect()`: verify CCHOPEN
  * @todo In `modemSend()`: make sure requested and confirmed bytes match
  */
@@ -562,6 +560,7 @@ class TinyGsmSim7600
     // Configure TCP parameters
 
     // Select TCP/IP application mode (command mode)
+    //  0 = non transparent mode
     sendAT(GF("+CIPMODE=0"));
     waitResponse();
 
@@ -569,6 +568,7 @@ class TinyGsmSim7600
     sendAT(GF("+CIPSENDMODE=0"));
     waitResponse();
 
+#if 0
     // Configure socket parameters
     // AT+CIPCCFG= <NmRetry>, <DelayTm>, <Ack>, <errMode>, <HeaderType>,
     //            <AsyncMode>, <TimeoutVal>
@@ -588,8 +588,10 @@ class TinyGsmSim7600
 
     // Configure timeouts for opening and closing sockets
     // AT+CIPTIMEOUT=<netopen_timeout> <cipopen_timeout>, <cipsend_timeout>
-    sendAT(GF("+CIPTIMEOUT="), 75000, ',', 15000, ',', 15000);
+    sendAT(GF("+CIPTIMEOUT="), 75000, ',', TcpConfig::kConnectTimeoutS, ',',
+           15000);
     waitResponse();
+#endif
 
     // Set to get data manually on TCP (unsecured) sockets
     sendAT(GF("+CIPRXGET=1"));
@@ -603,9 +605,21 @@ class TinyGsmSim7600
     // We to ignore any immediate response and wait for the
     // URC to show it's really connected.
     sendAT(GF("+NETOPEN"));
-    if (waitResponse(75000L, GF("+NETOPEN: 0")) != 1) { return false; }
+    int8_t res = waitResponse(75000L, GF("+NETOPEN: 0"),
+                              GF("+IP ERROR: Network is already opened"),
+                              GFP(ModemConfig::GSM_ERROR));
+    if (res != 1 && res != 2) { return false; }
 
     // Set the module to require manual reading of rx buffer data on SSL sockets
+
+    // Configure the mode of sending and receiving data
+    // CCHMODE=<mode>
+    // <mode>
+    //  0 – Normal
+    //  1 – Transparent mode
+    // This command must be called before AT+CCHSTART.
+    sendAT(GF("+CCHMODE=0"));
+    waitResponse(5000L);  // allowed to fail
 
     // Configure the report mode of sending and receiving data
     // +CCHSET=<report_send_result>,<recv_mode>
@@ -617,12 +631,13 @@ class TinyGsmSim7600
     //   1 Module caches the received data and notifies MCU with+CCHEVENT:
     // <session_id>,RECV EVENT. MCU can use AT+CCHRECV to receive the cached
     //   data (only in manual receiving mode).
+    // This command must be called before AT+CCHSTART.
     sendAT(GF("+CCHSET=1,1"));
-    waitResponse(5000L);
+    waitResponse(5000L);  // allowed to fail
 
-    // Start the SSL client (doesn't mean we have to use it!)
-    sendAT(GF("+CCHSTART"));  // Start the SSL client
-    if (waitResponse(5000L) != 1) return false;
+    // Start the SSL client service (doesn't mean we have to use it!)
+    sendAT(GF("+CCHSTART"));
+    waitResponse(5000L);  // allowed to fail
 
     return true;
   }
@@ -634,12 +649,14 @@ class TinyGsmSim7600
     sendAT(GF("+NETCLOSE"));
     if (waitResponse(60000L, GF("+NETCLOSE: 0")) != 1) { return false; }
 
-    // We assume this works, so we can do SSL disconnect to stop the SSL client
+    // Stop the SSL client
     sendAT(GF("+CCHSTOP"));
     return (waitResponse(60000L, GF("+CCHSTOP: 0")) == 1);
 
     // TODO: Should CCHSTOP come before NETCLOSE?  Is it needed in addition to
     // NETCLOSE?
+
+    sendAT(GF("+CGATT=0"));  // Detach from Packet Domain service
   }
 
   bool isGprsConnectedImpl() {
@@ -690,7 +707,7 @@ class TinyGsmSim7600
   /*
    * Audio functions
    */
-  //  No functions of this type supported
+  // No functions of this type supported
 
   /*
    * Text messaging (SMS) functions
@@ -904,12 +921,12 @@ class TinyGsmSim7600
   // get temperature in degree celsius
   float getTemperatureImpl() {
     sendAT(GF("+CPMUTEMP"));
-    if (waitResponse(GF("+CPMUTEMP:")) != 1) { return 0; }
+    if (waitResponse(GF("+CPMUTEMP:")) != 1) { return -9999.0f; }
     // return temperature in C
-    float res = streamGetFloatBefore('\n');
+    float temp = streamGetFloatBefore('\n');
     // Wait for final OK
     waitResponse();
-    return res;
+    return temp;
   }
 
   /*
@@ -1100,9 +1117,7 @@ class TinyGsmSim7600
 
       // Establish a connection in multi-socket mode
       // AT+CCHOPEN=<session_id>,"<host>",<port>[,<client_type>,[<bind_port>]]
-      // TODO: Should we specify the client_type as 2=SSL/TLS?  It is the
-      // default, it shouldn't be necessary.
-      sendAT(GF("+CCHOPEN="), mux, GF(",\""), host, GF("\","), port);
+      sendAT(GF("+CCHOPEN="), mux, GF(",\""), host, GF("\","), port, GF(",2"));
       // The reply is OK or ERROR followed by +CCHOPEN: <session_id>,<err> where
       // <session_id> is the mux number and <err> should be 0 if there's no
       // error

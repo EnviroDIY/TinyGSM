@@ -30,13 +30,9 @@
  * of range
  * @todo In `getLocalIPSecure()`: figure out when to use each command properly
  * @todo In `deleteCertificateImpl()`: test
- * @todo In `connect()` (secure path): Shouldn't CCHSET be called only once
- * during the init or during the GPRS connection process?
- * @todo In `connect()` (secure path): Should CCHSTART be called once during the
- * GPRS connection process instead of repeatedly here?
+ * @todo In `gprsDisconnectImpl()`: Should CCHSTOP come before NETCLOSE?  Is it
+ * needed in addition to NETCLOSE?
  * @todo In `connect()` (secure path): verify the socket returned by CCHOPEN
- * @todo In `connect()` (non-secure path): Should NETOPEN be called once during
- * the GPRS connection process instead of repeatedly here?
  * @todo In `modemSend()`: make sure requested and confirmed bytes match
  */
 
@@ -600,13 +596,9 @@ class TinyGsmA7672X
     sendAT(GF("+CGACT=1,1"));
     waitResponse(60000L);
 
-    // Attach to GPRS
+    // Attach to Packet Domain service
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1) { return false; }
-
-    // Set to get data manually on TCP (unsecured) sockets
-    sendAT(GF("+CIPRXGET=1"));
-    if (waitResponse() != 1) { return false; }
 
     // Get Local IP Address, only assigned after connection
     sendAT(GF("+CGPADDR=1"));
@@ -616,6 +608,86 @@ class TinyGsmA7672X
     sendAT(GF("+CDNSCFG=\"8.8.8.8\",\"8.8.4.4\""));
     if (waitResponse() != 1) { return false; }
 
+    // Configure TCP parameters
+
+    // Select TCP/IP application mode (command mode)
+    //  0 = non transparent mode
+    sendAT(GF("+CIPMODE=0"));
+    waitResponse();
+
+    // Set Sending Mode - send without waiting for peer TCP ACK
+    sendAT(GF("+CIPSENDMODE=0"));
+    waitResponse();
+
+#if 0
+    // Configure socket parameters
+    // AT+CIPCCFG= <NmRetry>, <DelayTm>, <Ack>, <errMode>, <HeaderType>,
+    //            <AsyncMode>, <TimeoutVal>
+    // NmRetry = number of retransmission to be made for an IP packet
+    //         = 10 (default)
+    // DelayTm = number of milliseconds to delay before outputting received data
+    //          = 0 (default)
+    // Ack = sets whether reporting a string "Send ok" = 0 (don't report)
+    // errMode = mode of reporting error result code = 0 (numberic values)
+    // HeaderType = which data header of receiving data in multi-client mode
+    //            = 1 (+RECEIVE,<link num>,<data length>)
+    // AsyncMode = sets mode of executing commands
+    //           = 0 (synchronous command executing)
+    // TimeoutVal = minimum retransmission timeout in milliseconds = 75000
+    sendAT(GF("+CIPCCFG=10,0,0,0,1,0,75000"));
+    if (waitResponse() != 1) { return false; }
+
+    // Configure timeouts for opening and closing sockets
+    // AT+CIPTIMEOUT=<netopen_timeout> <cipopen_timeout>, <cipsend_timeout>
+    sendAT(GF("+CIPTIMEOUT="), 75000, ',', TcpConfig::kConnectTimeoutS, ',',
+           15000);
+    waitResponse();
+#endif
+
+    // Set to get data manually on TCP (unsecured) sockets
+    sendAT(GF("+CIPRXGET=1"));
+    if (waitResponse() != 1) { return false; }
+
+    // Start the TCP/IP socket service
+
+    // Response may be an immediate "OK" followed later by "+NETOPEN: 0".
+    // We to ignore any immediate response and wait for the
+    // URC to show it's really connected.
+    sendAT(GF("+NETOPEN"));
+    int8_t res = waitResponse(75000L, GF("+NETOPEN: 0"),
+                              GF("+IP ERROR: Network is already opened"),
+                              GFP(ModemConfig::GSM_ERROR));
+    if (res != 1 && res != 2) { return false; }
+
+    // Set the module to require manual reading of rx buffer data on SSL sockets
+
+    // Configure the mode of sending and receiving data
+    // CCHMODE=<mode>
+    // <mode>
+    //  0 – Normal
+    //  1 – Transparent mode
+    // This command must be called before AT+CCHSTART.
+    sendAT(GF("+CCHMODE=0"));
+    waitResponse(5000L);  // allowed to fail
+
+    // Configure the report mode of sending and receiving data
+    // +CCHSET=<report_send_result>,<recv_mode>
+    // <report_send_result> Whether to report result of CCHSEND, the default
+    //   value is 0: 0 No. 1 Yes. Module will report +CCHSEND:
+    // <session_id>,<err> to MCU when complete sending data.
+    // <recv_mode> The receiving mode, the default value is 0:
+    //   0 Output the data to MCU whenever received data.
+    //   1 Module caches the received data and notifies MCU with+CCHEVENT:
+    // <session_id>,RECV EVENT. MCU can use AT+CCHRECV to receive the cached
+    //   data (only in manual receiving mode).
+    // This command must be called before AT+CCHSTART.
+    sendAT(GF("+CCHSET=1,1"));
+    waitResponse(5000L);  // allowed to fail
+
+    // Start the SSL client service (doesn't mean we have to use it!)
+    sendAT(GF("+CCHSTART"));
+    waitResponse(5000L);  // allowed to fail
+
     return true;
   }
 
@@ -624,7 +696,14 @@ class TinyGsmA7672X
     sendAT(GF("+NETCLOSE"));
     if (waitResponse(60000L) != 1) { return false; }
 
-    sendAT(GF("+CGATT=0"));  // Detach from GPRS
+    // Stop the SSL client
+    sendAT(GF("+CCHSTOP"));
+    return (waitResponse(60000L, GF("+CCHSTOP: 0")) == 1);
+
+    // TODO: Should CCHSTOP come before NETCLOSE?  Is it needed in addition to
+    // NETCLOSE?
+
+    sendAT(GF("+CGATT=0"));  // Detach from Packet Domain service
     if (waitResponse(60000L) != 1) { return false; }
 
     return true;
@@ -732,7 +811,9 @@ class TinyGsmA7672X
   float getTemperatureImpl() {
     sendAT(GF("+CPMUTEMP"));
     if (waitResponse(GF("+CPMUTEMP:")) != 1) { return -9999.0f; }
+    // return temperature in C
     float temp = streamGetFloatBefore('\n');
+    // Wait for final OK
     waitResponse();
     return temp;
   }
@@ -780,6 +861,10 @@ class TinyGsmA7672X
    */
   bool configureSSLContext(uint8_t context_id) {
     bool success = true;
+
+    // List the certs available
+    //   sendAT(GF("+CCERTLIST"));
+    //   waitResponse(5000L);
 
     // NOTE: The SSL context (<ssl_ctx_index>) is not the same as the
     // connection identifier.  The SSL context is the grouping of SSL
@@ -900,7 +985,6 @@ class TinyGsmA7672X
   /*
    * Client-related functions
    */
-
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t /*static*/ mux,
                     int timeout_s) {
@@ -915,21 +999,6 @@ class TinyGsmA7672X
     if (waitResponse(2000L) != 1) { return false; }
 
     if (ssl) {
-      // Configure the report mode of sending and receiving data
-      // +CCHSET=<report_send_result>,<recv_mode>
-      // <report_send_result> Whether to report result of CCHSEND, the default
-      //   value is 0: 0 No. 1 Yes. Module will report +CCHSEND:
-      // <session_id>,<err> to MCU when complete sending data.
-      // <recv_mode> The receiving mode, the default value is 0:
-      //   0 Output the data to MCU whenever received data.
-      //   1 Module caches the received data and notifies MCU with+CCHEVENT:
-      // <session_id>,RECV EVENT. MCU can use AT+CCHRECV to receive the cached
-      //   data (only in manual receiving mode).
-      // TODO: Shouldn't this be done only once during the init or during the
-      // GPRS connection process
-      sendAT(GF("+CCHSET=1,1"));
-      if (waitResponse(2000L) != 1) { return false; }
-
       // If we have a secure socket, use a static cast to get the context index.
       // This isn't really "safe" but since we've already checked that the
       // socket is a secure one, we're pretty sure of the type and it should
@@ -938,17 +1007,11 @@ class TinyGsmA7672X
           static_cast<const GsmClientSecureA7672X*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
 
-      // TODO: Should CCHSTART be called once during the GPRS connection process
-      // instead of repeatedly here?
-      // Start SSL service
-      sendAT(GF("+CCHSTART"));
-      if (waitResponse(2000L) != 1) { return false; }
-
       if (!linkSSLContext(mux, sslCtxIndex)) {
         DBG("### Failed to link the SSL context to mux", mux);
         return false;
       }
-      // Connect to server
+      // Establish a connection in multi-socket mode
       // AT+CCHOPEN=<session_id>,<host>,<port>[,<client_type>,[<bind_port>]]
       sendAT(GF("+CCHOPEN="), mux, GF(",\""), host, GF("\","), port, GF(",2"));
       // The reply is OK or ERROR followed by +CCHOPEN: <session_id>,<err> where
@@ -960,14 +1023,6 @@ class TinyGsmA7672X
       }
       // TODO: verify this
     } else {
-      // TODO: Should NETOPEN be called once during the GPRS connection process
-      // instead of repeatedly here?
-      sendAT(GF("+NETOPEN"));
-      if (waitResponse(2000L) != 1) { return false; }
-
-      sendAT(GF("+NETOPEN?"));
-      if (waitResponse(2000L) != 1) { return false; }
-
       // AT+CIPOPEN=<link_num>,"TCP",<serverIP>,<serverPort>[,<localPort>]
       sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host,
              GF("\","), port);
