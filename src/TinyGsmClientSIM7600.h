@@ -18,7 +18,7 @@
  * - SSL sockets:
  *   - 2
  * - SSL contexts:
- *   - 6
+ *   - 10
  * - Socket Buffering:
  *   - The modem has an internal buffer for incoming data.
  * - Socket Numbering:
