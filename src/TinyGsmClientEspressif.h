@@ -302,10 +302,12 @@ class TinyGsmEspressif
     // others: unknown error occurred.
     thisModem().sendAT(GF("+CWJAP=\""), ssid, GF("\",\""), pwd, '"');
     if (thisModem().waitResponse(30000L, GFP(ModemConfig::GSM_OK),
-                                 GF("FAIL\r\n")) != 1) {
+                                 GF("FAIL\r\n"),
+                                 GFP(ModemConfig::GSM_ERROR)) != 1) {
       thisModem().sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, '"');
       if (thisModem().waitResponse(30000L, GFP(ModemConfig::GSM_OK),
-                                   GF("FAIL\r\n")) != 1) {
+                                   GF("FAIL\r\n"),
+                                   GFP(ModemConfig::GSM_ERROR)) != 1) {
         return false;
       }
     }
