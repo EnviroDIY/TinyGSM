@@ -47,7 +47,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   - These functions are directly analogous to the `beginPublish` and `endPublish` functions within [PubSubClient](https://github.com/knolleary/pubsubclient) and should be usable in combination with them.
 
 ```cpp
-gsmClient.beginWrite(topic_len + msg_len + MQTT_MAX_HEADER_SIZE);
+uint16_t mqtt_remaining_length = 2 + topic_len + msg_len;
+uint16_t mqtt_packet_length    = 1 + mqtt_remaining_length;
+do {
+  mqtt_packet_length++;
+  mqtt_remaining_length /= 128;
+} while (mqtt_remaining_length > 0);
+gsmClient.beginWrite(mqtt_packet_length);
 // NOTE: total length _**MUST**_ be less than the specific module's maximum send size
 // You can compare against TINY_GSM_SEND_MAX_SIZE to verify you haven't exceeded the maximum
 mqttClient.beginPublish(topic, msg_len, false);
@@ -55,7 +61,7 @@ gsmClient.write((uint8_t*)message, strlen(message));
 // or mqttClient.write(...) or stream.write(...)
 // print/println functions should also work here
 mqttClient.endPublish();
-gsmClient.endWrite(strlen(message));
+gsmClient.endWrite(mqtt_packet_length);
 ```
 
 - Added an example connecting to AWS IoT Core with mutual authentication.
