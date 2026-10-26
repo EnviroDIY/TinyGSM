@@ -171,11 +171,11 @@ class TinyGsmESP8266NonOS
      * corresponding modem's socket array.  This is identical to the identifier
      * the modem uses internally to identify the socket for the ESP8266.
      *
-     * @note The ESP8266 allows you to choose the multiplexing channel number, but
-     * if the input mux channel number is already in use and other mux channels
-     * are available, this library will select the next available one.  Use the
-     * getMux() function to get the assigned multiplexing channel number after a
-     * successful connection.
+     * @note The ESP8266 allows you to choose the multiplexing channel number,
+     * but if the input mux channel number is already in use and other mux
+     * channels are available, this library will select the next available one.
+     * Use the getMux() function to get the assigned multiplexing channel number
+     * after a successful connection.
      */
     explicit GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem, uint8_t mux = 0)
         : GsmClient<TinyGsmESP8266NonOS, TinyGsmESP8266NonOSTcpConfig>(modem,
@@ -346,7 +346,7 @@ class TinyGsmESP8266NonOS
   // Follows functions inherited from Espressif
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
   // No functions of this type supported
 

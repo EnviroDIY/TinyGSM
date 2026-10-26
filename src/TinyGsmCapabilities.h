@@ -16,7 +16,7 @@ class TinyGsmSSL;
 template <class modemType>
 class TinyGsmGPS;
 template <class modemType>
-class TinyGsmGPRS;
+class TinyGsmCellularData;
 template <class modemType>
 class TinyGsmWifi;
 template <class modemType>
@@ -166,10 +166,10 @@ template <typename T>
 struct has_gps : is_base_of<TinyGsmGPS<T>, T> {};
 
 /**
- * @brief Detect if a modem type has GPRS/cellular data support
+ * @brief Detect if a modem type has cellular data support
  */
 template <typename T>
-struct has_gprs : is_base_of<TinyGsmGPRS<T>, T> {};
+struct has_cellular_data : is_base_of<TinyGsmCellularData<T>, T> {};
 
 /**
  * @brief Detect if a modem type has WiFi support

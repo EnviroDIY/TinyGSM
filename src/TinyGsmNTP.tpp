@@ -125,7 +125,7 @@ class TinyGsmNTP {
    */
 
   bool NTPServerSyncImpl(const char* server, int TimeZone) {
-    // Set GPRS bearer profile to associate with NTP sync
+    // Set bearer profile to associate with NTP sync
     // this is allowed to fail; it's not supported by all modules
     thisModem().sendAT(GF("+CNTPCID=1"));
     thisModem().waitResponse(10000L);

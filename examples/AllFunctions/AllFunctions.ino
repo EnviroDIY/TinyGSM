@@ -73,7 +73,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 /*
  * Tests enabled
  */
-#define TINY_GSM_TEST_GPRS true
+#define TINY_GSM_TEST_CELLULAR_DATA true
 #define TINY_GSM_TEST_WIFI false
 #define TINY_GSM_TEST_TCP true
 #define TEST_BUILD_ADD_CERTS true
@@ -91,16 +91,16 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TINY_GSM_POWERDOWN true
 
 // set GSM PIN, if any
-#define GSM_PIN ""
+#define SIM_PIN ""
 
 // Set phone numbers, if you want to test SMS and Calls
 // #define SMS_TARGET  "+380xxxxxxxxx"
 // #define CALL_TARGET "+380xxxxxxxxx"
 
-// Your GPRS credentials, if any
-const char apn[]      = "YourAPN";
-const char gprsUser[] = "";
-const char gprsPass[] = "";
+// Your SIM card credentials, if any
+const char apn[]     = "YourAPN";
+const char simUser[] = "";
+const char simPass[] = "";
 
 // Your WiFi connection credentials, if applicable
 const char wifiSSID[] = "YourSSID";
@@ -125,16 +125,16 @@ const int port_ssl = 443;
 #include <Adafruit_TinyUSB.h>  // for Serial
 #endif
 
-#if TINY_GSM_TEST_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
-#undef TINY_GSM_TEST_GPRS
+#if TINY_GSM_TEST_CELLULAR_DATA && not defined TINY_GSM_MODEM_HAS_CELLULAR_DATA
+#undef TINY_GSM_TEST_CELLULAR_DATA
 #undef TINY_GSM_TEST_WIFI
-#define TINY_GSM_TEST_GPRS false
+#define TINY_GSM_TEST_CELLULAR_DATA false
 #define TINY_GSM_TEST_WIFI true
 #endif
 #if TINY_GSM_TEST_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
-#undef TINY_GSM_USE_GPRS
+#undef TINY_GSM_USE_CELLULAR_DATA
 #undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_CELLULAR_DATA true
 #define TINY_GSM_USE_WIFI false
 #endif
 
@@ -251,7 +251,8 @@ void loop() {
 
   // Display modem capabilities using compile-time detection
   DBG("Modem Capabilities:");
-  DBG("  GPRS:", TinyGsmCapabilities::has_gprs<TinyGsm>::value ? "YES" : "NO");
+  DBG("  Cellular Data:",
+      TinyGsmCapabilities::has_cellular_data<TinyGsm>::value ? "YES" : "NO");
   DBG("  WiFi:", TinyGsmCapabilities::has_wifi<TinyGsm>::value ? "YES" : "NO");
   DBG("  SSL:", TinyGsmCapabilities::has_ssl<TinyGsm>::value ? "YES" : "NO");
   DBG("  GPS:", TinyGsmCapabilities::has_gps<TinyGsm>::value ? "YES" : "NO");
@@ -267,11 +268,11 @@ void loop() {
   DBG("  NTP:", TinyGsmCapabilities::has_ntp<TinyGsm>::value ? "YES" : "NO");
   DBG("  Time:", TinyGsmCapabilities::has_time<TinyGsm>::value ? "YES" : "NO");
 
-#if TINY_GSM_TEST_GPRS
+#if TINY_GSM_TEST_CELLULAR_DATA
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && modem.getSimStatus() != SIM_READY) {
+  if (SIM_PIN && modem.getSimStatus() != SIM_READY) {
     // simUnlock will do nothing if the pin is empty
-    modem.simUnlock(GSM_PIN);
+    modem.simUnlock(SIM_PIN);
   }
 #endif
 
@@ -285,9 +286,9 @@ void loop() {
   SerialMon.println(" success");
 #endif
 
-#if TINY_GSM_TEST_GPRS && defined(TINY_GSM_MODEM_XBEE)
-  // The XBee must run the gprsConnect function BEFORE waiting for network!
-  modem.gprsConnect(apn, gprsUser, gprsPass);
+#if TINY_GSM_TEST_CELLULAR_DATA && defined(TINY_GSM_MODEM_XBEE)
+  // The XBee must run the dataConnect function BEFORE waiting for network!
+  modem.dataConnect(apn, simUser, simPass);
 #endif
 
   DBG("Waiting for network...");
@@ -298,15 +299,15 @@ void loop() {
 
   if (modem.isNetworkConnected()) { DBG("Network connected"); }
 
-#if TINY_GSM_TEST_GPRS
+#if TINY_GSM_TEST_CELLULAR_DATA
   DBG("Connecting to", apn);
-  if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
+  if (!modem.dataConnect(apn, simUser, simPass)) {
     delay(10000);
     return;
   }
 
-  bool res = modem.isGprsConnected();
-  DBG("GPRS status:", res ? "connected" : "not connected");
+  bool res = modem.isDataConnected();
+  DBG("Cellular Data status:", res ? "connected" : "not connected");
   (void)res;
 
   String ccid = modem.getSimCCID();
@@ -789,13 +790,13 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 
 #if TINY_GSM_POWERDOWN
 
-#if TINY_GSM_TEST_GPRS
-  modem.gprsDisconnect();
+#if TINY_GSM_TEST_CELLULAR_DATA
+  modem.dataDisconnect();
   delay(5000L);
-  if (!modem.isGprsConnected()) {
-    DBG("GPRS disconnected");
+  if (!modem.isDataConnected()) {
+    DBG("Cellular data disconnected");
   } else {
-    DBG("GPRS disconnect: Failed.");
+    DBG("Cellular Data disconnect: Failed.");
   }
 #endif
 

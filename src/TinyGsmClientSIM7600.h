@@ -27,7 +27,7 @@
  *
  * @todo In GsmClientSim7600 constructor: Ensure the secure socket mux isn't out
  * of range
- * @todo In `gprsDisconnectImpl()`: Should CCHSTOP come before NETCLOSE?  Is it
+ * @todo In `dataDisconnectImpl()`: Should CCHSTOP come before NETCLOSE?  Is it
  * needed in addition to NETCLOSE?
  * @todo In `getGPSImpl()`: Can 1 be returned
  * @todo In `GsmClientSecureSim7600::connect()`: verify CCHOPEN
@@ -41,7 +41,7 @@
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGSMLocation.tpp"
@@ -122,7 +122,7 @@ struct TinyGsmSim7600SslConfig : public TinyGsmSslConfigPreset<
 /// @ingroup simcom_sim7600
 class TinyGsmSim7600
     : public TinyGsmModem<TinyGsmSim7600, TinyGsmSim7600ModemConfig>,
-      public TinyGsmGPRS<TinyGsmSim7600>,
+      public TinyGsmCellularData<TinyGsmSim7600>,
       public TinyGsmTCP<TinyGsmSim7600, TinyGsmSim7600TcpConfig>,
       public TinyGsmSSL<TinyGsmSim7600, TinyGsmSim7600SslConfig>,
       public TinyGsmSMS<TinyGsmSim7600>,
@@ -134,7 +134,7 @@ class TinyGsmSim7600
       public TinyGsmTemperature<TinyGsmSim7600>,
       public TinyGsmCalling<TinyGsmSim7600> {
   friend class TinyGsmModem<TinyGsmSim7600, TinyGsmSim7600ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmSim7600>;
+  friend class TinyGsmCellularData<TinyGsmSim7600>;
   friend class TinyGsmTCP<TinyGsmSim7600, TinyGsmSim7600TcpConfig>;
   friend class GsmClient<TinyGsmSim7600, TinyGsmSim7600TcpConfig>;
   friend class TinyGsmSSL<TinyGsmSim7600, TinyGsmSim7600SslConfig>;
@@ -537,11 +537,11 @@ class TinyGsmSim7600
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();  // Make sure we're not connected first
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();  // Make sure we're not connected first
 
     // Define the PDP context
 
@@ -642,7 +642,7 @@ class TinyGsmSim7600
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // Close all sockets and stop the socket service
     // Note: On the LTE models, this single command closes all sockets and the
     // service and deactivates the PDP context
@@ -659,7 +659,7 @@ class TinyGsmSim7600
     sendAT(GF("+CGATT=0"));  // Detach from Packet Domain service
   }
 
-  bool isGprsConnectedImpl() {
+  bool isDataConnectedImpl() {
     sendAT(GF("+NETOPEN?"));
     // May return +NETOPEN: 1, 0.  We just confirm that the first number is 1
     if (waitResponse(GF("+NETOPEN: 1")) != 1) { return false; }
@@ -1426,7 +1426,7 @@ class TinyGsmSim7600
       // Need to close all open sockets and release the network library.
       // User will then need to reconnect.
       DBG("### Network error!");
-      if (!isGprsConnected()) { gprsDisconnect(); }
+      if (!isDataConnected()) { dataDisconnect(); }
       data = "";
       return true;
     }

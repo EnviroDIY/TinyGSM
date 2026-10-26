@@ -195,17 +195,16 @@ The general flow of your code should be:
   - `modem.init()` or `modem.restart()`
   - Restart generally takes longer than init but ensures the module doesn't have lingering connections
 - Unlock your SIM, if necessary:
-  - `modem.simUnlock(GSM_PIN)`
+  - `modem.simUnlock(SIM_PIN)`
 - If using a **WiFi** module, specify your SSID information:
   - `modem.networkConnect(wifiSSID, wifiPass)`
   - Network registration should be automatic on cellular modules
 - Wait for network registration to be successful
   - `modem.waitForNetwork(600000L)`
   - New sim/tower combinations may take a *long* time to connect.
-- If using cellular, establish the GPRS or EPS data connection *after* you are successfully registered on the network
-  - `modem.gprsConnect(apn, gprsUser, gprsPass)` (or simply `modem.gprsConnect(apn)`)
-  - The same command is used for both GPRS or EPS connection
-  - If using a **Digi** brand cellular XBee, you must specify your GPRS/EPS connection information *before* waiting for the network.  This is true ONLY for *Digi cellular XBees*!  *For all other cellular modules, use the GPRS connect function after network registration.*
+- If using cellular, establish the cellular data connection *after* you are successfully registered on the network
+  - `modem.dataConnect(apn, simUser, simPass)` (or simply `modem.dataConnect(apn)`)
+  - If using a **Digi** brand cellular XBee, you must specify your cellular data connection information *before* waiting for the network.  This is true ONLY for *Digi cellular XBees*!  *For all other cellular modules, use the cellular data connect function after network registration.*
 - Connect the TCP or SSL client
     `client.connect(server, port)`
 - Send out your data.
@@ -226,7 +225,7 @@ TinyGSM knows which commands to send, and how to handle AT responses, and wraps 
 This library is "blocking" in all of its communication.
 Depending on the function, your code may be blocked for several *minutes* while waiting for the module responses.
 Apart from the obvious (i.e., `waitForNetwork()`) several other functions may block your code for up to several *minutes*.
-The `gprsConnect()` and `client.connect()` functions commonly block the longest, especially in poorer service regions.
+The `dataConnect()` and `client.connect()` functions commonly block the longest, especially in poorer service regions.
 Shutting down or restarting the module may also be quite slow.
 
 This library *does not* support any sort of "hardware" or pin-level controls for the modules.
@@ -235,7 +234,7 @@ If you're interested in pin controls for your module, there's documentation of t
 
 ## API Reference
 
-For GPRS data streams, this library provides the standard [Arduino Client](https://www.arduino.cc/en/Reference/ClientConstructor) interface.
+For cellular data streams, this library provides the standard [Arduino Client](https://www.arduino.cc/en/Reference/ClientConstructor) interface.
 For additional functions, please refer to [this example sketch](examples/AllFunctions/ReadMe.md)
 
 ## Troubleshooting
@@ -272,7 +271,7 @@ Some caveats with baud rates:
 Sometimes (especially if you played with AT commands), your module configuration may become invalid.
 This may result in problems such as:
 
-- Can't connect to the GPRS network
+- Can't connect to the cellular data network
 - Can't connect to the server
 - Sent/received data contains invalid bytes
 - etc.
@@ -281,7 +280,7 @@ To return module to **Factory Defaults**, use this sketch:
   Open [`extras/tools/FactoryReset/FactoryReset.ino`](extras/tools/FactoryReset/FactoryReset.ino) from the library folder.
 
 In some cases, you may need to set an initial APN to connect to the cellular network.
-Try using the `gprsConnect(APN)` function to set an initial APN if you are unable to register on the network.
+Try using the `dataConnect(APN)` function to set an initial APN if you are unable to register on the network.
 You may need set the APN again after registering.
 (In most cases, you should set the APN after registration.)
 
@@ -296,7 +295,7 @@ When using MQTT, to keep a continuous connection you may need to reduce your kee
 
 ### Diagnostics sketch
 
-Use this sketch to help diagnose SIM card and GPRS connection issues:
+Use this sketch to help diagnose SIM card and cellular data connection issues:
   Open [`extras/tools/Diagnostics/Diagnostics.ino`](extras/tools/Diagnostics/Diagnostics.ino) from the library folder.
 
 If the diagnostics fail, uncomment this line to output some debugging comments from the library:

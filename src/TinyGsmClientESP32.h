@@ -1040,7 +1040,7 @@ class TinyGsmESP32
   // Follows functions inherited from Espressif
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
   // No functions of this type supported
 

@@ -29,7 +29,7 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmGPS.tpp"
@@ -93,7 +93,7 @@ struct TinyGsmSim5360TcpConfig
 /// @ingroup simcom_sim5360
 class TinyGsmSim5360
     : public TinyGsmModem<TinyGsmSim5360, TinyGsmSim5360ModemConfig>,
-      public TinyGsmGPRS<TinyGsmSim5360>,
+      public TinyGsmCellularData<TinyGsmSim5360>,
       public TinyGsmTCP<TinyGsmSim5360, TinyGsmSim5360TcpConfig>,
       public TinyGsmSMS<TinyGsmSim5360>,
       public TinyGsmGSMLocation<TinyGsmSim5360>,
@@ -103,7 +103,7 @@ class TinyGsmSim5360
       public TinyGsmBattery<TinyGsmSim5360>,
       public TinyGsmTemperature<TinyGsmSim5360> {
   friend class TinyGsmModem<TinyGsmSim5360, TinyGsmSim5360ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmSim5360>;
+  friend class TinyGsmCellularData<TinyGsmSim5360>;
   friend class TinyGsmTCP<TinyGsmSim5360, TinyGsmSim5360TcpConfig>;
   friend class GsmClient<TinyGsmSim5360, TinyGsmSim5360TcpConfig>;
   friend class TinyGsmSMS<TinyGsmSim5360>;
@@ -385,11 +385,11 @@ class TinyGsmSim5360
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();  // Make sure we're not connected first
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();  // Make sure we're not connected first
 
     // Define the PDP context
 
@@ -468,7 +468,7 @@ class TinyGsmSim5360
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // Close any open sockets
     for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; mux++) {
       GsmClientSim5360* sock = sockets[mux];
@@ -484,7 +484,7 @@ class TinyGsmSim5360
     return true;
   }
 
-  bool isGprsConnectedImpl() {
+  bool isDataConnectedImpl() {
     sendAT(GF("+NETOPEN?"));
     // May return +NETOPEN: 1, 0.  We just confirm that the first number is 1
     if (waitResponse(GF("+NETOPEN: 1")) != 1) { return false; }
@@ -882,7 +882,7 @@ class TinyGsmSim5360
       // Need to close all open sockets and release the network library.
       // User will then need to reconnect.
       DBG("### Network error!");
-      if (!isGprsConnected()) { gprsDisconnect(); }
+      if (!isDataConnected()) { dataDisconnect(); }
       data = "";
       return true;
     }

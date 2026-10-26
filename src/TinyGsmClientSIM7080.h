@@ -109,7 +109,7 @@ class TinyGsmSim7080
       public TinyGsmBattery<TinyGsmSim7080> {
   friend class TinyGsmSim70xx<TinyGsmSim7080, TinyGsmSim7080ModemConfig>;
   friend class TinyGsmModem<TinyGsmSim7080, TinyGsmSim7080ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmSim7080>;
+  friend class TinyGsmCellularData<TinyGsmSim7080>;
   friend class TinyGsmTCP<TinyGsmSim7080, TinyGsmSim7080TcpConfig>;
   friend class GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig>;
   friend class TinyGsmSSL<TinyGsmSim7080, TinyGsmSim7080SslConfig>;
@@ -637,11 +637,11 @@ class TinyGsmSim7080
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();
 
     // Define the PDP context
     // AT+CGDCONT=<cid>[,<PDP_type>[,<APN>[,<PDP_addr>[,<d_comp>[,<h_comp>][,<ipv4_ctrl>[,<emergency_flag>]]]]]]
@@ -649,7 +649,7 @@ class TinyGsmSim7080
     sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');
     waitResponse();
 
-    // Attach to GPRS
+    // Attach to Packet Domain service
     // AT+CGATT={state}
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1) { return false; }
@@ -721,7 +721,7 @@ class TinyGsmSim7080
     return res;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // Shut down the general application TCP/IP connection
     // CNACT will close *all* open application connections
     sendAT(GF("+CNACT=0,0"));
@@ -774,7 +774,7 @@ class TinyGsmSim7080
    */
  protected:
   bool NTPServerSyncImpl(const char* server, int TimeZone) {
-    // Set GPRS bearer profile to associate with NTP sync
+    // Set bearer profile to associate with NTP sync
     // this may fail, it's not supported by all modules
     sendAT(GF("+CNTPCID=0"));  // CID must be 0. With 1 (like other modules)
                                // does not work!

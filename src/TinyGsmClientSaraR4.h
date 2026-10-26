@@ -43,7 +43,7 @@
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmGPS.tpp"
@@ -116,7 +116,7 @@ struct TinyGsmSaraR4SslConfig : public TinyGsmSslConfigPreset<
 /// @ingroup ublox_sara_r4
 class TinyGsmSaraR4
     : public TinyGsmModem<TinyGsmSaraR4, TinyGsmSaraR4ModemConfig>,
-      public TinyGsmGPRS<TinyGsmSaraR4>,
+      public TinyGsmCellularData<TinyGsmSaraR4>,
       public TinyGsmTCP<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>,
       public TinyGsmSMS<TinyGsmSaraR4>,
       public TinyGsmGSMLocation<TinyGsmSaraR4>,
@@ -125,7 +125,7 @@ class TinyGsmSaraR4
       public TinyGsmBattery<TinyGsmSaraR4>,
       public TinyGsmTemperature<TinyGsmSaraR4> {
   friend class TinyGsmModem<TinyGsmSaraR4, TinyGsmSaraR4ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmSaraR4>;
+  friend class TinyGsmCellularData<TinyGsmSaraR4>;
   friend class TinyGsmTCP<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>;
   friend class GsmClient<TinyGsmSaraR4, TinyGsmSaraR4TcpConfig>;
   friend class TinyGsmSMS<TinyGsmSaraR4>;
@@ -514,13 +514,13 @@ class TinyGsmSaraR4
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    // gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    // dataDisconnect();
 
-    sendAT(GF("+CGATT=1"));  // attach to GPRS
+    sendAT(GF("+CGATT=1"));  // attach to Packet Domain service
     if (waitResponse(360000L) != 1) { return false; }
 
     // Using CGDCONT sets up an "external" PCP context, i.e. a data connection
@@ -543,7 +543,7 @@ class TinyGsmSaraR4
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // Mark all the sockets as closed
     // This ensures that asynchronously closed sockets are marked closed
     for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; mux++) {
@@ -557,7 +557,7 @@ class TinyGsmSaraR4
       // return false;
     }
 
-    sendAT(GF("+CGATT=0"));  // detach from GPRS
+    sendAT(GF("+CGATT=0"));  // Detach from Packet Domain service
     if (waitResponse(360000L) != 1) { return false; }
 
     return true;

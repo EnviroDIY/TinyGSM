@@ -15,7 +15,7 @@
 #pragma message("TinyGSM:  TinyGsmClientSIM70xx")
 
 #include "TinyGsmModem.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmGPS.tpp"
 
 /// Registration status
@@ -40,10 +40,10 @@ enum class Sim70xxRegStatus {
  */
 template <class SIM70xxType, class SIM70xxModemConfig>
 class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
-                       public TinyGsmGPRS<SIM70xxType>,
+                       public TinyGsmCellularData<SIM70xxType>,
                        public TinyGsmGPS<SIM70xxType> {
   friend class TinyGsmModem<SIM70xxType, SIM70xxModemConfig>;
-  friend class TinyGsmGPRS<SIM70xxType>;
+  friend class TinyGsmCellularData<SIM70xxType>;
   friend class TinyGsmGPS<SIM70xxType>;
 
   /*
@@ -246,7 +246,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
   }
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
   // should implement in sub-classes

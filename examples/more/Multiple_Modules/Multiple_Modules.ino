@@ -72,12 +72,12 @@ SoftwareSerial SerialAT2(2, 3);  // RX, TX
 #define GSM_AUTOBAUD_MAX 921600
 
 // set GSM PIN, if any
-#define GSM_PIN ""
+#define SIM_PIN ""
 
-// Your GPRS credentials, if any
-const char apn[]      = "YourAPN";
-const char gprsUser[] = "";
-const char gprsPass[] = "";
+// Your SIM card credentials, if any
+const char apn[]     = "YourAPN";
+const char simUser[] = "";
+const char simPass[] = "";
 
 // Your WiFi connection credentials, if applicable
 const char wifiSSID[] = "YourSSID";
@@ -213,16 +213,19 @@ void loop() {
     SerialMon.println(GF("Cellular network connected"));
   }
 
-  // GPRS connection parameters are usually set after network registration
+  // Cellular data connection parameters are usually set after network
+  // registration
   SerialMon.print(GF("Connecting to "));
   SerialMon.print(apn);
-  if (!modem1.gprsConnect(apn, gprsUser, gprsPass)) {
+  if (!modem1.dataConnect(apn, simUser, simPass)) {
     SerialMon.println(GF(" fail"));
     delay(10000);
     return;
   }
   SerialMon.println(GF(" success"));
-  if (modem1.isGprsConnected()) { SerialMon.println(GF("GPRS connected")); }
+  if (modem1.isDataConnected()) {
+    SerialMon.println(GF("Cellular data connected"));
+  }
 
   SerialMon.println(GF("\n==============================="));
   SerialMon.println(GF("===============================\n"));
@@ -293,8 +296,8 @@ void loop() {
   SerialMon.println(GF("\n==============================="));
   SerialMon.println(GF("===============================\n"));
 
-  modem1.gprsDisconnect();
-  SerialMon.println(GF("GPRS disconnected"));
+  modem1.dataDisconnect();
+  SerialMon.println(GF("Cellular data disconnected"));
   modem2.networkDisconnect();
   SerialMon.println(GF("WiFi disconnected"));
 

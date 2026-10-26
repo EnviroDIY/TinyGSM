@@ -324,7 +324,7 @@ class TinyGsmEspressif
 
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
   // No functions of this type supported
 

@@ -43,7 +43,7 @@
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGSMLocation.tpp"
@@ -113,7 +113,7 @@ struct TinyGsmUBLOXSslConfig : public TinyGsmSslConfigPreset<
 /// Class for the u-blox family of modems
 /// @ingroup ublox_cellular
 class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
-                     public TinyGsmGPRS<TinyGsmUBLOX>,
+                     public TinyGsmCellularData<TinyGsmUBLOX>,
                      public TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>,
                      public TinyGsmCalling<TinyGsmUBLOX>,
                      public TinyGsmSMS<TinyGsmUBLOX>,
@@ -122,7 +122,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
                      public TinyGsmTime<TinyGsmUBLOX>,
                      public TinyGsmBattery<TinyGsmUBLOX> {
   friend class TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmUBLOX>;
+  friend class TinyGsmCellularData<TinyGsmUBLOX>;
   friend class TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>;
   friend class GsmClient<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>;
   friend class TinyGsmCalling<TinyGsmUBLOX>;
@@ -433,7 +433,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
       return true;
     else if (s == UBLOXRegStatus::REG_UNKNOWN)  // for some reason, it can hang
                                                 // at unknown..
-      return isGprsConnected();
+      return isDataConnected();
     else
       return false;
   }
@@ -519,13 +519,13 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    // gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    // dataDisconnect();
 
-    sendAT(GF("+CGATT=1"));  // attach to GPRS
+    sendAT(GF("+CGATT=1"));  // attach to Packet Domain service
     if (waitResponse(360000L) != 1) { return false; }
 
     // Setting up the PSD profile/PDP context with the UPSD commands sets up an
@@ -590,12 +590,12 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     sendAT(GF(
         "+UPSDA=0,4"));  // Deactivate the PDP context associated with profile 0
     if (waitResponse(360000L) != 1) { return false; }
 
-    sendAT(GF("+CGATT=0"));  // detach from GPRS
+    sendAT(GF("+CGATT=0"));  // Detach from Packet Domain service
     if (waitResponse(360000L) != 1) { return false; }
 
     return true;

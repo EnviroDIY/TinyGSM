@@ -93,7 +93,7 @@ class TinyGsmSim7000SSL
       public TinyGsmBattery<TinyGsmSim7000SSL> {
   friend class TinyGsmSim70xx<TinyGsmSim7000SSL, TinyGsmSim7000SSLModemConfig>;
   friend class TinyGsmModem<TinyGsmSim7000SSL, TinyGsmSim7000SSLModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmSim7000SSL>;
+  friend class TinyGsmCellularData<TinyGsmSim7000SSL>;
   friend class TinyGsmTCP<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>;
   friend class GsmClient<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>;
   friend class TinyGsmSSL<TinyGsmSim7000SSL, TinyGsmSim7000SSLSslConfig>;
@@ -594,11 +594,11 @@ class TinyGsmSim7000SSL
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();
 
     // Define the PDP context
     // AT+CGDCONT=<cid>[,<PDP_type>[,<APN>[,<PDP_addr>[,<d_comp>[,<h_comp>][,<ipv4_ctrl>[,<emergency_flag>]]]]]]
@@ -606,7 +606,7 @@ class TinyGsmSim7000SSL
     sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');
     waitResponse();
 
-    // Attach to GPRS
+    // Attach to Packet Domain service
     // AT+CGATT={state}
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1) { return false; }
@@ -660,7 +660,7 @@ class TinyGsmSim7000SSL
     return res;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // Shut down the general application TCP/IP connection
     // CNACT will close *all* open application connections
     sendAT(GF("+CNACT=0"));

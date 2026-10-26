@@ -71,7 +71,7 @@ class TinyGsmSim7000
       public TinyGsmBattery<TinyGsmSim7000> {
   friend class TinyGsmSim70xx<TinyGsmSim7000, TinyGsmSim7000ModemConfig>;
   friend class TinyGsmModem<TinyGsmSim7000, TinyGsmSim7000ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmSim7000>;
+  friend class TinyGsmCellularData<TinyGsmSim7000>;
   friend class TinyGsmTCP<TinyGsmSim7000, TinyGsmSim7000TcpConfig>;
   friend class GsmClient<TinyGsmSim7000, TinyGsmSim7000TcpConfig>;
   friend class TinyGsmSMS<TinyGsmSim7000>;
@@ -268,11 +268,11 @@ class TinyGsmSim7000
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();
 
     // Bearer settings for applications based on IP
     // Set the connection type to GPRS
@@ -298,7 +298,7 @@ class TinyGsmSim7000
     sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');
     waitResponse();
 
-    // Attach to GPRS
+    // Attach to Packet Domain service
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1) { return false; }
 
@@ -306,10 +306,10 @@ class TinyGsmSim7000
     sendAT(GF("+CGACT=1,1"));
     waitResponse(60000L);
 
-    // Open the definied GPRS bearer context
+    // Open the definied bearer context
     sendAT(GF("+SAPBR=1,1"));
     waitResponse(85000L);
-    // Query the GPRS bearer context status
+    // Query the bearer context status
     sendAT(GF("+SAPBR=2,1"));
     if (waitResponse(30000L) != 1) { return false; }
 
@@ -342,7 +342,7 @@ class TinyGsmSim7000
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // Shut the TCP application toolkit connection
     // CIPSHUT will close *all* open TCP application toolkit connections
     sendAT(GF("+CIPSHUT"));

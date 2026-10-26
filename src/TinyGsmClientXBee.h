@@ -84,7 +84,7 @@
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
 #include "TinyGsmWifi.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTemperature.tpp"
 #include "TinyGsmBattery.tpp"
@@ -194,7 +194,7 @@ enum class XBeeType {
 /// Class for the Digi XBee family of modems
 /// @ingroup digi_xbee
 class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
-                    public TinyGsmGPRS<TinyGsmXBee>,
+                    public TinyGsmCellularData<TinyGsmXBee>,
                     public TinyGsmWifi<TinyGsmXBee>,
                     public TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>,
                     public TinyGsmSSL<TinyGsmXBee, TinyGsmXBeeSslConfig>,
@@ -202,7 +202,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
                     public TinyGsmBattery<TinyGsmXBee>,
                     public TinyGsmTemperature<TinyGsmXBee> {
   friend class TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmXBee>;
+  friend class TinyGsmCellularData<TinyGsmXBee>;
   friend class TinyGsmWifi<TinyGsmXBee>;
   friend class TinyGsmTCP<TinyGsmXBee, TinyGsmXBeeTcpConfig>;
   friend class GsmClient<TinyGsmXBee, TinyGsmXBeeTcpConfig>;
@@ -750,29 +750,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   }
 
   /*
-  bool thisHasSSL() {
-    if (beeType == XBeeType::XBEE_S6B_WIFI)
-      return false;
-    else
-      return true;
-  }
-
-  bool thisHasWifi() {
-    if (beeType == XBeeType::XBEE_S6B_WIFI)
-      return true;
-    else
-      return false;
-  }
-
-  bool thisHasGPRS() {
-    if (beeType == XBeeType::XBEE_S6B_WIFI)
-      return false;
-    else
-      return true;
-  }
-  */
-
-  /*
    * XBee identifier functions
    */
  public:
@@ -1168,10 +1145,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   }
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
     bool success     = true;
     bool changesMade = false;
     XBEE_COMMAND_START_DECORATOR(5, false)
@@ -1205,7 +1182,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     return success;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     bool success = true;
     XBEE_COMMAND_START_DECORATOR(5, false)
     // Cheating and disconnecting by turning on airplane mode
@@ -1216,7 +1193,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     return success;
   }
 
-  bool isGprsConnectedImpl() {
+  bool isDataConnectedImpl() {
     return isNetworkConnected();
   }
 

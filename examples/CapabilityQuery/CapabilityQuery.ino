@@ -104,10 +104,10 @@ void setup() {
   }
 
   // Cellular data capability
-  if (TinyGsmCapabilities::has_gprs<TinyGsm>::value) {
-    SerialMon.println(F("✓ GPRS/Cellular data: YES"));
+  if (TinyGsmCapabilities::has_cellular_data<TinyGsm>::value) {
+    SerialMon.println(F("✓ Cellular data: YES"));
   } else {
-    SerialMon.println(F("✗ GPRS/Cellular data: NO"));
+    SerialMon.println(F("✗ Cellular data: NO"));
   }
 
   // WiFi capability

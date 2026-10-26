@@ -30,7 +30,7 @@
  * of range
  * @todo In `getLocalIPSecure()`: figure out when to use each command properly
  * @todo In `deleteCertificateImpl()`: test
- * @todo In `gprsDisconnectImpl()`: Should CCHSTOP come before NETCLOSE?  Is it
+ * @todo In `dataDisconnectImpl()`: Should CCHSTOP come before NETCLOSE?  Is it
  * needed in addition to NETCLOSE?
  * @todo In `connect()` (secure path): verify the socket returned by CCHOPEN
  * @todo In `modemSend()`: make sure requested and confirmed bytes match
@@ -43,7 +43,7 @@
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGSMLocation.tpp"
@@ -118,7 +118,7 @@ struct TinyGsmA7672XSslConfig : public TinyGsmSslConfigPreset<
  */
 class TinyGsmA7672X
     : public TinyGsmModem<TinyGsmA7672X, TinyGsmA7672XModemConfig>,
-      public TinyGsmGPRS<TinyGsmA7672X>,
+      public TinyGsmCellularData<TinyGsmA7672X>,
       public TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672XTcpConfig>,
       public TinyGsmSSL<TinyGsmA7672X, TinyGsmA7672XSslConfig>,
       public TinyGsmCalling<TinyGsmA7672X>,
@@ -129,7 +129,7 @@ class TinyGsmA7672X
       public TinyGsmBattery<TinyGsmA7672X>,
       public TinyGsmTemperature<TinyGsmA7672X> {
   friend class TinyGsmModem<TinyGsmA7672X, TinyGsmA7672XModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmA7672X>;
+  friend class TinyGsmCellularData<TinyGsmA7672X>;
   friend class TinyGsmTCP<TinyGsmA7672X, TinyGsmA7672XTcpConfig>;
   friend class GsmClient<TinyGsmA7672X, TinyGsmA7672XTcpConfig>;
   friend class TinyGsmSSL<TinyGsmA7672X, TinyGsmA7672XSslConfig>;
@@ -582,11 +582,11 @@ class TinyGsmA7672X
   // No functions of this type supported (but the modem does support WiFi)
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char*, const char*) {
-    gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char*, const char*) {
+    dataDisconnect();
 
     // Define the PDP context
     sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');
@@ -693,7 +693,7 @@ class TinyGsmA7672X
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // Shut the TCP/IP connection
     sendAT(GF("+NETCLOSE"));
     if (waitResponse(60000L) != 1) { return false; }

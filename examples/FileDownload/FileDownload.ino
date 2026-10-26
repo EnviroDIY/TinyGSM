@@ -85,16 +85,16 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 
 // Define how you're planning to connect to the internet.
 // This is only needed for this example, not in other code.
-#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_CELLULAR_DATA true
 #define TINY_GSM_USE_WIFI false
 
 // set GSM PIN, if any
-#define GSM_PIN ""
+#define SIM_PIN ""
 
-// Your GPRS credentials, if any
-const char apn[]      = "YourAPN";
-const char gprsUser[] = "";
-const char gprsPass[] = "";
+// Your SIM card credentials, if any
+const char apn[]     = "YourAPN";
+const char simUser[] = "";
+const char simPass[] = "";
 
 // Your WiFi connection credentials, if applicable
 const char wifiSSID[] = "YourSSID";
@@ -115,16 +115,16 @@ uint32_t   knownFileSize = 1024;  // In case server does not send it
 #endif
 
 // Just in case someone defined the wrong thing..
-#if TINY_GSM_USE_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
-#undef TINY_GSM_USE_GPRS
+#if TINY_GSM_USE_CELLULAR_DATA && not defined TINY_GSM_MODEM_HAS_CELLULAR_DATA
+#undef TINY_GSM_USE_CELLULAR_DATA
 #undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_GPRS false
+#define TINY_GSM_USE_CELLULAR_DATA false
 #define TINY_GSM_USE_WIFI true
 #endif
 #if TINY_GSM_USE_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
-#undef TINY_GSM_USE_GPRS
+#undef TINY_GSM_USE_CELLULAR_DATA
 #undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_CELLULAR_DATA true
 #define TINY_GSM_USE_WIFI false
 #endif
 
@@ -169,11 +169,11 @@ void setup() {
   SerialMon.print(F("Modem Info: "));
   SerialMon.println(modemInfo);
 
-#if TINY_GSM_USE_GPRS
+#if TINY_GSM_USE_CELLULAR_DATA
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && modem.getSimStatus() != SIM_READY) {
+  if (SIM_PIN && modem.getSimStatus() != SIM_READY) {
     // simUnlock will do nothing if the pin is empty
-    modem.simUnlock(GSM_PIN);
+    modem.simUnlock(SIM_PIN);
   }
 #endif
 }
@@ -201,9 +201,9 @@ void loop() {
   SerialMon.println(F(" success"));
 #endif
 
-#if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_XBEE
-  // The XBee must run the gprsConnect function BEFORE waiting for network!
-  modem.gprsConnect(apn, gprsUser, gprsPass);
+#if TINY_GSM_USE_CELLULAR_DATA && defined TINY_GSM_MODEM_XBEE
+  // The XBee must run the dataConnect function BEFORE waiting for network!
+  modem.dataConnect(apn, simUser, simPass);
 #endif
 
   SerialMon.print(F("Waiting for network..."));
@@ -216,18 +216,21 @@ void loop() {
 
   if (modem.isNetworkConnected()) { SerialMon.println(F("Network connected")); }
 
-#if TINY_GSM_USE_GPRS
-  // GPRS connection parameters are usually set after network registration
+#if TINY_GSM_USE_CELLULAR_DATA
+  // Cellular data connection parameters are usually set after network
+  // registration
   SerialMon.print(F("Connecting to "));
   SerialMon.print(apn);
-  if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
+  if (!modem.dataConnect(apn, simUser, simPass)) {
     SerialMon.println(F(" fail"));
     delay(10000);
     return;
   }
   SerialMon.println(F(" success"));
 
-  if (modem.isGprsConnected()) { SerialMon.println(F("GPRS connected")); }
+  if (modem.isDataConnected()) {
+    SerialMon.println(F("Cellular data connected"));
+  }
 #endif
 
   SerialMon.print(F("Connecting to "));
@@ -357,9 +360,9 @@ void loop() {
   modem.networkDisconnect();
   SerialMon.println(F("WiFi disconnected"));
 #endif
-#if TINY_GSM_USE_GPRS
-  modem.gprsDisconnect();
-  SerialMon.println(F("GPRS disconnected"));
+#if TINY_GSM_USE_CELLULAR_DATA
+  modem.dataDisconnect();
+  SerialMon.println(F("Cellular data disconnected"));
 #endif
 
   float duration = float(timeElapsed) / 1000;

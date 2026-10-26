@@ -35,7 +35,7 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
@@ -90,14 +90,14 @@ struct TinyGsmMC60TcpConfig
 /// Class for the Quectel MC60
 /// @ingroup quectel_mc60
 class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
-                    public TinyGsmGPRS<TinyGsmMC60>,
+                    public TinyGsmCellularData<TinyGsmMC60>,
                     public TinyGsmTCP<TinyGsmMC60, TinyGsmMC60TcpConfig>,
                     public TinyGsmCalling<TinyGsmMC60>,
                     public TinyGsmSMS<TinyGsmMC60>,
                     public TinyGsmTime<TinyGsmMC60>,
                     public TinyGsmBattery<TinyGsmMC60> {
   friend class TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmMC60>;
+  friend class TinyGsmCellularData<TinyGsmMC60>;
   friend class TinyGsmTCP<TinyGsmMC60, TinyGsmMC60TcpConfig>;
   friend class GsmClient<TinyGsmMC60, TinyGsmMC60TcpConfig>;
   friend class TinyGsmCalling<TinyGsmMC60>;
@@ -327,11 +327,11 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();
 
     // select foreground context 0 = VIRTUAL_UART_1
     sendAT(GF("+QIFGCNT=0"));
@@ -381,7 +381,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60, TinyGsmMC60ModemConfig>,
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     sendAT(GF("+QIDEACT"));  // Deactivate the bearer context
     return waitResponse(60000L, GF("DEACT OK"), GFP(ModemConfig::GSM_ERROR)) ==
         1;

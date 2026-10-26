@@ -43,7 +43,7 @@
 #endif
 #endif
 
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGSMLocation.tpp"
@@ -115,7 +115,7 @@ struct TinyGsmSim800SslConfig : public TinyGsmSslConfigPreset<
 /// @ingroup simcom_sim800
 class TinyGsmSim800
     : public TinyGsmModem<TinyGsmSim800, TinyGsmSim800ModemConfig>,
-      public TinyGsmGPRS<TinyGsmSim800>,
+      public TinyGsmCellularData<TinyGsmSim800>,
       public TinyGsmTCP<TinyGsmSim800, TinyGsmSim800TcpConfig>,
       public TinyGsmCalling<TinyGsmSim800>,
       public TinyGsmSMS<TinyGsmSim800>,
@@ -124,7 +124,7 @@ class TinyGsmSim800
       public TinyGsmNTP<TinyGsmSim800>,
       public TinyGsmBattery<TinyGsmSim800> {
   friend class TinyGsmModem<TinyGsmSim800, TinyGsmSim800ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmSim800>;
+  friend class TinyGsmCellularData<TinyGsmSim800>;
   friend class TinyGsmTCP<TinyGsmSim800, TinyGsmSim800TcpConfig>;
   friend class GsmClient<TinyGsmSim800, TinyGsmSim800TcpConfig>;
   friend class TinyGsmCalling<TinyGsmSim800>;
@@ -445,11 +445,11 @@ class TinyGsmSim800
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();
 
     // Bearer settings for applications based on IP
     // Set the connection type to GPRS
@@ -486,7 +486,7 @@ class TinyGsmSim800
     sendAT(GF("+SAPBR=2,1"));
     if (waitResponse(30000L) != 1) { return false; }
 
-    // Attach to GPRS
+    // Attach to Packet Domain service
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1) { return false; }
 
@@ -523,13 +523,13 @@ class TinyGsmSim800
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // Shut the TCP/IP connection
     // CIPSHUT will close *all* open connections
     sendAT(GF("+CIPSHUT"));
     if (waitResponse(60000L) != 1) { return false; }
 
-    sendAT(GF("+CGATT=0"));  // Detach from GPRS
+    sendAT(GF("+CGATT=0"));  // Detach from Packet Domain service
     if (waitResponse(60000L) != 1) { return false; }
 
     return true;

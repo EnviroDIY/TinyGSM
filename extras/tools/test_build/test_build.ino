@@ -37,8 +37,8 @@ void loop() {
   if (TinyGsmCapabilities::has_wifi<TinyGsm>::value) {
     Serial.println(F("WiFi capability: available"));
   }
-  if (TinyGsmCapabilities::has_gprs<TinyGsm>::value) {
-    Serial.println(F("GPRS capability: available"));
+  if (TinyGsmCapabilities::has_cellular_data<TinyGsm>::value) {
+    Serial.println(F("Cellular Data capability: available"));
   }
   if (TinyGsmCapabilities::has_sms<TinyGsm>::value) {
     Serial.println(F("SMS capability: available"));
@@ -210,7 +210,7 @@ void loop() {
   // TinyGsm - SIM card functions
   // ========================================================================
 
-#if defined(TINY_GSM_MODEM_HAS_GPRS)
+#if defined(TINY_GSM_MODEM_HAS_CELLULAR_DATA)
   modem.simUnlock("1234");
   modem.getSimCCID();
   modem.getIMEI();
@@ -219,15 +219,15 @@ void loop() {
 #endif
 
   // ========================================================================
-  // TinyGsm - GPRS functions
+  // TinyGsm - Cellular data functions
   // ========================================================================
 
-#if defined(TINY_GSM_MODEM_HAS_GPRS)
-  modem.gprsConnect("myAPN");
-  modem.gprsConnect("myAPN", "myUser");
-  modem.gprsConnect("myAPN", "myAPNUser", "myAPNPass");
-  modem.gprsDisconnect();
-  modem.isGprsConnected();
+#if defined(TINY_GSM_MODEM_HAS_CELLULAR_DATA)
+  modem.dataConnect("myAPN");
+  modem.dataConnect("myAPN", "myUser");
+  modem.dataConnect("myAPN", "myAPNUser", "myAPNPass");
+  modem.dataDisconnect();
+  modem.isDataConnected();
   modem.getOperator();
 #if defined(TINY_GSM_MODEM_A7672X) || defined(TINY_GSM_MODEM_BG96) ||     \
     defined(TINY_GSM_MODEM_M95) || defined(TINY_GSM_MODEM_MC60) ||        \

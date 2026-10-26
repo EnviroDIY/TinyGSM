@@ -35,7 +35,7 @@
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGPS.tpp"
@@ -103,7 +103,7 @@ struct TinyGsmBG96SslConfig : public TinyGsmSslConfigPreset<
 /// Class for the Quectel BG96 and BG95
 /// @ingroup quectel_bg96
 class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
-                    public TinyGsmGPRS<TinyGsmBG96>,
+                    public TinyGsmCellularData<TinyGsmBG96>,
                     public TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>,
                     public TinyGsmSSL<TinyGsmBG96, TinyGsmBG96SslConfig>,
                     public TinyGsmCalling<TinyGsmBG96>,
@@ -114,7 +114,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
                     public TinyGsmBattery<TinyGsmBG96>,
                     public TinyGsmTemperature<TinyGsmBG96> {
   friend class TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmBG96>;
+  friend class TinyGsmCellularData<TinyGsmBG96>;
   friend class TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>;
   friend class GsmClient<TinyGsmBG96, TinyGsmBG96TcpConfig>;
   friend class TinyGsmSSL<TinyGsmBG96, TinyGsmBG96SslConfig>;
@@ -662,11 +662,11 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();
 
     // Configure the TCPIP Context
     sendAT(GF("+QICSGP=1,1,\""), apn, GF("\",\""), user, GF("\",\""), pwd, '"');
@@ -683,7 +683,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     sendAT(GF("+QIDEACT=1"));  // Deactivate the bearer context
     if (waitResponse(40000L) != 1) { return false; }
 

@@ -16,7 +16,7 @@
  * Ethernet, GSM, Bluetooth, BLE, USB/Serial connection methods. See more in
  * [Blynk library examples and community forum](http://community.blynk.cc/).
  *
- * Change GPRS apn, user, pass, and Blynk auth token to run :)
+ * Change SIM card apn, user, pass, and Blynk auth token to run :)
  * ========================================================================== */
 
 #define BLYNK_TEMPLATE_ID "TMPxxxxxx"
@@ -78,7 +78,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
 
 
-// Your GPRS credentials, if any
+// Your SIM card credentials, if any
 const char apn[]  = "YourAPN";
 const char user[] = "";
 const char pass[] = "";

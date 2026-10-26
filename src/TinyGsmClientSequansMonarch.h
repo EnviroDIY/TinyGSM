@@ -43,7 +43,7 @@
 /// The default SSL context to use for SSL connections.
 #define TINY_GSM_MONARCH_DEFAULT_SSL_CTX 1
 
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
@@ -121,7 +121,7 @@ enum class SocketStatus {
 class TinyGsmSequansMonarch
     : public TinyGsmModem<TinyGsmSequansMonarch,
                           TinyGsmSequansMonarchModemConfig>,
-      public TinyGsmGPRS<TinyGsmSequansMonarch>,
+      public TinyGsmCellularData<TinyGsmSequansMonarch>,
       public TinyGsmTCP<TinyGsmSequansMonarch, TinyGsmSequansMonarchTcpConfig>,
       public TinyGsmCalling<TinyGsmSequansMonarch>,
       public TinyGsmSMS<TinyGsmSequansMonarch>,
@@ -129,7 +129,7 @@ class TinyGsmSequansMonarch
       public TinyGsmTemperature<TinyGsmSequansMonarch> {
   friend class TinyGsmModem<TinyGsmSequansMonarch,
                             TinyGsmSequansMonarchModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmSequansMonarch>;
+  friend class TinyGsmCellularData<TinyGsmSequansMonarch>;
   friend class TinyGsmTCP<TinyGsmSequansMonarch,
                           TinyGsmSequansMonarchTcpConfig>;
   friend class GsmClient<TinyGsmSequansMonarch, TinyGsmSequansMonarchTcpConfig>;
@@ -524,11 +524,11 @@ class TinyGsmSequansMonarch
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();
 
     // Define the PDP context (This uses context #3!)
     sendAT(GF("+CGDCONT=3,\"IPV4V6\",\""), apn, '"');
@@ -544,14 +544,14 @@ class TinyGsmSequansMonarch
     sendAT(GF("+CGACT=1,3"));
     waitResponse(60000L);
 
-    // Attach to GPRS
+    // Attach to Packet Domain service
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1) { return false; }
 
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // Detach from PS network
     sendAT(GF("+CGATT=0"));
     if (waitResponse(60000L) != 1) { return false; }
@@ -673,7 +673,7 @@ class TinyGsmSequansMonarch
     // AT+SQNSCFG:<connId1>, <cid1>, <pktSz1>, <maxTo1>, <connTo1>, <txTo1>
     // <connId1> = Connection ID = mux
     // <cid1> = PDP context ID = 3 - this is number set up above in the
-    // GprsConnect function
+    // dataConnect function
     // <pktSz1> = Packet Size, used for online data mode only = 300 (default)
     // <maxTo1> = Max timeout in seconds = 90 (default)
     // <connTo1> = Connection timeout in hundreds of milliseconds

@@ -16,7 +16,7 @@ This is particularly useful when working with multiple modem types in the same c
 - `TinyGsmCapabilities::can_specify_certs` - Certificate specification for SSL
 - `TinyGsmCapabilities::can_load_certs` - Certificate loading for SSL
 - `TinyGsmCapabilities::has_gps` - GPS/GNSS positioning
-- `TinyGsmCapabilities::has_gprs` - GPRS/cellular data
+- `TinyGsmCapabilities::has_cellular_data` - Cellular data
 - `TinyGsmCapabilities::has_wifi` - WiFi connectivity
 - `TinyGsmCapabilities::has_sms` - SMS messaging
 - `TinyGsmCapabilities::has_calling` - Voice calls

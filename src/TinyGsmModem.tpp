@@ -543,8 +543,8 @@ class TinyGsmModem {
   }
 
   /**
-   * @brief Confirm whether the module is currently connected to the
-   * GSM/GPRS/LTE network.
+   * @brief Confirm whether the module is currently connected to the cellular
+   * data (GSM/GPRS/eGPRS/EPS/LTE, etc) network.
    *
    * @return True if the module is connected to the network, false otherwise.
    */

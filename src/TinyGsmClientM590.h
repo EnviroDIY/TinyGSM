@@ -24,8 +24,8 @@
  *   - The modem respects user-specified multiplexing channel
  * numbers/identifiers for socket connections.
  *
- * @todo In `gprsConnectImpl()`: configure DNS settings if needed
- * @todo In `gprsDisconnectImpl()`: There is no command in AT command set
+ * @todo In `dataConnectImpl()`: configure DNS settings if needed
+ * @todo In `dataDisconnectImpl()`: There is no command in AT command set
  * @todo In `modemConnect()`: no need for loop?
  */
 
@@ -35,7 +35,7 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
 
@@ -84,12 +84,12 @@ struct TinyGsmM590TcpConfig
 /// Class for the Neoway M590
 /// @ingroup neoway_m590
 class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
-                    public TinyGsmGPRS<TinyGsmM590>,
+                    public TinyGsmCellularData<TinyGsmM590>,
                     public TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>,
                     public TinyGsmSMS<TinyGsmM590>,
                     public TinyGsmTime<TinyGsmM590> {
   friend class TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmM590>;
+  friend class TinyGsmCellularData<TinyGsmM590>;
   friend class TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>;
   friend class GsmClient<TinyGsmM590, TinyGsmM590TcpConfig>;
   friend class TinyGsmSMS<TinyGsmM590>;
@@ -367,11 +367,11 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();
 
     sendAT(GF("+XISP=0"));
     waitResponse();
@@ -389,7 +389,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
 
     const uint32_t timeout_ms = 60000L;
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
-      if (isGprsConnected()) {
+      if (isDataConnected()) {
         // goto set_dns; // TODO
         return true;
       }
@@ -409,13 +409,13 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // TODO(?): There is no command in AT command set
     // XIIC=0 does not work
     return true;
   }
 
-  bool isGprsConnectedImpl() {
+  bool isDataConnectedImpl() {
     sendAT(GF("+XIIC?"));
     if (waitResponse(GF("+XIIC:")) != 1) { return false; }
     int8_t res = streamGetIntBefore(',');
@@ -427,7 +427,8 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
    * SIM card functions
    */
  protected:
-  // Able to follow all SIM card functions as inherited from TinyGsmGPRS.tpp
+  // Able to follow all SIM card functions as inherited from
+  // TinyGsmCellularData.tpp
 
 
   /*

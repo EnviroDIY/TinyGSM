@@ -41,7 +41,7 @@
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGSMLocation.tpp"
@@ -135,7 +135,7 @@ struct TinyGsmSaraR5SslConfig : public TinyGsmSslConfigPreset<
 /// @ingroup ublox_sara_r5
 class TinyGsmSaraR5
     : public TinyGsmModem<TinyGsmSaraR5, TinyGsmSaraR5ModemConfig>,
-      public TinyGsmGPRS<TinyGsmSaraR5>,
+      public TinyGsmCellularData<TinyGsmSaraR5>,
       public TinyGsmTCP<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>,
       public TinyGsmCalling<TinyGsmSaraR5>,
       public TinyGsmSMS<TinyGsmSaraR5>,
@@ -144,7 +144,7 @@ class TinyGsmSaraR5
       public TinyGsmTime<TinyGsmSaraR5>,
       public TinyGsmBattery<TinyGsmSaraR5> {
   friend class TinyGsmModem<TinyGsmSaraR5, TinyGsmSaraR5ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmSaraR5>;
+  friend class TinyGsmCellularData<TinyGsmSaraR5>;
   friend class TinyGsmTCP<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>;
   friend class GsmClient<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>;
   friend class TinyGsmCalling<TinyGsmSaraR5>;
@@ -473,7 +473,7 @@ class TinyGsmSaraR5
       return true;
     else if (s == SaraR5RegStatus::REG_UNKNOWN)  // for some reason, it can hang
                                                  // at unknown..
-      return isGprsConnected();
+      return isDataConnected();
     else
       return false;
   }
@@ -554,11 +554,11 @@ class TinyGsmSaraR5
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char*, const char*) {
-    sendAT(GF("+CGATT=1"));  // attach to GPRS
+  bool dataConnectImpl(const char* apn, const char*, const char*) {
+    sendAT(GF("+CGATT=1"));  // attach to Packet Domain service
     if (waitResponse(360000L) != 1) { return false; }
 
     // Setting up the PSD profile/PDP context with the UPSD commands sets up an
@@ -632,12 +632,12 @@ class TinyGsmSaraR5
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     sendAT(GF(
         "+UPSDA=0,4"));  // Deactivate the PDP context associated with profile 0
     if (waitResponse(360000L) != 1) { return false; }
 
-    sendAT(GF("+CGATT=0"));  // detach from GPRS
+    sendAT(GF("+CGATT=0"));  // Detach from Packet Domain service
     if (waitResponse(360000L) != 1) { return false; }
 
     return true;
