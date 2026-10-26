@@ -2258,20 +2258,20 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    * @tparam commandType The type of the AT command.
    */
   template <typename commandType>
-  bool changeSettingIfNeeded(commandType cmd, int16_t newValue,
+  bool changeSettingIfNeeded(commandType cmd, uint16_t newValue,
                              uint32_t timeout_ms = 1000L) {
     sendAT(cmd);
-    if (readResponseInt() != newValue) {
+    if (readResponseInt() != static_cast<int16_t>(newValue)) {
       // convert the new value to a hexadecimal string
       // all numeric commands are sent in hexadecimal format
       char buf[16] = {0};
-      itoa(newValue, buf, HEX);
+      utoa(newValue, buf, HEX);
       sendAT(cmd, buf);
       // return false if we attempted to change but failed
       if (waitResponse(timeout_ms) != 1) { return false; }
       // check if we succeeded in staging a change and retry once
       sendAT(cmd);
-      if (readResponseInt() != newValue) {
+      if (readResponseInt() != static_cast<int16_t>(newValue)) {
         sendAT(cmd, buf);
         if (waitResponse(timeout_ms) != 1) { return false; }
       }
