@@ -781,19 +781,19 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     int16_t imin         = 0;
     float   secondWithSS = 0;
 
-    // UTC Time
+    // UTC Time; Format: hhmmss.sss
     // Read the whole time portion into a single float, then parse that
     // into the hour, minute, and second portions.  By doing it this way, we
     // avoid issues of attempting to read a set number of characters for each
     // portion of the time if the time is missing or malformed.
-    float    itime     = streamGetFloatBefore(',');
-    uint32_t itime_int = static_cast<uint32_t>(itime * 1000.0f);
-    // ^^ Multiply by 1000 to avoid floating point modulo
-    ihour = static_cast<int16_t>(itime_int / 10000000);  // Two digit hour
-    imin =
-        static_cast<int16_t>((itime_int / 100000) % 100);  // Two digit minute
-    secondWithSS = static_cast<float>(
-        (itime_int % 100000) / 1000.0);  // Two digit second with subseconds
+    float itime = streamGetFloatBefore(',');
+    if (itime >= 0.0F) {
+      uint32_t itime_int      = static_cast<uint32_t>(itime);
+      float    itime_fraction = itime - static_cast<float>(itime_int);
+      ihour = static_cast<int16_t>(itime_int / 10000);       // Two digit hour
+      imin = static_cast<int16_t>((itime_int / 100) % 100);  // Two digit minute
+      secondWithSS = static_cast<float>(itime_int % 100) + itime_fraction;
+    }
 
     ilat      = streamGetFloatBefore(',');  // Latitude
     ilon      = streamGetFloatBefore(',');  // Longitude
