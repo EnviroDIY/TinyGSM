@@ -1041,7 +1041,9 @@ class TinyGsmA7672X
       streamSkipUntil(',');  // Skip requested bytes to send
       // TODO:  make sure requested and confirmed bytes match
       int16_t sent = streamGetIntBefore('\n');  // check send length
-      if (isExpectedMux(ret_mux, mux)) { return sent; }
+      if (isExpectedMux(ret_mux, mux) && sent >= 0) {
+        return static_cast<size_t>(sent);
+      }
       return 0;
     }
   }
