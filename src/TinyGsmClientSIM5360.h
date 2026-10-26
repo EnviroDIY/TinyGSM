@@ -453,9 +453,8 @@ class TinyGsmSim5360
 
     // Configure timeouts for opening and closing sockets
     // AT+CIPTIMEOUT=<netopen_timeout>, <cipopen_timeout>, <cipsend_timeout>
-    sendAT(GF("+CIPTIMEOUT="), 75000, ',',
-           TcpConfig::kConnectTimeoutS * 1000L, ',',
-           TcpConfig::kSendTimeoutS * 1000L);
+    sendAT(GF("+CIPTIMEOUT="), 75000, ',', TcpConfig::kConnectTimeoutS * 1000L,
+           ',', TcpConfig::kSendTimeoutS * 1000L);
     waitResponse();
 
     // Start the socket service
@@ -482,7 +481,10 @@ class TinyGsmSim5360
     // Note: all sockets should be closed first - on 3G/4G models the sockets
     // must be closed manually
     sendAT(GF("+NETCLOSE"));
-    if (waitResponse(60000L, GF("+NETCLOSE: 0")) != 1) { return false; }
+    waitResponse(60000L, GF("+NETCLOSE: 0"));  // allowed to fail
+
+    sendAT(GF("+CGATT=0"));  // Detach from Packet Domain service
+    if (waitResponse(60000L) != 1) { return false; }
 
     return true;
   }

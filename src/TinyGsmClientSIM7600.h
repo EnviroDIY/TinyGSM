@@ -646,16 +646,19 @@ class TinyGsmSim7600
     // Note: On the LTE models, this single command closes all sockets and the
     // service and deactivates the PDP context
     sendAT(GF("+NETCLOSE"));
-    if (waitResponse(60000L, GF("+NETCLOSE: 0")) != 1) { return false; }
+    waitResponse(60000L);  // allowed to fail
 
     // Stop the SSL client
     sendAT(GF("+CCHSTOP"));
-    return (waitResponse(60000L, GF("+CCHSTOP: 0")) == 1);
+    waitResponse(60000L, GF("+CCHSTOP: 0"));  // allowed to fail
 
     // TODO: Should CCHSTOP come before NETCLOSE?  Is it needed in addition to
     // NETCLOSE?
 
     sendAT(GF("+CGATT=0"));  // Detach from Packet Domain service
+    if (waitResponse(60000L) != 1) { return false; }
+
+    return true;
   }
 
   bool isDataConnectedImpl() {
@@ -1336,9 +1339,7 @@ class TinyGsmSim7600
   }
 
   bool modemGetConnected(uint8_t mux) {
-    // NOTE: This function gets the status for all sockets at once, so we don't
-    // check if the specific mux is valid until right before returning the value
-    // for that mux.
+    if (!isValidMux(mux)) { return false; }
     if (sockets[mux]->is_secure) {
       sendAT(GF("+CCHOPEN?"));
       // If connect to a server, it will show the connected information.
@@ -1383,7 +1384,6 @@ class TinyGsmSim7600
 
     waitResponse();  // Should be an OK at the end
 
-    if (!isValidMux(mux)) { return false; }
     return sockets[mux]->sock_connected;
   }
 
