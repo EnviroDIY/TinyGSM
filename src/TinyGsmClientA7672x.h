@@ -545,7 +545,7 @@ class TinyGsmA7672X
   template <typename TCert>
   bool loadCertificateImpl(const char* certificateName, TCert cert,
                            const uint16_t len) {
-    sendAT(GF("+CCERTDOWN="), certificateName, ',', len);
+    sendAT(GF("+CCERTDOWN=\""), certificateName, GF("\","), len);
     if (waitResponse(5000L, GF(">")) != 1) { return false; }
     this->streamWrite(cert, len);
     stream.flush();
@@ -942,21 +942,24 @@ class TinyGsmA7672X
          sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       /* Configure the server root CA of the specified SSL context
       AT + CSSLCFG = "cacert", <ssl_ctx_index>,<ca_file> */
-      sendAT(GF("+CSSLCFG=\"cacert\","), context_id, ',', CAcertName);
+      sendAT(GF("+CSSLCFG=\"cacert\","), context_id, GF(",\""), CAcertName,
+             '"');
       success &= waitResponse(5000L) == 1;
     }
     if (clientCertName != nullptr &&
         strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
          sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
-      sendAT(GF("+CSSLCFG=\"clientcert\","), context_id, ',', clientCertName);
+      sendAT(GF("+CSSLCFG=\"clientcert\","), context_id, GF(",\""),
+             clientCertName, '"');
       success &= waitResponse(5000L) == 1;
     }
     if (clientKeyName != nullptr &&
         strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
         (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION ||
          sslAuthMode == SSLAuthMode::CLIENT_VALIDATION)) {
-      sendAT(GF("+CSSLCFG=\"clientkey\","), context_id, ',', clientKeyName);
+      sendAT(GF("+CSSLCFG=\"clientkey\","), context_id, GF(",\""),
+             clientKeyName, '"');
       success &= waitResponse(5000L) == 1;
     }
 
