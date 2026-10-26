@@ -568,7 +568,6 @@ class TinyGsmSim7600
     sendAT(GF("+CIPSENDMODE=0"));
     waitResponse();
 
-#if 0
     // Configure socket parameters
     // AT+CIPCCFG= <NmRetry>, <DelayTm>, <Ack>, <errMode>, <HeaderType>,
     //            <AsyncMode>, <TimeoutVal>
@@ -582,16 +581,16 @@ class TinyGsmSim7600
     //            = 1 (+RECEIVE,<link num>,<data length>)
     // AsyncMode = sets mode of executing commands
     //           = 0 (synchronous command executing)
-    // TimeoutVal = minimum retransmission timeout in milliseconds = 75000
-    sendAT(GF("+CIPCCFG=10,0,0,0,1,0,75000"));
+    // TimeoutVal = minimum retransmission timeout in milliseconds
+    sendAT(GF("+CIPCCFG=10,0,0,0,1,0,"),
+           TcpConfig::kRetransmissionTimeoutS * 1000L);
     if (waitResponse() != 1) { return false; }
 
     // Configure timeouts for opening and closing sockets
     // AT+CIPTIMEOUT=<netopen_timeout> <cipopen_timeout>, <cipsend_timeout>
-    sendAT(GF("+CIPTIMEOUT="), 75000, ',', TcpConfig::kConnectTimeoutS, ',',
-           15000);
+    sendAT(GF("+CIPTIMEOUT="), 75000, ',', TcpConfig::kConnectTimeoutS * 1000L,
+           ',', TcpConfig::kSendTimeoutS * 1000L);
     waitResponse();
-#endif
 
     // Set to get data manually on TCP (unsecured) sockets
     sendAT(GF("+CIPRXGET=1"));

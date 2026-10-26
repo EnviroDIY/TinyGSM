@@ -86,6 +86,8 @@ struct TinyGsmSim7080TcpConfig
           /*sendMaxSize*/ 1360,
           /*connectTimeoutS*/ 75,  // default
           /*stopTimeoutS*/ 15,
+          /*sendTimeoutS*/ 15,
+          /*retransmissionTimeoutS*/ 75,
           /*minFreeTxBuffer*/ 1360> {};
 
 /**

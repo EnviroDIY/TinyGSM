@@ -49,12 +49,16 @@ enum class TinyGsmTcpMuxMode {
  * @tparam sendMaxSize The maximum number of bytes in one send command.
  * @tparam connectTimeoutS The connection timeout, in seconds.
  * @tparam stopTimeoutS The clean-disconnect timeout, in seconds.
+ * @tparam sendTimeoutS The data send timeout, in seconds.
+ * @tparam retransmissionTimeoutS The minimum TCP retransmission timeout, in
+ * seconds.
  * @tparam minFreeTxBuffer The minimum free send-buffer space, in bytes,
  * required before a send is attempted.
  */
 template <TinyGsmTcpBufferMode bufferMode, TinyGsmTcpMuxMode muxMode,
           uint8_t muxCount, size_t sendMaxSize = 1500, int connectTimeoutS = 75,
-          int stopTimeoutS = 15, size_t minFreeTxBuffer = 1>
+          int stopTimeoutS = 15, int sendTimeoutS = 15,
+          int retransmissionTimeoutS = 75, size_t minFreeTxBuffer = 1>
 struct TinyGsmTcpConfigPreset {
   /// The buffer mode for the modem's TCP receive buffer.
   static constexpr TinyGsmTcpBufferMode kBufferMode = bufferMode;
@@ -63,12 +67,16 @@ struct TinyGsmTcpConfigPreset {
 
   /// The number of simultaneous TCP channels supported by the modem.
   static constexpr uint8_t kMuxCount = muxCount;
+  /// The maximum size of data that can be sent in a single transmission.
+  static constexpr size_t kSendMaxSize = sendMaxSize;
   /// The timeout in seconds to wait for a connection to be established.
   static constexpr int kConnectTimeoutS = connectTimeoutS;
   /// The timeout in seconds to wait for a connection to disconnect cleanly.
   static constexpr int kStopTimeoutS = stopTimeoutS;
-  /// The maximum size of data that can be sent in a single transmission.
-  static constexpr size_t kSendMaxSize = sendMaxSize;
+  /// The timeout in seconds to wait for sufficient send buffer space.
+  static constexpr int kSendTimeoutS = sendTimeoutS;
+  /// The minimum TCP retransmission timeout, in seconds.
+  static constexpr int kRetransmissionTimeoutS = retransmissionTimeoutS;
   /**
    * @brief This is the minimum amount of free send buffer space the modem must
    * report before attempting a send.
@@ -527,8 +535,8 @@ class TinyGsmTCP {
    * @param mux The **zero-indexed** connection identifier of the client in the
    * modem's socket array.
    * @return The number of bytes sent
-   * @todo Add parameter for timeout for the entire send operation.  This
-   * currently has a hard-coded timeout of 15 seconds for each chunk.
+   * @todo Add parameter for timeout for the entire send operation. The
+   * configured send timeout currently applies separately to each chunk.
    */
   size_t modemSend(const uint8_t* buff, size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
@@ -543,7 +551,9 @@ class TinyGsmTCP {
       int8_t send_attempts = 0;
       bool   send_success  = false;
       while (send_attempts < 3 && !send_success) {
-        size_t sendLength = thisModem().modemWaitForSend(mux, 15000L);
+        size_t sendLength =
+            thisModem().modemWaitForSend(mux,
+                                        TcpConfig::kSendTimeoutS * 1000L);
         if (sendLength < TcpConfig::kMinFreeTxBuffer) {
           send_attempts++;
           DBG(GF("### Insufficient send buffer ("), sendLength,
