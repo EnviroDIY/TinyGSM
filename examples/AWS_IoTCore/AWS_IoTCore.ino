@@ -176,12 +176,6 @@ PubSubClient         mqtt(secureClient);
 #define LED_PIN 13
 int ledStatus = LOW;
 
-// ======================== CERTIFICATE NAMES ========================
-
-const char* root_ca     = AWS_SERVER_CERTIFICATE;
-const char* client_cert = AWS_CLIENT_CERTIFICATE;
-const char* client_key  = AWS_CLIENT_PRIVATE_KEY;
-
 uint32_t lastReconnectAttempt = 0;
 uint32_t lastStatusPublished  = 0;
 bool     setupSuccess         = false;
@@ -247,8 +241,9 @@ bool setupCertificates() {
   bool ca_cert_success = true;
   // add the server's certificate authority certificate to the modem
   SerialMon.print("Loading Certificate Authority Certificate");
-  ca_cert_success &= modem.loadCertificate(root_ca_name, root_ca,
-                                           strlen(root_ca));
+  ca_cert_success &= modem.loadCertificate(root_ca_name,
+                                           GFP(AWS_SERVER_CERTIFICATE),
+                                           sizeof(AWS_SERVER_CERTIFICATE) - 1);
   delay(250);
   if (!ca_cert_success) {
     SerialMon.println(" ...failed to load CA certificate!");
@@ -283,8 +278,9 @@ bool setupCertificates() {
   bool client_cert_success = true;
   // add the client's certificate and private key to the modem
   SerialMon.print("Loading Client Certificate");
-  client_cert_success &= modem.loadCertificate(client_cert_name, client_cert,
-                                               strlen(client_cert));
+  client_cert_success &=
+      modem.loadCertificate(client_cert_name, GFP(AWS_CLIENT_CERTIFICATE),
+                            sizeof(AWS_CLIENT_CERTIFICATE) - 1);
   delay(250);
 #if !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600)
   if (print_certs) {
@@ -294,8 +290,9 @@ bool setupCertificates() {
   }
 #endif
   SerialMon.print(" and Client Private Key ");
-  client_cert_success &= modem.loadCertificate(client_key_name, client_key,
-                                               strlen(client_key));
+  client_cert_success &=
+      modem.loadCertificate(client_key_name, GFP(AWS_CLIENT_PRIVATE_KEY),
+                            sizeof(AWS_CLIENT_PRIVATE_KEY) - 1);
   delay(250);
 #if !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600)
   if (print_certs) {
