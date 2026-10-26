@@ -551,10 +551,13 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
         // End this send command and check its responses
         // NOTE: In many cases, confirmed is just a passthrough of len
         int16_t confirmed = modemEndSend(sendLength, mux);
-        bytesSent += TinyGsmMin(attempted,
-                                confirmed);  // bump up number of bytes sent
-        txPtr += TinyGsmMin(attempted, confirmed);  // bump up the pointer
-        send_success &= TinyGsmMin(attempted, confirmed) > 0;
+        size_t  processed = TinyGsmMin(attempted, confirmed);
+        // If bytes were written to the stream, don't retry that chunk even if
+        // the modem doesn't confirm any bytes.
+        if (attempted > 0 && processed == 0) { processed = attempted; }
+        bytesSent += processed;  // bump up number of bytes sent
+        txPtr += processed;      // bump up the pointer
+        send_success = processed > 0;
         send_attempts++;
       }
       // if we failed after 3 attempts at the same chunk, bail from the whole
