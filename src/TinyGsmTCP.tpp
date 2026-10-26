@@ -539,7 +539,7 @@ class TinyGsmTCP {
     size_t   bytesSent = 0;
 
     do {
-      // make no more than 3 attempts at the single send command
+      // make no more than 3 attempts to begin a single send command
       int8_t send_attempts = 0;
       bool   send_success  = false;
       while (send_attempts < 3 && !send_success) {
@@ -586,9 +586,11 @@ class TinyGsmTCP {
         txPtr += accepted;      // bump up the pointer
         send_success &= accepted > 0;
         send_attempts++;
+        // Never retry after writing the payload; a failed confirmation does
+        // not prove that the modem rejected the data.
+        break;
       }
-      // if we failed after 3 attempts at the same chunk, bail from the whole
-      // thing
+      // If the chunk was not accepted, bail from the whole thing.
       if (!send_success) { break; }
     } while (bytesSent < len && thisModem().sockets[mux]->sock_connected);
     return bytesSent;
