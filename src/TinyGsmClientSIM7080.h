@@ -30,6 +30,11 @@
 #define SRC_TINYGSMCLIENTSIM7080_H_
 #pragma message("TinyGSM:  TinyGsmClientSim7080")
 
+#ifndef TINY_GSM_USE_PUBLIC_DNS
+/** Override network-assigned DNS with Google Public DNS. */
+#define TINY_GSM_USE_PUBLIC_DNS 0
+#endif
+
 
 #include "TinyGsmClientSIM70xx.h"
 #include "TinyGsmTCP.tpp"
@@ -703,9 +708,12 @@ class TinyGsmSim7080
     // Set the PDP context for DNS lookup
     sendAT(GF("+CDNSPDPID=0"));
     if (waitResponse() != 1) { return false; }
-    // Configure Domain Name Server (DNS)
+#if TINY_GSM_USE_PUBLIC_DNS
+    // Override network-assigned DNS with Google Public DNS when requested.
     sendAT(GF("+CDNSCFG=\"8.8.8.8\",\"8.8.4.4\""));
-    if (waitResponse() != 1) { return false; }
+    // This optional override is not required for the packet data connection.
+    waitResponse();
+#endif
 
     return res;
   }
@@ -1456,15 +1464,16 @@ class TinyGsmSim7080
   }
 
   bool modemGetConnected(uint8_t mux) {
-    // NOTE: This function gets the number of available characters for all
-    // sockets at once, so we don't check if the specific mux is valid until
-    // right before returning the value for that mux.
+    // NOTE: This function gets the status for all sockets at once, so we don't
+    // check if the specific mux is valid until right before returning the value
+    // for that mux.
     // NOTE:  This gets the state of all connections that have been opened
     // since the last connection
     sendAT(GF("+CASTATE?"));
 
     for (int16_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
-      // after the last connection, there's an ok, so we catch it right away
+      // after the last connection, there's an ok, so we try to catch it right
+      // away
       int res = waitResponse(3000, GF("+CASTATE:"), GFP(ModemConfig::GSM_OK),
                              GFP(ModemConfig::GSM_ERROR));
       // if we get the +CASTATE: response, read the mux number and the status

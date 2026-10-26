@@ -1289,11 +1289,11 @@ class TinyGsmSim7000SSL
   }
 
   bool modemGetConnected(uint8_t mux) {
-    // NOTE: This function gets the number of available characters for all
-    // sockets at once, so we don't check if the specific mux is valid until
-    // right before returning the value for that mux.
-    // NOTE:  This gets the state of all connections that have been opened
-    // since the last connection
+    // NOTE: This function gets status for all sockets at once, so we don't
+    // check if the specific mux is valid until right before returning the value
+    // for that mux.
+    // NOTE:  This gets the state of all connections that have been opened since
+    // the last connection
     sendAT(GF("+CASTATE?"));
 
     for (int16_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
