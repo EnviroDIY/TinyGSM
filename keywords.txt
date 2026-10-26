@@ -55,7 +55,7 @@ TinyGsmCapabilities::can_specify_certs< TinyGsmUBLOX >	KEYWORD1
 TinyGsmCapabilities::has_battery	KEYWORD1
 TinyGsmCapabilities::has_bluetooth	KEYWORD1
 TinyGsmCapabilities::has_calling	KEYWORD1
-TinyGsmCapabilities::has_gprs	KEYWORD1
+TinyGsmCapabilities::has_cellular_data	KEYWORD1
 TinyGsmCapabilities::has_gps	KEYWORD1
 TinyGsmCapabilities::has_gsm_location	KEYWORD1
 TinyGsmCapabilities::has_ntp	KEYWORD1
@@ -77,6 +77,7 @@ TinyGsmCapabilities::integral_constant	KEYWORD1
 TinyGsmCapabilities::is_base_of	KEYWORD1
 TinyGsmCapabilities::is_base_of_impl	KEYWORD1
 TinyGsmCapabilities::make_void	KEYWORD1
+TinyGsmCellularData	KEYWORD1
 TinyGsmESP32	KEYWORD1
 TinyGsmESP32::GsmClientESP32	KEYWORD1
 TinyGsmESP32::GsmClientSecureESP32	KEYWORD1
@@ -97,7 +98,6 @@ TinyGsmESP8266NonOSTcpConfig	KEYWORD1
 TinyGsmESP8266SslConfig	KEYWORD1
 TinyGsmESP8266TcpConfig	KEYWORD1
 TinyGsmEspressif	KEYWORD1
-TinyGsmGPRS	KEYWORD1
 TinyGsmGPS	KEYWORD1
 TinyGsmGSMLocation	KEYWORD1
 TinyGsmM590	KEYWORD1
@@ -246,6 +246,7 @@ waitForNetwork	KEYWORD2
 getSignalQuality	KEYWORD2
 getLocalIP	KEYWORD2
 localIP	KEYWORD2
+streamPrint	KEYWORD2
 streamWrite	KEYWORD2
 streamClear	KEYWORD2
 streamDump	KEYWORD2
@@ -254,6 +255,9 @@ getSimCCID	KEYWORD2
 getIMEI	KEYWORD2
 getIMSI	KEYWORD2
 getSimStatus	KEYWORD2
+dataConnect	KEYWORD2
+dataDisconnect	KEYWORD2
+isDataConnected	KEYWORD2
 gprsConnect	KEYWORD2
 gprsDisconnect	KEYWORD2
 isGprsConnected	KEYWORD2
@@ -300,6 +304,7 @@ setGsmBusy	KEYWORD2
 configureSSLContext	KEYWORD2
 linkSSLContext	KEYWORD2
 GsmClientA7672X	KEYWORD2
+GsmClientSecureA7672X	KEYWORD2
 ~GsmSecureContextA7672X	KEYWORD2
 enableGPS	KEYWORD2
 disableGPS	KEYWORD2
@@ -413,6 +418,11 @@ GsmClientXBee	KEYWORD2
 # Constants (LITERAL1)
 #######################################
 
+TINY_GSM_USE_PUBLIC_DNS	LITERAL1
+SIM_ERROR	LITERAL1
+SIM_READY	LITERAL1
+SIM_LOCKED	LITERAL1
+SIM_ANTITHEFT_LOCKED	LITERAL1
 TINY_GSM_ESP_SSL_FILENAME_SIZE	LITERAL1
 TINY_GSM_MONARCH_DEFAULT_SSL_CTX	LITERAL1
 SOCK_CLOSED	LITERAL1
@@ -441,10 +451,6 @@ GF	LITERAL1
 TINY_GSM_F_READ	LITERAL1
 TINY_GSM_F_STRNCMP	LITERAL1
 TINY_GSM_F_STRCPY	LITERAL1
-SIM_ERROR	LITERAL1
-SIM_READY	LITERAL1
-SIM_LOCKED	LITERAL1
-SIM_ANTITHEFT_LOCKED	LITERAL1
 TINY_GSM_MODEM_CAN_SPECIFY_CERTS	LITERAL1
 TINY_GSM_MODEM_CAN_LOAD_CERTS	LITERAL1
 TINY_GSM_CERT_NAME_LENGTH	LITERAL1
