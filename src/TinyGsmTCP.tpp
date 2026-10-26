@@ -551,6 +551,7 @@ class TinyGsmTCP {
               GF(") on attempt"), send_attempts);
           continue;
         }
+        sendLength = TinyGsmMin(sendLength, TcpConfig::kSendMaxSize);
         // Ensure the program doesn't read past the allocated memory
         if (txPtr + sendLength > const_cast<uint8_t*>(buff) + len) {
           sendLength = const_cast<uint8_t*>(buff) + len - txPtr;
