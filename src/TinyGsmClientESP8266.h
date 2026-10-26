@@ -673,13 +673,14 @@ class TinyGsmESP8266
     sendAT(GF("+CIPSNTPTIME?"));
     if (waitResponse(2000L, GF("+CIPSNTPTIME:")) != 1) { return false; }
 
-    int16_t iyear     = 0;
-    int16_t imonth    = 0;
-    int16_t iday      = 0;
-    int16_t ihour     = 0;
-    int16_t imin      = 0;
-    int16_t isec      = 0;
-    float   itimezone = 0;
+    int16_t iyear               = 0;
+    int16_t imonth              = 0;
+    int16_t iday                = 0;
+    int16_t ihour               = 0;
+    int16_t imin                = 0;
+    int16_t isec                = 0;
+    float   itimezone           = 0;
+    int16_t itimezone_quarters  = 0;
 
     // Date & Time
     streamSkipUntil(' ');  // skip the day of the week
@@ -704,7 +705,28 @@ class TinyGsmESP8266
     if (waitResponse(2000L, GF("+CIPSNTPCFG:")) != 1) { return false; }
 
     streamSkipUntil(',');  // skip if sync is enabled
-    itimezone = streamGetFloatBefore(',');
+    const int16_t itimezone_cfg = streamGetIntBefore(',');
+    // AT+CIPSNTPCFG may report timezone as signed whole hours or signed HHMM.
+    if (itimezone_cfg >= -14 && itimezone_cfg <= 14) {
+      itimezone          = static_cast<float>(itimezone_cfg);
+      itimezone_quarters = static_cast<int16_t>(itimezone_cfg * 4);
+    } else {
+      const int16_t  timezone_sign     = (itimezone_cfg < 0) ? -1 : 1;
+      const uint16_t timezone_abs      = abs(itimezone_cfg);
+      const uint8_t  timezone_hours    = timezone_abs / 100;
+      const uint8_t  timezone_minutes  = timezone_abs % 100;
+      itimezone = timezone_sign *
+                  (static_cast<float>(timezone_hours) +
+                   static_cast<float>(timezone_minutes) / 60.0f);
+      if (timezone_minutes % 15 == 0) {
+        itimezone_quarters = timezone_sign *
+                             static_cast<int16_t>(timezone_hours * 4 +
+                                                  timezone_minutes / 15);
+      } else {
+        // force validation failure for unsupported minute precision
+        itimezone_quarters = 127;
+      }
+    }
     // Final OK
     waitResponse(5000L);
 
@@ -726,7 +748,7 @@ class TinyGsmESP8266
 
     // Validate parsed values
     if (!TinyGsmTime<TinyGsmESP8266>::isValidDateTimeValues(
-            iyear, imonth, iday, ihour, imin, isec, itimezone)) {
+            iyear, imonth, iday, ihour, imin, isec, itimezone_quarters)) {
       return false;
     }
 
