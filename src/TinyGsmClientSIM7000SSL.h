@@ -426,7 +426,7 @@ class TinyGsmSim7000SSL
     // we don't write the file. If we don't write something within 10 seconds
     // (the <input time>), the terminal will timeout and send back an 'OK' at
     // the 10s mark.
-    success &= waitResponse(10500L, GF("DOWNLOAD"), GFP(ModemConfig::GSM_OK),
+    success &= waitResponse(10500L, GF("DOWNLOAD"),
                             GFP(ModemConfig::GSM_ERROR)) == 1;
 
     if (success) {
@@ -499,7 +499,7 @@ class TinyGsmSim7000SSL
 
     // wait for some characters to be available
     uint32_t start = millis();
-    while (!stream.available() && millis() - start < 10000) {}
+    while (!stream.available() && millis() - start < 10000) { yield(); }
 
     for (int i = 0; i < print_len; i++) {
       int      c;
@@ -1002,7 +1002,8 @@ class TinyGsmSim7000SSL
     }
     if (clientCertName != nullptr &&
         strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
-        (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
+        (sslAuthMode == SSLAuthMode::CLIENT_VALIDATION ||
+         sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       // AT+CASSLCFG=<cid>,"CERT",<certname>
       // <cid> Application connection ID (set with AT+CACID above)
       // <certname> Alphanumeric ASCII text string up to 64 characters.

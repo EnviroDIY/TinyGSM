@@ -1117,7 +1117,8 @@ class TinyGsmSim7080
     }
     if (clientCertName != nullptr &&
         strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) != 0 &&
-        (sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
+        (sslAuthMode == SSLAuthMode::CLIENT_VALIDATION ||
+         sslAuthMode == SSLAuthMode::MUTUAL_AUTHENTICATION)) {
       // AT+CASSLCFG=<cid>,"CERT",<certname>
       // <cid> Application connection ID (set with AT+CACID above)
       // <certname> Alphanumeric ASCII text string up to 64 characters.
