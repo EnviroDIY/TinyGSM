@@ -1686,6 +1686,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       // FQDN and port
       // The configureConnection function will also set up SSL if needed
       success = configureConnection(host, port, mux);
+      if (success) { savedIP = NULL_IP; }
     }
 
     // For the pre XBee3 Bees, we need to look up the IP address manually
