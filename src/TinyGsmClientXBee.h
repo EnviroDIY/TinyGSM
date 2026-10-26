@@ -1336,6 +1336,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     sendAT(GF("TP"));
     int16_t intRes = readResponseInt();
     XBEE_COMMAND_END_DECORATOR
+    if (intRes < 0) { return -9999.0F; }
     return static_cast<float>(static_cast<int8_t>(intRes));
   }
 
