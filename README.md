@@ -278,7 +278,7 @@ This may result in problems such as:
 - etc.
 
 To return module to **Factory Defaults**, use this sketch:
-  Open [`extras/tools/FactoryReset/FactoryReset.ino`](https://github.com/vshymanskyy/TinyGSM/blob/master/extras/tools/FactoryReset/FactoryReset.ino) from the library folder.
+  Open [`extras/tools/FactoryReset/FactoryReset.ino`](extras/tools/FactoryReset/FactoryReset.ino) from the library folder.
 
 In some cases, you may need to set an initial APN to connect to the cellular network.
 Try using the `gprsConnect(APN)` function to set an initial APN if you are unable to register on the network.
@@ -297,7 +297,7 @@ When using MQTT, to keep a continuous connection you may need to reduce your kee
 ### Diagnostics sketch
 
 Use this sketch to help diagnose SIM card and GPRS connection issues:
-  Open [`extras/tools/Diagnostics/Diagnostics.ino`](https://github.com/vshymanskyy/TinyGSM/blob/master/extras/tools/Diagnostics/Diagnostics.ino) from the library folder.
+  Open [`extras/tools/Diagnostics/Diagnostics.ino`](extras/tools/Diagnostics/Diagnostics.ino) from the library folder.
 
 If the diagnostics fail, uncomment this line to output some debugging comments from the library:
 
