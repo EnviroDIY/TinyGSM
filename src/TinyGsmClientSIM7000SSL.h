@@ -247,6 +247,13 @@ class TinyGsmSim7000SSL
         DBG("### The SSL context is missing required credentials!");
         return 0;
       }
+      // this module accepts PSK credentials only as a converted PSK table
+      if (sslContext->sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS &&
+          sslContext->pskTableName[0] == '\0') {
+        DBG("### The SIM7000 requires a PSK table; identity/key pairs are "
+            "not supported.");
+        return 0;
+      }
       // configure the context
       if (!at->configureSSLContext(sslCtxIndex)) {
         DBG("### Failed to configure the SSL context!");
