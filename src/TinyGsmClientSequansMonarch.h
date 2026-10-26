@@ -924,6 +924,7 @@ class TinyGsmSequansMonarch
       }
     }
     waitResponse();  // Should be an OK at the end
+    if (!isValidMux(mux)) { return false; }
     GsmClientSequansMonarch* thisSock = sockets[mux];
     return thisSock ? thisSock->sock_connected : false;
   }
