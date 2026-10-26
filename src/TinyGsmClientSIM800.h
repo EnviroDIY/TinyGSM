@@ -514,9 +514,11 @@ class TinyGsmSim800
     sendAT(GF("+CIFSR;E0"));
     if (waitResponse(10000L) != 1) { return false; }
 
+#if TINY_GSM_USE_PUBLIC_DNS
     // Configure Domain Name Server (DNS)
     sendAT(GF("+CDNSCFG=\"8.8.8.8\",\"8.8.4.4\""));
     if (waitResponse() != 1) { return false; }
+#endif
 
     return true;
   }

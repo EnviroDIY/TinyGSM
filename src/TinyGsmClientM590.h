@@ -397,12 +397,14 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
     }
     return false;
 
+#if TINY_GSM_USE_PUBLIC_DNS
     // set_dns:  // TODO
     //     sendAT(GF("+DNSSERVER=1,8.8.8.8"));
     //     waitResponse();
     //
     //     sendAT(GF("+DNSSERVER=2,8.8.4.4"));
     //     waitResponse();
+#endif
 
     return true;
   }

@@ -17,6 +17,11 @@
 #define TINY_GSM_MODEM_HAS_GPRS
 #endif
 
+#if defined(DOXYGEN)
+/** Override network-assigned DNS with Google Public DNS. */
+#define TINY_GSM_USE_PUBLIC_DNS 0
+#endif
+
 /// SIM card status
 enum SimStatus {
   /// SIM card error

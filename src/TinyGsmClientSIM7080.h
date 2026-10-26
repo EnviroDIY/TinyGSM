@@ -30,11 +30,6 @@
 #define SRC_TINYGSMCLIENTSIM7080_H_
 #pragma message("TinyGSM:  TinyGsmClientSim7080")
 
-#ifndef TINY_GSM_USE_PUBLIC_DNS
-/** Override network-assigned DNS with Google Public DNS. */
-#define TINY_GSM_USE_PUBLIC_DNS 0
-#endif
-
 
 #include "TinyGsmClientSIM70xx.h"
 #include "TinyGsmTCP.tpp"
@@ -715,6 +710,7 @@ class TinyGsmSim7080
     // Set the PDP context for DNS lookup
     sendAT(GF("+CDNSPDPID=0"));
     if (waitResponse() != 1) { return false; }
+
 #if TINY_GSM_USE_PUBLIC_DNS
     // Override network-assigned DNS with Google Public DNS when requested.
     sendAT(GF("+CDNSCFG=\"8.8.8.8\",\"8.8.4.4\""));
