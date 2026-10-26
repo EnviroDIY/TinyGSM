@@ -1219,11 +1219,17 @@ class TinyGsmModem {
   static inline IPAddress TinyGsmIpFromString(const String& strIP) {
     int  Parts[4]          = {0};
     int  Part              = 0;
+    bool addressStarted    = false;
     bool hasDigitInPart[4] = {
         false};  // Track if each octet has at least one digit
 
     for (uint8_t i = 0; i < strIP.length(); i++) {
       char c = strIP[i];
+      if (!addressStarted) {
+        if (c < '0' || c > '9') { continue; }
+        addressStarted = true;
+      }
+
       if (c == '.') {
         // Reject dot when octet is empty
         if (!hasDigitInPart[Part]) { return IPAddress(0, 0, 0, 0); }
@@ -1236,7 +1242,9 @@ class TinyGsmModem {
         if (nextValue > 255) { return IPAddress(0, 0, 0, 0); }
         Parts[Part] = nextValue;
       } else {
-        return IPAddress(0, 0, 0, 0);  // Invalid character
+        // Framing may follow a complete dotted-quad, but not interrupt it.
+        if (Part == 3 && hasDigitInPart[Part]) { break; }
+        return IPAddress(0, 0, 0, 0);
       }
     }
 
