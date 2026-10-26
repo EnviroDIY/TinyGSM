@@ -584,45 +584,51 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     return success && waitResponse() == 1;
   }
 
-  // NOTE: You cannot print/view the content of a certificate after uploading it
-  // to the modem This only prints the checksum
   bool printCertificateImpl(const char* filename, Stream& print_stream) {
-    bool    success   = true;
-    int16_t print_len = 0;
-
     // Download the file
     // AT+QFDWL=<filename>
+    // Responds with "CONNECT\r\n"
+    // TA switches to data mode, and the binary data of the file will be
+    // outputted. When the file is read over, TA will return to command mode and
+    // reply the following codes:
+    // +QFDWL: <download_size>,<checksum>
+    // OK
     sendAT(GF("+QFDWL=\""), filename, '"');
-    success &= waitResponse(GF("+QFDWL")) == 1;
-    if (success) {
-      print_len = streamGetIntBefore(',');
-      streamSkipUntil('\n');  // skip the checksum
-    }
+    if (waitResponse(GF("CONNECT\r\n")) != 1) { return false; }
 
-    // wait for some characters to be available
-    uint32_t start = millis();
-    while (!stream.available() && millis() - start < 10000) {}
+    const char metadataMarker[] = "\r\n+QFDWL:";
+    uint8_t    markerIndex      = 0;
+    uint32_t   print_len        = 0;
+    while (markerIndex < sizeof(metadataMarker) - 1) {
+      int c = streamTimedRead(10000L);
+      if (c < 0) { return false; }
+      if (c == metadataMarker[markerIndex]) {
+        markerIndex++;
+        continue;
+      }
 
-    for (int i = 0; i < print_len; i++) {
-      int      c;
-      uint32_t _startMillis = millis();
-      do {
-        c = stream.read();
-        if (c >= 0) break;
-      } while (millis() - _startMillis < 50);
-      // Print the file to the buffer
 #ifndef DUMP_AT_COMMANDS
-      // NOTE: Only do this if we're not dumping the all AT, or we'll double
-      // print
-      print_stream.write(c);
+      // NOTE: Only do this if we're not dumping all AT, or we'll double print.
+      for (uint8_t i = 0; i < markerIndex; i++) {
+        print_stream.write(metadataMarker[i]);
+      }
 #endif
-      if (c < 0) { break; }  // if we run out of characters, stop
+      print_len += markerIndex;
+      markerIndex = 0;
+      if (c == metadataMarker[0]) {
+        markerIndex = 1;
+      } else {
+#ifndef DUMP_AT_COMMANDS
+        print_stream.write(static_cast<uint8_t>(c));
+#endif
+        print_len++;
+      }
     }
     print_stream.flush();
 
-    // wait for the ending OK
-    success &= waitResponse() == 1;
-    return success;
+    uint32_t len_confirmed = streamGetULBefore(',');
+    streamSkipUntil('\n');  // skip the checksum
+    return len_confirmed == print_len && waitResponse() == 1;
   }
 
   // NOTE: Deleting the certificate only happens by filename, the type of
