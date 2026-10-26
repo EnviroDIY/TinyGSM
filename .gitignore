@@ -12,9 +12,6 @@ cd# Compiled files, executables
 
 # IDE project files
 .settings
-.pioenvs
-.piolibdeps
-.pio/*
 .clang_complete
 .gcc-flags.json
 platformio.ini
@@ -45,12 +42,17 @@ filters/*
 src/CipherSuiteCodes.csv
 
 # PlatformIO
+.pioenvs
+.piolibdeps
+.pio/*
+.platformio_local/*
+.pio_local/*
+.pio_core_local/*
 pioScripts/*
 variants/*
 boards/*
 tests/*
 lib/*
-.pio_core_local/*
 platformio_extra_envs.ini
 pio_common_libdeps.ini
 continuous_integration/platformio_local.ini
