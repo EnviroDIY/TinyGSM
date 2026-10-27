@@ -19,7 +19,7 @@
 #endif
 
 /// The current library version number
-#define TINYGSM_VERSION "0.12.0"
+#define TINYGSM_VERSION "0.13.0"
 
 #if defined(SPARK) || defined(PARTICLE)
 #include "Particle.h"
