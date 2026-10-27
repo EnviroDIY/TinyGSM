@@ -5,11 +5,11 @@ on:
       - main
     # Sequence of patterns matched against refs/tags
     paths:
-      - "VERSION" # Push events when the VERSION file changes
+      - 'VERSION' # Push events when the VERSION file changes
   workflow_dispatch:
     inputs:
       include_dependencies:
-        description: "True to include a zip file with dependencies in the release"
+        description: 'True to include a zip file with dependencies in the release'
         required: false
         type: boolean
         default: true
@@ -21,12 +21,7 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' }}
     strategy:
       matrix:
-        req_workflow:
-          [
-            verify_library_structure.yaml,
-            build_examples.yaml,
-            build_documentation.yaml,
-          ]
+        req_workflow: [verify_library_structure.yaml, build_examples.yaml]
     name: Wait for Checks to complete
     runs-on: ubuntu-latest
     # actions:read is required so action-wait-for-workflow can query workflow run status

@@ -1125,7 +1125,6 @@ EXCLUDE                = ../src/ReadMe.md \
                          ../docs/reviews \
                          ../docs/.doxybook \
                          ../docs/__pycache__ \
-                         ../docs/SupportedModuleFunctions.md \
                          ../generated_docs \
                          ../src/ArduinoCompat \
                          ../src/wakeUp.h \
@@ -1138,6 +1137,7 @@ EXCLUDE                = ../src/ReadMe.md \
                          ../examples/more/SIM800_SslSetCert/DSTRootCAX3.der.h \
                          ../examples/more/SIM800_SslSetCert/DSTRootCAX3.h \
                          ../AGENTS.md
+#                         ../docs/SupportedModuleFunctions.md \
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -1447,7 +1447,7 @@ IGNORE_PREFIX          =
 # If the GENERATE_HTML tag is set to YES, Doxygen will generate HTML output
 # The default value is: YES.
 
-GENERATE_HTML          = NO
+GENERATE_HTML          = YES
 
 # The HTML_OUTPUT tag is used to specify where the HTML docs will be put. If a
 # relative path is entered the value of OUTPUT_DIRECTORY will be put in front of

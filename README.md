@@ -276,8 +276,7 @@ This may result in problems such as:
 - Sent/received data contains invalid bytes
 - etc.
 
-To return module to **Factory Defaults**, use this sketch:
-  Open [`extras/tools/FactoryReset/FactoryReset.ino`](extras/tools/FactoryReset/FactoryReset.ino) from the library folder.
+To return module to **Factory Defaults**, use the [Factory Reset sketch](https://github.com/vshymanskyy/TinyGSM/tree/master/extras/tools/FactoryReset)
 
 In some cases, you may need to set an initial APN to connect to the cellular network.
 Try using the `dataConnect(APN)` function to set an initial APN if you are unable to register on the network.
@@ -295,8 +294,7 @@ When using MQTT, to keep a continuous connection you may need to reduce your kee
 
 ### Diagnostics sketch
 
-Use this sketch to help diagnose SIM card and cellular data connection issues:
-  Open [`extras/tools/Diagnostics/Diagnostics.ino`](extras/tools/Diagnostics/Diagnostics.ino) from the library folder.
+Use the [diagnostics sketch](https://github.com/vshymanskyy/TinyGSM/tree/master/extras/tools/Diagnostics) to help diagnose SIM card and cellular data connection issues
 
 If the diagnostics fail, uncomment this line to output some debugging comments from the library:
 

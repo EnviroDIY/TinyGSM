@@ -24,11 +24,11 @@ include/readme.txt
 .vscode
 
 # Extras
-extras/docs/*
-extras/Module Datasheets/*
-extras/Older Command Manuals/*
-extras/Older Command Manuals/*
-extras/At Command Manuals - Unsupported/*
+extras/docs
+extras/Module Datasheets
+extras/Older Command Manuals
+extras/Older Command Manuals
+extras/At Command Manuals - Unsupported
 
 # Filters
 .gitconfig
@@ -44,15 +44,15 @@ src/CipherSuiteCodes.csv
 # PlatformIO
 .pioenvs
 .piolibdeps
-.pio/*
-.platformio_local/*
-.pio_local/*
-.pio_core_local/*
-pioScripts/*
-variants/*
-boards/*
-tests/*
-lib/*
+.pio
+.platformio_local
+.pio_local
+.pio_core_local
+pioScripts
+variants
+boards
+tests
+lib
 platformio_extra_envs.ini
 pio_common_libdeps.ini
 continuous_integration/platformio_local.ini
@@ -63,8 +63,8 @@ continuous_integration/parse_test_results.py
 continuous_integration/arduino_cli_local.yaml
 
 # Local CI and Build Artifacts
-home/arduino/*
-continuous_integration_artifacts/*
+home/arduino
+continuous_integration_artifacts
 clang_format_all.bat
 generateKeywords.bat
 installWorkingDependencies.bat
@@ -74,11 +74,14 @@ compile_commands.json
 buildCI.bat
 
 # Local Documentation Artifacts
-generated_docs/*
-docs/__pycache__/*
-docs/css/*
-docs/reviews/*
+generated_docs
+docs/__pycache__
+docs/css
+docs/reviews
 docs/*output*
+docs/logs
+docs/.doxybook
+docs/generated_doc_helpers
 docs/*.png
 docs/*.js
 docs/*.ttf
@@ -89,8 +92,6 @@ docs/pages.dox
 docs/supported_module_functions.dox
 docs/clients*.dox
 docs/DOC_TEMPLATE_*
-docs/.doxybook/*
-docs/generated_doc_helpers/*
 docs/create_client_dox.py
 docs/generate_callable_docs.py
 docs/generateLogos.py
@@ -101,12 +102,16 @@ docs/mcss-Doxyfile-md
 docs/mcss-conf-md.py
 docs/generate_usable_fxn_docs.py
 docs/update_wiki_docs.py
+docs/m-tinygsm.css
+docs/m-tinygsm.compiled.css
+docs/m-tinygsm+documentation.compiled.css
 
 # Other stuff
 *.tar.gz
-archive/*
+archive
+tmp
 src/wakeUp.h
-**/__pycache__/**
+**/__pycache__
 AGENTS.md
 .github/copilot-instructions.md
 .bumpversion.toml
