@@ -36,13 +36,31 @@ You can also join our chat:
 
 - [TinyGSM](#tinygsm)
   - [Overview](#overview)
+    - [Arduino Client interface support](#arduino-client-interface-support)
   - [Supported modems](#supported-modems)
   - [Features](#features)
   - [Credits](#credits)
   - [Getting Started](#getting-started)
+    - [First Steps](#first-steps)
+    - [Writing your own code](#writing-your-own-code)
+    - [If you have any issues](#if-you-have-any-issues)
   - [How does it work?](#how-does-it-work)
   - [API Reference](#api-reference)
   - [Troubleshooting](#troubleshooting)
+    - [Ensure stable data \& power connection](#ensure-stable-data--power-connection)
+    - [Baud rates](#baud-rates)
+    - [Broken initial configuration](#broken-initial-configuration)
+    - [Failed connection or no data received](#failed-connection-or-no-data-received)
+    - [Diagnostics sketch](#diagnostics-sketch)
+    - [Web request formatting problems - "but it works with PostMan"](#web-request-formatting-problems---but-it-works-with-postman)
+    - [SoftwareSerial problems](#softwareserial-problems)
+    - [ESP32 Notes](#esp32-notes)
+      - [HardwareSerial](#hardwareserial)
+      - [HttpClient](#httpclient)
+    - [SAMD21](#samd21)
+    - [Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion](#goouuu-tech-iot-ga6-vs-ai-thinker-a6-confusion)
+    - [SIM800 and SSL](#sim800-and-ssl)
+    - [Which version of the SIM7000 code to use](#which-version-of-the-sim7000-code-to-use)
   - [License](#license)
 
 <!--! @endif -->
@@ -91,7 +109,7 @@ This library is easy to integrate with lots of sketches which use Ethernet or Wi
   - Previously tested by original author
 - u-blox 2G, 3G, 4G, and LTE Cat1 Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
   - Previously tested by the current maintainer (SARA-U201 only); updates not all tested
-- u-blox LTE-M/NB-IoT Modems (SARA-R4xx, SARA-N4xx, SARA-R5xx, _but NOT SARA-N2xx_)
+- u-blox LTE-M/NB-IoT Modems (SARA-R4xx, SARA-N4xx, SARA-R5xx, *but NOT SARA-N2xx*)
   - Tested by the current maintainer (SARA-R410M only)
 - Sequans Monarch LTE Cat M1/NB1 (VZM20Q)
   - Previously tested by current maintainer; updates not all tested
@@ -101,7 +119,7 @@ This library is easy to integrate with lots of sketches which use Ethernet or Wi
   - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
 - Quectel M95
   - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
-- Quectel MC60 _**(alpha)**_
+- Quectel MC60 ***(alpha)***
   - Accepted as pull request, though I have concerns about the implementation. Not personally tested by the maintainer.
 
 Watch this repo for new updates!
@@ -177,17 +195,16 @@ The general flow of your code should be:
   - `modem.init()` or `modem.restart()`
   - Restart generally takes longer than init but ensures the module doesn't have lingering connections
 - Unlock your SIM, if necessary:
-  - `modem.simUnlock(GSM_PIN)`
+  - `modem.simUnlock(SIM_PIN)`
 - If using a **WiFi** module, specify your SSID information:
   - `modem.networkConnect(wifiSSID, wifiPass)`
   - Network registration should be automatic on cellular modules
 - Wait for network registration to be successful
   - `modem.waitForNetwork(600000L)`
-  - New sim/tower combinations may take a _long_ time to connect.
-- If using cellular, establish the GPRS or EPS data connection _after_ you are successfully registered on the network
-  - `modem.gprsConnect(apn, gprsUser, gprsPass)` (or simply `modem.gprsConnect(apn)`)
-  - The same command is used for both GPRS or EPS connection
-  - If using a **Digi** brand cellular XBee, you must specify your GPRS/EPS connection information _before_ waiting for the network.  This is true ONLY for _Digi cellular XBees_!  _For all other cellular modules, use the GPRS connect function after network registration._
+  - New sim/tower combinations may take a *long* time to connect.
+- If using cellular, establish the cellular data connection *after* you are successfully registered on the network
+  - `modem.dataConnect(apn, simUser, simPass)` (or simply `modem.dataConnect(apn)`)
+  - If using a **Digi** brand cellular XBee, you must specify your cellular data connection information *before* waiting for the network.  This is true ONLY for *Digi cellular XBees*!  *For all other cellular modules, use the cellular data connect function after network registration.*
 - Connect the TCP or SSL client
     `client.connect(server, port)`
 - Send out your data.
@@ -206,25 +223,25 @@ Many GSM modems, WiFi and radio modules can be controlled by sending AT commands
 TinyGSM knows which commands to send, and how to handle AT responses, and wraps that into standard Arduino Client interface.
 
 This library is "blocking" in all of its communication.
-Depending on the function, your code may be blocked for several _minutes_ while waiting for the module responses.
-Apart from the obvious (i.e., `waitForNetwork()`) several other functions may block your code for up to several _minutes_.
-The `gprsConnect()` and `client.connect()` functions commonly block the longest, especially in poorer service regions.
+Depending on the function, your code may be blocked for several *minutes* while waiting for the module responses.
+Apart from the obvious (i.e., `waitForNetwork()`) several other functions may block your code for up to several *minutes*.
+The `dataConnect()` and `client.connect()` functions commonly block the longest, especially in poorer service regions.
 Shutting down or restarting the module may also be quite slow.
 
-This library _does not_ support any sort of "hardware" or pin-level controls for the modules.
+This library *does not* support any sort of "hardware" or pin-level controls for the modules.
 If you need to turn your module on or reset it using some sort of High/Low/High pin sequence, you must write those functions yourself.
 If you're interested in pin controls for your module, there's documentation of the wake/sleep protocols for most of the modules supported by this library in the [ModularSensors library](https://github.com/EnviroDIY/ModularSensors/).
 
 ## API Reference
 
-For GPRS data streams, this library provides the standard [Arduino Client](https://www.arduino.cc/en/Reference/ClientConstructor) interface.
+For cellular data streams, this library provides the standard [Arduino Client](https://www.arduino.cc/en/Reference/ClientConstructor) interface.
 For additional functions, please refer to [this example sketch](examples/AllFunctions/ReadMe.md)
 
 ## Troubleshooting
 
 ### Ensure stable data & power connection
 
-Most modules require _**as much as 2A**_ to properly connect to the network.
+Most modules require ***as much as 2A*** to properly connect to the network.
 This is 4x what a "standard" USB will supply!
 Improving the power supply actually solves stability problems in **many** cases!
 
@@ -243,7 +260,9 @@ Once you've established communication with the module, set the baud rate using t
 
 Some caveats with baud rates:
 
-- If you are using a slow baud rate to communicate with your module, you may need to define `-D TINY_GSM_YIELD_MS=1` to prevent command responses from being spliced apart.
+- `TINY_GSM_INTERCHAR_TIMEOUT_MS` sets the maximum silence allowed while waiting for the next character during short inter-character operations. `waitResponse()` also uses it to avoid splitting a response that is still arriving when its overall timeout expires. The default is 10 ms.
+- `TINY_GSM_RESPONSE_MAX_GRACE_MS` limits how long `waitResponse()` can continue beyond its overall timeout while a response is still arriving. The default is 1000 ms.
+- These timing defaults should work for most users. Override them before including TinyGSM only when a modem or stream transport is known to require different timing.
 - If you are using a slow baud rate to communicate with your module, you may end up with data loss when buffers fill faster than they can be emptied.
 - If you are using a very fast baud rate to communicate with your module, you may need to turn off AT debugging (using StreamDebugger or `DUMP_AT_COMMANDS`) to prevent data loss
 
@@ -252,22 +271,22 @@ Some caveats with baud rates:
 Sometimes (especially if you played with AT commands), your module configuration may become invalid.
 This may result in problems such as:
 
-- Can't connect to the GPRS network
+- Can't connect to the cellular data network
 - Can't connect to the server
 - Sent/received data contains invalid bytes
 - etc.
 
 To return module to **Factory Defaults**, use this sketch:
-  File -> Examples -> TinyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/extras/tools/FactoryReset/FactoryReset.ino)
+  Open [`extras/tools/FactoryReset/FactoryReset.ino`](extras/tools/FactoryReset/FactoryReset.ino) from the library folder.
 
 In some cases, you may need to set an initial APN to connect to the cellular network.
-Try using the `gprsConnect(APN)` function to set an initial APN if you are unable to register on the network.
+Try using the `dataConnect(APN)` function to set an initial APN if you are unable to register on the network.
 You may need set the APN again after registering.
 (In most cases, you should set the APN after registration.)
 
 ### Failed connection or no data received
 
-The first connection with a new SIM card, a new module, or at a new location/tower may take a _LONG_ time - up to 15 minutes or even more, especially if the signal quality isn't excellent.
+The first connection with a new SIM card, a new module, or at a new location/tower may take a *LONG* time - up to 15 minutes or even more, especially if the signal quality isn't excellent.
 If it is your first connection, you may need to adjust your wait times and possibly go to lunch while you're waiting.
 
 If you are able to open a TCP connection but have the connection close before receiving data, try adding a keep-alive header to your request.
@@ -276,8 +295,8 @@ When using MQTT, to keep a continuous connection you may need to reduce your kee
 
 ### Diagnostics sketch
 
-Use this sketch to help diagnose SIM card and GPRS connection issues:
-  File -> Examples -> TinyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/extras/tools/Diagnostics/Diagnostics.ino)
+Use this sketch to help diagnose SIM card and cellular data connection issues:
+  Open [`extras/tools/Diagnostics/Diagnostics.ino`](extras/tools/Diagnostics/Diagnostics.ino) from the library folder.
 
 If the diagnostics fail, uncomment this line to output some debugging comments from the library:
 
@@ -319,7 +338,7 @@ Here are some tips for writing layer 7 (particularly HTTP request) manually:
 - Look at the "WebClient" example
 - Make sure you are including all required headers.
   - If you are testing with PostMan, make sure you un-hide and look at the "auto-generated" headers; you'll probably be surprised by how many of them there are.
-- Use `client.print("...")`, or `client.write(buf, #)`, or even `client.write(String("..."))`, not `client.write("...")` to help prevent text being sent out one character at a time (typewriter style)
+- Use `client.print("...")` or `client.write(buf, #)` to help prevent text being sent out one character at a time (typewriter style).
 - Enclose the entirety of each header or line within a single string or print statement
 
 Use this:
@@ -355,7 +374,7 @@ Try selecting **57600**, **38400**, or even lower - the one that works best for 
 In some cases **9600** is unstable, but using **38400** helps, etc.
 Be sure to set correct TX/RX pins in the sketch.
 Please note that not every Arduino pin can serve as TX or RX pin.
-**Read more about AVR Serial options and configuration [on Paul Stroffregen's site](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [the Arduino reference site](https://www.arduino.cc/en/Reference/SoftwareSerial).**
+**Read more about AVR Serial options and configuration [on Paul Stoffregen's site](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [the Arduino reference site](https://www.arduino.cc/en/Reference/SoftwareSerial).**
 
 ### ESP32 Notes
 
@@ -388,8 +407,8 @@ If you need SSL and it does not appear to be working on your SIM800, try a diffe
 ### Which version of the SIM7000 code to use
 
 There are two versions of the SIM7000 code, one using `TINY_GSM_MODEM_SIM7000` and another with `TINY_GSM_MODEM_SIM7000SSL`.
-The `TINY_GSM_MODEM_SIM7000` version _does not support SSL_ but supports up to 8 simultaneous connections.
-The `TINY_GSM_MODEM_SIM7000SSL` version supports both SSL _and unsecured connections_ with up to 2 simultaneous connections.
+The `TINY_GSM_MODEM_SIM7000` version *does not support SSL* but supports up to 8 simultaneous connections.
+The `TINY_GSM_MODEM_SIM7000SSL` version supports both SSL *and unsecured connections* with up to 2 simultaneous connections.
 So why are there two versions?
 The "SSL" version uses the SIM7000's "application" commands while the other uses the "TCP-IP toolkit".
 Depending on your region/firmware, one or the other may not work for you.

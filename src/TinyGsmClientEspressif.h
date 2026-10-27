@@ -146,7 +146,7 @@ class TinyGsmEspressif
     thisModem().streamSkipUntil('(');  // skip the text "Bin version"
     String wroom = stream.readStringUntil(
         ')');  // read the WRoom version in the parenthesis
-    thisModem().streamSkipUntil('(');            // skip the bin version itself
+    // skip the bin version itself while waiting for the ending OK
     if (thisModem().waitResponse(1000L) == 1) {  // wait for the ending OK
       wroom.trim();
       if (wroom.length() > 0) { return wroom; }
@@ -302,10 +302,12 @@ class TinyGsmEspressif
     // others: unknown error occurred.
     thisModem().sendAT(GF("+CWJAP=\""), ssid, GF("\",\""), pwd, '"');
     if (thisModem().waitResponse(30000L, GFP(ModemConfig::GSM_OK),
-                                 GF("FAIL\r\n")) != 1) {
+                                 GF("FAIL\r\n"),
+                                 GFP(ModemConfig::GSM_ERROR)) != 1) {
       thisModem().sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, '"');
       if (thisModem().waitResponse(30000L, GFP(ModemConfig::GSM_OK),
-                                   GF("FAIL\r\n")) != 1) {
+                                   GF("FAIL\r\n"),
+                                   GFP(ModemConfig::GSM_ERROR)) != 1) {
         return false;
       }
     }
@@ -322,7 +324,7 @@ class TinyGsmEspressif
 
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
   // No functions of this type supported
 

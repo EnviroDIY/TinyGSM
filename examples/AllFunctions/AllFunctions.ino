@@ -70,14 +70,10 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TARGET_BAUD 115200
 #endif
 
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
-// #define TINY_GSM_YIELD_MS 2
-
 /*
  * Tests enabled
  */
-#define TINY_GSM_TEST_GPRS true
+#define TINY_GSM_TEST_CELLULAR_DATA true
 #define TINY_GSM_TEST_WIFI false
 #define TINY_GSM_TEST_TCP true
 #define TEST_BUILD_ADD_CERTS true
@@ -95,16 +91,16 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TINY_GSM_POWERDOWN true
 
 // set GSM PIN, if any
-#define GSM_PIN ""
+#define SIM_PIN ""
 
 // Set phone numbers, if you want to test SMS and Calls
 // #define SMS_TARGET  "+380xxxxxxxxx"
 // #define CALL_TARGET "+380xxxxxxxxx"
 
-// Your GPRS credentials, if any
-const char apn[]      = "YourAPN";
-const char gprsUser[] = "";
-const char gprsPass[] = "";
+// Your SIM card credentials, if any
+const char apn[]     = "YourAPN";
+const char simUser[] = "";
+const char simPass[] = "";
 
 // Your WiFi connection credentials, if applicable
 const char wifiSSID[] = "YourSSID";
@@ -129,16 +125,16 @@ const int port_ssl = 443;
 #include <Adafruit_TinyUSB.h>  // for Serial
 #endif
 
-#if TINY_GSM_TEST_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
-#undef TINY_GSM_TEST_GPRS
+#if TINY_GSM_TEST_CELLULAR_DATA && not defined TINY_GSM_MODEM_HAS_CELLULAR_DATA
+#undef TINY_GSM_TEST_CELLULAR_DATA
 #undef TINY_GSM_TEST_WIFI
-#define TINY_GSM_TEST_GPRS false
+#define TINY_GSM_TEST_CELLULAR_DATA false
 #define TINY_GSM_TEST_WIFI true
 #endif
 #if TINY_GSM_TEST_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
-#undef TINY_GSM_USE_GPRS
+#undef TINY_GSM_USE_CELLULAR_DATA
 #undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_CELLULAR_DATA true
 #define TINY_GSM_USE_WIFI false
 #endif
 
@@ -255,7 +251,8 @@ void loop() {
 
   // Display modem capabilities using compile-time detection
   DBG("Modem Capabilities:");
-  DBG("  GPRS:", TinyGsmCapabilities::has_gprs<TinyGsm>::value ? "YES" : "NO");
+  DBG("  Cellular Data:",
+      TinyGsmCapabilities::has_cellular_data<TinyGsm>::value ? "YES" : "NO");
   DBG("  WiFi:", TinyGsmCapabilities::has_wifi<TinyGsm>::value ? "YES" : "NO");
   DBG("  SSL:", TinyGsmCapabilities::has_ssl<TinyGsm>::value ? "YES" : "NO");
   DBG("  GPS:", TinyGsmCapabilities::has_gps<TinyGsm>::value ? "YES" : "NO");
@@ -271,11 +268,11 @@ void loop() {
   DBG("  NTP:", TinyGsmCapabilities::has_ntp<TinyGsm>::value ? "YES" : "NO");
   DBG("  Time:", TinyGsmCapabilities::has_time<TinyGsm>::value ? "YES" : "NO");
 
-#if TINY_GSM_TEST_GPRS
+#if TINY_GSM_TEST_CELLULAR_DATA
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && modem.getSimStatus() != SIM_READY) {
+  if (SIM_PIN && modem.getSimStatus() != SIM_READY) {
     // simUnlock will do nothing if the pin is empty
-    modem.simUnlock(GSM_PIN);
+    modem.simUnlock(SIM_PIN);
   }
 #endif
 
@@ -289,9 +286,9 @@ void loop() {
   SerialMon.println(" success");
 #endif
 
-#if TINY_GSM_TEST_GPRS && defined(TINY_GSM_MODEM_XBEE)
-  // The XBee must run the gprsConnect function BEFORE waiting for network!
-  modem.gprsConnect(apn, gprsUser, gprsPass);
+#if TINY_GSM_TEST_CELLULAR_DATA && defined(TINY_GSM_MODEM_XBEE)
+  // The XBee must run the dataConnect function BEFORE waiting for network!
+  modem.dataConnect(apn, simUser, simPass);
 #endif
 
   DBG("Waiting for network...");
@@ -302,15 +299,15 @@ void loop() {
 
   if (modem.isNetworkConnected()) { DBG("Network connected"); }
 
-#if TINY_GSM_TEST_GPRS
+#if TINY_GSM_TEST_CELLULAR_DATA
   DBG("Connecting to", apn);
-  if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
+  if (!modem.dataConnect(apn, simUser, simPass)) {
     delay(10000);
     return;
   }
 
-  bool res = modem.isGprsConnected();
-  DBG("GPRS status:", res ? "connected" : "not connected");
+  bool res = modem.isDataConnected();
+  DBG("Cellular Data status:", res ? "connected" : "not connected");
   (void)res;
 
   String ccid = modem.getSimCCID();
@@ -403,7 +400,7 @@ void loop() {
     DBG(GF("Sending a raw HTTP GET request as a single write command."));
 
     // make a buffer to contain the whole request
-    char request[strlen(resource) + strlen(server) + 45] = {
+    char request[sizeof(resource) + sizeof(server) + 45] = {
         '\0',
     };
     // concatenate the request
@@ -452,7 +449,9 @@ void loop() {
 
 #if TINY_GSM_TEST_SSL && \
     (defined TINY_GSM_MODEM_ESP32 || defined TINY_GSM_MODEM_ESP8266)
+  DBG(GF("Setting timezone..."));
   modem.setTimeZone(-5);
+  DBG(GF("Waiting for time sync..."));
   modem.waitForTimeSync();
 #endif
 
@@ -460,7 +459,9 @@ void loop() {
   TinyGsmClientSecure secureClient(modem, (uint8_t)0);
 
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
-  secureClient.setSSLAuthMode(SSLAuthMode::CA_VALIDATION);
+  TinyGsmSecureContext secureContext(modem, (uint8_t)0);
+  DBG(GF("Setting SSL authentication mode..."));
+  secureContext.setSSLAuthMode(SSLAuthMode::CA_VALIDATION);
 
 // For Espressif modules, only two certificate sets are supported and the
 // certificates must be named "client_ca.{0|1}", "client_cert.{0|1}", or
@@ -516,32 +517,49 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 -----END CERTIFICATE-----
 )EOF";
 
-  modem.loadCertificate(root_ca_name, isrgrootx1_certificate,
-                        strlen(isrgrootx1_certificate));
+  DBG(GF("\nLoading root CA certificate..."));
+  modem.loadCertificate(root_ca_name, GFP(isrgrootx1_certificate),
+                        sizeof(isrgrootx1_certificate) - 1);
+  DBG(GF("\n\nConverting root CA certificate..."));
   modem.convertCACertificate(root_ca_name);
-  // modem.loadCertificate(client_cert_name, client_cert,
-  //                       strlen(client_cert));
-  // modem.loadCertificate(client_key_name, client_key,
-  //                       strlen(client_key));
-  // modem.convertClientCertificates(client_cert_name, client_key_name);
-  // modem.convertPSKandID(psk_name, psk_hint_name);
+#if 0
+  DBG(GF("Loading client certificate..."));
+  modem.loadCertificate(client_cert_name, client_cert,
+                        strlen(client_cert));
+  DBG(GF("Loading client key..."));
+  modem.loadCertificate(client_key_name, client_key,
+                        strlen(client_key));
+  DBG(GF("Converting client certificate..."));
+  modem.convertClientCertificates(client_cert_name, client_key_name);
+  DBG(GF("Converting PSK and ID..."));
+  modem.convertPSKandID(psk_name, psk_hint_name);
+#endif
 
-#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_BG96)
+#if !defined(TINY_GSM_MODEM_ESP32) && !defined(TINY_GSM_MODEM_BG96) &&     \
+    !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600) && \
+    !defined(TINY_GSM_MODEM_XBEE)
+  DBG(GF("Deleting root CA certificate..."));
   modem.deleteCertificate(root_ca_name);
 #endif
 #endif
 
-  secureClient.setCACertName(root_ca_name);
-  // secureClient.setClientCertName(client_cert_name);
-  // secureClient.setPrivateKeyName(client_key_name);
-  // secureClient.setPreSharedKey(pre_shared_key_hint_text,
-  // pre_shared_key_text);
+  DBG(GF("Setting the CA certificate name in the secure context..."));
+  secureContext.setCACertName(root_ca_name);
+#if 0
+  DBG(GF("Setting the client credentials in the secure context..."));
+  secureContext.setClientCredentials(client_cert_name, client_key_name);
+  DBG(GF("Setting the pre-shared key in the secure context..."));
+  secureContext.setPreSharedKey(pre_shared_key_hint_text, pre_shared_key_text);
+#endif
+
 #endif
 
 #if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS) && \
     !defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
   // if we didn't actually load a certificate, don't use it
-  secureClient.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
+  DBG(GF("Setting SSL authentication mode to not validate because certificates "
+         "weren't loaded..."));
+  secureContext.setSSLAuthMode(SSLAuthMode::NO_VALIDATION);
 #endif
 
   DBG("Connecting securely to", server_ssl);
@@ -549,7 +567,7 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
     DBG("... failed");
   } else {
     // make a buffer to contain the whole request
-    char request[strlen(resource_ssl) + strlen(server_ssl) + 45] = {
+    char request[sizeof(resource_ssl) + sizeof(server_ssl) + 45] = {
         '\0',
     };
     // concatenate the request
@@ -562,7 +580,7 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
     strcat(request, "Connection: close\r\n\r\n");
     // Write the request out
     secureClient.write((uint8_t*)request, strlen(request));
-    client.flush();
+    secureClient.flush();
 
     // Wait for data to arrive
     uint32_t startS = millis();
@@ -721,7 +739,7 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 // Test the Network time functions
 #if TINY_GSM_TEST_NTP && defined TINY_GSM_MODEM_HAS_NTP
   DBG("Asking modem to sync with NTP");
-  modem.NTPServerSync("pool.ntp.org", -5);
+  modem.NTPServerSync("pool.ntp.org", -20);
 #endif
 
 #if TINY_GSM_TEST_TIME && defined TINY_GSM_MODEM_HAS_TIME
@@ -772,13 +790,13 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 
 #if TINY_GSM_POWERDOWN
 
-#if TINY_GSM_TEST_GPRS
-  modem.gprsDisconnect();
+#if TINY_GSM_TEST_CELLULAR_DATA
+  modem.dataDisconnect();
   delay(5000L);
-  if (!modem.isGprsConnected()) {
-    DBG("GPRS disconnected");
+  if (!modem.isDataConnected()) {
+    DBG("Cellular data disconnected");
   } else {
-    DBG("GPRS disconnect: Failed.");
+    DBG("Cellular Data disconnect: Failed.");
   }
 #endif
 

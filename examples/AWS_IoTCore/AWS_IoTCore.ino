@@ -67,10 +67,6 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 921600
 
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
-// #define TINY_GSM_YIELD_MS 2
-
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
 #include "aws_iot_config.h"
@@ -81,16 +77,16 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 
 // Define how you're planning to connect to the internet.
 // This is only needed for this example, not in other code.
-#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_CELLULAR_DATA true
 #define TINY_GSM_USE_WIFI false
 
 // set GSM PIN, if any
-#define GSM_PIN ""
+#define SIM_PIN ""
 
-// Your GPRS credentials, if any
-const char apn[]      = "YourAPN";
-const char gprsUser[] = "";
-const char gprsPass[] = "";
+// Your SIM card credentials, if any
+const char apn[]     = "YourAPN";
+const char simUser[] = "";
+const char simPass[] = "";
 
 // Your WiFi connection credentials, if applicable
 const char wifiSSID[] = "YourSSID";
@@ -152,16 +148,16 @@ const char* client_key_name  = THING_NAME "-private-key.pem.key";
 #endif
 
 // Just in case someone defined the wrong thing..
-#if TINY_GSM_USE_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
-#undef TINY_GSM_USE_GPRS
+#if TINY_GSM_USE_CELLULAR_DATA && not defined TINY_GSM_MODEM_HAS_CELLULAR_DATA
+#undef TINY_GSM_USE_CELLULAR_DATA
 #undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_GPRS false
+#define TINY_GSM_USE_CELLULAR_DATA false
 #define TINY_GSM_USE_WIFI true
 #endif
 #if TINY_GSM_USE_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
-#undef TINY_GSM_USE_GPRS
+#undef TINY_GSM_USE_CELLULAR_DATA
 #undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_CELLULAR_DATA true
 #define TINY_GSM_USE_WIFI false
 #endif
 
@@ -173,22 +169,18 @@ TinyGsm        modem(debugger);
 TinyGsm modem(SerialAT);
 #endif
 
-TinyGsmClientSecure secureClient(modem, (uint8_t)0);
-PubSubClient        mqtt(secureClient);
+TinyGsmSecureContext secureContext(modem, (uint8_t)0);
+TinyGsmClientSecure  secureClient(modem, (uint8_t)0);
+PubSubClient         mqtt(secureClient);
 
 #define LED_PIN 13
 int ledStatus = LOW;
-
-// ======================== CERTIFICATE NAMES ========================
-
-const char* root_ca     = AWS_SERVER_CERTIFICATE;
-const char* client_cert = AWS_CLIENT_CERTIFICATE;
-const char* client_key  = AWS_CLIENT_PRIVATE_KEY;
 
 uint32_t lastReconnectAttempt = 0;
 uint32_t lastStatusPublished  = 0;
 bool     setupSuccess         = false;
 bool     certificateSuccess   = false;
+bool     networkSuccess       = false;
 
 bool wakeModem() {
   // !!!!!!!!!!!
@@ -230,7 +222,7 @@ void printModemInfo() {
   SerialMon.print("Modem Serial: ");
   SerialMon.println(modemSerial);
 #endif
-#if TINY_GSM_USE_GPRS
+#if TINY_GSM_USE_CELLULAR_DATA
   String modemIMEI = modem.getIMEI();
   SerialMon.print("Modem IMEI: ");
   SerialMon.println(modemIMEI);
@@ -249,8 +241,9 @@ bool setupCertificates() {
   bool ca_cert_success = true;
   // add the server's certificate authority certificate to the modem
   SerialMon.print("Loading Certificate Authority Certificate");
-  ca_cert_success &= modem.loadCertificate(root_ca_name, root_ca,
-                                           strlen(root_ca));
+  ca_cert_success &= modem.loadCertificate(root_ca_name,
+                                           GFP(AWS_SERVER_CERTIFICATE),
+                                           sizeof(AWS_SERVER_CERTIFICATE) - 1);
   delay(250);
   if (!ca_cert_success) {
     SerialMon.println(" ...failed to load CA certificate!");
@@ -285,8 +278,9 @@ bool setupCertificates() {
   bool client_cert_success = true;
   // add the client's certificate and private key to the modem
   SerialMon.print("Loading Client Certificate");
-  client_cert_success &= modem.loadCertificate(client_cert_name, client_cert,
-                                               strlen(client_cert));
+  client_cert_success &=
+      modem.loadCertificate(client_cert_name, GFP(AWS_CLIENT_CERTIFICATE),
+                            sizeof(AWS_CLIENT_CERTIFICATE) - 1);
   delay(250);
 #if !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600)
   if (print_certs) {
@@ -296,8 +290,9 @@ bool setupCertificates() {
   }
 #endif
   SerialMon.print(" and Client Private Key ");
-  client_cert_success &= modem.loadCertificate(client_key_name, client_key,
-                                               strlen(client_key));
+  client_cert_success &=
+      modem.loadCertificate(client_key_name, GFP(AWS_CLIENT_PRIVATE_KEY),
+                            sizeof(AWS_CLIENT_PRIVATE_KEY) - 1);
   delay(250);
 #if !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_SIM7600)
   if (print_certs) {
@@ -330,16 +325,15 @@ bool setupCertificates() {
   // ================= SET CERTIFICATES FOR THE CONNECTION =================
   // AWS IoT Core requires mutual authentication
   DBG("Requiring mutual authentication on socket");
-  secureClient.setSSLAuthMode(SSLAuthMode::MUTUAL_AUTHENTICATION);
+  secureContext.setSSLAuthMode(SSLAuthMode::MUTUAL_AUTHENTICATION);
   DBG("Requesting TLS 1.3 on socket");
-  secureClient.setSSLVersion(SSLVersion::TLS1_3);
-  // attach the uploaded certificates to the secure client
+  secureContext.setSSLVersion(SSLVersion::TLS1_3);
+  // attach the uploaded certificates to the secure context
   DBG("Assigning", root_ca_name, "as certificate authority on socket");
-  secureClient.setCACertName(root_ca_name);
+  secureContext.setCACertName(root_ca_name);
   DBG("Assigning", client_cert_name, "as client certificate on socket");
-  secureClient.setClientCertName(client_cert_name);
   DBG("Assigning", client_key_name, "as client key on socket");
-  secureClient.setPrivateKeyName(client_key_name);
+  secureContext.setClientCredentials(client_cert_name, client_key_name);
 
   return ca_cert_success & client_cert_success;
 #else
@@ -351,7 +345,7 @@ String createStatusMessage() {
   String msgStatus = "{\"clientId\":\"" THING_NAME "\"";
   msgStatus += ",\"LED status\":\"" + String(ledStatus) + "\"";
 
-#if TINY_GSM_USE_GPRS
+#if TINY_GSM_USE_CELLULAR_DATA
   String modemIMEI = modem.getIMEI();
   msgStatus += ",\"modemIMEI\":\"" + modemIMEI + "\"";
   String modemSimCCID = modem.getSimCCID();
@@ -385,7 +379,7 @@ String createInitMessage() {
   String modemSerial = modem.getModemSerialNumber();
   msgInit += ",\"modemSerial\":\"" + modemSerial + "\"";
 #endif
-#if TINY_GSM_USE_GPRS
+#if TINY_GSM_USE_CELLULAR_DATA
   String modemIMEI = modem.getIMEI();
   msgInit += ",\"modemIMEI\":\"" + modemIMEI + "\"";
   String modemIMSI = modem.getIMSI();
@@ -509,11 +503,11 @@ bool setupModem() {
 
   printModemInfo();
 
-#if TINY_GSM_USE_GPRS
+#if TINY_GSM_USE_CELLULAR_DATA
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && modem.getSimStatus() != SIM_READY) {
+  if (SIM_PIN && modem.getSimStatus() != SIM_READY) {
     // simUnlock will do nothing if the pin is empty
-    success &= modem.simUnlock(GSM_PIN);
+    success &= modem.simUnlock(SIM_PIN);
   }
 #endif
 
@@ -534,17 +528,10 @@ bool setupNetwork() {
   SerialMon.println(" ...success");
 #endif
 
-#if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_XBEE
-  // The XBee must run the gprsConnect function BEFORE waiting for network!
+#if TINY_GSM_USE_CELLULAR_DATA && defined TINY_GSM_MODEM_XBEE
+  // The XBee must run the dataConnect function BEFORE waiting for network!
   // All other modules must wait for network first.
-  success &= modem.gprsConnect(apn, gprsUser, gprsPass);
-#endif
-
-#ifdef TINY_GSM_MODEM_HAS_NTP
-  // enable/force time sync with NTP server
-  // This is **REQUIRED** for validated SSL connections
-  DBG("Enabling time sync with NTP server");
-  modem.NTPServerSync("pool.ntp.org", -4);
+  success &= modem.dataConnect(apn, simUser, simPass);
 #endif
 
   return success;
@@ -564,20 +551,33 @@ bool getInternetConnection() {
     if (modem.isNetworkConnected()) { SerialMon.println("Network connected"); }
   }
 
-#if TINY_GSM_USE_GPRS
-  // Make sure GPRS/EPS is connected
-  // For GPRS / EPS we need to connect to the GPRS/EPS network in addition to
+#if TINY_GSM_USE_CELLULAR_DATA
+  // Make sure cellular data is connected
+  // For cellular data we need to connect to the cellular network in addition to
   // the base network connection.
-  if (!modem.isGprsConnected()) {
-    SerialMon.println("GPRS disconnected!");
+  if (!modem.isDataConnected()) {
+    SerialMon.println("Cellular data disconnected!");
     SerialMon.print(F("Connecting to "));
     SerialMon.println(apn);
-    if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-      SerialMon.println(" ...failed to connect to GPRS!");
+    if (!modem.dataConnect(apn, simUser, simPass)) {
+      SerialMon.println(" ...failed to connect to cellular data!");
       delay(15000L);
       return false;
     }
-    if (modem.isGprsConnected()) { SerialMon.println("GPRS reconnected"); }
+    if (modem.isDataConnected()) {
+      SerialMon.println("Cellular data reconnected");
+    }
+  }
+#endif
+
+#ifdef TINY_GSM_MODEM_HAS_NTP
+  // enable/force time sync with NTP server
+  // This is **REQUIRED** for validated SSL connections
+  static bool timeSyncSuccess = false;
+  if (!timeSyncSuccess) {
+    DBG("Enabling time sync with NTP server");
+    timeSyncSuccess = modem.NTPServerSync("pool.ntp.org", -16);
+    if (!timeSyncSuccess) { return false; }
   }
 #endif
 
@@ -614,7 +614,7 @@ void setup() {
   mqtt.setCallback(mqttCallback);
 
   DBG("TINY_GSM_USE_WIFI:", TINY_GSM_USE_WIFI);
-  DBG("TINY_GSM_USE_GPRS:", TINY_GSM_USE_GPRS);
+  DBG("TINY_GSM_USE_CELLULAR_DATA:", TINY_GSM_USE_CELLULAR_DATA);
 
   wakeModem();
 
@@ -640,7 +640,8 @@ void setup() {
   SerialMon.println(" ...success");
 
   SerialMon.println("Setting up network...");
-  if (!setupNetwork()) {
+  networkSuccess = setupNetwork();
+  if (!networkSuccess) {
     SerialMon.println(" ...failed to set up network!");
     delay(15000L);
     return;
@@ -670,6 +671,17 @@ void loop() {
     certificateSuccess = setupCertificates();
     if (!certificateSuccess) {
       SerialMon.println(" ...failed to set up certificates!");
+      delay(15000L);
+      return;
+    }
+    SerialMon.println(" ...success");
+  }
+
+  if (!networkSuccess) {
+    SerialMon.println("Network setup failed, re-trying...");
+    networkSuccess = setupNetwork();
+    if (!networkSuccess) {
+      SerialMon.println(" ...failed to set up network!");
       delay(15000L);
       return;
     }

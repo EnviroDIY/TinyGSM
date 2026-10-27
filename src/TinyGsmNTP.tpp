@@ -50,7 +50,8 @@ class TinyGsmNTP {
    * returns a boolean indicating success or failure.
    *
    * @param server The NTP server to use
-   * @param TimeZone The timezone offset
+   * @param TimeZone The timezone offset from UTC, in quarter-hours (15-minute
+   * increments)
    *
    * @return True if the synchronization was successful, false otherwise.
    */
@@ -124,7 +125,7 @@ class TinyGsmNTP {
    */
 
   bool NTPServerSyncImpl(const char* server, int TimeZone) {
-    // Set GPRS bearer profile to associate with NTP sync
+    // Set bearer profile to associate with NTP sync
     // this is allowed to fail; it's not supported by all modules
     thisModem().sendAT(GF("+CNTPCID=1"));
     thisModem().waitResponse(10000L);

@@ -58,4 +58,4 @@ jobs:
     secrets:
       PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
     with:
-      include_dependencies: ${{ ( true ) || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true') }}
+      include_dependencies: ${{ github.event_name != 'workflow_dispatch' || inputs.include_dependencies }}

@@ -32,8 +32,8 @@
 #include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
-// management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
-// so as not to waste space.
+// management yet. Define TINY_GSM_MODEM_HAS_SSL here and do no include the SSL
+// module.
 // See the example examples/more/SIM800_SslSetCert/SIM800_SslSetCert.ino for an
 // example of how to manage the certificates
 #if !defined(TINY_GSM_MODEM_SIM900)
@@ -43,7 +43,7 @@
 #endif
 #endif
 
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGSMLocation.tpp"
@@ -100,11 +100,22 @@ struct TinyGsmSim800TcpConfig
           /*muxMode*/ TinyGsmTcpMuxMode::Static,
           /*muxCount*/ 8> {};
 
+#if 0
+/**
+ * @brief SSL behavior and limits for SIMCom SIM800 variants.
+ * This library does not support selecting or modifying the SSL contexts in any
+ * way.  The module will always use the default context.
+ * @ingroup simcom_sim800
+ */
+struct TinyGsmSim800SslConfig : public TinyGsmSslConfigPreset<
+                                   /*contextCount*/ ?> {};
+#endif
+
 /// Class for the SIMCOM SIM800 and SIM900 (with some limitations)
 /// @ingroup simcom_sim800
 class TinyGsmSim800
     : public TinyGsmModem<TinyGsmSim800, TinyGsmSim800ModemConfig>,
-      public TinyGsmGPRS<TinyGsmSim800>,
+      public TinyGsmCellularData<TinyGsmSim800>,
       public TinyGsmTCP<TinyGsmSim800, TinyGsmSim800TcpConfig>,
       public TinyGsmCalling<TinyGsmSim800>,
       public TinyGsmSMS<TinyGsmSim800>,
@@ -113,7 +124,7 @@ class TinyGsmSim800
       public TinyGsmNTP<TinyGsmSim800>,
       public TinyGsmBattery<TinyGsmSim800> {
   friend class TinyGsmModem<TinyGsmSim800, TinyGsmSim800ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmSim800>;
+  friend class TinyGsmCellularData<TinyGsmSim800>;
   friend class TinyGsmTCP<TinyGsmSim800, TinyGsmSim800TcpConfig>;
   friend class GsmClient<TinyGsmSim800, TinyGsmSim800TcpConfig>;
   friend class TinyGsmCalling<TinyGsmSim800>;
@@ -239,7 +250,7 @@ class TinyGsmSim800
     using TcpConfig = TinyGsmSim800TcpConfig;
 
     /*
-     * Client constructors and initialization
+     * Secure client constructors and initialization
      */
     /**
      * @brief Create a new secured TCP (SSL) client.
@@ -417,11 +428,16 @@ class TinyGsmSim800
   // addition to adding the functions here):
   //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
   //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  //  - Add `public TinyGsmSSL<TinyGsmSim800>,` to the constructor's initializer
-  //  list
-  //  - Add `friend class TinyGsmSSL<TinyGsmSim800>;` to the friend list
+  //  - Remove the #if 0 / #endif statements bracketing the SSL configuration
+  //  structure.
+  //  - Add `public TinyGsmSSL<TinyGsmSim800, TinyGsmSim800SslConfig>,` to the
+  //  constructor's initializer list
+  //  - Add `friend class TinyGsmSSL<TinyGsmSim800, TinyGsmSim800SslConfig>;` to
+  //  the friend list
   //  - Make the secure client inherit from the secure client class in the SSL
   //  template.
+  //  - Create an inner secure context class inheriting from
+  //  TinyGsmSSLContext<TinyGsmSim800, TinyGsmSim800SslConfig>
 
   /*
    * Wifi functions
@@ -429,11 +445,11 @@ class TinyGsmSim800
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();
 
     // Bearer settings for applications based on IP
     // Set the connection type to GPRS
@@ -470,7 +486,7 @@ class TinyGsmSim800
     sendAT(GF("+SAPBR=2,1"));
     if (waitResponse(30000L) != 1) { return false; }
 
-    // Attach to GPRS
+    // Attach to Packet Domain service
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1) { return false; }
 
@@ -498,20 +514,22 @@ class TinyGsmSim800
     sendAT(GF("+CIFSR;E0"));
     if (waitResponse(10000L) != 1) { return false; }
 
+#if TINY_GSM_USE_PUBLIC_DNS
     // Configure Domain Name Server (DNS)
     sendAT(GF("+CDNSCFG=\"8.8.8.8\",\"8.8.4.4\""));
     if (waitResponse() != 1) { return false; }
+#endif
 
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // Shut the TCP/IP connection
     // CIPSHUT will close *all* open connections
     sendAT(GF("+CIPSHUT"));
     if (waitResponse(60000L) != 1) { return false; }
 
-    sendAT(GF("+CGATT=0"));  // Detach from GPRS
+    sendAT(GF("+CGATT=0"));  // Detach from Packet Domain service
     if (waitResponse(60000L) != 1) { return false; }
 
     return true;
@@ -747,7 +765,11 @@ class TinyGsmSim800
     if (isValidMux(ret_mux)) {
       // Move the data to the socket buffer of the returned mux as long as the
       // returned mux is valid, even if it doesn't match the expected mux.
+#ifdef TINY_GSM_USE_HEX
+      len_read = moveCharsFromStreamToFifo<true>(ret_mux, len_reported);
+#else
       len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
+#endif
     }
     waitResponse();  // ending OK; the waitResponse function will toss all the
                      // characters before the OK if the mux was invalid

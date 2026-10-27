@@ -6,8 +6,7 @@
 
 // Get the broker host/endpoint from AWS IoT Core / Connect / Domain
 // Configurations
-// NOTE: You can ignore linter errors about TINY_GSM_PROGMEM
-static const char AWS_IOT_ENDPOINT[] TINY_GSM_PROGMEM =
+static const char AWS_IOT_ENDPOINT[] =
     "YOUR_ENDPOINT-ats.iot.YOUR_REGION.amazonaws.com";
 // the client ID should be the name of your "thing" in AWS IoT Core
 #define THING_NAME "YOUR_THING_NAME"

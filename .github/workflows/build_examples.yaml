@@ -20,4 +20,3 @@ jobs:
       pio_envs_to_ignore: 'esp32-c6-devkitm-1,arduino_nano_esp32'
       log_grouping_fields: 'compiler,board,example,inline_defines,compiler_flags'
       job_grouping_fields: 'compiler,board,example,compiler_flags'
-    secrets: inherit

@@ -29,7 +29,7 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmGPS.tpp"
@@ -93,7 +93,7 @@ struct TinyGsmSim5360TcpConfig
 /// @ingroup simcom_sim5360
 class TinyGsmSim5360
     : public TinyGsmModem<TinyGsmSim5360, TinyGsmSim5360ModemConfig>,
-      public TinyGsmGPRS<TinyGsmSim5360>,
+      public TinyGsmCellularData<TinyGsmSim5360>,
       public TinyGsmTCP<TinyGsmSim5360, TinyGsmSim5360TcpConfig>,
       public TinyGsmSMS<TinyGsmSim5360>,
       public TinyGsmGSMLocation<TinyGsmSim5360>,
@@ -103,7 +103,7 @@ class TinyGsmSim5360
       public TinyGsmBattery<TinyGsmSim5360>,
       public TinyGsmTemperature<TinyGsmSim5360> {
   friend class TinyGsmModem<TinyGsmSim5360, TinyGsmSim5360ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmSim5360>;
+  friend class TinyGsmCellularData<TinyGsmSim5360>;
   friend class TinyGsmTCP<TinyGsmSim5360, TinyGsmSim5360TcpConfig>;
   friend class GsmClient<TinyGsmSim5360, TinyGsmSim5360TcpConfig>;
   friend class TinyGsmSMS<TinyGsmSim5360>;
@@ -385,11 +385,11 @@ class TinyGsmSim5360
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();  // Make sure we're not connected first
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();  // Make sure we're not connected first
 
     // Define the PDP context
 
@@ -446,13 +446,15 @@ class TinyGsmSim5360
     //            = 1 (+RECEIVE,<link num>,<data length>)
     // AsyncMode = sets mode of executing commands
     //           = 0 (synchronous command executing)
-    // TimeoutVal = minimum retransmission timeout in milliseconds = 75000
-    sendAT(GF("+CIPCCFG=10,0,0,0,1,0,75000"));
+    // TimeoutVal = minimum retransmission timeout in milliseconds
+    sendAT(GF("+CIPCCFG=10,0,0,0,1,0,"),
+           TcpConfig::kRetransmissionTimeoutS * 1000L);
     if (waitResponse() != 1) { return false; }
 
     // Configure timeouts for opening and closing sockets
     // AT+CIPTIMEOUT=<netopen_timeout>, <cipopen_timeout>, <cipsend_timeout>
-    sendAT(GF("+CIPTIMEOUT="), 75000, ',', 15000, ',', 15000);
+    sendAT(GF("+CIPTIMEOUT="), 75000, ',', TcpConfig::kConnectTimeoutS * 1000L,
+           ',', TcpConfig::kSendTimeoutS * 1000L);
     waitResponse();
 
     // Start the socket service
@@ -468,7 +470,7 @@ class TinyGsmSim5360
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // Close any open sockets
     for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; mux++) {
       GsmClientSim5360* sock = sockets[mux];
@@ -479,12 +481,15 @@ class TinyGsmSim5360
     // Note: all sockets should be closed first - on 3G/4G models the sockets
     // must be closed manually
     sendAT(GF("+NETCLOSE"));
-    if (waitResponse(60000L, GF("+NETCLOSE: 0")) != 1) { return false; }
+    waitResponse(60000L, GF("+NETCLOSE: 0"));  // allowed to fail
+
+    sendAT(GF("+CGATT=0"));  // Detach from Packet Domain service
+    if (waitResponse(60000L) != 1) { return false; }
 
     return true;
   }
 
-  bool isGprsConnectedImpl() {
+  bool isDataConnectedImpl() {
     sendAT(GF("+NETOPEN?"));
     // May return +NETOPEN: 1, 0.  We just confirm that the first number is 1
     if (waitResponse(GF("+NETOPEN: 1")) != 1) { return false; }
@@ -612,19 +617,22 @@ class TinyGsmSim5360
     // UTC Time. Output format is hhmmss.s
     // Again, read the whole time portion into a single float, then parse that
     // into the hour, minute, and second portions.
-    float    itime     = streamGetFloatBefore(',');
-    uint32_t itime_int = static_cast<uint32_t>(itime * 1000.0f);
-    // ^^ Multiply by 1000 to avoid floating point modulo
-    ihour = static_cast<int16_t>(itime_int / 10000000);  // Two digit hour
-    imin =
-        static_cast<int16_t>((itime_int / 100000) % 100);  // Two digit minute
-    secondWithSS = static_cast<float>(
-        (itime_int % 100000) / 1000.0);  // Two digit second with subseconds
+    float itime = streamGetFloatBefore(',');
+    if (itime >= 0.0F) {
+      uint32_t itime_int      = static_cast<uint32_t>(itime);
+      float    itime_fraction = itime - static_cast<float>(itime_int);
+      ihour = static_cast<int16_t>(itime_int / 10000);       // Two digit hour
+      imin = static_cast<int16_t>((itime_int / 100) % 100);  // Two digit minute
+      secondWithSS = static_cast<float>(itime_int % 100) + itime_fraction;
+    }
 
     ialt   = streamGetFloatBefore(',');  // MSL Altitude. Unit is meters
     ispeed = streamGetFloatBefore(',');  // Speed Over Ground. Unit is knots.
 
-    // Set pointers
+    // Set pointers **even if the fix is not valid!!**
+    // The module returns avlues even without a valid GNSS fix, so we set the
+    // pointers regardless. Allow the user to decide whether to use the data
+    // based on the fix status.
     if (lat != nullptr)
       *lat = (floor(ilat / 100) + fmod(ilat, 100.) / 60) *
           (north == 'N' ? 1 : -1);
@@ -790,7 +798,11 @@ class TinyGsmSim5360
     if (isValidMux(ret_mux)) {
       // Move the data to the socket buffer of the returned mux as long as the
       // returned mux is valid, even if it doesn't match the expected mux.
+#ifdef TINY_GSM_USE_HEX
+      len_read = moveCharsFromStreamToFifo<true>(ret_mux, len_reported);
+#else
       len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
+#endif
       // update the amount remaining for the returned mux, even if it doesn't
       // match the expected mux.
       sockets[ret_mux]->sock_available = len_remaining >= 0 ? len_remaining : 0;
@@ -875,7 +887,7 @@ class TinyGsmSim5360
       // Need to close all open sockets and release the network library.
       // User will then need to reconnect.
       DBG("### Network error!");
-      if (!isGprsConnected()) { gprsDisconnect(); }
+      if (!isDataConnected()) { dataDisconnect(); }
       data = "";
       return true;
     }

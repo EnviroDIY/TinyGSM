@@ -1,20 +1,31 @@
 /**
- * @file       TinyGsmGPRS.tpp
- * @brief      GPRS and packet-data connection helper mixin.
+ * @file       TinyGsmCellularData.tpp
+ * @brief      Cellular data (packet-data) connection helper mixin.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMGPRS_TPP_
-#define SRC_TINYGSMGPRS_TPP_
+#ifndef SRC_TinyGsmCellularData_TPP_
+#define SRC_TinyGsmCellularData_TPP_
 
 #include "TinyGsmCommon.h"
 
 #ifndef TINY_GSM_MODEM_HAS_GPRS
-/// flag to indicate that the modem has GPRS functions
+/// flag to indicate that the modem has cellular data functions
+/// This is called `GPRS` for historical reasons.
 #define TINY_GSM_MODEM_HAS_GPRS
+#endif
+
+#ifndef TINY_GSM_MODEM_HAS_CELLULAR_DATA
+/// flag to indicate that the modem has cellular data functions
+#define TINY_GSM_MODEM_HAS_CELLULAR_DATA
+#endif
+
+#if defined(DOXYGEN)
+/** Override network-assigned DNS with Google Public DNS. */
+#define TINY_GSM_USE_PUBLIC_DNS 0
 #endif
 
 /// SIM card status
@@ -30,15 +41,17 @@ enum SimStatus {
 };
 
 /**
- * @class TinyGsmGPRS
- * @brief The CRTP parent class for GPRS functions.
+ * @class TinyGsmCellularData
+ * @brief The CRTP parent class for SIM card, cellular network and cellular data
+ * functions.
  * @tparam modemType The derived modem class
  */
 template <class modemType>
-class TinyGsmGPRS {
+class TinyGsmCellularData {
  public:
   /// Compile-time capability flag indicating GPRS/cellular data support
-  static constexpr bool hasGPRS = true;
+  static constexpr bool hasGPRS         = true;
+  static constexpr bool hasCellularData = true;
 
   /* =========================================== */
   /* =========================================== */
@@ -93,38 +106,67 @@ class TinyGsmGPRS {
   /**@}*/
 
   /**
-   * @anchor gprs_functions
-   * @name GPRS functions
+   * @anchor cell_data_functions
+   * @name Cellular data functions
+   * @remark These functions are labeled `GPRS` for historical reasons - when
+   * the library was first developed, GPRS was the primary cellular data
+   * technology.
    */
   /**@{*/
 
   /**
-   * @brief Connect to a GPRS network.
+   * @brief Connect to a cellular data network.
    *
-   * @param apn The Access Point Name (APN) of the network.
+   * @param apn The Access Point Name (APN) for the network.
    * @param user The username for the APN (optional).
    * @param pwd The password for the APN (optional).
    *
    * @return True if the connection was successful, false otherwise.
    */
-  bool gprsConnect(const char* apn, const char* user = nullptr,
+  bool dataConnect(const char* apn, const char* user = nullptr,
                    const char* pwd = nullptr) {
-    return thisModem().gprsConnectImpl(apn, user, pwd);
+    return thisModem().dataConnectImpl(apn, user, pwd);
   }
   /**
-   * @brief Disconnect from the GPRS network.
+   * @brief Disconnect from the cellular data network.
    * @return True if the disconnection was successful, false otherwise.
    */
-  bool gprsDisconnect() {
-    return thisModem().gprsDisconnectImpl();
+  bool dataDisconnect() {
+    return thisModem().dataDisconnectImpl();
   }
   /**
-   * @brief Check if currently attached to GPRS/EPS service.
+   * @brief Check if currently attached to the cellular data network.
    * @return True if connected, false otherwise.
    */
-  bool isGprsConnected() {
-    return thisModem().isGprsConnectedImpl();
+  bool isDataConnected() {
+    return thisModem().isDataConnectedImpl();
   }
+
+  /**
+   * @copydoc dataConnect()
+   * This is an overload for historical reasons.  Use `dataConnect()` instead.
+   */
+  bool gprsConnect(const char* apn, const char* user = nullptr,
+                   const char* pwd = nullptr) {
+    return thisModem().dataConnectImpl(apn, user, pwd);
+  }
+  /**
+   * @copydoc dataDisconnect()
+   * This is an overload for historical reasons.  Use `dataDisconnect()`
+   * instead.
+   */
+  bool gprsDisconnect() {
+    return thisModem().dataDisconnectImpl();
+  }
+  /**
+   * @copydoc isDataConnected()
+   * This is an overload for historical reasons.  Use `isDataConnected()`
+   * instead.
+   */
+  bool isGprsConnected() {
+    return thisModem().isDataConnectedImpl();
+  }
+
   /**
    * @brief Get the current network operator.
    * @return The current network operator as a String.
@@ -151,7 +193,7 @@ class TinyGsmGPRS {
 
  protected:
   // destructor (protected!)
-  ~TinyGsmGPRS() {}
+  ~TinyGsmCellularData() {}
 
   /*
    * CRTP Helper
@@ -236,15 +278,15 @@ class TinyGsmGPRS {
   }
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+  bool dataConnectImpl(const char* apn, const char* user = nullptr,
                        const char* pwd = nullptr) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool gprsDisconnectImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool dataDisconnectImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool isGprsConnectedImpl() {
+  bool isDataConnectedImpl() {
     thisModem().sendAT(GF("+CGATT?"));
     if (thisModem().waitResponse(GF("+CGATT:")) != 1) { return false; }
     int8_t res = thisModem().streamGetIntBefore('\n');
@@ -267,4 +309,4 @@ class TinyGsmGPRS {
   String getProviderImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
-#endif  // SRC_TINYGSMGPRS_TPP_
+#endif  // SRC_TinyGsmCellularData_TPP_

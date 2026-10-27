@@ -73,8 +73,8 @@ void setup() {
         F("***********************************************************"));
     SerialMon.println(F(" Cannot initialize modem!"));
     SerialMon.println(
-        F("   Use File -> Examples -> TinyGSM -> tools -> AT_Debug"));
-    SerialMon.println(F("   to find correct configuration"));
+        +F("   Use the extras/tools/AT_Debug sketch in the TinyGSM library "
+           "folder to find correct configuration"));
     SerialMon.println(
         F("***********************************************************"));
     return;

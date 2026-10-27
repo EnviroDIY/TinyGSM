@@ -35,7 +35,7 @@
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGPS.tpp"
@@ -77,11 +77,7 @@ constexpr char TinyGsmBG96ModemConfig::MODEM_MODEL[] __attribute__((weak));
 /**
  * @brief TCP behavior and limits for Quectel BG96 and BG95.
  *
- * The BG95/BG96 supports 12 sockets (0-11); any of them can be SSL
- *
- * The BG95/BG96 also supports 6 SSL contexts (0-5)
- * The SSL context is a collection of SSL settings, not the connection
- * identifier. This library always uses SSL context 0.
+ * The BG95/BG96 supports 12 sockets (0-11); any of them can be SSL.
  *
  * When sending  data QISEND and QSSLSEND both accept up to 1460 bytes of input.
  *
@@ -95,12 +91,21 @@ struct TinyGsmBG96TcpConfig
           /*sendMaxSize*/ 1460,
           /*connectTimeoutS*/ 150> {};
 
+/**
+ * @brief SSL behavior and limits for Quectel BG96 and BG95.
+ *
+ * The module supports 6 SSL contexts (0-5).
+ * @ingroup quectel_bg96
+ */
+struct TinyGsmBG96SslConfig : public TinyGsmSslConfigPreset<
+                                  /*contextCount*/ 6> {};
+
 /// Class for the Quectel BG96 and BG95
 /// @ingroup quectel_bg96
 class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
-                    public TinyGsmGPRS<TinyGsmBG96>,
+                    public TinyGsmCellularData<TinyGsmBG96>,
                     public TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>,
-                    public TinyGsmSSL<TinyGsmBG96>,
+                    public TinyGsmSSL<TinyGsmBG96, TinyGsmBG96SslConfig>,
                     public TinyGsmCalling<TinyGsmBG96>,
                     public TinyGsmSMS<TinyGsmBG96>,
                     public TinyGsmGPS<TinyGsmBG96>,
@@ -109,10 +114,10 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
                     public TinyGsmBattery<TinyGsmBG96>,
                     public TinyGsmTemperature<TinyGsmBG96> {
   friend class TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmBG96>;
+  friend class TinyGsmCellularData<TinyGsmBG96>;
   friend class TinyGsmTCP<TinyGsmBG96, TinyGsmBG96TcpConfig>;
   friend class GsmClient<TinyGsmBG96, TinyGsmBG96TcpConfig>;
-  friend class TinyGsmSSL<TinyGsmBG96>;
+  friend class TinyGsmSSL<TinyGsmBG96, TinyGsmBG96SslConfig>;
   friend class TinyGsmCalling<TinyGsmBG96>;
   friend class TinyGsmSMS<TinyGsmBG96>;
   friend class TinyGsmGPS<TinyGsmBG96>;
@@ -124,6 +129,9 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
  public:
   using ModemConfig = TinyGsmBG96ModemConfig;
   using TcpConfig   = TinyGsmBG96TcpConfig;
+  using SslConfig   = TinyGsmBG96SslConfig;
+  using GsmSecureContext =
+      TinyGsmSSL<TinyGsmBG96, TinyGsmBG96SslConfig>::gsmSecureContext;
 
   /*
    * Inner Client
@@ -228,19 +236,15 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
  public:
   /// Inner secure client
   /// @ingroup quectel_bg96
-  class GsmClientSecureBG96 : public GsmClientBG96, public GsmSecureClient {
+  class GsmClientSecureBG96
+      : public GsmSecureClient<GsmClientBG96, TinyGsmBG96> {
     friend class TinyGsmBG96;
 
    public:
     using GsmClientBG96::connect;
     using GsmClientBG96::stop;
+    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmBG96TcpConfig;
-
-    /*
-     * Client constructors and initialization
-     */
-
-    TINY_GSM_SECURE_CLIENT_CTORS(BG96)
 
     /*
      * Arduino Client interface
@@ -252,22 +256,29 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
       stop(TcpConfig::kStopTimeoutS * 1000L);
-      TINY_GSM_YIELD();
       rx.clear();
-      if (!sslCtxConfigured) {
-        if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
-          DBG("### The BG96 does not support SSL using pre-shared keys.");
-          return 0;
-        } else {
-          sslCtxConfigured = at->configureSSLContext(
-              sslCtxIndex, sslAuthMode, sslVersion, CAcertName, clientCertName,
-              clientKeyName);
-          if (!sslCtxConfigured) {
-            DBG("### Failed to configure the SSL context!");
-            return 0;
-          }
-        }
+      GsmSecureContext* sslContext = at->getSSLContext(sslCtxIndex);
+      // check for a valid SSL context
+      if (sslContext == nullptr) {
+        DBG("### No SSL context is registered at index", sslCtxIndex);
+        return 0;
       }
+      // check that the authentication mode is supported
+      if (sslContext->sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+        DBG("### The BG96 does not support SSL using pre-shared keys.");
+        return 0;
+      }
+      // check that the context has the required credentials
+      if (!at->validateSSLContextCredentials(sslContext)) {
+        DBG("### The SSL context is missing required credentials!");
+        return 0;
+      }
+      // configure the context
+      if (!at->configureSSLContext(sslCtxIndex)) {
+        DBG("### Failed to configure the SSL context!");
+        return 0;
+      }
+      // make the connection
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
@@ -281,7 +292,6 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       if (at == nullptr) { return 0; }
       is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                             // send to fail
-      TINY_GSM_YIELD();
       // Returns the combined number of characters available in the TinyGSM
       // fifo and the modem chips internal fifo.
       if (!rx.size()) { at->maintain(); }
@@ -293,8 +303,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       if (at == nullptr) { return -1; }
       is_mid_send = false;  // Any calls to the AT when mid-send will cause the
                             // send to fail
-      TINY_GSM_YIELD();
-      size_t cnt = 0;
+      size_t cnt  = 0;
 
       // Reads characters out of the TinyGSM fifo, and from the modem chip's
       // internal fifo if available.
@@ -340,6 +349,24 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     // NOTE: We do NOT need to re-write the peek() function for the secure
     // client, because the peek() function isn't different for buffers that can
     // and can't have the size checked - only for those with no buffer at all.
+  };
+
+  /*
+   * Inner Secure Context
+   */
+ public:
+  /// Inner secure context
+  /// @ingroup quectel_bg96
+  class GsmSecureContextBG96
+      : public ::GsmSecureContext<TinyGsmBG96, TinyGsmBG96SslConfig> {
+    friend class TinyGsmBG96;
+
+   public:
+    using ::GsmSecureContext<TinyGsmBG96,
+                             TinyGsmBG96SslConfig>::GsmSecureContext;
+
+    /// Unregister this context from its modem.
+    ~GsmSecureContextBG96() {}
   };
 
   /*
@@ -469,7 +496,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     if (waitResponse(GF("CONNECT")) != 1) {
       return false;
     }
-    stream.write(cert, len);
+    streamWrite(cert, len);
     stream.flush();
     // After module switches to data mode, and the certificate or key data can
     // be inputted. When the size of the inputted data reaches <filesize> (unit:
@@ -535,11 +562,12 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
 #endif
 
   // AT+QFUPL=<filename>[,<file_size>[,<timeout>[,<ackmode>]]]
-  bool loadCertificateImpl(const char* certificateName, const char* cert,
+  template <typename TCert>
+  bool loadCertificateImpl(const char* certificateName, TCert cert,
                            const uint16_t len) {
     sendAT(GF("+QFUPL=\""), certificateName, GF("\","), len, GF(",10"));
     if (waitResponse(GF("CONNECT")) != 1) { return false; }
-    stream.write(cert, len);
+    this->streamWrite(cert, len);
     stream.flush();
     // TA switches to the data mode (transparent access mode), and the binary
     // data of file can be inputted. When the total size of the inputted data
@@ -556,45 +584,51 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     return success && waitResponse() == 1;
   }
 
-  // NOTE: You cannot print/view the content of a certificate after uploading it
-  // to the modem This only prints the checksum
   bool printCertificateImpl(const char* filename, Stream& print_stream) {
-    bool    success   = true;
-    int16_t print_len = 0;
-
     // Download the file
     // AT+QFDWL=<filename>
+    // Responds with "CONNECT\r\n"
+    // TA switches to data mode, and the binary data of the file will be
+    // outputted. When the file is read over, TA will return to command mode and
+    // reply the following codes:
+    // +QFDWL: <download_size>,<checksum>
+    // OK
     sendAT(GF("+QFDWL=\""), filename, '"');
-    success &= waitResponse(GF("+QFDWL")) == 1;
-    if (success) {
-      print_len = streamGetIntBefore(',');
-      streamSkipUntil('\n');  // skip the checksum
-    }
+    if (waitResponse(GF("CONNECT\r\n")) != 1) { return false; }
 
-    // wait for some characters to be available
-    uint32_t start = millis();
-    while (!stream.available() && millis() - start < 10000) {}
+    const char metadataMarker[] = "\r\n+QFDWL:";
+    uint8_t    markerIndex      = 0;
+    uint32_t   print_len        = 0;
+    while (markerIndex < sizeof(metadataMarker) - 1) {
+      int c = streamTimedRead(10000L);
+      if (c < 0) { return false; }
+      if (c == metadataMarker[markerIndex]) {
+        markerIndex++;
+        continue;
+      }
 
-    for (int i = 0; i < print_len; i++) {
-      int      c;
-      uint32_t _startMillis = millis();
-      do {
-        c = stream.read();
-        if (c >= 0) break;
-      } while (millis() - _startMillis < 50);
-      // Print the file to the buffer
 #ifndef DUMP_AT_COMMANDS
-      // NOTE: Only do this if we're not dumping the all AT, or we'll double
-      // print
-      print_stream.write(c);
+      // NOTE: Only do this if we're not dumping all AT, or we'll double print.
+      for (uint8_t i = 0; i < markerIndex; i++) {
+        print_stream.write(metadataMarker[i]);
+      }
 #endif
-      if (c < 0) { break; }  // if we run out of characters, stop
+      print_len += markerIndex;
+      markerIndex = 0;
+      if (c == metadataMarker[0]) {
+        markerIndex = 1;
+      } else {
+#ifndef DUMP_AT_COMMANDS
+        print_stream.write(static_cast<uint8_t>(c));
+#endif
+        print_len++;
+      }
     }
     print_stream.flush();
 
-    // wait for the ending OK
-    success &= waitResponse() == 1;
-    return success;
+    uint32_t len_confirmed = streamGetULBefore(',');
+    streamSkipUntil('\n');  // skip the checksum
+    return len_confirmed == print_len && waitResponse() == 1;
   }
 
   // NOTE: Deleting the certificate only happens by filename, the type of
@@ -628,11 +662,11 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();
 
     // Configure the TCPIP Context
     sendAT(GF("+QICSGP=1,1,\""), apn, GF("\",\""), user, GF("\",\""), pwd, '"');
@@ -649,7 +683,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     sendAT(GF("+QIDEACT=1"));  // Deactivate the bearer context
     if (waitResponse(40000L) != 1) { return false; }
 
@@ -753,19 +787,19 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     int16_t imin         = 0;
     float   secondWithSS = 0;
 
-    // UTC Time
+    // UTC Time; Format: hhmmss.sss
     // Read the whole time portion into a single float, then parse that
     // into the hour, minute, and second portions.  By doing it this way, we
     // avoid issues of attempting to read a set number of characters for each
     // portion of the time if the time is missing or malformed.
-    float    itime     = streamGetFloatBefore(',');
-    uint32_t itime_int = static_cast<uint32_t>(itime * 1000.0f);
-    // ^^ Multiply by 1000 to avoid floating point modulo
-    ihour = static_cast<int16_t>(itime_int / 10000000);  // Two digit hour
-    imin =
-        static_cast<int16_t>((itime_int / 100000) % 100);  // Two digit minute
-    secondWithSS = static_cast<float>(
-        (itime_int % 100000) / 1000.0);  // Two digit second with subseconds
+    float itime = streamGetFloatBefore(',');
+    if (itime >= 0.0F) {
+      uint32_t itime_int      = static_cast<uint32_t>(itime);
+      float    itime_fraction = itime - static_cast<float>(itime_int);
+      ihour = static_cast<int16_t>(itime_int / 10000);       // Two digit hour
+      imin = static_cast<int16_t>((itime_int / 100) % 100);  // Two digit minute
+      secondWithSS = static_cast<float>(itime_int % 100) + itime_fraction;
+    }
 
     ilat      = streamGetFloatBefore(',');  // Latitude
     ilon      = streamGetFloatBefore(',');  // Longitude
@@ -1002,11 +1036,13 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       bool got_time_rsp = waitResponse(500L, GF("+QLTS: \"")) == 1;
       if (got_time_rsp) {
         // if the year is at or after 2025, we assume the time is valid and
-        // synced (the response uses a 2-digit year, so we check for >= 25)
+        // synced (the response uses a 2-digit year, so we immediately add 2000
+        // to it)
         int16_t iyear = streamGetIntBefore('/');
+        if (iyear < 2000) iyear += 2000;
         streamSkipUntil('\n');  // skip the rest of the response
         bool got_ok = waitResponse(500L) == 1;
-        if (iyear >= 25 && iyear <= 99 && got_ok) { return true; }
+        if (iyear >= 2025 && iyear <= 2099 && got_ok) { return true; }
       }
       delay(500);  // Wait 0.5s before trying again
     }
@@ -1059,13 +1095,54 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
                            SSLVersion sslVersion, const char* CAcertName,
                            const char* clientCertName,
                            const char* clientKeyName) {
+    // store the configuration in the SSL context object
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    if (sslContext == nullptr) { return false; }
+    sslContext->sslAuthMode = sslAuthMode;
+    sslContext->sslVersion  = sslVersion;
+    strncpy(sslContext->CAcertName, CAcertName ? CAcertName : "",
+            sizeof(sslContext->CAcertName) - 1);
+    sslContext->CAcertName[sizeof(sslContext->CAcertName) - 1] = '\0';
+    strncpy(sslContext->clientCertName, clientCertName ? clientCertName : "",
+            sizeof(sslContext->clientCertName) - 1);
+    sslContext->clientCertName[sizeof(sslContext->clientCertName) - 1] = '\0';
+    strncpy(sslContext->clientKeyName, clientKeyName ? clientKeyName : "",
+            sizeof(sslContext->clientKeyName) - 1);
+    sslContext->clientKeyName[sizeof(sslContext->clientKeyName) - 1] = '\0';
+
+    return configureSSLContext(context_id);
+  }
+
+  /**
+   * @brief Configure the SSL context for the modem.
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool configureSSLContext(uint8_t context_id) {
     bool success = true;
 
     // NOTE: The SSL context (<sslctxID>) is not the same as the connection
     // identifier.  The SSL context is the grouping of SSL settings, the
     // connection identifier is the mux/socket number.
-    // For this, we will *always* configure SSL context 0, just as we always
-    // configured PDP context 1.
+
+    // Retrieve the SSL context object for the given context ID.
+    GsmSecureContext* sslContext  = getSSLContext(context_id);
+    SSLAuthMode       sslAuthMode = sslContext ? sslContext->sslAuthMode
+                                               : SSLAuthMode::NO_VALIDATION;
+    SSLVersion        sslVersion  = sslContext ? sslContext->sslVersion
+                                               : SSLVersion::ALL_SSL;
+    const char* CAcertName     = sslContext ? sslContext->CAcertName : nullptr;
+    const char* clientCertName = sslContext ? sslContext->clientCertName
+                                            : nullptr;
+    const char* clientKeyName  = sslContext ? sslContext->clientKeyName
+                                            : nullptr;
+
+    DBG("### SSL context index:", context_id);
+    DBG("### SSL auth mode:", (int)sslAuthMode);
+    DBG("### SSL version:", (int)sslVersion);
+    DBG("### CA cert name:", CAcertName);
+    DBG("### Client cert name:", clientCertName);
+    DBG("### Client key name:", clientKeyName);
 
     // apply the correct certificates to the connection
     if (CAcertName != nullptr &&
@@ -1190,10 +1267,10 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     bool     ssl        = sockets[mux]->is_secure;
 
     if (ssl) {
-      // If we have a secure socket, use a static cast to get the authentication
-      // mode and certificate names. This isn't really "safe" but since we've
-      // already checked that the socket is a secure one, we're pretty sure of
-      // the type and it should work.
+      // If we have a secure socket, use a static cast to get the context index.
+      // This isn't really "safe" but since we've already checked that the
+      // socket is a secure one, we're pretty sure of the type and it should
+      // work.
       const GsmClientSecureBG96* thisClient =
           static_cast<const GsmClientSecureBG96*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
@@ -1269,6 +1346,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     if (ssl) {
       sendAT(GF("+QSSLRECV="), mux, ',', (uint16_t)size);
       if (waitResponse(GF("+QSSLRECV:")) != 1) {
+        sockets[mux]->sock_available = 0;
         DBG("### READ: For unknown reason close");
         return 0;
       }

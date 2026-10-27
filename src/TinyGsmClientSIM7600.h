@@ -18,7 +18,7 @@
  * - SSL sockets:
  *   - 2
  * - SSL contexts:
- *   - 6
+ *   - 10
  * - Socket Buffering:
  *   - The modem has an internal buffer for incoming data.
  * - Socket Numbering:
@@ -27,15 +27,11 @@
  *
  * @todo In GsmClientSim7600 constructor: Ensure the secure socket mux isn't out
  * of range
- * @todo In `gprsDisconnectImpl()`: Should CCHSTOP come before NETCLOSE?  Is it
+ * @todo In `dataDisconnectImpl()`: Should CCHSTOP come before NETCLOSE?  Is it
  * needed in addition to NETCLOSE?
  * @todo In `getGPSImpl()`: Can 1 be returned
- * @todo In `GsmClientSecureSim7600::connect()`: Should we specify the
- * client_type as 2=SSL/TLS?
  * @todo In `GsmClientSecureSim7600::connect()`: verify CCHOPEN
  * @todo In `modemSend()`: make sure requested and confirmed bytes match
- * @todo In `modemGetConnected()`: I think this only returns the TCP socket
- * connection status, not the SSL connection status
  */
 
 #ifndef SRC_TINYGSMCLIENTSIM7600_H_
@@ -45,7 +41,7 @@
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGSMLocation.tpp"
@@ -114,13 +110,21 @@ struct TinyGsmSim7600TcpConfig
           /*muxMode*/ TinyGsmTcpMuxMode::Static,
           /*muxCount*/ 10> {};
 
+/**
+ * @brief SSL behavior and limits for SIMCom SIM7600 modules.
+ * The module supports 10 SSL contexts.
+ * @ingroup simcom_sim7600
+ */
+struct TinyGsmSim7600SslConfig : public TinyGsmSslConfigPreset<
+                                     /*contextCount*/ 10> {};
+
 /// Class for the SIMCOM SIM7600, SIM7500, and SIM7800
 /// @ingroup simcom_sim7600
 class TinyGsmSim7600
     : public TinyGsmModem<TinyGsmSim7600, TinyGsmSim7600ModemConfig>,
-      public TinyGsmGPRS<TinyGsmSim7600>,
+      public TinyGsmCellularData<TinyGsmSim7600>,
       public TinyGsmTCP<TinyGsmSim7600, TinyGsmSim7600TcpConfig>,
-      public TinyGsmSSL<TinyGsmSim7600>,
+      public TinyGsmSSL<TinyGsmSim7600, TinyGsmSim7600SslConfig>,
       public TinyGsmSMS<TinyGsmSim7600>,
       public TinyGsmGSMLocation<TinyGsmSim7600>,
       public TinyGsmGPS<TinyGsmSim7600>,
@@ -130,10 +134,10 @@ class TinyGsmSim7600
       public TinyGsmTemperature<TinyGsmSim7600>,
       public TinyGsmCalling<TinyGsmSim7600> {
   friend class TinyGsmModem<TinyGsmSim7600, TinyGsmSim7600ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmSim7600>;
+  friend class TinyGsmCellularData<TinyGsmSim7600>;
   friend class TinyGsmTCP<TinyGsmSim7600, TinyGsmSim7600TcpConfig>;
   friend class GsmClient<TinyGsmSim7600, TinyGsmSim7600TcpConfig>;
-  friend class TinyGsmSSL<TinyGsmSim7600>;
+  friend class TinyGsmSSL<TinyGsmSim7600, TinyGsmSim7600SslConfig>;
   friend class TinyGsmSMS<TinyGsmSim7600>;
   friend class TinyGsmGPS<TinyGsmSim7600>;
   friend class TinyGsmGSMLocation<TinyGsmSim7600>;
@@ -146,6 +150,9 @@ class TinyGsmSim7600
  public:
   using ModemConfig = TinyGsmSim7600ModemConfig;
   using TcpConfig   = TinyGsmSim7600TcpConfig;
+  using SslConfig   = TinyGsmSim7600SslConfig;
+  using GsmSecureContext =
+      TinyGsmSSL<TinyGsmSim7600, TinyGsmSim7600SslConfig>::gsmSecureContext;
 
   /*
    * Inner Client
@@ -252,20 +259,15 @@ class TinyGsmSim7600
  public:
   /// Inner secure client
   /// @ingroup simcom_sim7600
-  class GsmClientSecureSim7600 : public GsmClientSim7600,
-                                 public GsmSecureClient {
+  class GsmClientSecureSim7600
+      : public GsmSecureClient<GsmClientSim7600, TinyGsmSim7600> {
     friend class TinyGsmSim7600;
 
    public:
     using GsmClientSim7600::connect;
     using GsmClientSim7600::stop;
+    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmSim7600TcpConfig;
-
-    /*
-     * Client constructors and initialization
-     */
-
-    TINY_GSM_SECURE_CLIENT_CTORS(Sim7600)
 
     /*
      * Arduino Client interface
@@ -274,21 +276,50 @@ class TinyGsmSim7600
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
       stop(TcpConfig::kStopTimeoutS * 1000L);
-      TINY_GSM_YIELD();
       rx.clear();
-      if (!sslCtxConfigured) {
-        if (sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
-          DBG("### The SIM7600 does not support SSL using pre-shared keys.");
-          sslCtxConfigured = false;
-        } else {
-          sslCtxConfigured = at->configureSSLContext(
-              sslCtxIndex, sslAuthMode, sslVersion, CAcertName, clientCertName,
-              clientKeyName);
-        }
+      GsmSecureContext* sslContext = at->getSSLContext(sslCtxIndex);
+      // check for a valid SSL context
+      if (sslContext == nullptr) {
+        DBG("### No SSL context is registered at index", sslCtxIndex);
+        return 0;
       }
+      // check that the authentication mode is supported
+      if (sslContext->sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS) {
+        DBG("### The SIM7600 does not support SSL using pre-shared keys.");
+        return 0;
+      }
+      // check that the context has the required credentials
+      if (!at->validateSSLContextCredentials(sslContext)) {
+        DBG("### The SSL context is missing required credentials!");
+        return 0;
+      }
+      // configure the context
+      if (!at->configureSSLContext(sslCtxIndex)) {
+        DBG("### Failed to configure the SSL context!");
+        return 0;
+      }
+      // make the connection
       sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
+  };
+
+  /*
+   * Inner Secure Context
+   */
+ public:
+  /// Inner secure context
+  /// @ingroup simcom_sim7600
+  class GsmSecureContextSim7600
+      : public ::GsmSecureContext<TinyGsmSim7600, TinyGsmSim7600SslConfig> {
+    friend class TinyGsmSim7600;
+
+   public:
+    using ::GsmSecureContext<TinyGsmSim7600,
+                             TinyGsmSim7600SslConfig>::GsmSecureContext;
+
+    /// Unregister this context from its modem.
+    ~GsmSecureContextSim7600() {}
   };
 
   /*
@@ -468,11 +499,12 @@ class TinyGsmSim7600
    * Secure socket layer (SSL) certificate management functions
    */
  protected:
-  bool loadCertificateImpl(const char* certificateName, const char* cert,
+  template <typename TCert>
+  bool loadCertificateImpl(const char* certificateName, TCert cert,
                            const uint16_t len) {
     sendAT(GF("+CCERTDOWN=\""), certificateName, GF("\","), len);
-    if (!waitResponse(5000L, GF(">"))) { return false; }
-    stream.write(cert, len);
+    if (waitResponse(5000L, GF(">")) != 1) { return false; }
+    this->streamWrite(cert, len);
     stream.flush();
     return waitResponse(5000L) == 1;
   }
@@ -505,11 +537,11 @@ class TinyGsmSim7600
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();  // Make sure we're not connected first
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();  // Make sure we're not connected first
 
     // Define the PDP context
 
@@ -528,6 +560,7 @@ class TinyGsmSim7600
     // Configure TCP parameters
 
     // Select TCP/IP application mode (command mode)
+    //  0 = non transparent mode
     sendAT(GF("+CIPMODE=0"));
     waitResponse();
 
@@ -548,13 +581,15 @@ class TinyGsmSim7600
     //            = 1 (+RECEIVE,<link num>,<data length>)
     // AsyncMode = sets mode of executing commands
     //           = 0 (synchronous command executing)
-    // TimeoutVal = minimum retransmission timeout in milliseconds = 75000
-    sendAT(GF("+CIPCCFG=10,0,0,0,1,0,75000"));
+    // TimeoutVal = minimum retransmission timeout in milliseconds
+    sendAT(GF("+CIPCCFG=10,0,0,0,1,0,"),
+           TcpConfig::kRetransmissionTimeoutS * 1000L);
     if (waitResponse() != 1) { return false; }
 
     // Configure timeouts for opening and closing sockets
     // AT+CIPTIMEOUT=<netopen_timeout> <cipopen_timeout>, <cipsend_timeout>
-    sendAT(GF("+CIPTIMEOUT="), 75000, ',', 15000, ',', 15000);
+    sendAT(GF("+CIPTIMEOUT="), 75000, ',', TcpConfig::kConnectTimeoutS * 1000L,
+           ',', TcpConfig::kSendTimeoutS * 1000L);
     waitResponse();
 
     // Set to get data manually on TCP (unsecured) sockets
@@ -569,9 +604,21 @@ class TinyGsmSim7600
     // We to ignore any immediate response and wait for the
     // URC to show it's really connected.
     sendAT(GF("+NETOPEN"));
-    if (waitResponse(75000L, GF("+NETOPEN: 0")) != 1) { return false; }
+    int8_t res = waitResponse(75000L, GF("+NETOPEN: 0"),
+                              GF("+IP ERROR: Network is already opened"),
+                              GFP(ModemConfig::GSM_ERROR));
+    if (res != 1 && res != 2) { return false; }
 
     // Set the module to require manual reading of rx buffer data on SSL sockets
+
+    // Configure the mode of sending and receiving data
+    // CCHMODE=<mode>
+    // <mode>
+    //  0 – Normal
+    //  1 – Transparent mode
+    // This command must be called before AT+CCHSTART.
+    sendAT(GF("+CCHMODE=0"));
+    waitResponse(5000L);  // allowed to fail
 
     // Configure the report mode of sending and receiving data
     // +CCHSET=<report_send_result>,<recv_mode>
@@ -583,32 +630,38 @@ class TinyGsmSim7600
     //   1 Module caches the received data and notifies MCU with+CCHEVENT:
     // <session_id>,RECV EVENT. MCU can use AT+CCHRECV to receive the cached
     //   data (only in manual receiving mode).
+    // This command must be called before AT+CCHSTART.
     sendAT(GF("+CCHSET=1,1"));
-    waitResponse(5000L);
+    waitResponse(5000L);  // allowed to fail
 
-    // Start the SSL client (doesn't mean we have to use it!)
-    sendAT(GF("+CCHSTART"));  // Start the SSL client
-    if (waitResponse(5000L) != 1) return false;
+    // Start the SSL client service (doesn't mean we have to use it!)
+    sendAT(GF("+CCHSTART"));
+    waitResponse(5000L);  // allowed to fail
 
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // Close all sockets and stop the socket service
     // Note: On the LTE models, this single command closes all sockets and the
     // service and deactivates the PDP context
     sendAT(GF("+NETCLOSE"));
-    if (waitResponse(60000L, GF("+NETCLOSE: 0")) != 1) { return false; }
+    waitResponse(60000L);  // allowed to fail
 
-    // We assume this works, so we can do SSL disconnect to stop the SSL client
+    // Stop the SSL client
     sendAT(GF("+CCHSTOP"));
-    return (waitResponse(60000L, GF("+CCHSTOP: 0")) == 1);
+    waitResponse(60000L, GF("+CCHSTOP: 0"));  // allowed to fail
 
     // TODO: Should CCHSTOP come before NETCLOSE?  Is it needed in addition to
     // NETCLOSE?
+
+    sendAT(GF("+CGATT=0"));  // Detach from Packet Domain service
+    if (waitResponse(60000L) != 1) { return false; }
+
+    return true;
   }
 
-  bool isGprsConnectedImpl() {
+  bool isDataConnectedImpl() {
     sendAT(GF("+NETOPEN?"));
     // May return +NETOPEN: 1, 0.  We just confirm that the first number is 1
     if (waitResponse(GF("+NETOPEN: 1")) != 1) { return false; }
@@ -656,7 +709,7 @@ class TinyGsmSim7600
   /*
    * Audio functions
    */
-  //  No functions of this type supported
+  // No functions of this type supported
 
   /*
    * Text messaging (SMS) functions
@@ -746,14 +799,14 @@ class TinyGsmSim7600
     // UTC Time. Output format is hhmmss.s
     // Again, read the whole time portion into a single float, then parse that
     // into the hour, minute, and second portions.
-    float    itime     = streamGetFloatBefore(',');
-    uint32_t itime_int = static_cast<uint32_t>(itime * 1000.0f);
-    // ^^ Multiply by 1000 to avoid floating point modulo
-    ihour = static_cast<int16_t>(itime_int / 10000000);  // Two digit hour
-    imin =
-        static_cast<int16_t>((itime_int / 100000) % 100);  // Two digit minute
-    secondWithSS = static_cast<float>(
-        (itime_int % 100000) / 1000.0);  // Two digit second with subseconds
+    float itime = streamGetFloatBefore(',');
+    if (itime >= 0.0F) {
+      uint32_t itime_int      = static_cast<uint32_t>(itime);
+      float    itime_fraction = itime - static_cast<float>(itime_int);
+      ihour = static_cast<int16_t>(itime_int / 10000);       // Two digit hour
+      imin = static_cast<int16_t>((itime_int / 100) % 100);  // Two digit minute
+      secondWithSS = static_cast<float>(itime_int % 100) + itime_fraction;
+    }
 
     ialt   = streamGetFloatBefore(',');     // MSL Altitude. Unit is meters
     ispeed = streamGetFloatBefore(',');     // Speed Over Ground. Unit is knots.
@@ -870,12 +923,12 @@ class TinyGsmSim7600
   // get temperature in degree celsius
   float getTemperatureImpl() {
     sendAT(GF("+CPMUTEMP"));
-    if (waitResponse(GF("+CPMUTEMP:")) != 1) { return 0; }
+    if (waitResponse(GF("+CPMUTEMP:")) != 1) { return -9999.0f; }
     // return temperature in C
-    float res = streamGetFloatBefore('\n');
+    float temp = streamGetFloatBefore('\n');
     // Wait for final OK
     waitResponse();
-    return res;
+    return temp;
   }
 
   /*
@@ -896,6 +949,30 @@ class TinyGsmSim7600
                            SSLVersion sslVersion, const char* CAcertName,
                            const char* clientCertName,
                            const char* clientKeyName) {
+    // store the configuration in the SSL context object
+    GsmSecureContext* sslContext = getSSLContext(context_id);
+    if (sslContext == nullptr) { return false; }
+    sslContext->sslAuthMode = sslAuthMode;
+    sslContext->sslVersion  = sslVersion;
+    strncpy(sslContext->CAcertName, CAcertName ? CAcertName : "",
+            sizeof(sslContext->CAcertName) - 1);
+    sslContext->CAcertName[sizeof(sslContext->CAcertName) - 1] = '\0';
+    strncpy(sslContext->clientCertName, clientCertName ? clientCertName : "",
+            sizeof(sslContext->clientCertName) - 1);
+    sslContext->clientCertName[sizeof(sslContext->clientCertName) - 1] = '\0';
+    strncpy(sslContext->clientKeyName, clientKeyName ? clientKeyName : "",
+            sizeof(sslContext->clientKeyName) - 1);
+    sslContext->clientKeyName[sizeof(sslContext->clientKeyName) - 1] = '\0';
+
+    return configureSSLContext(context_id);
+  }
+
+  /**
+   * @brief Configure the SSL context for the modem.
+   * @param context_id The SSL context ID.
+   * @return True if the operation was successful, false otherwise.
+   */
+  bool configureSSLContext(uint8_t context_id) {
     bool success = true;
 
     // List the certs available
@@ -904,15 +981,33 @@ class TinyGsmSim7600
 
     // NOTE: The SSL context (<ssl_ctx_index>) is not the same as the
     // connection identifier.  The SSL context is the grouping of SSL
-    // settings, the connection identifier is the mux/socket number. For this,
-    // we will *always* configure SSL context 0, just as we always configured
-    // PDP context 1.
+    // settings, the connection identifier is the mux/socket number.
+
     // CSSLCFG commands reference the SSL context number; C**A**SSLCFG
     // commands reference the connection number (aka, the mux).
 
+    // Retrieve the SSL context object for the given context ID.
+    GsmSecureContext* sslContext  = getSSLContext(context_id);
+    SSLAuthMode       sslAuthMode = sslContext ? sslContext->sslAuthMode
+                                               : SSLAuthMode::NO_VALIDATION;
+    SSLVersion        sslVersion  = sslContext ? sslContext->sslVersion
+                                               : SSLVersion::ALL_SSL;
+    const char* CAcertName     = sslContext ? sslContext->CAcertName : nullptr;
+    const char* clientCertName = sslContext ? sslContext->clientCertName
+                                            : nullptr;
+    const char* clientKeyName  = sslContext ? sslContext->clientKeyName
+                                            : nullptr;
+
+    DBG("### SSL context index:", context_id);
+    DBG("### SSL auth mode:", (int)sslAuthMode);
+    DBG("### SSL version:", (int)sslVersion);
+    DBG("### CA cert name:", CAcertName);
+    DBG("### Client cert name:", clientCertName);
+    DBG("### Client key name:", clientKeyName);
+
     // set the ssl version
     // AT+CSSLCFG="sslversion",<ssl_ctx_index>,<sslversion>
-    // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
+    // <ssl_ctx_index> The SSL context ID. The range is 0-9.
     // <sslversion> 0: SSL3.0
     //              1: TLS1.0
     //              2: TLS1.1
@@ -925,6 +1020,31 @@ class TinyGsmSim7600
     }
     sendAT(GF("+CSSLCFG=\"sslversion\","), context_id, ',',
            static_cast<int8_t>(sslVersion));
+    success &= waitResponse(5000L) == 1;
+
+    // set authentication mode
+    // AT+CSSLCFG="authmode",<ssl_ctx_index>,<authmode>
+    // <ssl_ctx_index> The SSL context ID. The range is 0-9.
+    // <authmode> 0: No authentication (SSLAuthMode::NO_VALIDATION)
+    //            1: server authentication (SSLAuthMode::CA_VALIDATION)
+    //            2: server and client authentication
+    //            (SSLAuthMode::MUTUAL_AUTHENTICATION)
+    //            3: client authentication and no server authentication
+    //            (SSLAuthMode::CLIENT_VALIDATION)
+    // Because the auth mode used by the SIM7600 is different than the
+    // SSLAuthMode enum, we need to translate it to the correct value.
+    int8_t authModeValue = 0;
+    switch (sslAuthMode) {
+      case SSLAuthMode::NO_VALIDATION: authModeValue = 0; break;
+      case SSLAuthMode::CA_VALIDATION: authModeValue = 1; break;
+      case SSLAuthMode::MUTUAL_AUTHENTICATION: authModeValue = 2; break;
+      case SSLAuthMode::CLIENT_VALIDATION: authModeValue = 3; break;
+      default:
+        authModeValue = 0;  // Default to no validation if unknown
+        break;
+    }
+    sendAT(GF("+CSSLCFG=\"authmode\","), context_id, ',',
+           static_cast<int8_t>(authModeValue));
     success &= waitResponse(5000L) == 1;
 
     // apply the correct certificates to the connection
@@ -955,31 +1075,6 @@ class TinyGsmSim7600
       success &= waitResponse(5000L) == 1;
     }
 
-    // set authentication mode
-    // AT+CSSLCFG="authmode",<ssl_ctx_index>,<authmode>
-    // <ssl_ctx_index> The SSL context ID. The range is 0-9. We always use 0.
-    // <authmode> 0: No authentication (SSLAuthMode::NO_VALIDATION)
-    //            1: server authentication (SSLAuthMode::CA_VALIDATION)
-    //            2: server and client authentication
-    //            (SSLAuthMode::MUTUAL_AUTHENTICATION)
-    //            3: client authentication and no server authentication
-    //            (SSLAuthMode::CLIENT_VALIDATION)
-    // Because the auth mode used by the SIM7600 is different than the
-    // SSLAuthMode enum, we need to translate it to the correct value.
-    int8_t authModeValue = 0;
-    switch (sslAuthMode) {
-      case SSLAuthMode::NO_VALIDATION: authModeValue = 0; break;
-      case SSLAuthMode::CA_VALIDATION: authModeValue = 1; break;
-      case SSLAuthMode::MUTUAL_AUTHENTICATION: authModeValue = 2; break;
-      case SSLAuthMode::CLIENT_VALIDATION: authModeValue = 3; break;
-      default:
-        authModeValue = 0;  // Default to no validation if unknown
-        break;
-    }
-    sendAT(GF("+CSSLCFG=\"authmode\","), context_id, ',',
-           static_cast<int8_t>(authModeValue));
-    success &= waitResponse(5000L) == 1;
-
     return success;
   }
 
@@ -1009,21 +1104,22 @@ class TinyGsmSim7600
     bool     ssl        = sockets[mux]->is_secure;
 
     if (ssl) {
-      // If we have a secure socket, use a static cast to get the authentication
-      // mode and certificate names. This isn't really "safe" but since we've
-      // already checked that the socket is a secure one, we're pretty sure of
-      // the type and it should work.
+      // If we have a secure socket, use a static cast to get the context index.
+      // This isn't really "safe" but since we've already checked that the
+      // socket is a secure one, we're pretty sure of the type and it should
+      // work.
       const GsmClientSecureSim7600* thisClient =
           static_cast<const GsmClientSecureSim7600*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
 
-
-      linkSSLContext(mux, sslCtxIndex);
+      if (!linkSSLContext(mux, sslCtxIndex)) {
+        DBG("### Failed to link the SSL context to mux", mux);
+        return false;
+      }
 
       // Establish a connection in multi-socket mode
       // AT+CCHOPEN=<session_id>,"<host>",<port>[,<client_type>,[<bind_port>]]
-      // TODO: Should we specify the client_type as 2=SSL/TLS?
-      sendAT(GF("+CCHOPEN="), mux, GF(",\""), host, GF("\","), port);
+      sendAT(GF("+CCHOPEN="), mux, GF(",\""), host, GF("\","), port, GF(",2"));
       // The reply is OK or ERROR followed by +CCHOPEN: <session_id>,<err> where
       // <session_id> is the mux number and <err> should be 0 if there's no
       // error
@@ -1155,14 +1251,24 @@ class TinyGsmSim7600
     if (isValidMux(ret_mux)) {
       // Move the data to the socket buffer of the returned mux as long as the
       // returned mux is valid, even if it doesn't match the expected mux.
-      len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
+#ifdef TINY_GSM_USE_HEX
+      // CCHRECV returns raw TLS data even when CIPRXGET uses hex mode.
+      if (!ssl) {
+        len_read = moveCharsFromStreamToFifo<true>(ret_mux, len_reported);
+      } else
+#endif
+      {
+        len_read = moveCharsFromStreamToFifo(ret_mux, len_reported);
+      }
     }
 
     if (ssl) {
       if (isValidMux(ret_mux)) {
         // Returns +CCHRECV: {mux},0 after the data
-        String await_response = "+CCHRECV: " + String(ret_mux) + ",0";
-        waitResponse(GFP(await_response.c_str()));
+        if (waitResponse(GF("+CCHRECV: ")) == 1) {
+          streamSkipUntil('\n');  // skip the mux and error code
+          waitResponse();         // final OK
+        }
         // we need to check how much is left after the read
         sockets[ret_mux]->sock_available = (uint16_t)modemGetAvailable(ret_mux);
       } else {
@@ -1234,19 +1340,50 @@ class TinyGsmSim7600
 
   bool modemGetConnected(uint8_t mux) {
     if (!isValidMux(mux)) { return false; }
-    // TODO(SRGD): I think this only returns the TCP socket connection status,
-    // not the SSL connection status
-    // Read the status of all sockets at once
-    sendAT(GF("+CIPOPEN?"));
-    if (waitResponse(GF("+CIPOPEN:")) != 1) { return false; }
-    for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+    if (sockets[mux]->is_secure) {
+      sendAT(GF("+CCHOPEN?"));
+      // If connect to a server, it will show the connected information.
+      // Otherwise, the connected information is empty.
+      // +CCHOPEN: 0,”<host>”,<port>,<client_type>,[<bind_port>]
+      // +CCHOPEN: 1,”<host>”,<port>,<client_type>,[<bind_port>]
+      // […]
+      // OK
+      // <client_type> The type of client:
+      //   - 1 – TCP client.
+      //   - 2 – SSL/TLS client.
+      if (waitResponse(GF("+CCHOPEN:")) != 1) { return false; }
+      // for (uint8_t muxNo = 0; muxNo < SslConfig::kMuxCount; muxNo++) {
+      for (uint8_t muxNo = 0; muxNo < 2; muxNo++) {
+        String state = stream.readStringUntil('\n');
+        if (sockets[muxNo] && sockets[muxNo]->is_secure) {
+          // if there's at least one comma, there's connection info which
+          // means it's connected
+          sockets[muxNo]->sock_connected = (state.indexOf(',') > 0);
+        }
+      }
+    } else {
+      sendAT(GF("+CIPOPEN?"));
+      // If connect to a server, it will show the connected information.
+      // Otherwise, the connected information is empty.
       // +CIPOPEN:<mux>,<State or blank...>
-      String state = stream.readStringUntil('\n');
-      if (sockets[muxNo]) {
-        sockets[muxNo]->sock_connected = (state.indexOf(',') > 0);
+      // +CIPOPEN: <link_num>[,<type>,<serverIP>,<serverPort>,<index>]
+      // +CIPOPEN: <link_num>[,<type>,<serverIP>,<serverPort>,<index>]
+      // +CIPOPEN: <link_num> // no further content for closed connections
+      // […]
+      // OK
+      if (waitResponse(GF("+CIPOPEN:")) != 1) { return false; }
+      for (uint8_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
+        String state = stream.readStringUntil('\n');
+        if (sockets[muxNo] && !sockets[muxNo]->is_secure) {
+          // if there's at least one comma, there's connection info which
+          // means it's connected
+          sockets[muxNo]->sock_connected = (state.indexOf(',') > 0);
+        }
       }
     }
+
     waitResponse();  // Should be an OK at the end
+
     return sockets[mux]->sock_connected;
   }
 
@@ -1288,7 +1425,7 @@ class TinyGsmSim7600
       // Need to close all open sockets and release the network library.
       // User will then need to reconnect.
       DBG("### Network error!");
-      if (!isGprsConnected()) { gprsDisconnect(); }
+      if (!isDataConnected()) { dataDisconnect(); }
       data = "";
       return true;
     }

@@ -33,7 +33,7 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
@@ -83,7 +83,7 @@ struct TinyGsmM95TcpConfig
 /// Class for the Quectel M95
 /// @ingroup quectel_m95
 class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
-                   public TinyGsmGPRS<TinyGsmM95>,
+                   public TinyGsmCellularData<TinyGsmM95>,
                    public TinyGsmTCP<TinyGsmM95, TinyGsmM95TcpConfig>,
                    public TinyGsmCalling<TinyGsmM95>,
                    public TinyGsmSMS<TinyGsmM95>,
@@ -91,7 +91,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
                    public TinyGsmBattery<TinyGsmM95>,
                    public TinyGsmTemperature<TinyGsmM95> {
   friend class TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmM95>;
+  friend class TinyGsmCellularData<TinyGsmM95>;
   friend class TinyGsmTCP<TinyGsmM95, TinyGsmM95TcpConfig>;
   friend class GsmClient<TinyGsmM95, TinyGsmM95TcpConfig>;
   friend class TinyGsmCalling<TinyGsmM95>;
@@ -335,11 +335,11 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();
 
     // select foreground context 0 = VIRTUAL_UART_1
     sendAT(GF("+QIFGCNT=0"));
@@ -406,7 +406,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     sendAT(GF("+QIDEACT"));  // Deactivate the bearer context
     return waitResponse(60000L, GF("DEACT OK"), GF("ERROR")) == 1;
   }
@@ -657,18 +657,6 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
         // We have no way of knowing how much data actually came in, so
         // we set the value to 1500, the maximum possible size.
         sockets[mux]->sock_available = 1500;
-      }
-      data = "";
-      return true;
-    } else if (data.endsWith(GF("CLOSED\r\n"))) {
-      int16_t nl = TinyGsmMax(0,
-                              data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
-                                               data.length() - 8));
-      int16_t coma = data.indexOf(',', nl + 2);
-      if (coma > nl + 2) {
-        int16_t mux = data.substring(nl + 2, coma).toInt();
-        if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
-        DBG("### Closed: ", mux);
       }
       data = "";
       return true;

@@ -15,7 +15,7 @@
  *
  * - Combined TCP/SSL sockets:
  *   - 7
- * - SSL contexts:
+ * - SSL contexts (security profiles):
  *   - 5
  * - Socket Buffering:
  *   - The modem has an internal buffer for incoming data.
@@ -34,14 +34,14 @@
 #include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
-// management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
-// so as not to waste space.
+// management yet. Define TINY_GSM_MODEM_HAS_SSL here and do no include the SSL
+// module.
 #ifndef TINY_GSM_MODEM_HAS_SSL
 /// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGSMLocation.tpp"
@@ -102,9 +102,7 @@ constexpr char TinyGsmSaraR5ModemConfig::MODEM_MODEL[] __attribute__((weak));
  * @brief TCP behavior and limits for the SARA-R5.
  *
  * Per the manual, 7 standard sockets can be managed.  I **think** all sockets
- * can be SSL, but the manual is not clear (to me). Also supports 5 SSL contexts
- * (0-4), but this library hard-codes to 0. The SSL context is collection of SSL
- * settings, not the connection identifier.
+ * can be SSL, but the manual is not clear (to me).
  *
  * @warning You cannot control the socket mux number on this module! The module
  * opens the connection and returns the connection number it opened.
@@ -121,11 +119,23 @@ struct TinyGsmSaraR5TcpConfig
           /*sendMaxSize*/ 1024,
           /*connectTimeoutS*/ 120> {};
 
+#if 0
+/**
+ * @brief SSL behavior and limits for the u-blox SARA-R5.
+ * The module supports 5 SSL contexts (called security profiles, numbered 0-4).
+ * This library does not support selecting or modifying the security profiles in
+ * any way.  The module will always use the default profile.
+ * @ingroup ublox_sara_r5
+ */
+struct TinyGsmSaraR5SslConfig : public TinyGsmSslConfigPreset<
+                                   /*contextCount*/ 5> {};
+#endif
+
 /// Class for the u-blox SARA-R5
 /// @ingroup ublox_sara_r5
 class TinyGsmSaraR5
     : public TinyGsmModem<TinyGsmSaraR5, TinyGsmSaraR5ModemConfig>,
-      public TinyGsmGPRS<TinyGsmSaraR5>,
+      public TinyGsmCellularData<TinyGsmSaraR5>,
       public TinyGsmTCP<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>,
       public TinyGsmCalling<TinyGsmSaraR5>,
       public TinyGsmSMS<TinyGsmSaraR5>,
@@ -134,7 +144,7 @@ class TinyGsmSaraR5
       public TinyGsmTime<TinyGsmSaraR5>,
       public TinyGsmBattery<TinyGsmSaraR5> {
   friend class TinyGsmModem<TinyGsmSaraR5, TinyGsmSaraR5ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmSaraR5>;
+  friend class TinyGsmCellularData<TinyGsmSaraR5>;
   friend class TinyGsmTCP<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>;
   friend class GsmClient<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>;
   friend class TinyGsmCalling<TinyGsmSaraR5>;
@@ -255,7 +265,6 @@ class TinyGsmSaraR5
         stop(TcpConfig::kStopTimeoutS * 1000L);
       }
 #endif
-      TINY_GSM_YIELD();
       rx.clear();
       // attempt to use the requested mux number first
       uint8_t assignedMux = mux;
@@ -316,7 +325,7 @@ class TinyGsmSaraR5
     using TcpConfig = TinyGsmSaraR5TcpConfig;
 
     /*
-     * Client constructors and initialization
+     * Secure client constructors and initialization
      */
     /**
      * @brief Create a new secured TCP (SSL) client.
@@ -464,7 +473,7 @@ class TinyGsmSaraR5
       return true;
     else if (s == SaraR5RegStatus::REG_UNKNOWN)  // for some reason, it can hang
                                                  // at unknown..
-      return isGprsConnected();
+      return isDataConnected();
     else
       return false;
   }
@@ -504,19 +513,19 @@ class TinyGsmSaraR5
 
   /**
    * @brief Get the current radio access technology (RAT) of the modem.
-   * @return The current RAT mode, or 0 if the command failed.
+   * @return The current RAT mode, or -1 if the command or parsing failed.
    * Possible values are:
    * - 3: LTE
    * - 7: LTE Cat M1
    * - 8: LTE Cat NB1
    * - 9: GPRS / eGPRS
    */
-  uint8_t getCurrentRadioAccessTechnology() {
+  int8_t getCurrentRadioAccessTechnology() {
     sendAT(GF("+URAT?"));
-    if (waitResponse(10000L, GF("+URAT:")) != 1) { return 0; }
+    if (waitResponse(10000L, GF("+URAT:")) != 1) { return -1; }
     int16_t parsedRat = streamGetIntBefore('\n');
-    if (waitResponse() != 1 || parsedRat == -9999) { return 0; }
-    return static_cast<uint8_t>(parsedRat);
+    if (waitResponse() != 1 || parsedRat == -9999) { return -1; }
+    return static_cast<int8_t>(parsedRat);
   }
 
   /*
@@ -528,11 +537,16 @@ class TinyGsmSaraR5
   // addition to adding the functions here):
   //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
   //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  //  - Add `public TinyGsmSSL<TinyGsmSaraR5>,` to the constructor's initializer
-  //  list
-  //  - Add `friend class TinyGsmSSL<TinyGsmSaraR5>;` to the friend list
+  //  - Remove the #if 0 / #endif statements bracketing the SSL configuration
+  //  structure.
+  //  - Add `public TinyGsmSSL<TinyGsmSaraR5, TinyGsmSaraR5SslConfig>,` to the
+  //  constructor's initializer list
+  //  - Add `friend class TinyGsmSSL<TinyGsmSaraR5, TinyGsmSaraR5SslConfig>;` to
+  //  the friend list
   //  - Make the secure client inherit from the secure client class in the SSL
   //  template.
+  //  - Create an inner secure context class inheriting from
+  //  TinyGsmSSLContext<TinyGsmSaraR5, TinyGsmSaraR5SslConfig>
 
   /*
    * Wifi functions
@@ -540,11 +554,11 @@ class TinyGsmSaraR5
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char*, const char*) {
-    sendAT(GF("+CGATT=1"));  // attach to GPRS
+  bool dataConnectImpl(const char* apn, const char*, const char*) {
+    sendAT(GF("+CGATT=1"));  // attach to Packet Domain service
     if (waitResponse(360000L) != 1) { return false; }
 
     // Setting up the PSD profile/PDP context with the UPSD commands sets up an
@@ -569,13 +583,18 @@ class TinyGsmSaraR5
     // 1,"IP","payandgo.o2.co.uk.mnc010.mcc234.gprs","10.160.182.234",0,0,0,2,0,0,0,0,0,0
 
     // While we're still getting responses starting with +CGDCONT:, keep reading
-    // the lines and trying to match the APN.  If we find a match, break out of
-    // the loop and use that PDP context identifier.
-    int  rcid = -1;
-    char strApn[128];
-    bool found = false;
-    while (waitResponse(1000, GF("+CGDCONT:")) == 1) {
-      rcid = streamGetIntBefore(',');
+    // the lines and trying to match the APN. Continue through the final result
+    // code after finding a match so the response is completely consumed.
+    int    rcid = -1;
+    char   strApn[128];
+    bool   found = false;
+    int8_t response;
+    do {
+      response = waitResponse(1000L, GF("+CGDCONT:"), GFP(ModemConfig::GSM_OK),
+                              GFP(ModemConfig::GSM_ERROR));
+      if (response != 1) { break; }
+
+      int parsedCid = streamGetIntBefore(',');
       streamSkipUntil('\"');  // skip to the opening quote
       char strPdpType[10];
       // read the PDP type
@@ -585,53 +604,14 @@ class TinyGsmSaraR5
       size_t len  = stream.readBytesUntil('\"', strApn, sizeof(strApn) - 1);
       strApn[len] = '\0';
       streamSkipUntil('\n');  // throw away the rest of the line
-      if (!strcmp(strApn, apn)) {
+      if (!found && parsedCid >= 0 && !strcmp(strApn, apn)) {
+        rcid  = parsedCid;
         found = true;
-        break;
       }
-    }
-    if (!found) { rcid = -1; }
-#if 0
-    String response;
-    response.reserve(1024);
-    waitResponseUntilEndStream(1000, response);
+    } while (response == 1);
 
-    if (response.length() == 0) {
-      return false;  // no apn at all found
-    }
-    // parse string & look for apn -> modified from SparkFun u-blox SARA-R5 lib
-
-    // create search buffer where we can search
-    char* searchBuf = (char*)malloc(response.length() + 1);
-    response.toCharArray(searchBuf, response.length() + 1);
-
-    int   rcid      = -1;
-    char* searchPtr = searchBuf;
-
-    for (size_t index = 0; index <= response.length(); index++) {
-      // int scanned;
-      // Find the first/next occurrence of +CGDCONT:
-      searchPtr = strstr(searchPtr, "+CGDCONT:");
-      if (searchPtr != nullptr) {
-        char strPdpType[10];
-        char strApn[128];
-        int  ipOct[4];
-
-        searchPtr += strlen("+CGDCONT:");
-        while (*searchPtr == ' ') searchPtr++;  // skip spaces
-                                                /*scanned =*/
-        sscanf(searchPtr, "%d,\"%[^\"]\",\"%[^\"]\",\"%d.%d.%d.%d", &rcid,
-               strPdpType, strApn, &ipOct[0], &ipOct[1], &ipOct[2], &ipOct[3]);
-
-        if (!strcmp(strApn, apn)) {
-          // found the configuration that we want to connect to
-          break;
-        }
-      }
-    }
-
-    free(searchBuf);
-#endif
+    // The query must end successfully and return a matching PDP context.
+    if (response != 2 || !found) { return false; }
 
     sendAT(GF(
         "+UPSDA=0,4"));  // Deactivate the PDP context associated with profile 0
@@ -652,12 +632,12 @@ class TinyGsmSaraR5
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     sendAT(GF(
         "+UPSDA=0,4"));  // Deactivate the PDP context associated with profile 0
     if (waitResponse(360000L) != 1) { return false; }
 
-    sendAT(GF("+CGATT=0"));  // detach from GPRS
+    sendAT(GF("+CGATT=0"));  // Detach from Packet Domain service
     if (waitResponse(360000L) != 1) { return false; }
 
     return true;
@@ -937,6 +917,8 @@ class TinyGsmSaraR5
     *dynamicMux = static_cast<uint8_t>(connected_mux);
 
     if (ssl) {
+      // AT+USOSEC=<socket>,<ssl_tls_status>[,<usecmng_profile_id>]
+      // If no profile is set a default USECMNG profile is used
       sendAT(GF("+USOSEC="), *dynamicMux, ",1");
       waitResponse();
     }
@@ -1095,29 +1077,6 @@ class TinyGsmSaraR5
     }
     return false;
   }
-
-#if 0
- private:
-  // basically the same as waitResponse but without preemptive exiting (except
-  // when time runs out) this is used for +CGDCONT? as it can return multiple
-  // cid/apn configurations each terminated with OK\r\n
-  int8_t waitResponseUntilEndStream(uint32_t timeout_ms, String& data) {
-    data.reserve(1024);  // buffer of the same size as in the SparkFun lib
-    uint8_t  index       = 0;
-    uint32_t startMillis = millis();
-    do {
-      TINY_GSM_YIELD();
-      while (stream.available() > 0) {
-        TINY_GSM_YIELD();
-        int8_t a = stream.read();
-
-        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
-        data += static_cast<char>(a);
-      }
-    } while (millis() - startMillis < timeout_ms);
-    return index;
-  }
-#endif
 
  public:
   /// Stream used to communicate with the modem.

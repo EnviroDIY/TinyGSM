@@ -117,7 +117,7 @@ def build_custom_matrix(config: dict) -> list[dict]:
 
     # %%
     # Exclude modems without SSL support from HttpsClient and AWS_IoTCore examples
-    unsecured_modems_list = [
+    no_secure_client_list = [
         "TINY_GSM_MODEM_SIM900",
         "TINY_GSM_MODEM_SIM7000",
         "TINY_GSM_MODEM_SIM5320",
@@ -131,8 +131,18 @@ def build_custom_matrix(config: dict) -> list[dict]:
         "TINY_GSM_MODEM_MC60",
         "TINY_GSM_MODEM_MC60E",
     ]
-    unsecured_modems = [[modem] for modem in unsecured_modems_list]
-    # secured_modems = [[modem] for modem in modem_list if [modem] not in unsecured_modems]
+    no_secure_client = [[modem] for modem in no_secure_client_list]
+
+    no_secure_context_list = no_secure_client_list + [
+        "TINY_GSM_MODEM_SARAR4",
+        "TINY_GSM_MODEM_SARAR5",
+        "TINY_GSM_MODEM_UBLOX",
+        "TINY_GSM_MODEM_SEQUANS_MONARCH",
+        "TINY_GSM_MODEM_SIM800",
+        "TINY_GSM_MODEM_SIM808",
+        "TINY_GSM_MODEM_ESP8266_NONOS",
+    ]
+    no_secure_context = [[modem] for modem in no_secure_context_list]
 
     small_envs = ["uno", "leonardo", "yun", "feather328p", "feather32u4", "uno_pic32"]
     small_fqbns = [
@@ -207,12 +217,21 @@ def build_custom_matrix(config: dict) -> list[dict]:
             "compiler": compiler_list,
             "example": [
                 os.path.join("examples", "HttpsClient"),
+            ],
+            "board": boards,
+            "inline_defines": no_secure_client,
+            "compiler_flags": compiler_flags,
+            # Exclude SSL-incapable modems on SSL required examples.
+        },
+        {
+            "compiler": compiler_list,
+            "example": [
                 os.path.join("examples", "AWS_IoTCore"),
             ],
             "board": boards,
-            "inline_defines": unsecured_modems,
+            "inline_defines": no_secure_context,
             "compiler_flags": compiler_flags,
-            # Exclude SSL-incapable modems on SSL required examples.
+            # Exclude modems without definable context from AWS
         },
         {
             "compiler": compiler_list,
@@ -371,11 +390,13 @@ def build_custom_matrix(config: dict) -> list[dict]:
 
     # %%
     # decide on the filtered matrix to use for the job matrix
+    expanded_matrix_exclusions_lookup = set(expanded_matrix_exclusions_list)
+    expanded_matrix_inclusions_lookup = set(expanded_matrix_inclusions_list)
     assembled_matrix = [
         json.loads(e)
         for e in cart_join_list
-        if e not in expanded_matrix_exclusions_list
-        and e in expanded_matrix_inclusions_list
+        if e not in expanded_matrix_exclusions_lookup
+        and e in expanded_matrix_inclusions_lookup
     ]
     assembled_matrix = sorted(
         assembled_matrix,

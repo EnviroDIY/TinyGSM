@@ -24,8 +24,8 @@
  *   - The modem respects user-specified multiplexing channel
  * numbers/identifiers for socket connections.
  *
- * @todo In `gprsConnectImpl()`: configure DNS settings if needed
- * @todo In `gprsDisconnectImpl()`: There is no command in AT command set
+ * @todo In `dataConnectImpl()`: configure DNS settings if needed
+ * @todo In `dataDisconnectImpl()`: There is no command in AT command set
  * @todo In `modemConnect()`: no need for loop?
  */
 
@@ -35,7 +35,7 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
 
@@ -84,12 +84,12 @@ struct TinyGsmM590TcpConfig
 /// Class for the Neoway M590
 /// @ingroup neoway_m590
 class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
-                    public TinyGsmGPRS<TinyGsmM590>,
+                    public TinyGsmCellularData<TinyGsmM590>,
                     public TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>,
                     public TinyGsmSMS<TinyGsmM590>,
                     public TinyGsmTime<TinyGsmM590> {
   friend class TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmM590>;
+  friend class TinyGsmCellularData<TinyGsmM590>;
   friend class TinyGsmTCP<TinyGsmM590, TinyGsmM590TcpConfig>;
   friend class GsmClient<TinyGsmM590, TinyGsmM590TcpConfig>;
   friend class TinyGsmSMS<TinyGsmM590>;
@@ -367,11 +367,11 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();
 
     sendAT(GF("+XISP=0"));
     waitResponse();
@@ -389,7 +389,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
 
     const uint32_t timeout_ms = 60000L;
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
-      if (isGprsConnected()) {
+      if (isDataConnected()) {
         // goto set_dns; // TODO
         return true;
       }
@@ -397,23 +397,25 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
     }
     return false;
 
+#if TINY_GSM_USE_PUBLIC_DNS
     // set_dns:  // TODO
     //     sendAT(GF("+DNSSERVER=1,8.8.8.8"));
     //     waitResponse();
     //
     //     sendAT(GF("+DNSSERVER=2,8.8.4.4"));
     //     waitResponse();
+#endif
 
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // TODO(?): There is no command in AT command set
     // XIIC=0 does not work
     return true;
   }
 
-  bool isGprsConnectedImpl() {
+  bool isDataConnectedImpl() {
     sendAT(GF("+XIIC?"));
     if (waitResponse(GF("+XIIC:")) != 1) { return false; }
     int8_t res = streamGetIntBefore(',');
@@ -425,7 +427,8 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
    * SIM card functions
    */
  protected:
-  // Able to follow all SIM card functions as inherited from TinyGsmGPRS.tpp
+  // Able to follow all SIM card functions as inherited from
+  // TinyGsmCellularData.tpp
 
 
   /*
@@ -548,10 +551,13 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
         // End this send command and check its responses
         // NOTE: In many cases, confirmed is just a passthrough of len
         int16_t confirmed = modemEndSend(sendLength, mux);
-        bytesSent += TinyGsmMin(attempted,
-                                confirmed);  // bump up number of bytes sent
-        txPtr += TinyGsmMin(attempted, confirmed);  // bump up the pointer
-        send_success &= TinyGsmMin(attempted, confirmed) > 0;
+        size_t  processed = TinyGsmMin(attempted, confirmed);
+        // If bytes were written to the stream, don't retry that chunk even if
+        // the modem doesn't confirm any bytes.
+        if (attempted > 0 && processed == 0) { processed = attempted; }
+        bytesSent += processed;  // bump up number of bytes sent
+        txPtr += processed;      // bump up the pointer
+        send_success = processed > 0;
         send_attempts++;
       }
       // if we failed after 3 attempts at the same chunk, bail from the whole
@@ -613,10 +619,8 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
         // the mux is valid before we call it.
         moveCharsFromStreamToFifo(mux, len_reported);
       } else {
-        do {  // If the mux is invalid, throw away the stream data
-          stream.read();
-          TINY_GSM_YIELD();
-        } while (stream.available());
+        // If the mux is invalid, throw away the reported stream data
+        streamDump(len_reported);
       }
       data = "";
       return true;

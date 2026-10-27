@@ -17,6 +17,8 @@
  * - Combined TCP/SSL sockets:
  *   - 7
  *   - a few u-blox modules support more, but this library does not
+ * - SSL contexts (security profiles):
+ *   - 5
  * - Socket Buffering:
  *   - The modem has an internal buffer for incoming data.
  * - Socket Numbering:
@@ -34,14 +36,14 @@
 #include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
-// management yet. TINY_GSM_MODEM_HAS_SSL here and do no include the SSL module
-// so as not to waste space.
+// management yet. Define TINY_GSM_MODEM_HAS_SSL here and do no include the SSL
+// module.
 #ifndef TINY_GSM_MODEM_HAS_SSL
 /// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGSMLocation.tpp"
@@ -81,9 +83,6 @@ constexpr char TinyGsmUBLOXModemConfig::MODEM_MODEL[] __attribute__((weak));
  * Most modules using this protocol support 7 sockets, the LEON-G1 supports 16.
  * I **think** all sockets can be SSL, but the manual is not clear (to me).
  *
- * Also supports 5 SSL contexts (0-4).
- * The SSL context is collection of SSL settings, not the connection identifier.
- *
  * @warning You cannot control the socket mux number on this module! The module
  * opens the connection and returns the connection number it opened.
  *
@@ -99,10 +98,22 @@ struct TinyGsmUBLOXTcpConfig
           /*sendMaxSize*/ 1024,
           /*connectTimeoutS*/ 120> {};
 
+#if 0
+/**
+ * @brief SSL behavior and limits for the u-blox family
+ * The module supports 5 SSL contexts (called security profiles, numbered 0-4).
+ * This library does not support selecting or modifying the security profiles in
+ * any way.  The module will always use the default profile.
+ * @ingroup ublox_cellular
+ */
+struct TinyGsmUBLOXSslConfig : public TinyGsmSslConfigPreset<
+                                  /*contextCount*/ 5> {};
+#endif
+
 /// Class for the u-blox family of modems
 /// @ingroup ublox_cellular
 class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
-                     public TinyGsmGPRS<TinyGsmUBLOX>,
+                     public TinyGsmCellularData<TinyGsmUBLOX>,
                      public TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>,
                      public TinyGsmCalling<TinyGsmUBLOX>,
                      public TinyGsmSMS<TinyGsmUBLOX>,
@@ -111,7 +122,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
                      public TinyGsmTime<TinyGsmUBLOX>,
                      public TinyGsmBattery<TinyGsmUBLOX> {
   friend class TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmUBLOX>;
+  friend class TinyGsmCellularData<TinyGsmUBLOX>;
   friend class TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>;
   friend class GsmClient<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>;
   friend class TinyGsmCalling<TinyGsmUBLOX>;
@@ -231,7 +242,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
         stop(TcpConfig::kStopTimeoutS * 1000L);
       }
 #endif
-      TINY_GSM_YIELD();
       rx.clear();
       // attempt to use the requested mux number first
       uint8_t assignedMux = mux;
@@ -292,7 +302,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     using TcpConfig = TinyGsmUBLOXTcpConfig;
 
     /*
-     * Client constructors and initialization
+     * Secure client constructors and initialization
      */
     /**
      * @brief Create a new secured TCP (SSL) client.
@@ -423,7 +433,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
       return true;
     else if (s == UBLOXRegStatus::REG_UNKNOWN)  // for some reason, it can hang
                                                 // at unknown..
-      return isGprsConnected();
+      return isDataConnected();
     else
       return false;
   }
@@ -471,20 +481,16 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
 
   /**
    * @brief Get the current radio access technology (RAT) of the modem.
-   * @return The current RAT mode, or 0 if the command failed.
+   * @return The current RAT mode, or -1 if the command or parsing failed.
    */
-  /**
-   * @brief Get the current radio access technology (RAT) of the modem.
-   * @return The current RAT mode, or 0 if the command failed.
-   */
-  uint8_t getCurrentRadioAccessTechnology() {
+  int8_t getCurrentRadioAccessTechnology() {
     sendAT(GF("+URAT?"));
-    if (waitResponse(10000L, GF("+URAT:")) != 1) { return 0; }
+    if (waitResponse(10000L, GF("+URAT:")) != 1) { return -1; }
 
     int16_t parsedRat = streamGetIntBefore('\n');
-    if (waitResponse() != 1 || parsedRat == -9999) { return 0; }
+    if (waitResponse() != 1 || parsedRat == -9999) { return -1; }
 
-    return static_cast<uint8_t>(parsedRat);
+    return static_cast<int8_t>(parsedRat);
   }
 
   /*
@@ -496,11 +502,16 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   // addition to adding the functions here):
   //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
   //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
-  //  - Add `public TinyGsmSSL<TinyGsmUBLOX>,` to the constructor's initializer
-  //  list
-  //  - Add `friend class TinyGsmSSL<TinyGsmUBLOX>;` to the friend list
+  //  - Remove the #if 0 / #endif statements bracketing the SSL configuration
+  //  structure.
+  //  - Add `public TinyGsmSSL<TinyGsmUBLOX, TinyGsmUBLOXSslConfig>,` to the
+  //  constructor's initializer list
+  //  - Add `friend class TinyGsmSSL<TinyGsmUBLOX, TinyGsmUBLOXSslConfig>;` to
+  //  the friend list
   //  - Make the secure client inherit from the secure client class in the SSL
   //  template.
+  //  - Create an inner secure context class inheriting from
+  //  TinyGsmSSLContext<TinyGsmUBLOX, TinyGsmUBLOXSslConfig>
 
   /*
    * Wifi functions
@@ -508,13 +519,13 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    // gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    // dataDisconnect();
 
-    sendAT(GF("+CGATT=1"));  // attach to GPRS
+    sendAT(GF("+CGATT=1"));  // attach to Packet Domain service
     if (waitResponse(360000L) != 1) { return false; }
 
     // Setting up the PSD profile/PDP context with the UPSD commands sets up an
@@ -579,12 +590,12 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     sendAT(GF(
         "+UPSDA=0,4"));  // Deactivate the PDP context associated with profile 0
     if (waitResponse(360000L) != 1) { return false; }
 
-    sendAT(GF("+CGATT=0"));  // detach from GPRS
+    sendAT(GF("+CGATT=0"));  // Detach from Packet Domain service
     if (waitResponse(360000L) != 1) { return false; }
 
     return true;
@@ -864,6 +875,8 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     *dynamicMux = static_cast<uint8_t>(connected_mux);
 
     if (ssl) {
+      // AT+USOSEC=<socket>,<ssl_tls_status>[,<usecmng_profile_id>]
+      // If no profile is set a default USECMNG profile is used
       sendAT(GF("+USOSEC="), *dynamicMux, ",1");
       waitResponse();
     }

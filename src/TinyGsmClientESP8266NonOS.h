@@ -38,9 +38,8 @@
 #include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
-// management for the non-OS version of the ESP8266 firmware, so we define
-// TINY_GSM_MODEM_HAS_SSL here and do not include the SSL module so as not to
-// waste space.
+// management for the non-OS version of the ESP8266 firmware.  Define
+// TINY_GSM_MODEM_HAS_SSL here and do not include the SSL module
 #ifndef TINY_GSM_MODEM_HAS_SSL
 /// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
@@ -87,9 +86,6 @@ constexpr char TinyGsmESP8266NonOSModemConfig::MODEM_MODEL[]
  * manual warns that module may not be able to handle more than 1 SSL socket at
  * a time.
  *
- * These modules don't have "SSL Contexts" per-say, but they only support 2
- * certificate sets.  The certificates are loaded and referenced by number.
- *
  * The ESP8266 devices can receive 2048 bytes and send 1460 bytes at most in a
  * single transmission.
  * @ingroup espressif_esp8266_nonos
@@ -102,6 +98,19 @@ struct TinyGsmESP8266NonOSTcpConfig
           /*sendMaxSize*/ 1460,
           /*connectTimeoutS*/ 75,  // default
           /*stopTimeoutS*/ 5> {};
+
+#if 0
+/**
+ * @brief SSL behavior and limits for the ESP8266 (NonOS).
+ *
+ * These modules don't have "SSL Contexts" per-say, but they only support 2
+ * certificate sets.  The certificates are loaded and referenced by number.
+ *
+ * @ingroup espressif_esp8266_nonos
+ */
+struct TinyGsmESP8266NonOSSslConfig : public TinyGsmSslConfigPreset<
+                                   /*contextCount*/ 2> {};
+#endif
 
 /**
  * @brief Class for the Espressif ESP8266 modem, which is a Wi-Fi module with
@@ -162,11 +171,11 @@ class TinyGsmESP8266NonOS
      * corresponding modem's socket array.  This is identical to the identifier
      * the modem uses internally to identify the socket for the ESP8266.
      *
-     * @note The ESP8266 allows you choose the multiplexing channel number, but
-     * if the input mux channel number is already in use and other mux channels
-     * are available, this library will select the next available one.  Use the
-     * getMux() function to get the assigned multiplexing channel number after a
-     * successful connection.
+     * @note The ESP8266 allows you to choose the multiplexing channel number,
+     * but if the input mux channel number is already in use and other mux
+     * channels are available, this library will select the next available one.
+     * Use the getMux() function to get the assigned multiplexing channel number
+     * after a successful connection.
      */
     explicit GsmClientESP8266NonOS(TinyGsmESP8266NonOS& modem, uint8_t mux = 0)
         : GsmClient<TinyGsmESP8266NonOS, TinyGsmESP8266NonOSTcpConfig>(modem,
@@ -240,7 +249,7 @@ class TinyGsmESP8266NonOS
     using TcpConfig = TinyGsmESP8266NonOSTcpConfig;
 
     /*
-     * Client constructors and initialization
+     * Secure client constructors and initialization
      */
     /**
      * @brief Create a new secured TCP (SSL) client.
@@ -337,7 +346,7 @@ class TinyGsmESP8266NonOS
   // Follows functions inherited from Espressif
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
   // No functions of this type supported
 
@@ -467,7 +476,6 @@ class TinyGsmESP8266NonOS
                                         GFP(ModemConfig::GSM_ERROR));
       if (has_status == 1) {
         int16_t returned_mux = streamGetIntBefore(',');
-        streamSkipUntil(',');   // Skip mux (?)
         streamSkipUntil(',');   // Skip type
         streamSkipUntil(',');   // Skip remote IP
         streamSkipUntil(',');   // Skip remote port
@@ -502,14 +510,12 @@ class TinyGsmESP8266NonOS
         // the mux is valid before we call it.
         moveCharsFromStreamToFifo(mux, len_reported);
       } else {
-        do {  // If the mux is invalid, throw away the stream data
-          stream.read();
-          TINY_GSM_YIELD();
-        } while (stream.available());
+        // If the mux is invalid, throw away the reported stream data
+        streamDump(len_reported);
       }
       data = "";
       return true;
-    } else if (data.endsWith(GF("CLOSED"))) {
+    } else if (data.endsWith(GF("CLOSED\r\n"))) {
       int16_t muxStart =
           TinyGsmMax(0,
                      data.lastIndexOf(String(GFP(ModemConfig::GSM_NL)),
@@ -522,7 +528,6 @@ class TinyGsmESP8266NonOS
         }
         DBG("### Closed: ", mux);
       }
-      streamSkipUntil('\n');  // throw away the new line
       data = "";
       return true;
     } else if (data.endsWith(GF("busy p..."))) {

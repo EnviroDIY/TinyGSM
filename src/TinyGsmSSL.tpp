@@ -72,10 +72,10 @@
  *
  * This applies to **all** modems using the GsmSecureClient class.  The SSL
  * context is a collection of SSL settings, not the connection identifier.  This
- * library always uses SSL context 0 by default.  At this time, all modems that
- * support SSL via contexts show using context 0 in their documentation.  If you
- * find a modem that uses a different context, please let us know and we will
- * add it to the list of modems that use a different default context.
+ * library uses SSL context 0 by default.  At this time, all modems that support
+ * SSL via contexts show using context 0 in their documentation.  If you find a
+ * modem that uses a different context, please let us know and we will add it to
+ * the list of modems that use a different default context.
  */
 #define TINY_GSM_DEFAULT_SSL_CTX 0
 #endif
@@ -161,20 +161,44 @@ enum class SSLVersion : int8_t {
 };
 
 /**
- * @brief The CRTP parent class for Secure Socket Layer (SSL) functions.
- * @tparam modemType The derived modem class
+ * @brief Template class for modem SSL context config traits.
  *
- * @todo create an SSLConfig trait type to control SSL behavior and limits,
- * similar to TcpConfig.  This would handle:
- *  - the number of SSL contexts supported by the modem
+ * @tparam contextCount The number of hardware SSL contexts supported by the
+ * modem.
+ *
+ * @todo handle:
  *  - the number of SSL sockets supported by the modem
  *  - whether the socket numbering is shared between SSL and TCP sockets or
  * separate
  *  - the SSL capabilities of the modem (e.g., whether it supports PSK, client
  * certs, etc.)
  */
-template <class modemType>
+template <uint8_t contextCount>
+struct TinyGsmSslConfigPreset {
+  /// The number of hardware SSL contexts supported by the modem.
+  static constexpr uint8_t kContextCount = contextCount;
+};
+
+// Forward declaration so the matching context specialization can be friended.
+template <class modemType, class sslConfig>
+class GsmSecureContext;
+
+/**
+ * @brief The CRTP parent class for Secure Socket Layer (SSL) functions.
+ * @tparam modemType The derived modem class.
+ * @tparam sslConfig Trait type controlling SSL context limits.
+ */
+template <class modemType, class sslConfig>
 class TinyGsmSSL {
+ public:
+  /// The SSL trait type used by this modem.
+  using SslConfig = sslConfig;
+  /// The SSL context type used by this modem.
+  using gsmSecureContext = ::GsmSecureContext<modemType, sslConfig>;
+
+ private:
+  friend class ::GsmSecureContext<modemType, sslConfig>;
+
  public:
   /// Compile-time capability flag indicating SSL/TLS support
   static constexpr bool hasSSL = true;
@@ -185,25 +209,34 @@ class TinyGsmSSL {
 
   /* =========================================== */
   /* =========================================== */
+ public:
+  /*
+   * Mixin Constructors
+   */
+
+  /**
+   * @brief Create the SSL capability mixin.
+   */
+  TinyGsmSSL() {
+    initializeSSLContexts();
+  }
+
+  /**
+   * @brief Create the SSL capability mixin.
+   */
+  explicit TinyGsmSSL(modemType& /*modem*/, uint8_t /*mux*/ = 0) {
+    initializeSSLContexts();
+  }
+
   /*
    * Define the interface
    */
- public:
+
   /**
    * @anchor ssl_certificate_management_functions
    * @name Secure socket layer (SSL) certificate management functions
    */
   /**@{*/
-
-  /**
-   * @brief Create the SSL capability mixin.
-   */
-  TinyGsmSSL() {}
-
-  /**
-   * @brief Create the SSL capability mixin.
-   */
-  explicit TinyGsmSSL(modemType& /*modem*/, uint8_t /*mux*/ = 0) {}
 
   /**
    * @brief Load a new certificate onto the module.
@@ -221,6 +254,20 @@ class TinyGsmSSL {
                        const uint16_t len) {
     return thisModem().loadCertificateImpl(certificateName, cert, len);
   }
+#if defined(TINY_GSM_HAS_PROGMEM)
+  /**
+   * @brief Load a new certificate stored in program memory onto the module.
+   *
+   * @param certificateName The name of the certificate.
+   * @param cert The certificate content wrapped in GFP().
+   * @param len The length of the certificate content.
+   * @return True if the certificate was successfully loaded, false otherwise.
+   */
+  bool loadCertificate(const char* certificateName, GsmConstStr cert,
+                       const uint16_t len) {
+    return thisModem().loadCertificateImpl(certificateName, cert, len);
+  }
+#endif
   /// @copydoc loadCertificate(const char*, const char*, const uint16_t)
   bool loadCertificate(const String& certificateName, const String& cert,
                        const uint16_t len) {
@@ -356,14 +403,78 @@ class TinyGsmSSL {
   }
   /**@}*/
 
-  /*
-   * SSL context functions
-   */
-  // At this time, we have no templates for these functions, so they are
-  // implemented in the modem-specific classes.
-
 
  protected:
+  /**
+   * @anchor ssl_context_functions
+   * @name SSL context functions
+   */
+  /**@{*/
+  /**
+   * @brief Look up a registered SSL context by hardware context index.
+   *
+   * @param contextIndex The zero-based hardware SSL context index.
+   * @return The registered context, or `nullptr` if the index is invalid or no
+   * context is registered there.
+   */
+  gsmSecureContext* getSSLContext(uint8_t contextIndex) {
+    if (contextIndex >= SslConfig::kContextCount) { return nullptr; }
+    return sslContexts[contextIndex];
+  }
+
+  /**
+   * @brief Look up a registered SSL context by hardware context index.
+   *
+   * @param contextIndex The zero-based hardware SSL context index.
+   * @return The registered context, or `nullptr` if the index is invalid or no
+   * context is registered there.
+   */
+  const gsmSecureContext* getSSLContext(uint8_t contextIndex) const {
+    if (contextIndex >= SslConfig::kContextCount) { return nullptr; }
+    return sslContexts[contextIndex];
+  }
+
+  /**
+   * @brief Check that a context contains the credentials required by its
+   * authentication mode.
+   * @param context The context to validate.
+   * @return `true` when the context and its required credentials are present.
+   */
+  bool validateSSLContextCredentials(const gsmSecureContext* context) const {
+    if (context == nullptr) { return false; }
+
+    switch (context->sslAuthMode) {
+      case SSLAuthMode::NO_VALIDATION: {
+        return true;  // no credentials required
+      }
+      case SSLAuthMode::CLIENT_VALIDATION: {
+        // both a client certificate and key are required
+        return context->clientCertName[0] != '\0' &&
+            context->clientKeyName[0] != '\0';
+      }
+      case SSLAuthMode::CA_VALIDATION: {
+        // a CA certificate is required
+        return context->CAcertName[0] != '\0';
+      }
+      case SSLAuthMode::MUTUAL_AUTHENTICATION: {
+        // a CA certificate, client certificate, and client key are all required
+        return context->CAcertName[0] != '\0' &&
+            context->clientCertName[0] != '\0' &&
+            context->clientKeyName[0] != '\0';
+      }
+      case SSLAuthMode::PRE_SHARED_KEYS: {
+        // either a table that combines the key and identity is present, or both
+        // the individual key and identity (identifier/hint) are provided
+        return context->pskTableName[0] != '\0' ||
+            (context->pskIdent[0] != '\0' && context->psKey[0] != '\0');
+      }
+      default: {
+        return false;
+      }
+    }
+  }
+  /**@}*/
+
   // destructor (protected!)
   ~TinyGsmSSL() {}
 
@@ -404,39 +515,556 @@ class TinyGsmSSL {
                            const char* pskIdent) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool
   convertPSKTableImpl(const char* psk_table_name) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+ protected:
+  /**
+   * @brief Register an SSL context in a hardware context slot.
+   * @param context The context object to register.
+   * @param contextIndex The zero-based hardware SSL context index.
+   * @return `true` if the slot is valid and available for this context;
+   * otherwise `false`.
+   */
+  bool attachSSLContext(gsmSecureContext* context, uint8_t contextIndex) {
+    if (context == nullptr || contextIndex >= SslConfig::kContextCount ||
+        (sslContexts[contextIndex] != nullptr &&
+         sslContexts[contextIndex] != context)) {
+      return false;
+    }
+    sslContexts[contextIndex] = context;
+    return true;
+  }
+
+  /**
+   * @brief Remove an SSL context from a hardware context slot.
+   * @param context The context object requesting removal.
+   * @param contextIndex The zero-based hardware SSL context index.
+   */
+  void detachSSLContext(gsmSecureContext* context, uint8_t contextIndex) {
+    if (contextIndex < SslConfig::kContextCount &&
+        sslContexts[contextIndex] == context) {
+      sslContexts[contextIndex] = nullptr;
+    }
+  }
+
+ private:
+  /// Initialize the array of SSL context pointers to nullptr.
+  void initializeSSLContexts() {
+    for (uint8_t i = 0; i < SslConfig::kContextCount; ++i) {
+      sslContexts[i] = nullptr;
+    }
+  }
+
+  /// Registered contexts indexed by hardware SSL context number.
+  gsmSecureContext* sslContexts[SslConfig::kContextCount];
 };
 
 
 /**
- * The secure client class
+ * @brief Modem-owned SSL context configuration with application-owned storage.
  *
- * @note This is a base class for secure clients, but it is NOT an inner class
- * of the TinyGsmSSL class.
+ * A context registers itself with one hardware SSL context slot in a modem.
+ * The application must keep the context alive while any secure client may use
+ * its index. The modem must outlive every context and client attached to it.
+ * Copying is disabled because each registered object has unique ownership of
+ * its registry slot.
+ *
+ * @tparam modemType The modem class that owns the hardware SSL contexts.
+ * @tparam sslConfig Trait type controlling SSL context limits.
  */
-class GsmSecureClient {
- public:
-  /// Create a new secure client instance
-  GsmSecureClient() {
-    sslCtxIndex      = TINY_GSM_DEFAULT_SSL_CTX;
-    sslCtxConfigured = false;
-    sslAuthMode      = SSLAuthMode::NO_VALIDATION;
-    sslVersion       = SSLVersion::TLS1_2;
-    memset(CAcertName, '\0', sizeof(CAcertName));
-    memset(clientCertName, '\0', sizeof(clientCertName));
-    memset(clientKeyName, '\0', sizeof(clientKeyName));
-    memset(pskIdent, '\0', sizeof(pskIdent));
-    memset(psKey, '\0', sizeof(psKey));
-    memset(pskTableName, '\0', sizeof(pskTableName));
-  }
+template <class modemType, class sslConfig>
+class GsmSecureContext {
+  friend class TinyGsmSSL<modemType, sslConfig>;
+  friend modemType;
 
+ private:
+  modemType* modem;
+  uint8_t    sslCtxIndex;
+
+ public:
   /**
-   * @anchor client_ssl_config
-   * @name Client SSL configuration functions
+   * @anchor ssl_context_ctors
+   * @name Secure context constructors and initialization
    */
   /**@{*/
   /**
-   * @brief Set the SSL context index or identifier to use for this connection
-   * @param sslCtxIndex The SSL context index
+   * @brief Create an unattached SSL context with default settings.
+   */
+  GsmSecureContext()
+      : modem(nullptr),
+        sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
+        sslAuthMode(SSLAuthMode::NO_VALIDATION),
+        sslVersion(SSLVersion::TLS1_2) {
+    clearConfigurationStrings();
+  }
+
+  /**
+   * @brief Create and attach an SSL context to a modem context slot.
+   *
+   * Use isAttached() to determine whether registration succeeded.
+   *
+   * @param modem The modem that owns the hardware SSL context.
+   * @param contextIndex The zero-based hardware SSL context index.
+   */
+  GsmSecureContext(modemType& modem,
+                   uint8_t    contextIndex = TINY_GSM_DEFAULT_SSL_CTX)
+      : modem(nullptr),
+        sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
+        sslAuthMode(SSLAuthMode::NO_VALIDATION),
+        sslVersion(SSLVersion::TLS1_2) {
+    clearConfigurationStrings();
+    init(&modem, contextIndex);
+  }
+
+  /**
+   * @brief Create and attach an SSL context using an integer context index.
+   * @param modem The modem that owns the hardware SSL context.
+   * @param contextIndex The zero-based hardware SSL context index.
+   */
+  GsmSecureContext(modemType& modem, int contextIndex)
+      : GsmSecureContext(modem, static_cast<uint8_t>(contextIndex)) {}
+
+  /**
+   * @brief Create an SSL context with certificate authentication settings.
+   * @param modem The modem that owns the SSL contexts
+   * @param sslAuthMode The SSL authentication mode
+   * @param sslVersion The SSL/TLS version (default: TLS1_2)
+   * @param CAcertName The name of the CA certificate file
+   * @param clientCertName The name of the client certificate file
+   * @param clientKeyName The name of the client key file
+   */
+  explicit GsmSecureContext(modemType& modem, SSLAuthMode sslAuthMode,
+                            SSLVersion  sslVersion     = SSLVersion::TLS1_2,
+                            const char* CAcertName     = nullptr,
+                            const char* clientCertName = nullptr,
+                            const char* clientKeyName  = nullptr)
+      : modem(nullptr),
+        sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
+        sslAuthMode(SSLAuthMode::NO_VALIDATION),
+        sslVersion(SSLVersion::TLS1_2) {
+    clearConfigurationStrings();
+    init(&modem, TINY_GSM_DEFAULT_SSL_CTX);
+    this->setSSLAuthMode(sslAuthMode);
+    this->setSSLVersion(sslVersion);
+    this->setCACertName(CAcertName);
+    this->setClientCredentials(clientCertName, clientKeyName);
+  }
+
+  /**
+   * @brief Create an SSL context with certificate authentication and explicit
+   * context index.
+   * @param modem The modem that owns the SSL contexts
+   * @param contextIndex The SSL context index
+   * @param sslAuthMode The SSL authentication mode
+   * @param sslVersion The SSL/TLS version (default: TLS1_2)
+   * @param CAcertName The name of the CA certificate file
+   * @param clientCertName The name of the client certificate file
+   * @param clientKeyName The name of the client key file
+   */
+  explicit GsmSecureContext(modemType& modem, uint8_t contextIndex,
+                            SSLAuthMode sslAuthMode,
+                            SSLVersion  sslVersion     = SSLVersion::TLS1_2,
+                            const char* CAcertName     = nullptr,
+                            const char* clientCertName = nullptr,
+                            const char* clientKeyName  = nullptr)
+      : modem(nullptr),
+        sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
+        sslAuthMode(SSLAuthMode::NO_VALIDATION),
+        sslVersion(SSLVersion::TLS1_2) {
+    clearConfigurationStrings();
+    init(&modem, contextIndex);
+    this->setSSLAuthMode(sslAuthMode);
+    this->setSSLVersion(sslVersion);
+    this->setCACertName(CAcertName);
+    this->setClientCredentials(clientCertName, clientKeyName);
+  }
+
+  /**
+   * @brief Create an SSL context with pre-shared key (PSK) settings.
+   * @param modem The modem that owns the SSL contexts
+   * @param pskIdent The PSK identity/hint
+   * @param psKey The pre-shared key
+   * @param sslVersion The SSL/TLS version (default: TLS1_2)
+   */
+  explicit GsmSecureContext(modemType& modem, const char* pskIdent,
+                            const char* psKey,
+                            SSLVersion  sslVersion = SSLVersion::TLS1_2)
+      : modem(nullptr),
+        sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
+        sslAuthMode(SSLAuthMode::NO_VALIDATION),
+        sslVersion(SSLVersion::TLS1_2) {
+    clearConfigurationStrings();
+    init(&modem, TINY_GSM_DEFAULT_SSL_CTX);
+    this->setSSLAuthMode(SSLAuthMode::PRE_SHARED_KEYS);
+    this->setSSLVersion(sslVersion);
+    this->setPreSharedKey(pskIdent, psKey);
+  }
+
+  /**
+   * @brief Create an SSL context with PSK and explicit context index.
+   * @param modem The modem that owns the SSL contexts
+   * @param contextIndex The SSL context index
+   * @param pskIdent The PSK identity/hint
+   * @param psKey The pre-shared key
+   * @param sslVersion The SSL/TLS version (default: TLS1_2)
+   */
+  explicit GsmSecureContext(modemType& modem, uint8_t contextIndex,
+                            const char* pskIdent, const char* psKey,
+                            SSLVersion sslVersion = SSLVersion::TLS1_2)
+      : modem(nullptr),
+        sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
+        sslAuthMode(SSLAuthMode::NO_VALIDATION),
+        sslVersion(SSLVersion::TLS1_2) {
+    clearConfigurationStrings();
+    init(&modem, contextIndex);
+    this->setSSLAuthMode(SSLAuthMode::PRE_SHARED_KEYS);
+    this->setSSLVersion(sslVersion);
+    this->setPreSharedKey(pskIdent, psKey);
+  }
+
+  /**
+   * @brief Create an SSL context with PSK table name.
+   * @param modem The modem that owns the SSL contexts
+   * @param pskTableName The name of the PSK table file
+   * @param sslVersion The SSL/TLS version (default: TLS1_2)
+   */
+  explicit GsmSecureContext(modemType& modem, const char* pskTableName,
+                            SSLVersion sslVersion = SSLVersion::TLS1_2)
+      : modem(nullptr),
+        sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
+        sslAuthMode(SSLAuthMode::NO_VALIDATION),
+        sslVersion(SSLVersion::TLS1_2) {
+    clearConfigurationStrings();
+    init(&modem, TINY_GSM_DEFAULT_SSL_CTX);
+    this->setSSLAuthMode(SSLAuthMode::PRE_SHARED_KEYS);
+    this->setSSLVersion(sslVersion);
+    this->setPSKTableName(pskTableName);
+  }
+
+  /**
+   * @brief Create an SSL context with PSK table and explicit context index.
+   * @param modem The modem that owns the SSL contexts
+   * @param contextIndex The SSL context index
+   * @param pskTableName The name of the PSK table file
+   * @param sslVersion The SSL/TLS version (default: TLS1_2)
+   */
+  explicit GsmSecureContext(modemType& modem, uint8_t contextIndex,
+                            const char* pskTableName,
+                            SSLVersion  sslVersion = SSLVersion::TLS1_2)
+      : modem(nullptr),
+        sslCtxIndex(TINY_GSM_DEFAULT_SSL_CTX),
+        sslAuthMode(SSLAuthMode::NO_VALIDATION),
+        sslVersion(SSLVersion::TLS1_2) {
+    clearConfigurationStrings();
+    init(&modem, contextIndex);
+    this->setSSLAuthMode(SSLAuthMode::PRE_SHARED_KEYS);
+    this->setSSLVersion(sslVersion);
+    this->setPSKTableName(pskTableName);
+  }
+
+  /**
+   * @brief Create an SSL context with a PSK table and integer context index.
+   * @param modem The modem that owns the SSL contexts
+   * @param contextIndex The SSL context index
+   * @param pskTableName The name of the PSK table file
+   * @param sslVersion The SSL/TLS version (default: TLS1_2)
+   */
+  explicit GsmSecureContext(modemType& modem, int contextIndex,
+                            const char* pskTableName,
+                            SSLVersion  sslVersion = SSLVersion::TLS1_2)
+      : GsmSecureContext(modem, static_cast<uint8_t>(contextIndex),
+                         pskTableName, sslVersion) {}
+
+  /**
+   * @brief Unregister this context from its modem.
+   */
+  ~GsmSecureContext() {
+    detach();
+  }
+
+  /**
+   * @brief Attach or reattach this object to a modem SSL context slot.
+   *
+   * Reattaching to the same modem and slot succeeds. An invalid index, null
+   * modem, or slot registered to another context is rejected without changing
+   * the current attachment. When changing slots, the old slot is detached only
+   * after the requested slot has been validated.
+   *
+   * @param modem The modem that owns the hardware SSL context.
+   * @param contextIndex The zero-based hardware SSL context index.
+   * @return `true` if this object is registered in the requested slot;
+   * otherwise `false`.
+   */
+  bool init(modemType* modem, uint8_t contextIndex = TINY_GSM_DEFAULT_SSL_CTX) {
+    if (modem == nullptr || contextIndex >= sslConfig::kContextCount) {
+      return false;
+    }
+
+    GsmSecureContext* registered = modem->getSSLContext(contextIndex);
+    if (registered != nullptr && registered != this) { return false; }
+    if (this->modem == modem && this->sslCtxIndex == contextIndex &&
+        registered == this) {
+      return true;
+    }
+
+    detach();
+    if (!modem->attachSSLContext(this, contextIndex)) { return false; }
+    this->modem       = modem;
+    this->sslCtxIndex = contextIndex;
+    return true;
+  }
+  /**@}*/
+
+  /**
+   * @brief Check whether this context is registered with a modem.
+   * @return `true` when attached; otherwise `false`.
+   */
+  bool isAttached() const {
+    return modem != nullptr;
+  }
+
+  /**
+   * @brief Get the hardware SSL context index.
+   * @return The registered index, or #TINY_GSM_DEFAULT_SSL_CTX when unattached.
+   */
+  uint8_t getSSLContextIndex() const {
+    return sslCtxIndex;
+  }
+
+
+  /**
+   * @anchor context_ssl_config
+   * @name Secure context configuration functions
+   */
+  /**@{*/
+  /**
+   * @brief Set the SSL authentication mode.
+   * @param mode The SSL authentication mode.
+   */
+  void setSSLAuthMode(SSLAuthMode mode) {
+    sslAuthMode = mode;
+  }
+
+  /**
+   * @brief Set the SSL/TLS protocol version.
+   * @param version The SSL/TLS protocol version.
+   */
+  void setSSLVersion(SSLVersion version) {
+    sslVersion = version;
+  }
+  /**@}*/
+
+  /**
+   * @anchor context_cert_assignment
+   * @name Secure context certificate assignment functions
+   */
+  /**@{*/
+
+  /**
+   * @brief Set or clear the CA certificate file name.
+   * @param CAcertName The CA certificate file name, or `nullptr` to clear it.
+   */
+  void setCACertName(const char* CAcertName) {
+    memset(this->CAcertName, '\0', sizeof(this->CAcertName));
+    copyString(this->CAcertName, CAcertName, sizeof(this->CAcertName));
+  }
+  /// @copydoc setCACertName(const char*)
+  void setCACertName(const String& CAcertName) {
+    setCACertName(CAcertName.c_str());
+  }
+
+  /**
+   * @brief Set or clear the client certificate and private key.
+   *
+   * Both names are stored only when both are non-null, non-empty, and fit in
+   * the configured buffers. Otherwise both stored names are cleared.
+   *
+   * @param clientCertName The client certificate file name.
+   * @param clientKeyName The matching private-key file name.
+   */
+  void setClientCredentials(const char* clientCertName,
+                            const char* clientKeyName) {
+    memset(this->clientCertName, '\0', sizeof(this->clientCertName));
+    memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
+    if (hasText(clientCertName, TINY_GSM_CERT_NAME_LENGTH) &&
+        hasText(clientKeyName, TINY_GSM_CERT_NAME_LENGTH)) {
+      const bool certCopied = copyString(this->clientCertName, clientCertName,
+                                         sizeof(this->clientCertName));
+      const bool keyCopied  = copyString(this->clientKeyName, clientKeyName,
+                                         sizeof(this->clientKeyName));
+      if (!certCopied || !keyCopied) {
+        DBG(GF("### Rejected oversized client credential name(s):"),
+            clientCertName, clientKeyName);
+        memset(this->clientCertName, '\0', sizeof(this->clientCertName));
+        memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
+      }
+    }
+  }
+  /// @copydoc setClientCredentials(const char*, const char*)
+  void setClientCredentials(const String& clientCertName,
+                            const String& clientKeyName) {
+    setClientCredentials(clientCertName.c_str(), clientKeyName.c_str());
+  }
+  /**@}*/
+
+
+  /**
+   * @anchor context_psk_assignment
+   * @name Secure context PSK assignment functions
+   */
+  /**@{*/
+  /**
+   * @brief Set or clear the PSK table file name.
+   * @param pskTableName The PSK table file name, or `nullptr` to clear it.
+   */
+  void setPSKTableName(const char* pskTableName) {
+    memset(this->pskTableName, '\0', sizeof(this->pskTableName));
+    copyString(this->pskTableName, pskTableName, sizeof(this->pskTableName));
+  }
+  /// @copydoc setPSKTableName(const char*)
+  void setPSKTableName(const String& pskTableName) {
+    setPSKTableName(pskTableName.c_str());
+  }
+
+  /**
+   * @brief Set or clear a pre-shared key identity and key.
+   *
+   * Both values are stored only when both are non-null, non-empty, and fit in
+   * the configured buffers. Otherwise both stored values are cleared.
+   *
+   * @param pskIdent The pre-shared key identity.
+   * @param psKey The pre-shared key.
+   */
+  void setPreSharedKey(const char* pskIdent, const char* psKey) {
+    memset(this->pskIdent, '\0', sizeof(this->pskIdent));
+    memset(this->psKey, '\0', sizeof(this->psKey));
+    if (hasText(pskIdent, TINY_GSM_PSK_IDENTITY_LENGTH) &&
+        hasText(psKey, TINY_GSM_PSK_LENGTH)) {
+      const bool identityCopied = copyString(this->pskIdent, pskIdent,
+                                             sizeof(this->pskIdent));
+      const bool keyCopied      = copyString(this->psKey, psKey,
+                                             sizeof(this->psKey));
+      if (!identityCopied || !keyCopied) {
+        DBG(GF("### Rejected oversized pre-shared key value(s) for identity:"),
+            pskIdent);
+        memset(this->pskIdent, '\0', sizeof(this->pskIdent));
+        memset(this->psKey, '\0', sizeof(this->psKey));
+      }
+    }
+  }
+  /// @copydoc setPreSharedKey(const char*, const char*)
+  void setPreSharedKey(const String& pskIdent, const String& psKey) {
+    setPreSharedKey(pskIdent.c_str(), psKey.c_str());
+  }
+  /**@}*/
+
+ protected:
+  /// The SSL authentication mode.
+  SSLAuthMode sslAuthMode;
+  /// The SSL/TLS protocol version.
+  SSLVersion sslVersion;
+  /// The CA certificate file name.
+  char CAcertName[TINY_GSM_CERT_NAME_LENGTH];
+  /// The client certificate file name.
+  char clientCertName[TINY_GSM_CERT_NAME_LENGTH];
+  /// The client private-key file name.
+  char clientKeyName[TINY_GSM_CERT_NAME_LENGTH];
+  /// The PSK table file name.
+  char pskTableName[TINY_GSM_CERT_NAME_LENGTH];
+  /// The pre-shared key identity.
+  char pskIdent[TINY_GSM_PSK_IDENTITY_LENGTH];
+  /// The pre-shared key.
+  char psKey[TINY_GSM_PSK_LENGTH];
+
+ private:
+  GsmSecureContext(const GsmSecureContext&);
+  GsmSecureContext& operator=(const GsmSecureContext&);
+
+  static bool hasText(const char* value, size_t maximumLength) {
+    return value != nullptr && strnlen(value, maximumLength) != 0;
+  }
+
+  static bool copyString(char* destination, const char* source,
+                         size_t destinationSize) {
+    if (source == nullptr) { return false; }
+    const size_t sourceLength = strnlen(source, destinationSize);
+    if (sourceLength == 0 || sourceLength >= destinationSize) { return false; }
+    memcpy(destination, source, sourceLength + 1);
+    return true;
+  }
+
+  void clearConfigurationStrings() {
+    memset(CAcertName, '\0', sizeof(CAcertName));
+    memset(clientCertName, '\0', sizeof(clientCertName));
+    memset(clientKeyName, '\0', sizeof(clientKeyName));
+    memset(pskTableName, '\0', sizeof(pskTableName));
+    memset(pskIdent, '\0', sizeof(pskIdent));
+    memset(psKey, '\0', sizeof(psKey));
+  }
+
+  void detach() {
+    if (modem != nullptr) {
+      modem->detachSSLContext(this, sslCtxIndex);
+      modem = nullptr;
+    }
+  }
+};
+
+
+/**
+ * @brief Template for secure clients with SSL context index management.
+ *
+ * This template provides constructors and SSL context index management for all
+ * modem-specific secure client implementations. Derived classes provide only
+ * protocol-specific functionality.
+ *
+ * @tparam ClientType The base client class type (e.g., GsmClientA7672X)
+ * @tparam modemType The modem class type (e.g., TinyGsmA7672X)
+ */
+template <typename ClientType, typename modemType>
+class GsmSecureClient : public ClientType {
+ public:
+  /**
+   * @anchor ssl_client_ctors
+   * @name Secure client constructors and initialization
+   */
+  /**@{*/
+  /// Default constructor creating an unattached secure client
+  GsmSecureClient() {
+    this->is_secure = true;
+  }
+
+  /**
+   * @brief Create a secure client attached to a modem socket.
+   * @param modem The modem that owns the socket and SSL contexts
+   * @param mux The socket identifier
+   */
+  explicit GsmSecureClient(modemType& modem, uint8_t mux = 0)
+      : ClientType(modem, mux) {
+    this->is_secure = true;
+  }
+
+  /**
+   * @brief Create a secure client with an explicit SSL context.
+   * @param modem The modem that owns the socket and SSL contexts
+   * @param mux The socket identifier
+   * @param sslCtxIndex The hardware SSL context index
+   */
+  explicit GsmSecureClient(modemType& modem, uint8_t mux, uint8_t sslCtxIndex)
+      : ClientType(modem, mux) {
+    this->is_secure = true;
+    this->setSSLContextIndex(sslCtxIndex);
+  }
+  /**@}*/
+
+
+  /**
+   * @anchor ssl_client_config
+   * @name Secure client configuration
+   */
+  /**@{*/
+  /**
+   * @brief Select the hardware SSL context for this client.
+   * @param sslCtxIndex The hardware SSL context index.
    *
    * @important The SSL context index set here must be **exactly what the modem
    * will use as the context identifier within AT commands**.  Use whatever
@@ -448,244 +1076,14 @@ class GsmSecureClient {
    * socket array (the mux) or the connection identifier. The context index is a
    * separate identifier used by the modem to manage groups of SSL settings.
    */
-  virtual void setSSLContextIndex(uint8_t sslCtxIndex) {
+  void setSSLContextIndex(uint8_t sslCtxIndex) {
     this->sslCtxIndex = sslCtxIndex;
-    sslCtxConfigured  = false;
   }
-
-  /**
-   * @brief Set the SSL authorization mode to use for this connection
-   * @param mode The SSL authorization mode
-   */
-  virtual void setSSLAuthMode(SSLAuthMode mode) {
-    this->sslAuthMode = mode;
-    sslCtxConfigured  = false;
-  }
-
-  /**
-   * @brief Set the SSL version to use for this connection
-   * @param version The SSL version
-   */
-  virtual void setSSLVersion(SSLVersion version) {
-    this->sslVersion = version;
-    sslCtxConfigured = false;
-  }
-  /**@}*/
-
-  /**
-   * @anchor client_cert_assignment
-   * @name Client certificate assignment functions
-   */
-  /**@{*/
-  /**
-   * @brief Set the CA certificate name to use for this connection
-   * @param CAcertName The CA certificate name
-   */
-  virtual void setCACertName(const char* CAcertName) {
-    // copy the certificate name into owned buffer
-    memset(this->CAcertName, '\0', sizeof(this->CAcertName));
-    if (CAcertName != nullptr &&
-        strnlen(CAcertName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
-      strncpy(this->CAcertName, CAcertName, sizeof(this->CAcertName) - 1);
-    }
-    sslCtxConfigured = false;
-  }
-  /// @copydoc setCACertName(const char*)
-  virtual void setCACertName(const String& CAcertName) {
-    setCACertName(CAcertName.c_str());
-  }
-
-  /**
-   * @brief Set the client certificate name to use for this connection
-   * @param clientCertName The client certificate name
-   */
-  virtual void setClientCertName(const char* clientCertName) {
-    // copy the certificate name into owned buffer
-    memset(this->clientCertName, '\0', sizeof(this->clientCertName));
-    if (clientCertName != nullptr &&
-        strnlen(clientCertName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
-      strncpy(this->clientCertName, clientCertName,
-              sizeof(this->clientCertName) - 1);
-    }
-    sslCtxConfigured = false;
-  }
-  /// @copydoc setClientCertName(const char*)
-  virtual void setClientCertName(const String& clientCertName) {
-    setClientCertName(clientCertName.c_str());
-  }
-
-  /**
-   * @brief Set the client private key name to use for this connection
-   * @param clientKeyName The client private key name
-   */
-  virtual void setPrivateKeyName(const char* clientKeyName) {
-    // copy the key name into owned buffer
-    memset(this->clientKeyName, '\0', sizeof(this->clientKeyName));
-    if (clientKeyName != nullptr &&
-        strnlen(clientKeyName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
-      strncpy(this->clientKeyName, clientKeyName,
-              sizeof(this->clientKeyName) - 1);
-    }
-    sslCtxConfigured = false;
-  }
-  /// @copydoc setPrivateKeyName(const char*)
-  virtual void setPrivateKeyName(const String& clientKeyName) {
-    setPrivateKeyName(clientKeyName.c_str());
-  }
-  /**@}*/
-
-  /**
-   * @anchor client_psk_assignment
-   * @name Client PSK assignment functions
-   */
-  /**@{*/
-
-  /**
-   * @brief Set the PSK table name to use for this connection
-   * @param pskTableName The PSK table name
-   */
-  virtual void setPSKTableName(const char* pskTableName) {
-    // copy the PSK table name into owned buffer
-    memset(this->pskTableName, '\0', sizeof(this->pskTableName));
-    if (pskTableName != nullptr &&
-        strnlen(pskTableName, TINY_GSM_CERT_NAME_LENGTH) != 0) {
-      strncpy(this->pskTableName, pskTableName, sizeof(this->pskTableName) - 1);
-    }
-    sslCtxConfigured = false;
-  }
-  /// @copydoc setPSKTableName(const char*)
-  virtual void setPSKTableName(const String& pskTableName) {
-    setPSKTableName(pskTableName.c_str());
-  }
-
-  /**
-   * @brief Set the pre-shared key and identity to use for this connection
-   *
-   * @param pskIdent The pre-shared key identity (also called the identity hint
-   * or just hint)
-   * @param psKey The pre-shared key
-   */
-  virtual void setPreSharedKey(const char* pskIdent, const char* psKey) {
-    memset(this->pskIdent, '\0', sizeof(this->pskIdent));
-    memset(this->psKey, '\0', sizeof(this->psKey));
-    // copy the PSK identity and key into owned buffers
-    if (pskIdent != nullptr &&
-        strnlen(pskIdent, TINY_GSM_PSK_IDENTITY_LENGTH) != 0 &&
-        psKey != nullptr && strnlen(psKey, TINY_GSM_PSK_LENGTH) != 0) {
-      // require BOTH the identity and key to be non-null and non-empty to set
-      // them
-      strncpy(this->pskIdent, pskIdent, sizeof(this->pskIdent) - 1);
-      strncpy(this->psKey, psKey, sizeof(this->psKey) - 1);
-    }
-    sslCtxConfigured = false;
-  }
-  /// @copydoc setPreSharedKey(const char*, const char*)
-  virtual void setPreSharedKey(const String& pskIdent, const String& psKey) {
-    setPreSharedKey(pskIdent.c_str(), psKey.c_str());
-  }
-  /**@}*/
-
-  /// destructor
-  virtual ~GsmSecureClient() {}
 
  protected:
   /// The SSL context index to use for this connection
-  uint8_t sslCtxIndex;
-  /// Flag to denote whether the SSL context has been configured
-  bool sslCtxConfigured;
-  /// The SSL authorization mode to use for this connection
-  SSLAuthMode sslAuthMode;
-  /// The SSL version to use for this connection
-  SSLVersion sslVersion;
-  /// The FILE NAME of the certificate authority certificate loaded onto the
-  /// module
-  char CAcertName[TINY_GSM_CERT_NAME_LENGTH];
-  /// The FILE NAME of the client certificate loaded onto the module
-  char clientCertName[TINY_GSM_CERT_NAME_LENGTH];
-  /// The FILE NAME of the client private key loaded onto the module
-  char clientKeyName[TINY_GSM_CERT_NAME_LENGTH];
-  /// The FILE NAME of an identity for PSK cipher suites
-  char pskTableName[TINY_GSM_CERT_NAME_LENGTH];
-  /// The pre-shared key identifier VALUE for PSK cipher suites (also called
-  /// identity, identifier hint, or hint).
-  char pskIdent[TINY_GSM_PSK_IDENTITY_LENGTH];
-  /// The VALUE of the key in hex for PSK cipher suites
-  char psKey[TINY_GSM_PSK_LENGTH];
+  uint8_t sslCtxIndex = TINY_GSM_DEFAULT_SSL_CTX;
 };
-
-
-/// short-cut macro for constructors
-#define TINY_GSM_SECURE_CLIENT_CTORS(modemAbbrev)                             \
-  GsmClientSecure##modemAbbrev() {                                            \
-    is_secure = true;                                                         \
-  }                                                                           \
-  explicit GsmClientSecure##modemAbbrev(TinyGsm##modemAbbrev& modem,          \
-                                        uint8_t               mux = 0)        \
-      : GsmClient##modemAbbrev(modem, mux) {                                  \
-    is_secure = true;                                                         \
-  }                                                                           \
-  explicit GsmClientSecure##modemAbbrev(                                      \
-      TinyGsm##modemAbbrev& modem, SSLAuthMode sslAuthMode,                   \
-      SSLVersion  sslVersion = SSLVersion::TLS1_2,                            \
-      const char* CAcertName = nullptr, const char* clientCertName = nullptr, \
-      const char* clientKeyName = nullptr)                                    \
-      : GsmClient##modemAbbrev(modem) {                                       \
-    is_secure = true;                                                         \
-    setSSLAuthMode(sslAuthMode);                                              \
-    setSSLVersion(sslVersion);                                                \
-    setCACertName(CAcertName);                                                \
-    setClientCertName(clientCertName);                                        \
-    setPrivateKeyName(clientKeyName);                                         \
-  }                                                                           \
-  explicit GsmClientSecure##modemAbbrev(                                      \
-      TinyGsm##modemAbbrev& modem, uint8_t mux, SSLAuthMode sslAuthMode,      \
-      SSLVersion  sslVersion = SSLVersion::TLS1_2,                            \
-      const char* CAcertName = nullptr, const char* clientCertName = nullptr, \
-      const char* clientKeyName = nullptr)                                    \
-      : GsmClient##modemAbbrev(modem, mux) {                                  \
-    is_secure = true;                                                         \
-    setSSLAuthMode(sslAuthMode);                                              \
-    setSSLVersion(sslVersion);                                                \
-    setCACertName(CAcertName);                                                \
-    setClientCertName(clientCertName);                                        \
-    setPrivateKeyName(clientKeyName);                                         \
-  }                                                                           \
-  explicit GsmClientSecure##modemAbbrev(                                      \
-      TinyGsm##modemAbbrev& modem, const char* pskIdent, const char* psKey,   \
-      SSLVersion sslVersion = SSLVersion::TLS1_2)                             \
-      : GsmClient##modemAbbrev(modem) {                                       \
-    is_secure = true;                                                         \
-    setSSLAuthMode(SSLAuthMode::PRE_SHARED_KEYS);                             \
-    setSSLVersion(sslVersion);                                                \
-    setPreSharedKey(pskIdent, psKey);                                         \
-  }                                                                           \
-  explicit GsmClientSecure##modemAbbrev(                                      \
-      TinyGsm##modemAbbrev& modem, uint8_t mux, const char* pskIdent,         \
-      const char* psKey, SSLVersion sslVersion = SSLVersion::TLS1_2)          \
-      : GsmClient##modemAbbrev(modem, mux) {                                  \
-    is_secure = true;                                                         \
-    setSSLAuthMode(SSLAuthMode::PRE_SHARED_KEYS);                             \
-    setSSLVersion(sslVersion);                                                \
-    setPreSharedKey(pskIdent, psKey);                                         \
-  }                                                                           \
-  explicit GsmClientSecure##modemAbbrev(                                      \
-      TinyGsm##modemAbbrev& modem, const char* pskTableName,                  \
-      SSLVersion sslVersion = SSLVersion::TLS1_2)                             \
-      : GsmClient##modemAbbrev(modem) {                                       \
-    is_secure = true;                                                         \
-    setSSLAuthMode(SSLAuthMode::PRE_SHARED_KEYS);                             \
-    setSSLVersion(sslVersion);                                                \
-    setPSKTableName(pskTableName);                                            \
-  }                                                                           \
-  explicit GsmClientSecure##modemAbbrev(                                      \
-      TinyGsm##modemAbbrev& modem, uint8_t mux, const char* pskTableName,     \
-      SSLVersion sslVersion = SSLVersion::TLS1_2)                             \
-      : GsmClient##modemAbbrev(modem, mux) {                                  \
-    is_secure = true;                                                         \
-    setSSLAuthMode(SSLAuthMode::PRE_SHARED_KEYS);                             \
-    setSSLVersion(sslVersion);                                                \
-    setPSKTableName(pskTableName);                                            \
-  }
 
 // cSpell:words Palo
 

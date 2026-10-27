@@ -24,7 +24,7 @@
  *   - The modem will automatically assign a channel number when the client
  * connects to a server.
  *
- * @todo In `gprsConnectImpl()`: wait AT+CGATT?
+ * @todo In `dataConnectImpl()`: wait AT+CGATT?
  * @todo In `dtmfSendImpl()`: correctly handle the duration parameter
  * @todo In `modemGetConnected()`: correctly read the mux number
  */
@@ -35,7 +35,7 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
@@ -89,14 +89,14 @@ struct TinyGsmA6TcpConfig
  * @ingroup aithinker_a6
  */
 class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
-                  public TinyGsmGPRS<TinyGsmA6>,
+                  public TinyGsmCellularData<TinyGsmA6>,
                   public TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>,
                   public TinyGsmCalling<TinyGsmA6>,
                   public TinyGsmSMS<TinyGsmA6>,
                   public TinyGsmTime<TinyGsmA6>,
                   public TinyGsmBattery<TinyGsmA6> {
   friend class TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>;
-  friend class TinyGsmGPRS<TinyGsmA6>;
+  friend class TinyGsmCellularData<TinyGsmA6>;
   friend class TinyGsmTCP<TinyGsmA6, TinyGsmA6TcpConfig>;
   friend class GsmClient<TinyGsmA6, TinyGsmA6TcpConfig>;
   friend class TinyGsmCalling<TinyGsmA6>;
@@ -178,7 +178,6 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
         stop(TcpConfig::kStopTimeoutS * 1000L);
       }
 #endif
-      TINY_GSM_YIELD();
       rx.clear();
       // attempt to use the requested mux number first
       uint8_t assignedMux = mux;
@@ -343,11 +342,11 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   // No functions of this type supported
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();
+  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
+    dataDisconnect();
 
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1) { return false; }
@@ -371,7 +370,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool dataDisconnectImpl() {
     // Shut the TCP/IP connection
     sendAT(GF("+CIPSHUT"));
     if (waitResponse(60000L) != 1) { return false; }
@@ -652,10 +651,8 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
         // the mux is valid before we call it.
         moveCharsFromStreamToFifo(mux, len_reported);
       } else {
-        do {  // If the mux is invalid, throw away the stream data
-          stream.read();
-          TINY_GSM_YIELD();
-        } while (stream.available());
+        // If the mux is invalid, throw away the reported stream data
+        streamDump(len_reported);
       }
       data = "";
       DBG("### Got Data: ", len_reported, "on", mux);

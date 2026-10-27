@@ -10,6 +10,9 @@
 #ifndef TinyGsmFifo_h
 #define TinyGsmFifo_h
 
+#include <stddef.h>
+#include <string.h>
+
 template <class T, unsigned N>
 class TinyGsmFifo {
  public:
@@ -93,7 +96,7 @@ class TinyGsmFifo {
       int m = N - w;
       // check wrap
       if (f > m) f = m;
-      memcpy(&_b[w], p, f);
+      memcpy(&_b[w], p, f * sizeof(T));
       _w = _inc(w, f);
       c -= f;
       p += f;
@@ -140,7 +143,7 @@ class TinyGsmFifo {
       int m = N - r;
       // check wrap
       if (f > m) f = m;
-      memcpy(p, &_b[r], f);
+      memcpy(p, &_b[r], f * sizeof(T));
       _r = _inc(r, f);
       c -= f;
       p += f;

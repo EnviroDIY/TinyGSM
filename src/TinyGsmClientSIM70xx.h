@@ -15,7 +15,7 @@
 #pragma message("TinyGSM:  TinyGsmClientSIM70xx")
 
 #include "TinyGsmModem.tpp"
-#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCellularData.tpp"
 #include "TinyGsmGPS.tpp"
 
 /// Registration status
@@ -34,15 +34,16 @@ enum class Sim70xxRegStatus {
  * @brief Parent class for the SIMCom SIM70xx family of modems
  *
  * @tparam SIM70xxType The derived class type
+ * @tparam SIM70xxModemConfig The modem configuration type
  *
  * @ingroup simcom_sim70xx
  */
 template <class SIM70xxType, class SIM70xxModemConfig>
 class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
-                       public TinyGsmGPRS<SIM70xxType>,
+                       public TinyGsmCellularData<SIM70xxType>,
                        public TinyGsmGPS<SIM70xxType> {
   friend class TinyGsmModem<SIM70xxType, SIM70xxModemConfig>;
-  friend class TinyGsmGPRS<SIM70xxType>;
+  friend class TinyGsmCellularData<SIM70xxType>;
   friend class TinyGsmGPS<SIM70xxType>;
 
   /*
@@ -245,7 +246,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
   }
 
   /*
-   * GPRS functions
+   * Cellular data functions
    */
  protected:
   // should implement in sub-classes
@@ -348,11 +349,11 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
     // check if the date and time is present by checking if the next character
     // is a comma.  If it is a comma, then the date and time is missing and we
     // will skip parsing it.
-    TINY_GSM_YIELD();
-    // NOTE: only wait one 'yield' period for the next character to be
-    // available, not a whole timeout.  This character is in the middle of a
-    // long string set by the modem in a single chunk.
-    bool hasDateTime = stream.peek() != ',';
+    // NOTE: only wait for the response inter-character timeout, not a whole
+    // timeout. This character is in the middle of a long string sent by the
+    // modem in a single chunk.
+    bool hasDateTime =
+        thisModem().streamTimedPeek(TINY_GSM_INTERCHAR_TIMEOUT_MS) != ',';
     if (hasDateTime) {
       iyear        = thisModem().streamGetIntLength(4);  // Four digit year
       imonth       = thisModem().streamGetIntLength(2);  // Two digit month
@@ -399,7 +400,10 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType, SIM70xxModemConfig>,
       iusat = rest.substring(0, rest.indexOf(',')).toInt();
     }
 
-    // Set pointers
+    // Set pointers **even if the fix is not valid!!**
+    // The module returns avlues even without a valid GNSS fix, so we set the
+    // pointers regardless. Allow the user to decide whether to use the data
+    // based on the fix status.
     if (lat != nullptr) *lat = ilat;
     if (lon != nullptr) *lon = ilon;
     if (speed != nullptr) *speed = ispeed;

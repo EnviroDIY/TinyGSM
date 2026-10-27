@@ -11,12 +11,12 @@
 #define SRC_TINYGSMCAPABILITIES_H_
 
 // Forward declarations of capability template classes
-template <class modemType>
+template <class modemType, class sslConfig>
 class TinyGsmSSL;
 template <class modemType>
 class TinyGsmGPS;
 template <class modemType>
-class TinyGsmGPRS;
+class TinyGsmCellularData;
 template <class modemType>
 class TinyGsmWifi;
 template <class modemType>
@@ -87,6 +87,14 @@ typedef integral_constant<bool, true>  true_type;
 typedef integral_constant<bool, false> false_type;
 
 /**
+ * @brief C++11-compatible helper for detecting nested types.
+ */
+template <typename T>
+struct make_void {
+  typedef void type;
+};
+
+/**
  * @brief Helper for is_base_of - computes inheritance relationship
  */
 template <typename Base, typename Derived>
@@ -119,22 +127,37 @@ struct is_base_of
  * @brief Detect if a modem type has SSL/TLS support
  * @note Default implementation checks for TinyGsmSSL base class
  */
+template <typename T, typename = void>
+struct has_ssl : false_type {};
+
+/// @copydoc has_ssl
 template <typename T>
-struct has_ssl : is_base_of<TinyGsmSSL<T>, T> {};
+struct has_ssl<T, typename make_void<typename T::SslConfig>::type>
+    : is_base_of<TinyGsmSSL<T, typename T::SslConfig>, T> {};
 
 /**
  * @brief Detect if a modem type can specify certificates
  * @note Default implementation checks for TinyGsmSSL base class
  */
+template <typename T, typename = void>
+struct can_specify_certs : false_type {};
+
+/// @copydoc can_specify_certs
 template <typename T>
-struct can_specify_certs : is_base_of<TinyGsmSSL<T>, T> {};
+struct can_specify_certs<T, typename make_void<typename T::SslConfig>::type>
+    : is_base_of<TinyGsmSSL<T, typename T::SslConfig>, T> {};
 
 /**
  * @brief Detect if a modem type can load certificates
  * @note Default implementation checks for TinyGsmSSL base class
  */
+template <typename T, typename = void>
+struct can_load_certs : false_type {};
+
+/// @copydoc can_load_certs
 template <typename T>
-struct can_load_certs : is_base_of<TinyGsmSSL<T>, T> {};
+struct can_load_certs<T, typename make_void<typename T::SslConfig>::type>
+    : is_base_of<TinyGsmSSL<T, typename T::SslConfig>, T> {};
 
 /**
  * @brief Detect if a modem type has GPS/GNSS support
@@ -143,10 +166,10 @@ template <typename T>
 struct has_gps : is_base_of<TinyGsmGPS<T>, T> {};
 
 /**
- * @brief Detect if a modem type has GPRS/cellular data support
+ * @brief Detect if a modem type has cellular data support
  */
 template <typename T>
-struct has_gprs : is_base_of<TinyGsmGPRS<T>, T> {};
+struct has_cellular_data : is_base_of<TinyGsmCellularData<T>, T> {};
 
 /**
  * @brief Detect if a modem type has WiFi support
