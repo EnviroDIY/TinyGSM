@@ -1319,13 +1319,11 @@ class GsmClient : public Client {
             GF("instead of requested mux:"), requestedMux);
       }
 #endif
-    }
-
-    // if the requested mux is a possible numbered slot and is available or
-    // already this client, use the requested mux
-    if (requestedMux < availableMuxCount &&
-        (requestedAT->sockets[requestedMux] == nullptr ||
-         requestedAT->sockets[requestedMux] == client)) {
+    } else if (requestedMux < availableMuxCount &&
+               (requestedAT->sockets[requestedMux] == nullptr ||
+                requestedAT->sockets[requestedMux] == client)) {
+      // if the requested mux is a possible numbered slot and is available or
+      // already this client, use the requested mux
       assignedMux = requestedMux;
     } else {
       // otherwise, find the first available mux number
@@ -1423,19 +1421,29 @@ class GsmClient : public Client {
     if (oldMuxRegistered) { at->sockets[oldMux] = nullptr; }
     // If the assigned mux is currently occupied by another client, attempt to
     // move it to the old mux.
-    if (displacedClient != nullptr && displacedClient != client &&
-        !at->moveSocket(modemAssignedMux, oldMux) && !forceOverwrite) {
-      // we failed to move the displaced client to the old mux and are not
-      // willing to force an overwrite, so we cannot register the new client at
-      // the assigned mux.  If it was previously registered at the old mux,
-      // restore that pointer but return false regardless.
-      if (oldMuxRegistered) { at->sockets[oldMux] = client; }
-      return false;
+    if (displacedClient != nullptr && displacedClient != client) {
+      uint8_t    displacedMux   = modemAssignedMux;
+      const bool displacedMoved = at->moveSocket(modemAssignedMux, oldMux,
+                                                 &displacedMux) &&
+          displacedMux != modemAssignedMux;
+      if (!displacedMoved) {
+        if (!forceOverwrite) {
+          // we failed to move the displaced client to the old mux and are not
+          // willing to force an overwrite, so we cannot register the new client
+          // at the assigned mux. If it was previously registered at the old
+          // mux, restore that pointer but return false regardless.
+          if (oldMuxRegistered) { at->sockets[oldMux] = client; }
+          return false;
+        }
+        // Detach the displaced client before overwriting its slot so it cannot
+        // operate on the newly assigned connection.
+        displacedClient->detach();
+      }
     }
 
-    // At this point, either the assigned mux is free or the displaced client
-    // has been successfully moved to the old mux. We can now register the new
-    // client at the assigned mux.
+    // At this point, the assigned mux is free, or the displaced client was
+    // moved or detached. We can now register the new client at the assigned
+    // mux.
     at->sockets[modemAssignedMux] = client;
     mux                           = modemAssignedMux;
     return true;
