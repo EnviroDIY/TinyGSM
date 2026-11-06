@@ -251,6 +251,7 @@ void loop() {
   // ========================================================================
 
   modem.maintain();
+modem.findFirstUnassignedMux();
 
   char server[]   = "somewhere";
   char resource[] = "something";
@@ -260,6 +261,7 @@ void loop() {
   // ========================================================================
 
 #if defined(TINY_GSM_MODEM_HAS_SSL) && defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
+modem.findFirstUnassignedSSLContext();
   static const char flash_certificate_content[] TINY_GSM_PROGMEM =
       "certificate_content";
   modem.loadCertificate("certificateName", "certificate_content", 20);

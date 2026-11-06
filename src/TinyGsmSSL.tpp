@@ -401,6 +401,22 @@ class TinyGsmSSL {
   bool convertPSKTable(const String& psk_table_name) {
     return convertPSKTable(psk_table_name.c_str());
   }
+
+  /**
+   * @brief Find the first unassigned SSL context slot.
+   * @param availableContextCount The number of context slots to scan.
+   * @return The first available slot index, or uint8_t(-1) if none are free.
+   */
+  uint8_t findFirstUnassignedSSLContext(
+      uint8_t availableContextCount = SslConfig::kContextCount) {
+    if (availableContextCount > SslConfig::kContextCount) {
+      availableContextCount = SslConfig::kContextCount;
+    }
+    for (uint8_t i = 0; i < availableContextCount; ++i) {
+      if (sslContexts[i] == nullptr) { return i; }
+    }
+    return static_cast<uint8_t>(-1);
+  }
   /**@}*/
 
 

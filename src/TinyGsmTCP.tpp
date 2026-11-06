@@ -126,6 +126,28 @@ class TinyGsmTCP {
   void maintain() {
     return thisModem().maintainImpl();
   }
+
+  /**
+   * @brief Find the number of the first unassigned mux socket
+   * @param availableMuxCount The number of socket positions to search.
+   * @return The mux number of the first unassigned socket, or 255 (0xFF,
+   * static_cast<uint8_t>(-1)) if all searched sockets are assigned
+   * @note This returns an unsigned int instead of a signed int to be easily
+   * comparable with the socket mux value, which is also unsigned.
+   */
+  uint8_t
+  findFirstUnassignedMux(uint8_t availableMuxCount = TcpConfig::kMuxCount) {
+    if (availableMuxCount > TcpConfig::kMuxCount) {
+      availableMuxCount = TcpConfig::kMuxCount;
+    }
+    // Try to iterate through the assigned client sockets to find the next spot
+    // in the array of client pointers that has not been linked to an object.
+    for (uint8_t next_mux = 0; next_mux < availableMuxCount; ++next_mux) {
+      if (thisModem().sockets[next_mux] == nullptr) { return next_mux; }
+    }
+    DBG("### WARNING: No empty mux sockets found!");
+    return static_cast<uint8_t>(-1);
+  }
   /**@}*/
 
   /*
@@ -165,28 +187,6 @@ class TinyGsmTCP {
   template <typename T>
   bool isExpectedMux(T query_mux, uint8_t known_mux) {
     return query_mux >= 0 && query_mux == static_cast<T>(known_mux);
-  }
-
-  /**
-   * @brief Find the number of the first unassigned mux socket
-   * @param availableMuxCount The number of socket positions to search.
-   * @return The mux number of the first unassigned socket, or 255 (0xFF,
-   * static_cast<uint8_t>(-1)) if all searched sockets are assigned
-   * @note This returns an unsigned int instead of a signed int to be easily
-   * comparable with the socket mux value, which is also unsigned.
-   */
-  uint8_t
-  findFirstUnassignedMux(uint8_t availableMuxCount = TcpConfig::kMuxCount) {
-    if (availableMuxCount > TcpConfig::kMuxCount) {
-      availableMuxCount = TcpConfig::kMuxCount;
-    }
-    // Try to iterate through the assigned client sockets to find the next spot
-    // in the array of client pointers that has not been linked to an object.
-    for (uint8_t next_mux = 0; next_mux < availableMuxCount; ++next_mux) {
-      if (thisModem().sockets[next_mux] == nullptr) { return next_mux; }
-    }
-    DBG("### WARNING: No empty mux sockets found!");
-    return static_cast<uint8_t>(-1);
   }
 
   /**
