@@ -176,17 +176,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
       init(&modem);
     }
 
-    /**
-     * @brief Initialize the TCP client with a modem.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientUBLOX::GsmClientUBLOX(TinyGsmUBLOX&, uint8_t)
-     */
-    bool init(TinyGsmUBLOX* modem, uint8_t /*mux*/ = 0) override {
-      // This is a placeholder registration. The modem assigns the actual mux
-      // during connect(), and the client registration is moved at that time.
-      return this->attachToModem(this, modem, 0);
-    }
-
     /*
      * Arduino Client interface
      */

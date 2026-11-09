@@ -180,9 +180,15 @@ class TinyGsmSim7080
      * multiplexing channel.
      * @return true if initialization was successful, false otherwise.
      * @copydetails GsmClientSim7080::GsmClientSim7080(TinyGsmSim7080&, uint8_t)
+     * @note The SIM7080 uses an init() override to set the real maximum send
+     * size for the TCP client.
      */
-    bool init(TinyGsmSim7080* modem, uint8_t mux = 0) override {
-      if (!this->attachToModem(this, modem, mux)) { return false; }
+    bool init(TinyGsmSim7080* modem, uint8_t mux = 0,
+              bool strictAttach = false) override {
+      if (!this->attachToModem(this, modem, mux, TcpConfig::kMuxCount,
+                               strictAttach)) {
+        return false;
+      }
       realMaxSendSize = TcpConfig::kSendMaxSize;
       return true;
     }

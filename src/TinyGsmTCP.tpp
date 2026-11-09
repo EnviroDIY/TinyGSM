@@ -765,6 +765,10 @@ class GsmClient : public Client {
   /**
    * @brief Initialize this client with modem context and multiplexing channel.
    *
+   * The default implementation attaches the client without strict mux
+   * requirements. Derived classes may override this when they need module-
+   * specific attach behavior.
+   *
    * @param modem Pointer to the modem instance.
    * @param mux The **zero-indexed** position of this client in the
    * corresponding modem's socket array.  For most modules, this is identical to
@@ -774,7 +778,32 @@ class GsmClient : public Client {
    * socket identifier.
    * @return true if initialization completed.
    */
-  virtual bool init(modemType* modem, uint8_t mux) = 0;
+  virtual bool init(modemType* modem, uint8_t mux = 0, bool strictAttach = false) {
+    if (strictAttach && TcpConfig::kMuxMode != TinyGsmTcpMuxMode::Static) {
+      return false;
+    }
+    if (TcpConfig::kMuxMode == TinyGsmTcpMuxMode::Static) {
+      return attachToModem(this, modem, mux, TcpConfig::kMuxCount,
+                           strictAttach);
+    }
+    return attachToModem(this, modem);
+  }
+
+  /**
+   * @brief Initialize this client with optional strict mux assignment.
+   *
+   * This helper is supported only for static mux modems. Dynamic mux clients
+   * do not support strict assignment and strict requests will fail.
+   *
+   * @param modem Pointer to the modem instance.
+   * @param mux The preferred zero-indexed socket position.
+   * @param strictAttach If true, require the requested mux for static mux
+   * clients.
+   * @return true if initialization completed; otherwise false.
+   */
+  bool init(modemType& modem, uint8_t mux = 0, bool strictAttach = false) {
+    return init(&modem, mux, strictAttach);
+  }
   /**@}*/
 
 
@@ -1288,7 +1317,8 @@ class GsmClient : public Client {
   template <typename clientType>
   bool attachToModem(clientType* client, modemType* requestedAT,
                      uint8_t requestedMux,
-                     uint8_t availableMuxCount = TcpConfig::kMuxCount) {
+                     uint8_t availableMuxCount = TcpConfig::kMuxCount,
+                     bool    strictAttach      = false) {
     // if there's not a modem in the request or no available slots, return false
     // NOTE: It shouldn't ever happen that availableMuxCount is either zero or
     // greater than TcpConfig::kMuxCount.
@@ -1308,7 +1338,7 @@ class GsmClient : public Client {
 
     // if the modem to attach to is the same as the already attached one, try to
     // use the current mux, even if it's not the requested one
-    if (requestedAT == at && this->mux < availableMuxCount &&
+    if (!strictAttach && requestedAT == at && this->mux < availableMuxCount &&
         requestedAT->sockets[this->mux] == client) {
       assignedMux = this->mux;
 #if defined(TINY_GSM_DEBUG)
@@ -1325,7 +1355,7 @@ class GsmClient : public Client {
       // if the requested mux is a possible numbered slot and is available or
       // already this client, use the requested mux
       assignedMux = requestedMux;
-    } else {
+    } else if (!strictAttach) {
       // otherwise, find the first available mux number
       assignedMux = requestedAT->findFirstUnassignedMux(availableMuxCount);
       // print a debugging message if the mux was changed from the requested one
@@ -1338,7 +1368,11 @@ class GsmClient : public Client {
     // if no mux could be assigned, print an error and reset state if not
     // previously registered
     if (assignedMux == static_cast<uint8_t>(-1)) {
-      DBG(GF("ERROR: No unassigned client sockets available!"));
+      if (strictAttach) {
+        DBG(GF("ERROR: Requested strict mux is unavailable:"), requestedMux);
+      } else {
+        DBG(GF("ERROR: No unassigned client sockets available!"));
+      }
       if (!wasRegistered) {
         at        = nullptr;
         this->mux = static_cast<uint8_t>(-1);

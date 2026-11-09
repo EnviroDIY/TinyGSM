@@ -257,16 +257,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       init(&modem);
     }
 
-    /**
-     * @brief Initialize the TCP client with a modem.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientXBee::GsmClientXBee(TinyGsmXBee&, uint8_t)
-     */
-    bool init(TinyGsmXBee* modem, uint8_t /*mux*/ = 0) override {
-      // only 1 possible socket for XBee in transparent mode
-      return this->attachToModem(this, modem, 0);
-    }
-
     /*
      * Arduino Client interface
      */

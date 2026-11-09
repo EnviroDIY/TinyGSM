@@ -184,22 +184,11 @@ class TinyGsmSim800
       init(&modem, mux);
     }
 
-    /**
-     * @brief Initialize the TCP client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientSim800::GsmClientSim800(TinyGsmSim800&, uint8_t)
-     */
-    bool init(TinyGsmSim800* modem, uint8_t mux = 0) override {
-      return this->attachToModem(this, modem, mux);
-    }
-
     /*
      * Arduino Client interface
      */
    public:
     TINY_GSM_STATIC_TCP_CONNECT
-
 
     /*
      * Extended Client API

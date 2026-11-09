@@ -194,20 +194,9 @@ class TinyGsmA7672X
       init(&modem, mux);
     }
 
-    /**
-     * @brief Initialize the TCP client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientA7672X::GsmClientA7672X(TinyGsmA7672X&, uint8_t)
-     */
-    bool init(TinyGsmA7672X* modem, uint8_t mux = 0) override {
-      return this->attachToModem(this, modem, mux);
-    }
-
     /*
      * Arduino Client interface
      */
-   public:
     TINY_GSM_STATIC_TCP_CONNECT
 
     /*
@@ -274,8 +263,9 @@ class TinyGsmA7672X
      * @important The SSL client only supports multiplexing channel numbers 0
      * and 1.
      */
-    bool init(TinyGsmA7672X* modem, uint8_t mux = 0) override {
-      return this->attachToModem(this, modem, mux, 2);
+    bool init(TinyGsmA7672X* modem, uint8_t mux = 0,
+              bool strictAttach = false) override {
+      return this->attachToModem(this, modem, mux, 2, strictAttach);
     }
 
     /*
@@ -953,8 +943,9 @@ class TinyGsmA7672X
         DBG("### Failed to link the SSL context to mux", mux);
         return false;
       }
+
       // Establish a connection in multi-socket mode
-      // AT+CCHOPEN=<session_id>,<host>,<port>[,<client_type>,[<bind_port>]]
+      // AT+CCHOPEN=<session_id>,"<host>",<port>[,<client_type>,[<bind_port>]]
       sendAT(GF("+CCHOPEN="), mux, GF(",\""), host, GF("\","), port, GF(",2"));
       // The reply is OK or ERROR followed by +CCHOPEN: <session_id>,<err> where
       // <session_id> is the mux number and <err> should be 0 if there's no
@@ -1015,10 +1006,8 @@ class TinyGsmA7672X
   // stream.flush();
   size_t modemEndSend(size_t len, uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
-    bool ssl = sockets[mux]->is_secure;
-
     if (waitResponse() != 1) { return 0; }
-
+    bool ssl = sockets[mux]->is_secure;
     if (ssl) {
       // Because we set CCHSET to return the send result, we should get a
       // +CCHSEND: <session_id>,<err>
@@ -1035,7 +1024,7 @@ class TinyGsmA7672X
       if (waitResponse(GF("+CIPSEND:")) != 1) { return 0; }
       int16_t ret_mux = streamGetIntBefore(',');  // check mux
       streamSkipUntil(',');  // Skip requested bytes to send
-      // TODO:  make sure requested and confirmed bytes match
+      // TODO(?):  make sure requested and confirmed bytes match
       int16_t sent = streamGetIntBefore('\n');  // check send length
       if (isExpectedMux(ret_mux, mux) && sent >= 0) {
         return static_cast<size_t>(sent);
@@ -1053,6 +1042,10 @@ class TinyGsmA7672X
     size_t  len_read      = 0;
 
     if (ssl) {
+#if defined(TINY_GSM_USE_HEX) && defined(TINY_GSM_DEBUG)
+      DBG("### ERROR: SSL sockets do not support reading in HEX mode, reading "
+          "in ASCII mode");
+#endif
       // AT+CCHRECV=<session_id>[,<max_recv_len>]
       sendAT(GF("+CCHRECV="), mux, ',', (uint16_t)size);
       // response is +CCHRECV: DATA, <session_id>,<len>\n<data>
@@ -1113,8 +1106,8 @@ class TinyGsmA7672X
     }
 
     if (!isExpectedMux(ret_mux, mux)) {
-      // if we didn't get a read from the expected mux, set the read length to
-      // 0 and update the available data for the mux that was requested
+      // if we didn't get a read from the expected mux, set the read length to 0
+      // and update the available data for the mux that was requested
       len_read                     = 0;
       sockets[mux]->sock_available = modemGetAvailable(mux);
     }
@@ -1249,7 +1242,7 @@ class TinyGsmA7672X
         int16_t mux = streamGetIntBefore('\n');
         if (isValidMux(mux)) { sockets[mux]->got_data = true; }
         data = "";
-        DBG("### Got Data:", mux);
+        // DBG("### Got Data:", mux);
         return true;
       } else {
         data += mode;
@@ -1299,9 +1292,9 @@ class TinyGsmA7672X
       return true;
     } else if (data.endsWith(GF("+IPCLOSE:"))) {
       int16_t mux = streamGetIntBefore(',');
+      streamSkipUntil('\n');
       if (isValidMux(mux)) { sockets[mux]->sock_connected = false; }
       data = "";
-      streamSkipUntil('\n');
       DBG("### TCP Closed: ", mux);
       return true;
     } else if (data.endsWith(GF("+CCHCLOSE:"))) {
