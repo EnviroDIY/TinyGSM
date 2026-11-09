@@ -216,6 +216,7 @@ class TinyGsmA7672X
     friend class TinyGsmA7672X;
 
    public:
+    using GsmSecureClient<GsmClientA7672X, TinyGsmA7672X>::init;
     using GsmClientA7672X::connect;
     using GsmClientA7672X::stop;
     using TcpConfig = TinyGsmA7672XTcpConfig;
@@ -256,12 +257,18 @@ class TinyGsmA7672X
     }
 
     /**
-     * @brief Initialize the SSL client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientA7672X::GsmClientA7672X(TinyGsmA7672X&, uint8_t)
-     * @important The SSL client only supports multiplexing channel numbers 0
-     * and 1.
+     * @brief Initialize this client with modem context and multiplexing
+     * channel.
+     *
+     * @param modem Pointer to the modem instance.
+     * @param mux The **zero-indexed** position of this client in the
+     * corresponding modem's socket array.
+     * @param strictAttach If true, require the requested mux for static mux
+     * clients.
+     * @return true if initialization completed.
+     * @important The SSL client for the A7672x only supports multiplexing
+     * channel numbers 0 and 1 unlike the 10 channels supported for non-SSL
+     * sockets.
      */
     bool init(TinyGsmA7672X* modem, uint8_t mux = 0,
               bool strictAttach = false) override {

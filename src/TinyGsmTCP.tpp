@@ -776,9 +776,12 @@ class GsmClient : public Client {
    * modules (e.g., Sequans Monarch) use a 1-indexed identifier for the socket,
    * so the mux number is not necessarily the same as the modem's internal
    * socket identifier.
+   * @param strictAttach If true, require the requested mux for static mux
+   * clients.
    * @return true if initialization completed.
    */
-  virtual bool init(modemType* modem, uint8_t mux = 0, bool strictAttach = false) {
+  virtual bool init(modemType* modem, uint8_t mux = 0,
+                    bool strictAttach = false) {
     if (strictAttach && TcpConfig::kMuxMode != TinyGsmTcpMuxMode::Static) {
       return false;
     }
@@ -1299,6 +1302,11 @@ class GsmClient : public Client {
   /**@}*/
 
  protected:
+  template <typename slotClientType, typename clientType>
+  void assignSocketClient(slotClientType*& slot, clientType* client) {
+    slot = static_cast<slotClientType*>(client);
+  }
+
   /**
    * @brief Attach this client to an available modem socket slot.
    * This both attaches the client to the modem (sets the `at` pointer), assigns
@@ -1311,6 +1319,10 @@ class GsmClient : public Client {
    * @param requestedMux The preferred zero-indexed socket position.
    * @param availableMuxCount The number of socket positions this client type
    * may use.
+   * @param strictAttach If true, the client will only attach to the requested
+   * modem at the specified mux number. If false, it will attach to the
+   * requested modem at the next avaialble socket if the requested one is not
+   * available.
    * @return `true` if attached; otherwise `false`. On failure, an existing
    * attachment is preserved.
    */
@@ -1388,7 +1400,7 @@ class GsmClient : public Client {
     at        = requestedAT;
     this->mux = assignedMux;
     resetClientState();
-    at->sockets[this->mux] = client;
+    assignSocketClient(at->sockets[this->mux], client);
     return true;
   }
 

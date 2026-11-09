@@ -750,10 +750,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     sendAT(GF("HS"));  // Get the "Hardware Series";
     int16_t intRes = readResponseInt();
     // if no response from module, then try again
-    if (0xff == intRes || -1 == intRes) {
+    if (intRes == 0xff || intRes == -9999) {
       sendAT(GF("HS"));  // Get the "Hardware Series";
       intRes = readResponseInt();
-      if (0xff == intRes || -1 == intRes) {
+      if (intRes == 0xff || intRes == -9999) {
         // Still no response, leave a known value - should reset
         intRes = static_cast<int16_t>(XBeeType::XBEE_UNKNOWN);
       }
@@ -976,7 +976,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       intRes = 0;  // tends to reply with "69" when signal is unknown
 
     if (beeType == XBeeType::XBEE_S6B_WIFI) {
-      if (intRes == 0xFF) {
+      if (intRes == 0xFF || intRes == -9999) {
         return 0;  // 0xFF returned for unknown
       } else {
         return -93 + intRes;  // the maximum sensitivity is -93dBm
@@ -2174,7 +2174,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         hexDigit = c - 'a' + 10;
       } else {
         // Invalid character outside 0-9, A-F, a-f
-        return -1;
+        return -9999;
       }
 
       result <<= 4;
