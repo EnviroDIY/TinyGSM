@@ -761,10 +761,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     sendAT(GF("HS"));  // Get the "Hardware Series";
     int16_t intRes = readResponseInt();
     // if no response from module, then try again
-    if (intRes == 0xff || intRes == -9999) {
+    if (intRes == 0xff || intRes == -1 || intRes == -9999) {
       sendAT(GF("HS"));  // Get the "Hardware Series";
       intRes = readResponseInt();
-      if (intRes == 0xff || intRes == -9999) {
+      if (intRes == 0xff || intRes == -1 || intRes == -9999) {
         // Still no response, leave a known value - should reset
         intRes = static_cast<int16_t>(XBeeType::XBEE_UNKNOWN);
       }
@@ -993,6 +993,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         return -93 + intRes;  // the maximum sensitivity is -93dBm
       }
     } else {
+      if (intRes == -9999) { return 0; }
       return -1 * intRes;  // need to convert to negative number
     }
   }

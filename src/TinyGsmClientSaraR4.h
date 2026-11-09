@@ -205,11 +205,10 @@ class TinyGsmSaraR4
       }
 #endif
       rx.clear();
-      // attempt to use the requested mux number first
-      uint8_t assignedMux = mux;
-      // modemConnect will validate the mux number returned by the modem and
-      // return false and set the assignedMux to -1 if the mux number is invalid
-      // or the connection fails
+      // Start with an invalid mux so cleanup only closes a newly allocated
+      // socket.
+      uint8_t assignedMux = static_cast<uint8_t>(-1);
+      // modemConnect will validate the mux number returned by the modem.
       sock_connected = at->modemConnect(host, port, &assignedMux, timeout_s,
                                         is_secure);
       // stop the socket if the connection failed or we could not register the
@@ -850,7 +849,8 @@ class TinyGsmSaraR4
     // then finally return with a "new" socket that is immediately closed.
     // Attempting to close a socket that is already closed with a synchronous
     // close quickly returns an error.
-    if (supportsAsyncSockets && sockets[mux]->sock_connected) {
+    if (supportsAsyncSockets && sockets[mux] != nullptr &&
+        sockets[mux]->sock_connected) {
       DBG("### Closing socket asynchronously!  Socket might remain open "
           "until arrival of +UUSOCL:",
           mux);
