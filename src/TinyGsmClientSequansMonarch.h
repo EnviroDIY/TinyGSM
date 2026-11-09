@@ -309,6 +309,15 @@ class TinyGsmSequansMonarch
   };
 
   /*
+   * Modem-scoped Client Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientSequansMonarch;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureSequansMonarch;
+
+  /*
    * GSM Modem Constructor
    */
  public:

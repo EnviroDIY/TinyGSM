@@ -412,7 +412,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
   /// Inner secure client
   /// @ingroup digi_xbee
   class GsmClientSecureXBee
-      : public GsmSecureClient<GsmClientXBee, TinyGsmXBee> {
+      : public GsmClientSecure<GsmClientXBee, TinyGsmXBee> {
     friend class TinyGsmXBee;
 
    protected:
@@ -449,9 +449,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     }
 
    public:
+    using GsmClientSecure::GsmClientSecure;
     using GsmClientXBee::connect;
     using GsmClientXBee::stop;
-    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmXBeeTcpConfig;
 
     /*
@@ -498,6 +498,17 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     /// Unregister this context from its modem.
     ~GsmSecureContextXBee() {}
   };
+
+  /*
+   * Public Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientXBee;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureXBee;
+  /// Security-context type for this modem.
+  using TinyGsmSecureContext = GsmSecureContextXBee;
 
   /*
    * GSM Modem Constructor

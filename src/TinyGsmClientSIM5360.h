@@ -182,6 +182,13 @@ class TinyGsmSim5360
   // NOT SUPPORTED
 
   /*
+   * Public Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientSim5360;
+
+  /*
    * GSM Modem Constructor
    */
  public:

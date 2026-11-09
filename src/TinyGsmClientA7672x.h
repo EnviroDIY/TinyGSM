@@ -212,11 +212,11 @@ class TinyGsmA7672X
   /// Inner secure client
   /// @ingroup simcom_a7672x
   class GsmClientSecureA7672X
-      : public GsmSecureClient<GsmClientA7672X, TinyGsmA7672X> {
+      : public GsmClientSecure<GsmClientA7672X, TinyGsmA7672X> {
     friend class TinyGsmA7672X;
 
    public:
-    using GsmSecureClient<GsmClientA7672X, TinyGsmA7672X>::init;
+    using GsmClientSecure<GsmClientA7672X, TinyGsmA7672X>::init;
     using GsmClientA7672X::connect;
     using GsmClientA7672X::stop;
     using TcpConfig = TinyGsmA7672XTcpConfig;
@@ -230,7 +230,7 @@ class TinyGsmA7672X
      * @warning You must call the init() method before attempting to use a
      * client created with this constructor.
      */
-    GsmClientSecureA7672X() : GsmSecureClient() {}
+    GsmClientSecureA7672X() : GsmClientSecure() {}
 
     /**
      * @brief Create a new secured TCP (SSL) client and bind it to a modem and
@@ -238,7 +238,7 @@ class TinyGsmA7672X
      * @copydetails GsmClientA7672X::GsmClientA7672X(TinyGsmA7672X&, uint8_t)
      */
     explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux = 0)
-        : GsmSecureClient() {
+        : GsmClientSecure() {
       init(&modem, mux);
     }
 
@@ -251,7 +251,7 @@ class TinyGsmA7672X
      */
     explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux,
                                    uint8_t sslCtxIndex)
-        : GsmSecureClient() {
+        : GsmClientSecure() {
       setSSLContextIndex(sslCtxIndex);
       init(&modem, mux);
     }
@@ -327,6 +327,17 @@ class TinyGsmA7672X
     /// Unregister this context from its modem.
     ~GsmSecureContextA7672X() {}
   };
+
+  /*
+   * Modem-scoped Client Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientA7672X;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureA7672X;
+  /// Security-context type for this modem.
+  using TinyGsmSecureContext = GsmSecureContextA7672X;
 
   /*
    * GSM Modem Constructor

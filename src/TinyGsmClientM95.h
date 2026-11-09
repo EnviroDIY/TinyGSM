@@ -167,6 +167,13 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
   // NOT SUPPORTED
 
   /*
+   * Modem-scoped Client Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientM95;
+
+  /*
    * GSM Modem Constructor
    */
  public:

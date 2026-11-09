@@ -218,11 +218,11 @@ class TinyGsmSim7600
   /// Inner secure client
   /// @ingroup simcom_sim7600
   class GsmClientSecureSim7600
-      : public GsmSecureClient<GsmClientSim7600, TinyGsmSim7600> {
+      : public GsmClientSecure<GsmClientSim7600, TinyGsmSim7600> {
     friend class TinyGsmSim7600;
 
    public:
-    using GsmSecureClient<GsmClientSim7600, TinyGsmSim7600>::init;
+    using GsmClientSecure<GsmClientSim7600, TinyGsmSim7600>::init;
     using GsmClientSim7600::connect;
     using GsmClientSim7600::stop;
     using TcpConfig = TinyGsmSim7600TcpConfig;
@@ -236,7 +236,7 @@ class TinyGsmSim7600
      * @warning You must call the init() method before attempting to use a
      * client created with this constructor.
      */
-    GsmClientSecureSim7600() : GsmSecureClient() {}
+    GsmClientSecureSim7600() : GsmClientSecure() {}
 
     /**
      * @brief Create a new secured TCP (SSL) client and bind it to a modem and
@@ -244,7 +244,7 @@ class TinyGsmSim7600
      * @copydetails GsmClientSim7600::GsmClientSim7600(TinyGsmSim7600&, uint8_t)
      */
     explicit GsmClientSecureSim7600(TinyGsmSim7600& modem, uint8_t mux = 0)
-        : GsmSecureClient() {
+        : GsmClientSecure() {
       init(&modem, mux);
     }
 
@@ -257,7 +257,7 @@ class TinyGsmSim7600
      */
     explicit GsmClientSecureSim7600(TinyGsmSim7600& modem, uint8_t mux,
                                     uint8_t sslCtxIndex)
-        : GsmSecureClient() {
+        : GsmClientSecure() {
       setSSLContextIndex(sslCtxIndex);
       init(&modem, mux);
     }
@@ -333,6 +333,17 @@ class TinyGsmSim7600
     /// Unregister this context from its modem.
     ~GsmSecureContextSim7600() {}
   };
+
+  /*
+   * Public Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientSim7600;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureSim7600;
+  /// Security-context type for this modem.
+  using TinyGsmSecureContext = GsmSecureContextSim7600;
 
   /*
    * GSM Modem Constructor

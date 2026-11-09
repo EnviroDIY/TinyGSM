@@ -203,6 +203,13 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   // Doesn't support SSL
 
   /*
+   * Modem-scoped Client Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientA6;
+
+  /*
    * GSM Modem Constructor
    */
  public:

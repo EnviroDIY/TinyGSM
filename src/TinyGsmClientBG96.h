@@ -197,13 +197,13 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   /// Inner secure client
   /// @ingroup quectel_bg96
   class GsmClientSecureBG96
-      : public GsmSecureClient<GsmClientBG96, TinyGsmBG96> {
+      : public GsmClientSecure<GsmClientBG96, TinyGsmBG96> {
     friend class TinyGsmBG96;
 
    public:
     using GsmClientBG96::connect;
     using GsmClientBG96::stop;
-    using GsmSecureClient::GsmSecureClient;
+    using GsmClientSecure::GsmClientSecure;
     using TcpConfig = TinyGsmBG96TcpConfig;
 
     /*
@@ -328,6 +328,17 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     /// Unregister this context from its modem.
     ~GsmSecureContextBG96() {}
   };
+
+  /*
+   * Modem-scoped Client Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientBG96;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureBG96;
+  /// Security-context type for this modem.
+  using TinyGsmSecureContext = GsmSecureContextBG96;
 
   /*
    * GSM Modem Constructor

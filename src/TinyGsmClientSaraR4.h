@@ -261,8 +261,18 @@ class TinyGsmSaraR4
       is_secure = true;
     }
   };
+
+  /*
+   * Public Aliases
+   */
+ public:
   /// Typedef for backward compatibility
   using GsmClientSecureR4 = GsmClientSecureSaraR4;
+
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientSaraR4;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureSaraR4;
 
   /*
    * GSM Modem Constructor
