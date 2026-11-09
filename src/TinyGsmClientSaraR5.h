@@ -231,8 +231,12 @@ class TinyGsmSaraR5
       // or the connection fails
       sock_connected = at->modemConnect(host, port, &assignedMux, timeout_s,
                                         is_secure);
-      if (sock_connected &&
-          !this->registerAssignedMux(this, assignedMux, true)) {
+      // stop the socket if the connection failed or we could not register the
+      // assigned mux
+      if (!sock_connected && assignedMux < TcpConfig::kMuxCount) {
+        at->modemStop(assignedMux, TcpConfig::kStopTimeoutS * 1000L);
+      } else if (sock_connected &&
+                 !this->registerAssignedMux(this, assignedMux, true)) {
         at->modemStop(assignedMux, TcpConfig::kStopTimeoutS * 1000L);
         sock_connected = false;
       }
