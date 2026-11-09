@@ -657,10 +657,12 @@ void loop() {
   context_secure_default.isAttached();
   context_secure_default.getSSLContextIndex();
   context_secure_default.init(&modem, (uint8_t)1);
+  context_secure_default.init(&modem, (uint8_t)1, true);
   context_secure_default.isAttached();
   context_secure_default.getSSLContextIndex();
   context_secure_default.detach();
   context_secure_default.init(&modem, (uint8_t)1);
+  context_secure_default.init(&modem, (uint8_t)1, false);
 
   TinyGsmSecureContext context_secure(modem, 0);
   TinyGsmSecureContext(modem, SSLAuthMode::MUTUAL_AUTHENTICATION);
