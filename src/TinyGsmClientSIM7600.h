@@ -272,7 +272,7 @@ class TinyGsmSim7600
      * @param strictAttach If true, require the requested mux for static mux
      * clients.
      * @return true if initialization completed.
-     * @important The SSL client for the A7672x only supports multiplexing
+     * @important The SSL client for the SIM7600 only supports multiplexing
      * channel numbers 0 and 1 unlike the 10 channels supported for non-SSL
      * sockets.
      */
@@ -1292,7 +1292,7 @@ class TinyGsmSim7600
     if (ssl) {
       if (isValidMux(ret_mux)) {
         // Returns +CCHRECV: {mux},0 after the data
-        if (waitResponse(GF("+CCHRECV: ")) == 1) {
+        if (waitResponse(GF("+CCHRECV:")) == 1) {
           streamSkipUntil('\n');  // skip the mux and error code
           waitResponse();         // final OK
         }
@@ -1332,7 +1332,7 @@ class TinyGsmSim7600
       // +CCHRECV: LEN,<cache_len_0>,<cache_len_1>
       // <cache_len_0> = The length of RX data cached for connection 0.
       // <cache_len_1> = The length of RX data cached for connection 1.
-      if (waitResponse(GF("+CCHRECV: ")) != 1) { return 0; }
+      if (waitResponse(GF("+CCHRECV:")) != 1) { return 0; }
       streamSkipUntil(',');                        // Skip the text "LEN"
       size_t len_on_0 = streamGetIntBefore(',');   // read cache_len_0
       size_t len_on_1 = streamGetIntBefore('\n');  // read cache_len_1

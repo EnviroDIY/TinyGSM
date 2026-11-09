@@ -461,8 +461,8 @@ def build_custom_matrix(config: dict) -> list[dict]:
         if core_platform in ["sam"]:
             core_platform = "samd"
         matrix_entry["core_platform"] = core_platform
-        if f"{matrix_entry["compiler"]} {core_platform}" not in core_platforms:
-            core_platforms.append(f"{matrix_entry["compiler"]} {core_platform}")
+        if f"{matrix_entry['compiler']} {core_platform}" not in core_platforms:
+            core_platforms.append(f"{matrix_entry['compiler']} {core_platform}")
 
     assembled_matrix = sorted(
         assembled_matrix,
