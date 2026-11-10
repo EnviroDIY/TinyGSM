@@ -983,8 +983,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     XBEE_COMMAND_END_DECORATOR
 
-    if (beeType == XBeeType::XBEE3_LTEM_ATT && intRes == 105)
+    if (beeType == XBeeType::XBEE3_LTEM_ATT && intRes == 105) {
       intRes = -9999;  // tends to reply with "69" when signal is unknown
+    }
 
     if (beeType == XBeeType::XBEE_S6B_WIFI) {
       if (intRes < 0 || intRes == 0xFF) {
@@ -1309,20 +1310,12 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
+    // the only battery value we can get is voltage, so defer to
+    // getBattVoltageImpl() and set the others to default invalid values
     chargeState = -99;
     percent     = -99;
-    milliVolts  = -9999;
-
-    int16_t intRes = -9999;
-    XBEE_COMMAND_START_DECORATOR(5, false)
-    if (beeType == XBeeType::XBEE_UNKNOWN) getSeries();
-    if (beeType == XBeeType::XBEE_S6B_WIFI) {
-      sendAT(GF("%V"));
-      intRes = readResponseInt();
-    }
-    XBEE_COMMAND_END_DECORATOR
-    if (intRes != -9999) { milliVolts = intRes; }
-    return false;
+    milliVolts  = getBattVoltageImpl();
+    return milliVolts != -9999;
   }
 
   /*
