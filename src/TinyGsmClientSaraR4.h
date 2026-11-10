@@ -214,7 +214,7 @@ class TinyGsmSaraR4
       // stop the socket if the connection failed or we could not register the
       // assigned mux
       if (!sock_connected && assignedMux < TcpConfig::kMuxCount) {
-        at->modemStop(assignedMux, TcpConfig::kStopTimeoutS * 1000L);
+        at->modemStop(assignedMux, TcpConfig::kStopTimeoutS * 1000L, true);
       } else if (sock_connected &&
                  !this->registerAssignedMux(this, assignedMux, true)) {
         at->modemStop(assignedMux, TcpConfig::kStopTimeoutS * 1000L);
@@ -839,8 +839,10 @@ class TinyGsmSaraR4
     }
   }
 
-  bool modemStop(uint8_t mux, uint32_t maxWaitMs) {
-    if (!isValidMux(mux)) { return false; }
+  bool modemStop(uint8_t mux, uint32_t maxWaitMs, bool newlyAllocated = false) {
+    if (mux >= TcpConfig::kMuxCount || (!newlyAllocated && !isValidMux(mux))) {
+      return false;
+    }
     // We want to use an async socket close because the synchronous close of
     // an open socket is INCREDIBLY SLOW and the modem can freeze up.  But we
     // only attempt the async close if we already KNOW the socket is open

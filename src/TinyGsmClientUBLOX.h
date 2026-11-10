@@ -210,7 +210,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
       // stop the socket if the connection failed or we could not register the
       // assigned mux
       if (!sock_connected && assignedMux < TcpConfig::kMuxCount) {
-        at->modemStop(assignedMux, TcpConfig::kStopTimeoutS * 1000L);
+        at->modemStop(assignedMux, TcpConfig::kStopTimeoutS * 1000L, true);
       } else if (sock_connected &&
                  !this->registerAssignedMux(this, assignedMux, true)) {
         at->modemStop(assignedMux, TcpConfig::kStopTimeoutS * 1000L);
@@ -845,8 +845,11 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     return (1 == rsp);
   }
 
-  bool modemStop(uint8_t mux, uint32_t /*maxWaitMs*/) {
-    if (!isValidMux(mux)) { return false; }
+  bool modemStop(uint8_t mux, uint32_t /*maxWaitMs*/,
+                 bool    newlyAllocated = false) {
+    if (mux >= TcpConfig::kMuxCount || (!newlyAllocated && !isValidMux(mux))) {
+      return false;
+    }
     // Same command for both secure and non-secure sockets
     sendAT(GF("+USOCL="), mux);
     return waitResponse() == 1;  // should return within 1s
