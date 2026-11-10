@@ -913,7 +913,7 @@ class TinyGsmSim7600
    * Battery functions
    */
  protected:
-  // AT+CBC reports the power supply voltage in volts.
+  // AT+CBC reports the power supply voltage in volts instead of millivolts.
   int16_t getBattVoltageImpl() {
     sendAT(GF("+CBC"));
     // Return -9999 for no response
@@ -936,19 +936,12 @@ class TinyGsmSim7600
 
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
+    // the only battery value we can get is voltage, so defer to
+    // getBattVoltageImpl() and set the others to default invalid values
     chargeState = -99;
     percent     = -99;
-    milliVolts  = -9999;
-
-    sendAT(GF("+CBC"));
-    if (waitResponse(GF("+CBC:")) != 1) { return false; }
-    float voltage = streamGetFloatBefore('\n');
-    if (waitResponse() != 1) { return false; }
-    if (voltage >= -32.768F && voltage <= 32.767F) {
-      milliVolts = static_cast<int16_t>(
-          voltage * 1000.0F + (voltage >= 0.0F ? 0.5F : -0.5F));
-    }
-    return false;
+    milliVolts  = getBattVoltageImpl();
+    return milliVolts != -9999;
   }
 
   /*

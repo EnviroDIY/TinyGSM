@@ -723,7 +723,21 @@ class TinyGsmSaraR4
   int16_t getBattVoltageImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   int8_t getBattPercentImpl() {
+    // get indication states related to network status, battery information and
+    // so on
     sendAT(GF("+CIND?"));
+    // Response:
+    // +CIND:battchg,signal,service,sounder,message,call,roam,smsfull,gprs,callsetup,callheld,simind
+    // OK
+    // battchg = battery charge level, 0-5 (always 0 if charging isnt supported
+    // signal:
+    // - 0: < -105 dBm
+    // - 1: < -93 dBm
+    // - 2: < -81 dBm
+    // - 3: < -69 dBm
+    // - 4: < - 57 dBm
+    // - 5: >= -57 dBm
+    // see the manual for the rest of the "indications"
     if (waitResponse(GF("+CIND:")) != 1) { return -99; }
 
     int16_t res = streamGetIntBefore(',');  // return is 0-5
@@ -737,16 +751,12 @@ class TinyGsmSaraR4
 
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
+    // the only battery value we can get is percent, so defer to
+    // getBattPercentImpl() and set the others to default invalid values
     chargeState = -99;
-    percent     = -99;
+    percent     = getBattPercentImpl();
     milliVolts  = -9999;
-
-    sendAT(GF("+CIND?"));
-    if (waitResponse(GF("+CIND:")) != 1) { return false; }
-    int16_t res = streamGetIntBefore(',');
-    if (waitResponse() != 1) { return false; }
-    if (res >= -6 && res <= 6) { percent = static_cast<int8_t>(res * 20); }
-    return false;
+    return percent != -99;
   }
 
   /*
@@ -760,9 +770,7 @@ class TinyGsmSaraR4
     sendAT(GF("+UTEMP?"));
     if (waitResponse(GF("+UTEMP:")) != 1) { return -9999.0F; }
     int16_t res = streamGetIntBefore('\n');
-    if (waitResponse() != 1 || res == -1 || res == -9999) {
-      return -9999.0F;
-    }
+    if (waitResponse() != 1 || res == -1 || res == -9999) { return -9999.0F; }
     return static_cast<float>(res) / 10.0F;
   }
 

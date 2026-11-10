@@ -257,9 +257,7 @@ class TinyGsmEspressif
     thisModem().streamSkipUntil(',');  // Skip Chanel number
     int16_t res2 = thisModem().streamGetIntBefore(',');  // Read RSSI
     thisModem().streamSkipUntil('\n');                   // Skip the rest
-    if (thisModem().waitResponse() != 1 || res2 == -9999) {
-      return -9999;
-    }
+    if (thisModem().waitResponse() != 1 || res2 == -9999) { return -9999; }
     return res2;
   }
 

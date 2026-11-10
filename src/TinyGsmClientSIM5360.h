@@ -655,7 +655,7 @@ class TinyGsmSim5360
    * Battery functions
    */
  protected:
-  // AT+CBC reports the power supply voltage in volts.
+  // AT+CBC reports the power supply voltage in volts instead of millivolts.
   int16_t getBattVoltageImpl() {
     sendAT(GF("+CBC"));
     // Return -9999 for no response
@@ -677,6 +677,7 @@ class TinyGsmSim5360
   // SRGD Note:  Returns voltage in VOLTS instead of millivolts
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
+    // set outputs to default invalid values
     chargeState = -99;
     percent     = -99;
     milliVolts  = -9999;
@@ -690,22 +691,28 @@ class TinyGsmSim5360
     // Wait for final OK
     if (waitResponse() != 1) { return false; }
 
-    bool chargeStateRepresentable =
-        parsedChargeState >= -128 && parsedChargeState <= 127;
-    bool percentRepresentable = parsedPercent >= -128 && parsedPercent <= 127;
-    bool voltageRepresentable = voltage >= -32.768F && voltage <= 32.767F;
-    if (chargeStateRepresentable) {
+    bool results_valid = true;
+    // the charge state should be between 0 and 2
+    if (parsedChargeState >= 0 && parsedChargeState <= 2) {
       chargeState = static_cast<int8_t>(parsedChargeState);
+    } else {
+      results_valid = false;
     }
-    if (percentRepresentable) { percent = static_cast<int8_t>(parsedPercent); }
-    if (voltageRepresentable) {
-      milliVolts = static_cast<int16_t>(
-          voltage * 1000.0F + (voltage >= 0.0F ? 0.5F : -0.5F));
+    // the percent should be between 0 and 100
+    if (parsedPercent >= 0 && parsedPercent <= 100) {
+      percent = static_cast<int8_t>(parsedPercent);
+    } else {
+      results_valid = false;
+    }
+    // the voltage should be positive and < 32.767 volts
+    if (voltage > 0.0F && voltage <= 32.767F) {
+      milliVolts = static_cast<int16_t>(voltage * 1000.0F + 0.5F);
+    } else {
+      results_valid = false;
     }
 
-    return chargeStateRepresentable && parsedChargeState >= 0 &&
-        parsedChargeState <= 2 && percentRepresentable && parsedPercent >= 0 &&
-        parsedPercent <= 100 && voltage > 0.0F && voltage <= 32.767F;
+    // return true if everything is valid and within the expected ranges
+    return results_valid;
   }
 
   /*

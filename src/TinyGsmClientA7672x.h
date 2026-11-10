@@ -750,7 +750,7 @@ class TinyGsmA7672X
    * Battery functions
    */
  protected:
-  // AT+CBC reports the power supply voltage in volts.
+  // AT+CBC reports the power supply voltage in volts instead of millivolts.
   int16_t getBattVoltageImpl() {
     sendAT(GF("+CBC"));
     // Return -9999 for no response
@@ -765,6 +765,20 @@ class TinyGsmA7672X
     }
     // Return millivolts, adding 0.5 for rounding
     return static_cast<int16_t>(voltage * 1000.0F + 0.5F);
+  }
+
+  int8_t getBattPercentImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  int8_t getBattChargeStateImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
+                        int16_t& milliVolts) {
+    // the only battery value we can get is voltage, so defer to
+    // getBattVoltageImpl() and set the others to default invalid values
+    chargeState = -99;
+    percent     = -99;
+    milliVolts  = getBattVoltageImpl();
+    return milliVolts != -9999;
   }
 
   /*

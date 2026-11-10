@@ -83,19 +83,14 @@ class TinyGsmBattery {
    * @brief Get the all battery state
    *
    * @param chargeState A reference to an int to set to the battery charge
-   * state, or -99 if unavailable or not received.
+   * state, or -99 if unavailable, not valid, or not received.
    * @param percent A reference to an int to set to the battery percent, or -99
-   * if unavailable or not received.
+   * if unavailable, not valid, or not received.
    * @param milliVolts A reference to an int to set to the battery voltage in
-   * millivolts, or -9999 if unavailable or not received.
-   *
-   * @note If the modem returns a complete numeric response containing an
-   * impossible value, that value is retained in the corresponding reference
-   * when it is representable, and this function returns false. Outputs from a
-   * false return should be treated as diagnostic values only.
+   * millivolts, or -9999 if unavailable, not valid, or not received.
    *
    * @return True only if all battery stats were received and are valid, false
-   * otherwise.
+   * if any were not returned or not valid.
    */
   bool getBattStats(int8_t& chargeState, int8_t& percent, int16_t& milliVolts) {
     return thisModem().getBattStatsImpl(chargeState, percent, milliVolts);
@@ -169,30 +164,43 @@ class TinyGsmBattery {
 
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
+    // set outputs to default invalid values
     chargeState = -99;
     percent     = -99;
     milliVolts  = -9999;
 
     thisModem().sendAT(GF("+CBC"));
+    // if there's no response to the request, return false immediately
     if (thisModem().waitResponse(GF("+CBC:")) != 1) { return false; }
+    // try to parse the responses
     int16_t parsedChargeState = thisModem().streamGetIntBefore(',');
     int16_t parsedPercent     = thisModem().streamGetIntBefore(',');
     int16_t parsedMilliVolts  = thisModem().streamGetIntBefore('\n');
     // Wait for final OK
     if (thisModem().waitResponse() != 1) { return false; }
 
-    bool chargeStateRepresentable =
-        parsedChargeState >= -128 && parsedChargeState <= 127;
-    bool percentRepresentable = parsedPercent >= -128 && parsedPercent <= 127;
-    if (chargeStateRepresentable) {
+    bool results_valid = true;
+    // the charge state should be between 0 and 2
+    if (parsedChargeState >= 0 && parsedChargeState <= 2) {
       chargeState = static_cast<int8_t>(parsedChargeState);
+    } else {
+      results_valid = false;
     }
-    if (percentRepresentable) { percent = static_cast<int8_t>(parsedPercent); }
-    if (parsedMilliVolts != -9999) { milliVolts = parsedMilliVolts; }
+    // the percent should be between 0 and 100
+    if (parsedPercent >= 0 && parsedPercent <= 100) {
+      percent = static_cast<int8_t>(parsedPercent);
+    } else {
+      results_valid = false;
+    }
+    // assign the parsed milliVolts to the output if it is valid
+    if (parsedMilliVolts != -9999) {
+      milliVolts = parsedMilliVolts;
+    } else {
+      results_valid = false;
+    }
 
-    return chargeStateRepresentable && parsedChargeState >= 0 &&
-        parsedChargeState <= 2 && percentRepresentable && parsedPercent >= 0 &&
-        parsedPercent <= 100 && parsedMilliVolts > 0;
+    // return true if everything is valid and within the expected ranges
+    return results_valid;
   }
 };
 

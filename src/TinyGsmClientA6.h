@@ -558,24 +558,37 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   // Needs a '?' after CBC, unlike most
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
+    // set all output variables to default invalid values
     chargeState = -99;
     percent     = -99;
     milliVolts  = -9999;
 
-    sendAT(GF("+CBC?"));
+    sendAT(GF("+CBC?"));  // <- The '?' is needed!
+    // if there's no response to the request, return false immediately
     if (waitResponse(GF("+CBC:")) != 1) { return false; }
+    // try to parse the responses
     int16_t parsedChargeState = streamGetIntBefore(',');
     int16_t parsedPercent     = streamGetIntBefore('\n');
+    // no voltage reported by this modem
     // Wait for final OK
     if (waitResponse() != 1) { return false; }
 
-    if (parsedChargeState >= -128 && parsedChargeState <= 127) {
+    bool results_valid = true;
+    // the charge state should be between 0 and 2
+    if (parsedChargeState >= 0 && parsedChargeState <= 2) {
       chargeState = static_cast<int8_t>(parsedChargeState);
+    } else {
+      results_valid = false;
     }
-    if (parsedPercent >= -128 && parsedPercent <= 127) {
+    // the percent should be between 0 and 100
+    if (parsedPercent >= 0 && parsedPercent <= 100) {
       percent = static_cast<int8_t>(parsedPercent);
+    } else {
+      results_valid = false;
     }
-    return false;
+
+    // return true if everything is valid and within the expected ranges
+    return results_valid;
   }
 
   /*
