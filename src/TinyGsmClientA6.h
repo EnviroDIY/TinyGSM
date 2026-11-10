@@ -534,26 +534,48 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   // Needs a '?' after CBC, unlike most
   int8_t getBattPercentImpl() {
     sendAT(GF("+CBC?"));
-    if (waitResponse(GF("+CBC:")) != 1) { return false; }
+    if (waitResponse(GF("+CBC:")) != 1) { return -99; }
     streamSkipUntil(',');  // Skip battery charge status
     // Read battery charge level
-    int8_t res = streamGetIntBefore('\n');
+    int16_t res = streamGetIntBefore('\n');
     // Wait for final OK
-    waitResponse();
-    return res;
+    bool validResponse = waitResponse() == 1;
+    if (!validResponse || res < 0 || res > 100) { return -99; }
+    return static_cast<int8_t>(res);
+  }
+
+  // Needs a '?' after CBC, unlike most
+  int8_t getBattChargeStateImpl() {
+    sendAT(GF("+CBC?"));
+    if (waitResponse(GF("+CBC:")) != 1) { return -99; }
+    int16_t res = streamGetIntBefore(',');
+    // Wait for final OK
+    bool validResponse = waitResponse() == 1;
+    if (!validResponse || res < 0 || res > 2) { return -99; }
+    return static_cast<int8_t>(res);
   }
 
   // Needs a '?' after CBC, unlike most
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
+    chargeState = -99;
+    percent     = -99;
+    milliVolts  = -9999;
+
     sendAT(GF("+CBC?"));
     if (waitResponse(GF("+CBC:")) != 1) { return false; }
-    chargeState = streamGetIntBefore(',');
-    percent     = streamGetIntBefore('\n');
-    milliVolts  = 0;
+    int16_t parsedChargeState = streamGetIntBefore(',');
+    int16_t parsedPercent     = streamGetIntBefore('\n');
     // Wait for final OK
-    waitResponse();
-    return true;
+    if (waitResponse() != 1) { return false; }
+
+    if (parsedChargeState >= -128 && parsedChargeState <= 127) {
+      chargeState = static_cast<int8_t>(parsedChargeState);
+    }
+    if (parsedPercent >= -128 && parsedPercent <= 127) {
+      percent = static_cast<int8_t>(parsedPercent);
+    }
+    return false;
   }
 
   /*

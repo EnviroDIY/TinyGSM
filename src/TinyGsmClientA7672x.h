@@ -773,11 +773,11 @@ class TinyGsmA7672X
  protected:
   float getTemperatureImpl() {
     sendAT(GF("+CPMUTEMP"));
-    if (waitResponse(GF("+CPMUTEMP:")) != 1) { return -9999.0f; }
+    if (waitResponse(GF("+CPMUTEMP:")) != 1) { return -9999.0F; }
     // return temperature in C
     float temp = streamGetFloatBefore('\n');
     // Wait for final OK
-    waitResponse();
+    if (waitResponse() != 1 || temp == -9999.0F) { return -9999.0F; }
     return temp;
   }
 

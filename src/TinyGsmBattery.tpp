@@ -63,7 +63,8 @@ class TinyGsmBattery {
    * this will be the percent from the input voltage going to the module from
    * your main processor board, not the battery percent of your main processor.
    *
-   * @return *int8_t*  The current battery percent.
+   * @return *int8_t* The current battery percent, or -99 if the modem does not
+   * respond or returns an invalid value.
    */
   int8_t getBattPercent() {
     return thisModem().getBattPercentImpl();
@@ -71,7 +72,8 @@ class TinyGsmBattery {
 
   /**
    * @brief Get the battery charging state.
-   * @return *int8_t* The battery charge state.
+   * @return *int8_t* The battery charge state, or -99 if the modem does not
+   * respond or returns an invalid value.
    */
   int8_t getBattChargeState() {
     return thisModem().getBattChargeStateImpl();
@@ -80,10 +82,19 @@ class TinyGsmBattery {
   /**
    * @brief Get the all battery state
    *
-   * @param chargeState A reference to an int to set to the battery charge state
-   * @param percent A reference to an int to set to the battery percent
-   * @param milliVolts A reference to an int to set to the battery voltage
-   * @return True if the battery stats were updated by the module, false
+   * @param chargeState A reference to an int to set to the battery charge
+   * state, or -99 if unavailable or not received.
+   * @param percent A reference to an int to set to the battery percent, or -99
+   * if unavailable or not received.
+   * @param milliVolts A reference to an int to set to the battery voltage in
+   * millivolts, or -9999 if unavailable or not received.
+   *
+   * @note If the modem returns a complete numeric response containing an
+   * impossible value, that value is retained in the corresponding reference
+   * when it is representable, and this function returns false. Outputs from a
+   * false return should be treated as diagnostic values only.
+   *
+   * @return True only if all battery stats were received and are valid, false
    * otherwise.
    */
   bool getBattStats(int8_t& chargeState, int8_t& percent, int16_t& milliVolts) {
@@ -135,35 +146,53 @@ class TinyGsmBattery {
 
   int8_t getBattPercentImpl() {
     thisModem().sendAT(GF("+CBC"));
-    if (thisModem().waitResponse(GF("+CBC:")) != 1) { return false; }
+    if (thisModem().waitResponse(GF("+CBC:")) != 1) { return -99; }
     thisModem().streamSkipUntil(',');  // Skip battery charge status
     // Read battery charge level
-    int8_t res = thisModem().streamGetIntBefore(',');
+    int16_t res = thisModem().streamGetIntBefore(',');
     // Wait for final OK
-    thisModem().waitResponse();
-    return res;
+    bool validResponse = thisModem().waitResponse() == 1;
+    if (!validResponse || res < 0 || res > 100) { return -99; }
+    return static_cast<int8_t>(res);
   }
 
   int8_t getBattChargeStateImpl() {
     thisModem().sendAT(GF("+CBC"));
-    if (thisModem().waitResponse(GF("+CBC:")) != 1) { return false; }
+    if (thisModem().waitResponse(GF("+CBC:")) != 1) { return -99; }
     // Read battery charge status
-    int8_t res = thisModem().streamGetIntBefore(',');
+    int16_t res = thisModem().streamGetIntBefore(',');
     // Wait for final OK
-    thisModem().waitResponse();
-    return res;
+    bool validResponse = thisModem().waitResponse() == 1;
+    if (!validResponse || res < 0 || res > 2) { return -99; }
+    return static_cast<int8_t>(res);
   }
 
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
+    chargeState = -99;
+    percent     = -99;
+    milliVolts  = -9999;
+
     thisModem().sendAT(GF("+CBC"));
     if (thisModem().waitResponse(GF("+CBC:")) != 1) { return false; }
-    chargeState = thisModem().streamGetIntBefore(',');
-    percent     = thisModem().streamGetIntBefore(',');
-    milliVolts  = thisModem().streamGetIntBefore('\n');
+    int16_t parsedChargeState = thisModem().streamGetIntBefore(',');
+    int16_t parsedPercent     = thisModem().streamGetIntBefore(',');
+    int16_t parsedMilliVolts  = thisModem().streamGetIntBefore('\n');
     // Wait for final OK
-    thisModem().waitResponse();
-    return true;
+    if (thisModem().waitResponse() != 1) { return false; }
+
+    bool chargeStateRepresentable =
+        parsedChargeState >= -128 && parsedChargeState <= 127;
+    bool percentRepresentable = parsedPercent >= -128 && parsedPercent <= 127;
+    if (chargeStateRepresentable) {
+      chargeState = static_cast<int8_t>(parsedChargeState);
+    }
+    if (percentRepresentable) { percent = static_cast<int8_t>(parsedPercent); }
+    if (parsedMilliVolts != -9999) { milliVolts = parsedMilliVolts; }
+
+    return chargeStateRepresentable && parsedChargeState >= 0 &&
+        parsedChargeState <= 2 && percentRepresentable && parsedPercent >= 0 &&
+        parsedPercent <= 100 && parsedMilliVolts > 0;
   }
 };
 

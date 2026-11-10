@@ -936,10 +936,19 @@ class TinyGsmSim7600
 
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
-    chargeState = 0;
-    percent     = 0;
-    milliVolts  = getBattVoltage();
-    return true;
+    chargeState = -99;
+    percent     = -99;
+    milliVolts  = -9999;
+
+    sendAT(GF("+CBC"));
+    if (waitResponse(GF("+CBC:")) != 1) { return false; }
+    float voltage = streamGetFloatBefore('\n');
+    if (waitResponse() != 1) { return false; }
+    if (voltage >= -32.768F && voltage <= 32.767F) {
+      milliVolts = static_cast<int16_t>(
+          voltage * 1000.0F + (voltage >= 0.0F ? 0.5F : -0.5F));
+    }
+    return false;
   }
 
   /*
@@ -949,11 +958,11 @@ class TinyGsmSim7600
   // get temperature in degree celsius
   float getTemperatureImpl() {
     sendAT(GF("+CPMUTEMP"));
-    if (waitResponse(GF("+CPMUTEMP:")) != 1) { return -9999.0f; }
+    if (waitResponse(GF("+CPMUTEMP:")) != 1) { return -9999.0F; }
     // return temperature in C
     float temp = streamGetFloatBefore('\n');
     // Wait for final OK
-    waitResponse();
+    if (waitResponse() != 1 || temp == -9999.0F) { return -9999.0F; }
     return temp;
   }
 

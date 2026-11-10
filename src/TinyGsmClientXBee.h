@@ -968,8 +968,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     return stat;
   }
 
-  int8_t getSignalQualityImpl() {
-    XBEE_COMMAND_START_DECORATOR(5, 0);
+  int16_t getSignalQualityImpl() {
+    XBEE_COMMAND_START_DECORATOR(5, -9999);
 
     if (beeType == XBeeType::XBEE_UNKNOWN)
       getSeries();  // Need to know what type of bee so we know how to ask
@@ -984,16 +984,16 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     XBEE_COMMAND_END_DECORATOR
 
     if (beeType == XBeeType::XBEE3_LTEM_ATT && intRes == 105)
-      intRes = 0;  // tends to reply with "69" when signal is unknown
+      intRes = -9999;  // tends to reply with "69" when signal is unknown
 
     if (beeType == XBeeType::XBEE_S6B_WIFI) {
-      if (intRes == 0xFF || intRes == -9999) {
-        return 0;  // 0xFF returned for unknown
+      if (intRes < 0 || intRes == 0xFF) {
+        return -9999;  // 0xFF returned for unknown
       } else {
         return -93 + intRes;  // the maximum sensitivity is -93dBm
       }
     } else {
-      if (intRes == -9999) { return 0; }
+      if (intRes < 0) { return -9999; }
       return -1 * intRes;  // need to convert to negative number
     }
   }
@@ -1309,10 +1309,20 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
-    chargeState = 0;
-    percent     = 0;
-    milliVolts  = getBattVoltage();
-    return true;
+    chargeState = -99;
+    percent     = -99;
+    milliVolts  = -9999;
+
+    int16_t intRes = -9999;
+    XBEE_COMMAND_START_DECORATOR(5, false)
+    if (beeType == XBeeType::XBEE_UNKNOWN) getSeries();
+    if (beeType == XBeeType::XBEE_S6B_WIFI) {
+      sendAT(GF("%V"));
+      intRes = readResponseInt();
+    }
+    XBEE_COMMAND_END_DECORATOR
+    if (intRes != -9999) { milliVolts = intRes; }
+    return false;
   }
 
   /*
@@ -1320,11 +1330,11 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    */
  protected:
   float getTemperatureImpl() {
-    XBEE_COMMAND_START_DECORATOR(5, static_cast<float>(-9999))
+    XBEE_COMMAND_START_DECORATOR(5, -9999.0F)
     sendAT(GF("TP"));
     int16_t intRes = readResponseInt();
     XBEE_COMMAND_END_DECORATOR
-    if (intRes < 0) { return -9999.0F; }
+    if (intRes < 0 || intRes > 0xFF) { return -9999.0F; }
     return static_cast<float>(static_cast<int8_t>(intRes));
   }
 

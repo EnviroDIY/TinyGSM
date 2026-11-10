@@ -677,16 +677,35 @@ class TinyGsmSim5360
   // SRGD Note:  Returns voltage in VOLTS instead of millivolts
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
+    chargeState = -99;
+    percent     = -99;
+    milliVolts  = -9999;
+
     sendAT(GF("+CBC"));
     if (waitResponse(GF("+CBC:")) != 1) { return false; }
-    chargeState = streamGetIntBefore(',');
-    percent     = streamGetIntBefore(',');
+    int16_t parsedChargeState = streamGetIntBefore(',');
+    int16_t parsedPercent     = streamGetIntBefore(',');
     // get voltage in volts
     float voltage = streamGetFloatBefore('\n');
-    milliVolts    = voltage * 1000;
     // Wait for final OK
-    waitResponse();
-    return true;
+    if (waitResponse() != 1) { return false; }
+
+    bool chargeStateRepresentable =
+        parsedChargeState >= -128 && parsedChargeState <= 127;
+    bool percentRepresentable = parsedPercent >= -128 && parsedPercent <= 127;
+    bool voltageRepresentable = voltage >= -32.768F && voltage <= 32.767F;
+    if (chargeStateRepresentable) {
+      chargeState = static_cast<int8_t>(parsedChargeState);
+    }
+    if (percentRepresentable) { percent = static_cast<int8_t>(parsedPercent); }
+    if (voltageRepresentable) {
+      milliVolts = static_cast<int16_t>(
+          voltage * 1000.0F + (voltage >= 0.0F ? 0.5F : -0.5F));
+    }
+
+    return chargeStateRepresentable && parsedChargeState >= 0 &&
+        parsedChargeState <= 2 && percentRepresentable && parsedPercent >= 0 &&
+        parsedPercent <= 100 && voltage > 0.0F && voltage <= 32.767F;
   }
 
   /*
@@ -697,13 +716,13 @@ class TinyGsmSim5360
   float getTemperatureImpl() {
     // Enable Temparature Reading
     sendAT(GF("+CMTE=1"));
-    if (waitResponse() != 1) { return 0; }
+    if (waitResponse() != 1) { return -9999.0F; }
     // Get Temparature Value
     sendAT(GF("+CMTE?"));
-    if (waitResponse(GF("+CMTE:")) != 1) { return false; }
+    if (waitResponse(GF("+CMTE:")) != 1) { return -9999.0F; }
     float res = streamGetFloatBefore('\n');
     // Wait for final OK
-    waitResponse();
+    if (waitResponse() != 1 || res == -9999.0F) { return -9999.0F; }
     return res;
   }
 

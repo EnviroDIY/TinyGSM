@@ -724,23 +724,29 @@ class TinyGsmSaraR4
 
   int8_t getBattPercentImpl() {
     sendAT(GF("+CIND?"));
-    if (waitResponse(GF("+CIND:")) != 1) { return 0; }
+    if (waitResponse(GF("+CIND:")) != 1) { return -99; }
 
-    int8_t res     = streamGetIntBefore(',');
-    int8_t percent = res * 20;  // return is 0-5
+    int16_t res = streamGetIntBefore(',');  // return is 0-5
     // Wait for final OK
-    waitResponse();
-    return percent;
+    bool validResponse = waitResponse() == 1;
+    if (!validResponse || res < 0 || res > 5) { return -99; }
+    return static_cast<int8_t>(res * 20);
   }
 
   int8_t getBattChargeStateImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
-    chargeState = 0;
-    percent     = getBattPercent();
-    milliVolts  = 0;
-    return true;
+    chargeState = -99;
+    percent     = -99;
+    milliVolts  = -9999;
+
+    sendAT(GF("+CIND?"));
+    if (waitResponse(GF("+CIND:")) != 1) { return false; }
+    int16_t res = streamGetIntBefore(',');
+    if (waitResponse() != 1) { return false; }
+    if (res >= -6 && res <= 6) { percent = static_cast<int8_t>(res * 20); }
+    return false;
   }
 
   /*
@@ -750,13 +756,14 @@ class TinyGsmSaraR4
   float getTemperatureImpl() {
     // First make sure the temperature is set to be in celsius
     sendAT(GF("+UTEMP=0"));  // Would use 1 for Fahrenheit
-    if (waitResponse() != 1) { return static_cast<float>(-9999); }
+    if (waitResponse() != 1) { return -9999.0F; }
     sendAT(GF("+UTEMP?"));
-    if (waitResponse(GF("+UTEMP:")) != 1) { return static_cast<float>(-9999); }
-    int16_t res  = streamGetIntBefore('\n');
-    float   temp = -9999;
-    if (res != -1) { temp = (static_cast<float>(res)) / 10; }
-    return temp;
+    if (waitResponse(GF("+UTEMP:")) != 1) { return -9999.0F; }
+    int16_t res = streamGetIntBefore('\n');
+    if (waitResponse() != 1 || res == -1 || res == -9999) {
+      return -9999.0F;
+    }
+    return static_cast<float>(res) / 10.0F;
   }
 
   /*

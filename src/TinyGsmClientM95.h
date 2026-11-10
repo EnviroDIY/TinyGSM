@@ -476,14 +476,14 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
  protected:
   float getTemperatureImpl() {
     sendAT(GF("+QTEMP?"));
-    if (waitResponse(GF("+QTEMP:")) != 1) { return static_cast<float>(-9999); }
+    if (waitResponse(GF("+QTEMP:")) != 1) { return -9999.0F; }
     streamSkipUntil(',');  // Skip mode
     // Read charge of thermistor
     // milliVolts = streamGetIntBefore(',');
     streamSkipUntil(',');  // Skip thermistor charge
     float temp = streamGetFloatBefore('\n');
     // Wait for final OK
-    waitResponse();
+    if (waitResponse() != 1 || temp == -9999.0F) { return -9999.0F; }
     return temp;
   }
 
