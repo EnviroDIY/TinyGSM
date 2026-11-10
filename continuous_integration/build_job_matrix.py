@@ -18,24 +18,8 @@ import re
 import json
 
 # # %%
-# # LOCAL ONLY
-# from pathlib import Path
-# import sys
-
-# build_scripts_dir = Path(
-#     r"C:\\Users\\sdamiano\\Documents\\GitHub\\EnviroDIY\\workflows\\build_scripts"
-# )
-# sys.path.insert(0, str(build_scripts_dir))
-
-# config = {
-#     "workspace_path": "C:\\Users\\sdamiano\\Documents\\GitHub\\EnviroDIY\\TinyGSM"
-# }
-# with open(
-#     "C:\\Users\\sdamiano\\Documents\\GitHub\\EnviroDIY\\TinyGSM\\continuous_integration_artifacts\\matrix_config.json",
-#     "r",
-# ) as f:
-#     config = json.load(f)
-# # LOCAL ONLY
+# local testing paths below
+# local testing paths above
 
 # %%
 # Import helper functions from the CI pipeline
