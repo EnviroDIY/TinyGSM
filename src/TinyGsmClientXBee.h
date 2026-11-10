@@ -989,7 +989,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
 
     if (beeType == XBeeType::XBEE_S6B_WIFI) {
       if (intRes < 0 || intRes == 0xFF) {
-        return -9999;  // 0xFF returned for unknown
+        return -9999;  // WiFi Bee returns 0xFF when unknown
       } else {
         return -93 + intRes;  // the maximum sensitivity is -93dBm
       }

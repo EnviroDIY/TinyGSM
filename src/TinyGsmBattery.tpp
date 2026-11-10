@@ -193,7 +193,7 @@ class TinyGsmBattery {
       results_valid = false;
     }
     // assign the parsed milliVolts to the output if it is valid
-    if (parsedMilliVolts != -9999) {
+    if (parsedMilliVolts > 0) {
       milliVolts = parsedMilliVolts;
     } else {
       results_valid = false;
