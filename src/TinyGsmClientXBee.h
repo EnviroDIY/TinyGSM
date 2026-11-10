@@ -1293,15 +1293,15 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
  protected:
   // Use: float vBatt = modem.getBattVoltage() / 1000.0;
   int16_t getBattVoltageImpl() {
-    int16_t intRes = 0;
-    XBEE_COMMAND_START_DECORATOR(5, false)
+    int16_t intRes = -9999;
+    XBEE_COMMAND_START_DECORATOR(5, -9999)
     if (beeType == XBeeType::XBEE_UNKNOWN) getSeries();
     if (beeType == XBeeType::XBEE_S6B_WIFI) {
       sendAT(GF("%V"));
       intRes = readResponseInt();
     }
     XBEE_COMMAND_END_DECORATOR
-    return intRes;
+    return intRes > 0 ? intRes : -9999;
   }
 
   int8_t getBattPercentImpl() TINY_GSM_ATTR_NOT_AVAILABLE;

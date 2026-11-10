@@ -913,18 +913,21 @@ class TinyGsmSim7600
    * Battery functions
    */
  protected:
-  // returns volts, multiply by 1000 to get mV
+  // AT+CBC reports the power supply voltage in volts.
   int16_t getBattVoltageImpl() {
     sendAT(GF("+CBC"));
-    if (waitResponse(GF("+CBC:")) != 1) { return 0; }
-
-    // get voltage in VOLTS
+    // Return -9999 for no response
+    if (waitResponse(GF("+CBC:")) != 1) { return -9999; }
+    // get voltage in volts
     float voltage = streamGetFloatBefore('\n');
     // Wait for final OK
-    waitResponse();
-    // Return millivolts
-    uint16_t res = voltage * 1000;
-    return res;
+    bool validResponse = waitResponse() == 1;
+    // Return -9999 for an invalid value
+    if (!validResponse || voltage <= 0.0F || voltage > 32.767F) {
+      return -9999;
+    }
+    // Return millivolts, adding 0.5 for rounding
+    return static_cast<int16_t>(voltage * 1000.0F + 0.5F);
   }
 
   int8_t getBattPercentImpl() TINY_GSM_ATTR_NOT_AVAILABLE;

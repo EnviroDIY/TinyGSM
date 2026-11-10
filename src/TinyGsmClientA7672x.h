@@ -749,7 +749,23 @@ class TinyGsmA7672X
   /*
    * Battery functions
    */
-  // No functions of this type supported
+ protected:
+  // AT+CBC reports the power supply voltage in volts.
+  int16_t getBattVoltageImpl() {
+    sendAT(GF("+CBC"));
+    // Return -9999 for no response
+    if (waitResponse(GF("+CBC:")) != 1) { return -9999; }
+    // get voltage in volts
+    float voltage = streamGetFloatBefore('\n');
+    // Wait for final OK
+    bool validResponse = waitResponse() == 1;
+    // Return -9999 for an invalid value
+    if (!validResponse || voltage <= 0.0F || voltage > 32.767F) {
+      return -9999;
+    }
+    // Return millivolts, adding 0.5 for rounding
+    return static_cast<int16_t>(voltage * 1000.0F + 0.5F);
+  }
 
   /*
    * Temperature functions

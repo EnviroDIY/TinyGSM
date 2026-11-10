@@ -48,7 +48,9 @@ class TinyGsmBattery {
    * this will be the input voltage going to the module from your main processor
    * board, not the battery voltage of your main processor.
    *
-   * @return *int16_t*  The battery voltage measured by the modem module.
+   * @return *int16_t*  The battery voltage measured by the modem module, in
+   * millivolts, or -9999 if the modem didn't respond or returned an invalid
+   * value.
    */
   int16_t getBattVoltage() {
     return thisModem().getBattVoltageImpl();
@@ -117,14 +119,18 @@ class TinyGsmBattery {
   // Use: float vBatt = modem.getBattVoltage() / 1000.0;
   int16_t getBattVoltageImpl() {
     thisModem().sendAT(GF("+CBC"));
-    if (thisModem().waitResponse(GF("+CBC:")) != 1) { return 0; }
+    // Return -9999 for no response
+    if (thisModem().waitResponse(GF("+CBC:")) != 1) { return -9999; }
     thisModem().streamSkipUntil(',');  // Skip battery charge status
     thisModem().streamSkipUntil(',');  // Skip battery charge level
-    // return voltage in mV
-    uint16_t res = thisModem().streamGetIntBefore('\n');
+    // get voltage in milliVolts
+    int16_t milliVolts = thisModem().streamGetIntBefore('\n');
     // Wait for final OK
-    thisModem().waitResponse();
-    return res;
+    bool validResponse = thisModem().waitResponse() == 1;
+    // Return -9999 for an invalid value
+    if (!validResponse || milliVolts <= 0) { return -9999; }
+    // Return millivolts
+    return milliVolts;
   }
 
   int8_t getBattPercentImpl() {

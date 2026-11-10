@@ -655,19 +655,23 @@ class TinyGsmSim5360
    * Battery functions
    */
  protected:
-  // SRGD Note:  Returns voltage in VOLTS instead of millivolts
+  // AT+CBC reports the power supply voltage in volts.
   int16_t getBattVoltageImpl() {
     sendAT(GF("+CBC"));
-    if (waitResponse(GF("+CBC:")) != 1) { return 0; }
+    // Return -9999 for no response
+    if (waitResponse(GF("+CBC:")) != 1) { return -9999; }
     streamSkipUntil(',');  // Skip battery charge status
     streamSkipUntil(',');  // Skip battery charge level
-    // get voltage in VOLTS
+    // get voltage in volts
     float voltage = streamGetFloatBefore('\n');
     // Wait for final OK
-    waitResponse();
-    // Return millivolts
-    uint16_t res = voltage * 1000;
-    return res;
+    bool validResponse = waitResponse() == 1;
+    // Return -9999 for an invalid value
+    if (!validResponse || voltage <= 0.0F || voltage > 32.767F) {
+      return -9999;
+    }
+    // Return millivolts, adding 0.5 for rounding
+    return static_cast<int16_t>(voltage * 1000.0F + 0.5F);
   }
 
   // SRGD Note:  Returns voltage in VOLTS instead of millivolts
@@ -677,7 +681,7 @@ class TinyGsmSim5360
     if (waitResponse(GF("+CBC:")) != 1) { return false; }
     chargeState = streamGetIntBefore(',');
     percent     = streamGetIntBefore(',');
-    // get voltage in VOLTS
+    // get voltage in volts
     float voltage = streamGetFloatBefore('\n');
     milliVolts    = voltage * 1000;
     // Wait for final OK
