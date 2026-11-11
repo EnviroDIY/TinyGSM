@@ -93,7 +93,10 @@ const char resource1[] = "/TinyGSM/logo.txt";
 const char server2[]   = "vsh.pp.ua";
 const char resource2[] = "/TinyGSM/logo.txt";
 
-// NOTE: Do NOT include the generic TinyGsmClient headers for specific modems.
+// NOTE: Do NOT include the generic TinyGsmClient.h header for specific modems.
+// For the Arduino IDE to correctly detect TinyGSM as a dependency,
+// include TinyGSM.h and **do not** `#define` any of the modems beforehand.
+#include <TinyGSM.h>
 // Include for the SIM7080 modem
 #include <modems/TinyGsmClientSIM7080.h>
 // Include for the ESP32
