@@ -37,6 +37,7 @@ You can also join our chat:
 - [TinyGSM](#tinygsm)
   - [Overview](#overview)
     - [Arduino Client interface support](#arduino-client-interface-support)
+  - [Library Installation](#library-installation)
   - [Supported modems](#supported-modems)
   - [Features](#features)
   - [Credits](#credits)
@@ -82,6 +83,19 @@ This library is easy to integrate with lots of sketches which use Ethernet or Wi
 <!--! @image{inline} xml examples.png -->
 
 <!--! @todo Update size specs for TinyGSM -->
+
+## Library Installation
+
+This library is available through both the Arduino and PlatformIO library registries.
+
+Within the Arduino IDE, you can find the library in the library registry using the [library manager](https://docs.arduino.cc/software/ide-v1/tutorials/installing-libraries/#using-the-library-manager).
+[The build and ingest logs for this library into the Arduino library registry are available.](https://downloads.arduino.cc/libraries/logs/github.com/vshymanskyy/TinyGSM/).
+The Arduino library registry should show newly available versions of this library within a few hours of a new release.
+
+The library is also available in [the PlatformIO registry page.](https://registry.platformio.org/libraries/vshymanskyy/TinyGSM).
+It can be installed using the PlatformIO command `pio pkg install --library "vshymanskyy/TinyGSM"`.
+You can also include TinyGSM as a dependency for a project by adding `vshymanskyy/TinyGSM` to the [lib_deps](https://docs.platformio.org/en/latest/projectconf/sections/env/options/library/lib_deps.html) section of your platformio.ini configuration file.
+The PlatformIO library registry will show newly available versions of this library within minutes of a new release.
 
 ## Supported modems
 
