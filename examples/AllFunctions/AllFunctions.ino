@@ -138,6 +138,21 @@ const int port_ssl = 443;
 #define TINY_GSM_TEST_WIFI false
 #endif
 
+
+#if defined(F_CPU) && defined(TARGET_BAUD) && F_CPU <= 8000000L && \
+    TARGET_BAUD > 57600
+#warning "TARGET_BAUD is too high for the current F_CPU, reducing to 57600"
+#undef TARGET_BAUD
+#define TARGET_BAUD 57600
+#endif
+
+#if defined(F_CPU) && defined(TARGET_BAUD) && F_CPU <= 16000000L && \
+    TARGET_BAUD > 115200
+#warning "TARGET_BAUD is too high for the current F_CPU, reducing to 115200"
+#undef TARGET_BAUD
+#define TARGET_BAUD 115200
+#endif
+
 #ifdef DUMP_AT_COMMANDS
 #include <StreamDebugger.h>
 StreamDebugger debugger(SerialAT, SerialMon);

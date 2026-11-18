@@ -72,6 +72,21 @@ TinyGsm modem(SerialAT);
 bool setupSuccess = false;
 
 
+#if defined(F_CPU) && defined(TARGET_BAUD) && F_CPU <= 8000000L && \
+    TARGET_BAUD > 57600
+#warning "TARGET_BAUD is too high for the current F_CPU, reducing to 57600"
+#undef TARGET_BAUD
+#define TARGET_BAUD 57600
+#endif
+
+#if defined(F_CPU) && defined(TARGET_BAUD) && F_CPU <= 16000000L && \
+    TARGET_BAUD > 115200
+#warning "TARGET_BAUD is too high for the current F_CPU, reducing to 115200"
+#undef TARGET_BAUD
+#define TARGET_BAUD 115200
+#endif
+
+
 void printModemInfo() {
   String modemInfo = modem.getModemInfo();
   SerialMon.print(GF("Modem Info: "));
@@ -200,6 +215,8 @@ bool updateFirmware(uint32_t update_timeout = 300000UL) {
     SerialAT.end();
     // After a restore, the baud rate will revert to the default 115200
     SerialAT.begin(115200);
+    // change the default baud rate to match the target setting
+    modem.setDefaultBaud(TARGET_BAUD);
 
     success &= modem.init();
   }
@@ -267,12 +284,21 @@ void setup() {
     modem.forceModemBaud(SerialAT, targetBaud);
   }
 
+  if (!modem.testAT()) {
+    SerialMon.println(GF("Modem not responding to AT commands!"));
+    SerialMon.println(GF("Try restarting to re-attempt autobauding!"));
+    return;
+  }
+
   SerialMon.println(GF("Initializing modem..."));
   if (!modem.init()) {
-    SerialMon.println(
-        GF("Failed to initialize modem; reset the board to retry"));
-    delay(10000L);
-    return;
+    // If init fails, print a message and continue because the failed init may
+    // just be because the firmware is too old - which is exactly what this
+    // program is trying to fix.
+    SerialMon.println(GF("Failed to initialize modem!"));
+    SerialMon.println(GF(
+        "The initialization failure may simply mean the firmware is too old."));
+    SerialMon.println(GF("Continuing with the update attempt."));
   }
 
   printModemInfo();

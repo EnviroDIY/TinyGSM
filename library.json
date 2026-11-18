@@ -30,7 +30,8 @@
       "keywords.txt",
       "src/*",
       "src/*/*",
-      "examples/*"
+      "examples/*",
+      "extras/*"
     ]
   },
   "frameworks": ["arduino", "energia", "wiringpi"],

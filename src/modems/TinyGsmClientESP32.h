@@ -462,7 +462,14 @@ class TinyGsmESP32
     }
     sendAT(GF("+CIPDINFO=0"));  // do not show the remote host and port in
                                 // “+IPD” and “+CIPRECVDATA” messages.
-    success &= waitResponse() == 1;
+    bool cipinfo_success = waitResponse() == 1;
+    success &= cipinfo_success;
+    if (!cipinfo_success) {
+      DBG(GF("### Modem did not respond to +CIPDINFO command!"));
+      DBG(GF("### This probably means your ESP32 firmware too old!"));
+      DBG(GF("### Upgrade your ESP32 firmware using the program in "
+             "extras\\tools\\EspressifUpdateFirmware!"));
+    }
 
     // Set the data receive mode to have the module buffer data for all
     // connections AT+CIPRECVTYPE=<link ID>,<mode>[,<data_len_report_mode>]
@@ -487,7 +494,14 @@ class TinyGsmESP32
     //    ensures that the reported length always corresponds to a single
     //    complete datagram.
     sendAT(GF("+CIPRECVTYPE=5,1"));
-    success &= waitResponse() == 1;
+    bool ciprecv_success = waitResponse() == 1;
+    success &= ciprecv_success;
+    if (!ciprecv_success) {
+      DBG(GF("### Modem did not respond to +CIPRECVTYPE command!"));
+      DBG(GF("### This probably means your ESP32 firmware too old!"));
+      DBG(GF("### Upgrade your ESP32 firmware using the program in "
+             "extras\\tools\\EspressifUpdateFirmware!"));
+    }
 
     DBG(GF("### Modem:"), getModemName());
     return success;
