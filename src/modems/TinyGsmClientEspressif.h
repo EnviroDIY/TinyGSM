@@ -128,7 +128,9 @@ class TinyGsmEspressif
   String getModemInfoImpl() {
     thisModem().sendAT(GF("+GMR"));
     String res;
-    if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
+    res.reserve(128);
+    // NOTE: It may not return an "OK"
+    thisModem().waitResponse(1000L, res);
     thisModem().cleanResponseString(res);
     return res;
   }
@@ -159,11 +161,9 @@ class TinyGsmEspressif
 
   // Gets the modem firmware version
   String getModemRevisionImpl() {
-    thisModem().sendAT(GF("+GMR"));  // GMR instead of CGMR
-    String res;
-    if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
-    thisModem().cleanResponseString(res);
-    return res;
+    // Only option is plain GMR, no separate command for firmware revision like
+    // CGMR
+    return thisModem().getModemInfoImpl();
   }
 
   // Gets the modem serial number
