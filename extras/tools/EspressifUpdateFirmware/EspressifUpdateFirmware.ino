@@ -14,14 +14,17 @@
 #include <Adafruit_TinyUSB.h>  // for Serial
 #endif
 
+#include <Arduino.h>
+
 // Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 // Set console baud rate
-#if !defined(SerialBaud) && defined(__AVR__)
+#ifndef SerialBaud
+#ifdef __AVR__
 #define SerialBaud 115200
-#endif
-#if !defined(SerialBaud)
+#else
 #define SerialBaud 921600
+#endif
 #endif
 
 // If DBG isn't enabled, this sketch won't print anything to the console. Unless
@@ -89,25 +92,17 @@ bool setupSuccess = false;
 
 
 void printModemInfo() {
-  String modemInfo = modem.getModemInfo();
-  SerialMon.print(GF("Modem Info: "));
-  SerialMon.println(modemInfo);
+  String manufacturer = modem.getModemManufacturer();
+  SerialMon.print(GF("Modem Manufacturer: "));
+  SerialMon.println(manufacturer);
 
   String name = modem.getModemName();
   SerialMon.print(GF("Modem Name: "));
   SerialMon.println(name);
 
-  String manufacturer = modem.getModemManufacturer();
-  SerialMon.print(GF("Modem Manufacturer: "));
-  SerialMon.println(manufacturer);
-
-  String hw_ver = modem.getModemModel();
-  SerialMon.print(GF("Modem Hardware Version: "));
-  SerialMon.println(hw_ver);
-
-  String fv_ver = modem.getModemRevision();
-  SerialMon.print(GF("Modem Firmware Version: "));
-  SerialMon.println(fv_ver);
+  String modemInfo = modem.getModemInfo();
+  SerialMon.print(GF("Modem Info: "));
+  SerialMon.println(modemInfo);
 }
 
 bool connectNetwork() {
@@ -130,6 +125,30 @@ bool connectNetwork() {
     return true;
   }
   return false;
+}
+
+void listAvailableAPs() {
+  uint32_t startAPSearch = millis();
+  SerialMon.println(GF("Searching for available APs..."));
+  modem.sendAT(GF("+CWLAP"));
+  while (modem.stream.available() == 0 &&
+         (millis() - startAPSearch) < 10000UL) {
+    yield();
+  }
+  bool   gotOK = false;
+  String apItem;
+  while (!gotOK) {
+    apItem = modem.stream.readStringUntil('\n');
+    if (apItem.indexOf("OK") != -1) { gotOK = true; }
+    if (apItem.indexOf("ERROR") != -1) { gotOK = true; }
+    if (apItem.indexOf("FAIL") != -1) { gotOK = true; }
+    if (apItem.indexOf("ERR CODE") != -1) { gotOK = true; }
+    if (apItem.length() > 0) {
+      SerialMon.print(apItem);
+    } else {
+      break;
+    }
+  }
 }
 
 void checkNetworkTime() {
@@ -165,15 +184,15 @@ void checkNetworkTime() {
 
 bool updateFirmware(uint32_t update_timeout = 300000UL) {
   SerialMon.println(GF("Attempting to update firmware..."));
-  bool     success         = true;
-  bool     update_complete = false;
-  uint32_t update_start    = millis();
+  bool success = true;
   // Update using default firmware server and settings in blocking mode
   modem.sendAT(GF("+CIUPDATE"));
   // in blocking mode, we wait for the update to complete all the way to the
   // final OK
   if (success) { success &= modem.waitResponse(update_timeout) == 1; }
 #if 0
+    bool     update_complete = false;
+    uint32_t update_start    = millis();
   // If we used non-blocking mode, we could use this
   // Non-blocking mode requires manually specifying the update server
   // check for successful beginning of the update
@@ -218,6 +237,8 @@ bool updateFirmware(uint32_t update_timeout = 300000UL) {
     SerialAT.begin(115200);
     // change the default baud rate to match the target setting
     modem.setDefaultBaud(TARGET_BAUD);
+    SerialAT.end();
+    SerialAT.begin(TARGET_BAUD);
 
     success &= modem.init();
   }
@@ -303,6 +324,8 @@ void setup() {
   }
 
   printModemInfo();
+
+  listAvailableAPs();
 
   if (!connectNetwork()) {
     SerialMon.println(

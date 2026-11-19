@@ -127,8 +127,15 @@ class TinyGsmEspressif
 
   String getModemInfoImpl() {
     thisModem().sendAT(GF("+GMR"));
+    // AT+GMR
+    // AT version:4.2.0.0(s-9b8caf0 - ESP32 - Aug  7 2026 06:53:12)
+    // SDK version:v5.4.4
+    // compile time(8a803bdb):Aug  7 2026 12:12:12
+    // Bin version:v4.2.0.0(WROOM-32)
+
+    // OK
     String res;
-    res.reserve(128);
+    res.reserve(165);
     // NOTE: It may not return an "OK"
     thisModem().waitResponse(1000L, res);
     thisModem().cleanResponseString(res);
@@ -149,7 +156,7 @@ class TinyGsmEspressif
     thisModem().streamSkipUntil('\n');  // skip the compile time
     // read the hardware from the Bin version
     thisModem().streamSkipUntil('(');  // skip the text "Bin version"
-    String wroom = stream.readStringUntil(
+    String wroom = thisModem().stream.readStringUntil(
         ')');  // read the WRoom version in the parenthesis
     // skip the bin version itself while waiting for the ending OK
     if (thisModem().waitResponse(1000L) == 1) {  // wait for the ending OK
@@ -161,8 +168,7 @@ class TinyGsmEspressif
 
   // Gets the modem firmware version
   String getModemRevisionImpl() {
-    // Only option is plain GMR, no separate command for firmware revision like
-    // CGMR
+    // the modem info is the detailed version info
     return thisModem().getModemInfoImpl();
   }
 
