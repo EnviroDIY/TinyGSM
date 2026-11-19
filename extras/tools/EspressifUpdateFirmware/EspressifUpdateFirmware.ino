@@ -19,7 +19,8 @@
 // Set console baud rate
 #if !defined(SerialBaud) && defined(__AVR__)
 #define SerialBaud 115200
-#elif !defined(SerialBaud)
+#endif
+#if !defined(SerialBaud)
 #define SerialBaud 921600
 #endif
 
